@@ -1,192 +1,107 @@
 #include <boost/asio.hpp>
+#include <boost/intrusive_ptr.hpp>
+#include <boost/smart_ptr/intrusive_ref_counter.hpp>
+#include <functional>
 #include <iostream>
+#include <memory>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
-template <typename T, typename M, typename Marker> struct forwarder_t {
-  forwarder_t(T &obj_, M &&member_, Marker &&marker_)
-      : obj{obj_}, impl_fn{std::forward<M>(member_)}, marker{
-                                                          std::forward<Marker>(
-                                                              marker_)} {}
+namespace rotor {
 
-  template <typename E, typename... R>
-  void operator()(const E &err, R... results) noexcept {
-    if (err) {
-      obj.on_error(err, std::move(marker));
-    } else {
-      (obj.*impl_fn)(std::forward<R>(results)...);
-    }
-  }
+namespace asio = boost::asio;
 
-  T &obj;
-  M impl_fn;
-  Marker marker;
+struct supervisor_t;
+
+using counter_policy_t = boost::thread_unsafe_counter;
+
+struct address_base_t
+    : public boost::intrusive_ref_counter<address_base_t, counter_policy_t> {
+  void *ctx_addr;
+  address_base_t(void *ctx_addr_) : ctx_addr{ctx_addr_} {}
+  bool operator==(const address_base_t &other) const { return this == &other; }
 };
+using address_ptr_t = boost::intrusive_ptr<address_base_t>;
 
-template <typename T, typename M> struct forwarder_t<T, M, void> {
-  forwarder_t(T &obj_, M &&member_)
-      : obj{obj_}, impl_fn{std::forward<M>(member_)} {}
-
-  template <typename E, typename... R>
-  void operator()(const E &err, R... results) noexcept {
-    if (err) {
-      obj.on_error(err);
-    } else {
-      (obj.*impl_fn)(std::forward<R>(results)...);
-    }
-  }
-
-  T &obj;
-  M impl_fn;
-};
-
-template <typename T, typename M>
-forwarder_t(T, M)->forwarder_t<std::decay_t<T>, M, void>;
-
-template <typename T, typename M, typename Marker>
-forwarder_t(T, M, Marker)
-    ->forwarder_t<std::decay_t<T>, M, std::decay_t<Marker>>;
-
-class my_simple_agent_t {
+struct actor_context_t {
 public:
-  my_simple_agent_t(const std::string &host_, const std::string proto_,
-                    boost::asio::io_context &io_context_)
-      : host{host_}, proto{proto_},
-        io_context{io_context_}, resolver{io_context}, skt{io_context} {}
+  actor_context_t(asio::io_context &io_context_) : io_context{io_context_} {}
 
-  struct ctx_resolve {};
-  struct ctx_connect {};
-
-  void on_error(const boost::system::error_code &ec, ctx_resolve &&) {
-    std::cout << "on_error[resolve_ctx]() :: " << ec.message() << "\n";
-  }
-
-  void on_error(const boost::system::error_code &ec, ctx_connect &&) {
-    std::cout << "on_error[connect_ctx]() :: " << ec.message() << "\n";
-  }
-
-  void resolve() noexcept {
-    std::cout << "resolve()\n";
-
-    resolver.async_resolve(
-        host, proto,
-        forwarder_t(*this, &my_simple_agent_t::on_resolve, ctx_resolve{}));
-  }
-
-  void
-  on_resolve(boost::asio::ip::tcp::resolver::results_type &&results) noexcept {
-    std::cout << "on_resolve()\n";
-    boost::asio::async_connect(
-        skt, results.begin(), results.end(),
-        forwarder_t(*this, &my_simple_agent_t::on_connect, ctx_connect{}));
-  }
-
-  void on_connect(boost::asio::ip::tcp::resolver::iterator it) noexcept {
-    std::cout << "on_connect() :: " << it->endpoint() << "\n";
+  actor_context_t(const actor_context_t &) = delete;
+  actor_context_t(actor_context_t &&) = delete;
+  address_ptr_t make_address() {
+    return address_ptr_t{new address_base_t(static_cast<void *>(this))};
   }
 
 private:
-  std::string host;
-  std::string proto;
-  boost::asio::io_context &io_context;
-  boost::asio::ip::tcp::resolver resolver;
-  boost::asio::ip::tcp::socket skt;
+  asio::io_context &io_context;
 };
 
-class my_simple_agent2_t {
+struct base_message_t
+    : public boost::intrusive_ref_counter<base_message_t, counter_policy_t> {};
+
+template <typename T> struct message_t : public base_message_t {
+
+  template <typename... Args>
+  message_t(Args... args) : payload{std::forward<Args>(args)...} {}
+
+  T payload;
+};
+
+using message_ptr_t = boost::intrusive_ptr<base_message_t>;
+
+struct supervisor_t {
 public:
-  my_simple_agent2_t(const std::string &host_, const std::string proto_,
-                     boost::asio::io_context &io_context_)
-      : host{host_}, proto{proto_},
-        io_context{io_context_}, resolver{io_context}, skt{io_context} {}
+  supervisor_t(actor_context_t &actor_context_)
+      : actor_context{actor_context_} {}
 
-  void on_error(const boost::system::error_code &ec) {
-    std::cout << "on_error2 [generic] " << ec.message() << "\n";
-  }
-
-  void resolve() noexcept {
-    std::cout << "resolve2()\n";
-    resolver.async_resolve(host, proto,
-                           forwarder_t(*this, &my_simple_agent2_t::on_resolve));
-  }
-
-  void
-  on_resolve(boost::asio::ip::tcp::resolver::results_type &&results) noexcept {
-    std::cout << "on_resolve2()\n";
-    boost::asio::async_connect(
-        skt, results.begin(), results.end(),
-        forwarder_t(*this, &my_simple_agent2_t::on_connect));
-  }
-
-  void on_connect(boost::asio::ip::tcp::resolver::iterator it) noexcept {
-    std::cout << "on_connect2() :: " << it->endpoint() << "\n";
+  template <typename M, typename... Args>
+  void enqueue(const address_ptr_t &addr, Args &&... args) {
+    auto raw_message = new message_t<M>(std::forward<Args>(args)...);
+    outbound.emplace_back(addr, raw_message);
   }
 
 private:
-  std::string host;
-  std::string proto;
-  boost::asio::io_context &io_context;
-  boost::asio::ip::tcp::resolver resolver;
-  boost::asio::ip::tcp::socket skt;
+  struct item_t {
+    address_ptr_t address;
+    message_ptr_t message;
+
+  public:
+    item_t(const address_ptr_t &address_, message_ptr_t message_)
+        : address{address_}, message{message_} {}
+  };
+  using queue_t = std::vector<item_t>;
+
+  actor_context_t &actor_context;
+  queue_t outbound;
 };
 
-class my_simple_agent3_t {
-public:
-  my_simple_agent3_t(const std::string &host_, const std::string proto_,
-                     boost::asio::io_context &io_context_)
-      : host{host_}, proto{proto_},
-        io_context{io_context_}, resolver{io_context}, skt{io_context} {}
+} // namespace rotor
 
-  void on_error(const boost::system::error_code &ec, const char *ctx) {
-    std::cout << "on_error3 [" << ctx << "] :: " << ec.message() << "\n";
-  }
+namespace asio = boost::asio;
 
-  void resolve() noexcept {
-    std::cout << "resolve3()\n";
-    resolver.async_resolve(
-        host, proto,
-        forwarder_t(*this, &my_simple_agent3_t::on_resolve, "resolve"));
-  }
+struct my_message_t {
+  std::string name;
 
-  void
-  on_resolve(boost::asio::ip::tcp::resolver::results_type &&results) noexcept {
-    std::cout << "on_resolve3()\n";
-    boost::asio::async_connect(
-        skt, results.begin(), results.end(),
-        forwarder_t(*this, &my_simple_agent3_t::on_connect, "connect"));
-  }
-
-  void on_connect(boost::asio::ip::tcp::resolver::iterator it) noexcept {
-    std::cout << "on_connect3() :: " << it->endpoint() << "\n";
-  }
-
-private:
-  std::string host;
-  std::string proto;
-  boost::asio::io_context &io_context;
-  boost::asio::ip::tcp::resolver resolver;
-  boost::asio::ip::tcp::socket skt;
+  template <typename T> my_message_t(T arg) : name{arg} {}
 };
 
 int main(int argc, char **argv) {
 
-  boost::asio::io_context io_context;
+  asio::io_context io_context{1};
   try {
-    std::string host = "yandex.by";
-    std::string service = "httz";
-
-    my_simple_agent_t agent{host, service, io_context};
-    my_simple_agent2_t agent2{host, service, io_context};
-    my_simple_agent3_t agent3{host, service, io_context};
-
-    agent.resolve();
-    agent2.resolve();
-    agent3.resolve();
-
+    rotor::actor_context_t actor_context{io_context};
+    rotor::supervisor_t supervisor(actor_context);
+    // rotor::address_t addr_sup{supervisor};
+    rotor::address_ptr_t addr_sup = actor_context.make_address();
+    supervisor.enqueue<my_message_t>(addr_sup, "hello");
     io_context.run();
+
   } catch (const std::exception &ex) {
     std::cout << "exception : " << ex.what();
   }
 
+  std::cout << "exiting...\n";
   return 0;
 }
