@@ -2,10 +2,10 @@
 
 namespace rotor {
 
-namespace messages {
+namespace payload {
 
 struct start_supervisor_t {};
 
-}  // namespace messages
+} // namespace payload
 
 } // namespace rotor
