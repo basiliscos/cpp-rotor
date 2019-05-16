@@ -8,16 +8,15 @@ namespace rotor {
 
 namespace asio = boost::asio;
 
+struct supervisor_t;
+using supervisor_ptr_t = boost::intrusive_ptr<supervisor_t>;
+
 struct system_context_t {
 public:
-  // system_context_t(asio::io_context &io_context_): io_context{io_context_} {}
+  system_context_t(asio::io_context &io_context_) : io_context{io_context_} {}
 
   template <typename Supervisor = supervisor_t, typename... Args>
-  system_context_t(asio::io_context &io_context_, Args... args)
-      : io_context{io_context_} {
-    auto raw_object = new Supervisor{*this, std::forward<Args>(args)...};
-    supervisor = supervisor_ptr_t{raw_object};
-  }
+  auto create_supervisor(Args... args) -> boost::intrusive_ptr<Supervisor>;
 
   system_context_t(const system_context_t &) = delete;
   system_context_t(system_context_t &&) = delete;
@@ -28,6 +27,7 @@ protected:
   }
 
 private:
+  friend struct supervisor_t;
   supervisor_ptr_t supervisor;
   asio::io_context &io_context;
 };

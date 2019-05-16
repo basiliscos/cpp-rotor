@@ -14,7 +14,7 @@ struct actor_base_t : public arc_base_t<address_t> {
 
   address_ptr_t get_address() const { return address; }
 
-private:
+protected:
   system_context_t &system_context;
   address_ptr_t address;
 };
