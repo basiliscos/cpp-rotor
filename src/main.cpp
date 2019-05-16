@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
     auto supervisor = system_context.create_supervisor<my_supervisor_t>();
     auto addr_sup = supervisor->get_address();
     supervisor->enqueue<my_message_t>(addr_sup, "hello");
+    supervisor->start();
     io_context.run();
   } catch (const std::exception &ex) {
     std::cout << "exception : " << ex.what();

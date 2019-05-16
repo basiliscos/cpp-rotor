@@ -13,7 +13,7 @@ namespace asio = boost::asio;
 struct supervisor_t : public actor_base_t {
 public:
   supervisor_t(system_context_t &system_context_)
-      : actor_base_t{system_context_}, strand{system_context.io_context} {}
+      : actor_base_t{*this}, system_context{system_context_}, strand{system_context.io_context} {}
 
   template <typename M, typename... Args>
   void enqueue(const address_ptr_t &addr, Args &&... args) {
@@ -22,23 +22,26 @@ public:
   }
 
   void start() {
-      asio::defer(strand, [this]() { this->enqueue<messages::start_supervisor_t>(this->address); });
+      asio::defer(strand, [this]() { this->send<messages::start_supervisor_t>(this->address); });
   }
+  inline system_context_t& get_context() { return system_context; }
 
 private:
   struct item_t {
     address_ptr_t address;
     message_ptr_t message;
 
-  public:
     item_t(const address_ptr_t &address_, message_ptr_t message_)
         : address{address_}, message{message_} {}
   };
   using queue_t = std::vector<item_t>;
 
+  system_context_t &system_context;
   asio::io_context::strand strand;
   queue_t outbound;
 };
+
+inline system_context_t& get_context(supervisor_t& supervisor) { return  supervisor.get_context(); }
 
 using supervisor_ptr_t = boost::intrusive_ptr<supervisor_t>;
 
@@ -48,6 +51,11 @@ auto system_context_t::create_supervisor(Args... args) -> boost::intrusive_ptr<S
   auto raw_object = new Supervisor{*this, std::forward<Args>(args)...};
   supervisor = supervisor_ptr_t{raw_object};
   return wrapper_t{raw_object};
+}
+
+template <typename M, typename... Args>
+void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
+    supervisor.enqueue<M>(addr, std::forward<Args>(args)... );
 }
 
 
