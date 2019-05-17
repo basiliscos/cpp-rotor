@@ -4,7 +4,9 @@
 
 namespace rotor {
 
-struct message_base_t : public arc_base_t<message_base_t> {};
+struct message_base_t : public arc_base_t<message_base_t> {
+  virtual ~message_base_t() {}
+};
 
 template <typename T> struct message_t : public message_base_t {
   template <typename... Args>

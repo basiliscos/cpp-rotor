@@ -19,3 +19,12 @@ private:
 using address_ptr_t = boost::intrusive_ptr<address_t>;
 
 } // namespace rotor
+
+namespace std {
+template <> struct hash<rotor::address_ptr_t> {
+  size_t operator()(const rotor::address_ptr_t &address) const noexcept {
+    return reinterpret_cast<size_t>(address->ctx_addr);
+  }
+};
+
+} // namespace std
