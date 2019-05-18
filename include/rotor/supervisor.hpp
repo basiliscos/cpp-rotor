@@ -34,6 +34,18 @@ public:
     outbound.emplace_back(addr, raw_message);
   }
 
+  template <typename Actor, typename... Args>
+  boost::intrusive_ptr<Actor> create_actor(Args... args) {
+    using wrapper_t = boost::intrusive_ptr<Actor>;
+    auto raw_object = new Actor{*this, std::forward<Args>(args)...};
+    subscribe_actor<payload::initialize_actor_t>(*raw_object,
+                                                 &actor_base_t::on_initialize);
+    auto actor_address = raw_object->get_address();
+    actors_map.emplace(actor_address, raw_object);
+    send<payload::initialize_actor_t>(address, actor_address);
+    return wrapper_t{raw_object};
+  }
+
   void start() {
     subscribe<payload::start_supervisor_t>(&supervisor_t::on_start);
     auto actor_ptr = actor_ptr_t(this);
@@ -61,7 +73,6 @@ public:
     handler_t fn = [actor_ptr = std::move(actor_ptr),
                     handler = std::move(handler)](message_ptr_t &msg) mutable {
       auto final_message = dynamic_cast<final_messaget_t *>(msg.get());
-      // final_message.payload;
       if (final_message) {
         auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
         (final_obj.*handler)(*final_message);
@@ -70,15 +81,28 @@ public:
     handler_map.emplace(std::move(address), std::move(fn));
   }
 
-private:
+protected:
+  void on_initialize(message_t<payload::initialize_actor_t> &msg) override {
+    auto actor_addr = msg.payload.actor_address;
+    if (actor_addr != address) {
+      // TODO: forward?
+      send<payload::initialize_actor_t>(actor_addr, actor_addr);
+    }
+  }
+
   void dequeue() {
     while (outbound.size()) {
       auto &item = outbound.front();
+      std::uint32_t count{0};
+
       auto range = handler_map.equal_range(item.address);
       for (auto it = range.first; it != range.second; ++it) {
         auto &handler = it->second;
         handler(item.message);
+        ++count;
       }
+      // std::cout << "message " << typeid(item.message.get()).name() << " has
+      // been delivered " << count << " times\n";
       outbound.pop_front();
     }
   }
@@ -93,11 +117,13 @@ private:
   using queue_t = std::deque<item_t>;
   using handler_t = std::function<void(message_ptr_t &)>;
   using handler_map_t = std::unordered_multimap<address_ptr_t, handler_t>;
+  using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
   system_context_t &system_context;
   asio::io_context::strand strand;
   queue_t outbound;
   handler_map_t handler_map;
+  actors_map_t actors_map;
 };
 
 inline system_context_t &get_context(supervisor_t &supervisor) {
@@ -114,7 +140,8 @@ auto system_context_t::create_supervisor(Args... args)
   using wrapper_t = boost::intrusive_ptr<Supervisor>;
   auto raw_object = new Supervisor{*this, std::forward<Args>(args)...};
   supervisor = supervisor_ptr_t{raw_object};
-  supervisor->send<payload::initialize_actor_t>(supervisor->get_address());
+  auto address = supervisor->get_address();
+  supervisor->send<payload::initialize_actor_t>(address, address);
   return wrapper_t{raw_object};
 }
 
