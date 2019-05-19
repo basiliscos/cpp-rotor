@@ -82,6 +82,10 @@ public:
   }
 
 protected:
+  address_ptr_t make_address() {
+    return address_ptr_t{new address_t(static_cast<void *>(this))};
+  }
+
   void on_initialize(message_t<payload::initialize_actor_t> &msg) override {
     auto actor_addr = msg.payload.actor_address;
     if (actor_addr != address) {
@@ -125,10 +129,6 @@ protected:
   handler_map_t handler_map;
   actors_map_t actors_map;
 };
-
-inline system_context_t &get_context(supervisor_t &supervisor) {
-  return supervisor.get_context();
-}
 
 using supervisor_ptr_t = boost::intrusive_ptr<supervisor_t>;
 

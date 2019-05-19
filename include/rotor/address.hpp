@@ -4,14 +4,14 @@
 
 namespace rotor {
 
-struct system_context_t;
 struct actor_base_t;
+struct supervisor_t;
 
 struct address_t : public arc_base_t<address_t> {
   const void *ctx_addr;
 
 private:
-  friend struct system_context_t;
+  friend struct supervisor_t;
   friend struct actor_base_t;
   address_t(void *ctx_addr_) : ctx_addr{ctx_addr_} {}
   bool operator==(const address_t &other) const { return this == &other; }

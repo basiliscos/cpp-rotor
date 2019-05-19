@@ -21,11 +21,6 @@ public:
   system_context_t(const system_context_t &) = delete;
   system_context_t(system_context_t &&) = delete;
 
-protected:
-  address_ptr_t make_address() {
-    return address_ptr_t{new address_t(static_cast<void *>(this))};
-  }
-
 private:
   friend struct supervisor_t;
   supervisor_ptr_t supervisor;
