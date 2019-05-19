@@ -13,29 +13,6 @@
 
 namespace asio = boost::asio;
 
-struct my_payload_t {
-  std::string name;
-  template <typename T> my_payload_t(T arg) : name{arg} {}
-};
-
-struct my_supervisor_t : public rotor::supervisor_t {
-  my_supervisor_t(rotor::system_context_t &ctx) : rotor::supervisor_t{ctx} {}
-
-  void on_initialize(
-      rotor::message_t<rotor::payload::initialize_actor_t> &msg) override {
-    rotor::supervisor_t::on_initialize(msg);
-    if (msg.payload.actor_address == address) {
-      std::cout << "my_supervisor_t::on_initialize\n";
-      subscribe<my_payload_t>(&my_supervisor_t::on_message);
-      send<my_payload_t>(address, "hello 2 from init");
-    }
-  }
-
-  void on_message(rotor::message_t<my_payload_t> &msg) {
-    std::cout << "my_payload_t::on_message : " << msg.payload.name << "\n";
-  }
-};
-
 struct ping_t {};
 struct pong_t {};
 
@@ -108,11 +85,10 @@ int main(int argc, char **argv) {
   asio::io_context io_context{1};
   try {
     rotor::system_context_t system_context(io_context);
-    auto supervisor = system_context.create_supervisor<my_supervisor_t>();
+    auto supervisor = system_context.create_supervisor<rotor::supervisor_t>();
     auto addr_sup = supervisor->get_address();
-    supervisor->send<my_payload_t>(addr_sup, "hello");
 
-    auto pinger = supervisor->create_actor<pinger_t>(5u);
+    auto pinger = supervisor->create_actor<pinger_t>(10000u);
     auto ponger = supervisor->create_actor<ponger_t>();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

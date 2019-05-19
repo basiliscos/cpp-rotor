@@ -24,6 +24,10 @@ add_executable(rotor src/main.cpp)
 target_include_directories(rotor PUBLIC ${ROTOR_INCLUDE_DIRS})
 target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
 
+add_executable(rotor-ping_pong src/rotor-ping_pong.cpp)
+target_include_directories(rotor-ping_pong PUBLIC ${ROTOR_INCLUDE_DIRS})
+target_link_libraries(rotor-ping_pong PUBLIC ${Boost_LIBRARIES})
+
 add_executable(ping_pong_asio src/ping_pong_asio.cpp)
 target_include_directories(ping_pong_asio PUBLIC ${ROTOR_INCLUDE_DIRS})
 target_link_libraries(ping_pong_asio PUBLIC ${Boost_LIBRARIES})

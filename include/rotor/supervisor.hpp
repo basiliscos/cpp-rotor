@@ -57,7 +57,7 @@ public:
   }
 
   void on_start(message_t<payload::start_supervisor_t> &) {
-    std::cout << "on_start\n";
+    std::cout << "supervisor_t::on_start\n";
   }
 
   inline system_context_t &get_context() { return system_context; }
