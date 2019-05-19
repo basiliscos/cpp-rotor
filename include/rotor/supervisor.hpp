@@ -8,7 +8,6 @@
 #include <deque>
 #include <functional>
 #include <iostream>
-#include <type_traits>
 #include <unordered_map>
 
 namespace rotor {
