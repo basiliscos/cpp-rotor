@@ -26,7 +26,7 @@ struct my_supervisor_t : public rotor::supervisor_t {
     rotor::supervisor_t::on_initialize(msg);
     if (msg.payload.actor_address == address) {
       std::cout << "my_supervisor_t::on_initialize\n";
-      subscribe<my_payload_t>(&my_supervisor_t::on_message);
+      subscribe(&my_supervisor_t::on_message);
       send<my_payload_t>(address, "hello 2 from init");
     }
   }
@@ -51,7 +51,7 @@ struct pinger_t : public rotor::actor_base_t {
   void on_initialize(
       rotor::message_t<rotor::payload::initialize_actor_t> &) override {
     std::cout << "pinger_t::on_initialize\n";
-    subscribe<pong_t>(&pinger_t::on_pong);
+    subscribe(&pinger_t::on_pong);
     std::cout << "pings start (" << pings_left << ")\n";
     send_ping();
     start = std::chrono::high_resolution_clock::now();
@@ -94,7 +94,7 @@ struct ponger_t : public rotor::actor_base_t {
   void on_initialize(
       rotor::message_t<rotor::payload::initialize_actor_t> &) override {
     std::cout << "ponger_t::on_initialize\n";
-    subscribe<ping_t>(&ponger_t::on_ping);
+    subscribe(&ponger_t::on_ping);
   }
 
   void on_ping(rotor::message_t<ping_t> &) { send<pong_t>(pinger_addr); }

@@ -9,6 +9,7 @@ struct message_base_t : public arc_base_t<message_base_t> {
 };
 
 template <typename T> struct message_t : public message_base_t {
+  using payload_t = T;
   template <typename... Args>
   message_t(Args... args) : payload{std::forward<Args>(args)...} {}
   virtual ~message_t() {}

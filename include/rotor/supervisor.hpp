@@ -8,6 +8,7 @@
 #include <deque>
 #include <functional>
 #include <iostream>
+#include <type_traits>
 #include <unordered_map>
 
 namespace rotor {
@@ -18,6 +19,7 @@ template <typename T> struct handler_traits {};
 template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
   using actor_t = A;
   using message_t = M;
+  using payload_t = typename message_t::payload_t;
 };
 
 struct supervisor_t : public actor_base_t {
@@ -25,8 +27,12 @@ public:
   supervisor_t(system_context_t &system_context_)
       : actor_base_t{*this},
         system_context{system_context_}, strand{system_context.io_context} {
-    subscribe<payload::initialize_actor_t>(&actor_base_t::on_initialize);
+    subscribe(&actor_base_t::on_initialize);
+    subscribe(&supervisor_t::on_start);
   }
+
+  supervisor_t(const supervisor_t &) = delete;
+  supervisor_t(supervisor_t &&) = delete;
 
   template <typename M, typename... Args>
   void enqueue(const address_ptr_t &addr, Args &&... args) {
@@ -38,8 +44,7 @@ public:
   boost::intrusive_ptr<Actor> create_actor(Args... args) {
     using wrapper_t = boost::intrusive_ptr<Actor>;
     auto raw_object = new Actor{*this, std::forward<Args>(args)...};
-    subscribe_actor<payload::initialize_actor_t>(*raw_object,
-                                                 &actor_base_t::on_initialize);
+    subscribe_actor(*raw_object, &actor_base_t::on_initialize);
     auto actor_address = raw_object->get_address();
     actors_map.emplace(actor_address, raw_object);
     send<payload::initialize_actor_t>(address, actor_address);
@@ -47,7 +52,6 @@ public:
   }
 
   void start() {
-    subscribe<payload::start_supervisor_t>(&supervisor_t::on_start);
     auto actor_ptr = actor_ptr_t(this);
     asio::defer(strand, [actor_ptr = std::move(actor_ptr)]() {
       auto &self = static_cast<supervisor_t &>(*actor_ptr);
@@ -62,17 +66,18 @@ public:
 
   inline system_context_t &get_context() { return system_context; }
 
-  template <typename M, typename A, typename Handler>
+  template <typename A, typename Handler>
   void subscribe_actor(A &actor, Handler &&handler) {
     using traits = handler_traits<Handler>;
-    using final_messaget_t = typename traits::message_t;
+    using final_message_t = typename traits::message_t;
     using final_actor_t = typename traits::actor_t;
+    using payload_t = typename traits::payload_t;
 
     auto actor_ptr = actor_ptr_t(&actor);
     auto address = actor.get_address();
     handler_t fn = [actor_ptr = std::move(actor_ptr),
                     handler = std::move(handler)](message_ptr_t &msg) mutable {
-      auto final_message = dynamic_cast<final_messaget_t *>(msg.get());
+      auto final_message = dynamic_cast<final_message_t *>(msg.get());
       if (final_message) {
         auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
         (final_obj.*handler)(*final_message);
@@ -150,9 +155,8 @@ void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
   supervisor.enqueue<M>(addr, std::forward<Args>(args)...);
 }
 
-template <typename M, typename Handler>
-void actor_base_t::subscribe(Handler &&h) {
-  supervisor.subscribe_actor<M>(*this, std::forward<Handler>(h));
+template <typename Handler> void actor_base_t::subscribe(Handler &&h) {
+  supervisor.subscribe_actor(*this, std::forward<Handler>(h));
 }
 
 } // namespace rotor
