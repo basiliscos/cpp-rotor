@@ -16,6 +16,6 @@ template <typename T> struct message_t : public message_base_t {
 
   T payload;
 };
-using message_ptr_t = boost::intrusive_ptr<message_base_t>;
+using message_ptr_t = intrusive_ptr_t<message_base_t>;
 
 } // namespace rotor

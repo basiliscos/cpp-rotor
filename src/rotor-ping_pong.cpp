@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     auto supervisor = system_context.create_supervisor<rotor::supervisor_t>();
     auto addr_sup = supervisor->get_address();
 
-    auto pinger = supervisor->create_actor<pinger_t>(10000u);
+    auto pinger = supervisor->create_actor<pinger_t>(10000000u);
     auto ponger = supervisor->create_actor<ponger_t>();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

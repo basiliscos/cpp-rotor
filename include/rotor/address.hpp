@@ -16,7 +16,7 @@ private:
   address_t(void *ctx_addr_) : ctx_addr{ctx_addr_} {}
   bool operator==(const address_t &other) const { return this == &other; }
 };
-using address_ptr_t = boost::intrusive_ptr<address_t>;
+using address_ptr_t = intrusive_ptr_t<address_t>;
 
 } // namespace rotor
 
