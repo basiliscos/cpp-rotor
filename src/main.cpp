@@ -12,6 +12,7 @@
 #include <vector>
 
 namespace asio = boost::asio;
+namespace pt = boost::posix_time;
 
 struct my_payload_t {
   std::string name;
@@ -19,7 +20,13 @@ struct my_payload_t {
 };
 
 struct my_supervisor_t : public rotor::supervisor_t {
-  my_supervisor_t(rotor::system_context_t &ctx) : rotor::supervisor_t{ctx} {}
+  my_supervisor_t(rotor::system_context_t &ctx,
+                  const rotor::supervisor_config_t &config)
+      : rotor::supervisor_t{ctx, config} {}
+
+  ~my_supervisor_t() override {
+    std::cout << "my_supervisor_t::~my_supervisor_t\n";
+  }
 
   void on_initialize(
       rotor::message_t<rotor::payload::initialize_actor_t> &msg) override {
@@ -45,6 +52,7 @@ struct pinger_t : public rotor::actor_base_t {
 
   pinger_t(rotor::supervisor_t &sup, std::size_t pings)
       : rotor::actor_base_t{sup}, pings_left{pings}, pings_count{pings} {}
+  ~pinger_t() { std::cout << "pinger_t::~ponger_t\n"; }
 
   void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
@@ -76,6 +84,7 @@ private:
                 << "s"
                 << ", freq = " << std::fixed << std::setprecision(10) << freq
                 << "\n";
+      supervisor.shutdown();
     }
   }
 
@@ -88,6 +97,7 @@ private:
 struct ponger_t : public rotor::actor_base_t {
 
   ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {}
+  ~ponger_t() { std::cout << "ponger_t::~ponger_t\n"; }
 
   void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
@@ -107,8 +117,9 @@ int main(int argc, char **argv) {
 
   asio::io_context io_context{1};
   try {
+    rotor::supervisor_config_t conf{pt::milliseconds{500}};
     rotor::system_context_t system_context(io_context);
-    auto supervisor = system_context.create_supervisor<my_supervisor_t>();
+    auto supervisor = system_context.create_supervisor<my_supervisor_t>(conf);
     auto addr_sup = supervisor->get_address();
     supervisor->send<my_payload_t>(addr_sup, "hello");
 
@@ -118,6 +129,7 @@ int main(int argc, char **argv) {
     ponger->set_pinger_addr(pinger->get_address());
 
     supervisor->start();
+    supervisor->shutdown();
 
     io_context.run();
   } catch (const std::exception &ex) {

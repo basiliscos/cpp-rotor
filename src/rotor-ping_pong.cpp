@@ -12,6 +12,7 @@
 #include <vector>
 
 namespace asio = boost::asio;
+namespace pt = boost::posix_time;
 
 struct ping_t {};
 struct pong_t {};
@@ -85,10 +86,12 @@ int main(int argc, char **argv) {
   asio::io_context io_context{1};
   try {
     rotor::system_context_t system_context(io_context);
-    auto supervisor = system_context.create_supervisor<rotor::supervisor_t>();
+    rotor::supervisor_config_t conf{pt::milliseconds{500}};
+    auto supervisor =
+        system_context.create_supervisor<rotor::supervisor_t>(conf);
     auto addr_sup = supervisor->get_address();
 
-    auto pinger = supervisor->create_actor<pinger_t>(10000000u);
+    auto pinger = supervisor->create_actor<pinger_t>(1000000u);
     auto ponger = supervisor->create_actor<ponger_t>();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

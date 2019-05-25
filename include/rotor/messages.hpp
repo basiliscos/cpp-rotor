@@ -15,7 +15,7 @@ struct initialize_actor_t {
 
 struct shutdown_request_t {};
 struct shutdown_confirmation_t {
-  actor_ptr_t actor_address;
+  actor_ptr_t actor;
 };
 
 } // namespace payload

@@ -5,6 +5,7 @@
 #include <memory>
 #include <typeindex>
 #include <typeinfo>
+//#include <iostream>
 
 namespace rotor {
 
@@ -17,9 +18,10 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
 };
 
 struct handler_base_t : public arc_base_t<handler_base_t> {
-  void *object_ptr;
+  void *object_ptr; /* pointer to actor address */
   handler_base_t(void *object_ptr_) : object_ptr{object_ptr_} {}
-  virtual bool operator==(const handler_base_t &) noexcept = 0;
+  bool operator==(void *ptr) const noexcept { return ptr == object_ptr; }
+  virtual bool operator==(const handler_base_t &) const noexcept = 0;
   virtual size_t hash() const noexcept = 0;
   virtual void call(message_ptr_t &) = 0;
   virtual inline ~handler_base_t() {}
@@ -27,17 +29,17 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
 
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
-template <typename A, typename Handler>
-struct handler_t : public handler_base_t {
+template <typename Handler> struct handler_t : public handler_base_t {
   using underlying_fn_t = std::function<void(message_ptr_t &)>;
 
   std::type_index index = typeid(Handler);
   Handler handler;
   underlying_fn_t fn;
 
-  handler_t(A &actor, Handler &&handler_)
+  handler_t(actor_base_t &actor, Handler &&handler_)
       : handler_base_t{&actor}, handler{handler_} {
-    auto actor_ptr = actor_ptr_t{&actor};
+    auto actor_ptr = &actor;
+    // std::cout << "handler_t for actor " << object_ptr << "\n";
     fn = [actor_ptr = actor_ptr,
           handler = std::move(handler)](message_ptr_t &msg) mutable {
       using traits = handler_traits<Handler>;
@@ -51,10 +53,13 @@ struct handler_t : public handler_base_t {
       }
     };
   }
+  ~handler_t() {
+    // std::cout << "~handler_t for actor " << object_ptr << "\n";
+  }
 
   void call(message_ptr_t &message) override { fn(message); }
 
-  bool operator==(const handler_base_t &rhs) noexcept override {
+  bool operator==(const handler_base_t &rhs) const noexcept override {
     if (object_ptr != rhs.object_ptr) {
       return false;
     }

@@ -1,4 +1,3 @@
 1. check handler signature
 
-https://stackoverflow.com/questions/11983070/c-converting-function-pointer-to-unique-hash-key
-https://stackoverflow.com/questions/1328238/how-to-hash-and-compare-a-pointer-to-member-function
+get_supevisor -> get_supervisor
