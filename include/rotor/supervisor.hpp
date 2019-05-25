@@ -255,21 +255,12 @@ protected:
   using unsubscription_queue_t = std::deque<subscription_request_t>;
   using queue_t = std::deque<item_t>;
   using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
-  /*
-  using handler_map_t = std::unordered_multimap<address_ptr_t, handler_ptr_t>;
-  using reverser_handler_map_t =
-      std::unordered_multimap<handler_ptr_t, address_ptr_t>;
-  */
   using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
   using timer_t = asio::deadline_timer;
 
   system_context_t &system_context;
   asio::io_context::strand strand;
   queue_t outbound;
-  /*
-  handler_map_t handler_map;
-  reverser_handler_map_t reverser_handler_map;
-  */
   subscription_map_t subscription_map;
   actors_map_t actors_map;
   state_t state;
