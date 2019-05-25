@@ -5,6 +5,7 @@
 #include "handler.hpp"
 #include "message.hpp"
 #include "messages.hpp"
+#include "subscription.hpp"
 #include "system_context.hpp"
 #include <boost/asio.hpp>
 #include <cassert>
@@ -93,50 +94,37 @@ public:
     auto handler_ptr = handler_ptr_t{handler_raw};
 
     subscription_queue.emplace_back(
-        subscription_request_t{handler_ptr, address});
+        subscription_request_t{std::move(handler_ptr), std::move(address)});
   }
 
   void process() {
-    using seen_set_t = std::unordered_set<std::size_t>;
 
-    proccess_subscriptions(nullptr);
-    proccess_unsubscriptions(nullptr);
+    proccess_subscriptions();
+    proccess_unsubscriptions();
 
     while (outbound.size()) {
-
       auto &item = outbound.front();
-
       auto &address = item.address;
       auto &message = item.message;
-      bool skip_delivery =
+      auto it_subscriptions = subscription_map.find(address);
+      bool finished =
           address->ctx_addr == this && state == state_t::SHUTTED_DOWN;
-      if (!skip_delivery) {
-        auto range = handler_map.equal_range(item.address);
-        auto it = range.first;
-        seen_set_t seen_by;
-        while (it != range.second) {
-          auto &handler = it->second;
-          void *ptr = handler->object_ptr;
-          bool changed = false;
-          if (seen_by.count(handler->hash()) == 0) {
-            seen_by.emplace(handler->hash());
-            handler->call(message);
-
-            if (!subscription_queue.empty()) {
-              changed = proccess_subscriptions(ptr);
-            }
-            if (!unsubscription_queue.empty()) {
-              changed = proccess_unsubscriptions(ptr);
-            }
-            if (changed) {
-              // std::cout << "changes has been detected\n";
-              range = handler_map.equal_range(item.address);
-              it = range.first;
-            }
+      bool has_recipients = it_subscriptions != subscription_map.end();
+      if (!finished && has_recipients) {
+        auto &subscription = it_subscriptions->second;
+        auto recipients =
+            subscription.get_recipients(message->get_type_index());
+        if (recipients) {
+          for (auto it : *recipients) {
+            auto &handler = *it;
+            handler.call(message);
           }
-          if (!changed) {
-            ++it;
-          }
+        }
+        if (!unsubscription_queue.empty()) {
+          proccess_unsubscriptions();
+        }
+        if (!subscription_queue.empty()) {
+          proccess_subscriptions();
         }
         // std::cout << "message " << typeid(item.message.get()).name() << " has
         // been delivered " << count << " times\n";
@@ -146,47 +134,31 @@ public:
   }
 
 protected:
-  inline bool proccess_subscriptions(void *tracked_actor) {
-    bool changed = false;
+  inline void proccess_subscriptions() {
     for (auto it : subscription_queue) {
       auto handler_ptr = it.handler;
       auto address = it.address;
-      changed = changed || *handler_ptr == tracked_actor;
-      reverser_handler_map.emplace(handler_ptr, address);
-      handler_map.emplace(address, handler_ptr);
+      handler_ptr->raw_actor_ptr->remember_subscription(it);
+      subscription_map[address].subscribe(handler_ptr);
     }
     subscription_queue.clear();
-    return changed;
   }
 
-  inline bool proccess_unsubscriptions(void *tracked_actor) {
-    bool changed = false;
+  inline void proccess_unsubscriptions() {
     for (auto it : unsubscription_queue) {
-      auto handler_ptr = it.handler;
-      changed = changed || handler_ptr->object_ptr == tracked_actor;
-      auto range_outer = reverser_handler_map.equal_range(handler_ptr);
-      auto it_outer = range_outer.first;
-      while (it_outer != range_outer.second) {
-        auto &addr = it_outer->second;
-        auto range_inner = handler_map.equal_range(addr);
-        auto it_inner = range_inner.first;
-        while (it_inner != range_inner.second) {
-          if (it_inner->second == handler_ptr) {
-            it_inner = handler_map.erase(it_inner);
-            range_inner = handler_map.equal_range(addr);
-          } else {
-            ++it_inner;
-          }
-        }
-        it_outer = reverser_handler_map.erase(it_outer);
-      }
+      auto &handler = it.handler;
+      auto &address = it.address;
+      auto &subscriptions = subscription_map.at(address);
+      auto &actor_ptr = handler->raw_actor_ptr;
+      subscriptions.unsubscribe(handler);
+      actor_ptr->forget_subscription(it);
     }
     unsubscription_queue.clear();
-    return false;
   }
 
-  void unsubscribe_actor(handler_ptr_t &handler_ptr) {
-    unsubscription_queue.push_back(unsubscription_request_t{handler_ptr});
+  void unsubscribe_actor(address_ptr_t addr, handler_ptr_t &handler_ptr) {
+    unsubscription_queue.emplace_back(
+        subscription_request_t{handler_ptr, addr});
   }
 
   /*
@@ -235,15 +207,12 @@ protected:
 
   void unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor = true) {
     std::cout << "supervisor_t::unsubscribe_actor\n";
-    auto it = handler_map.begin();
-    while (it != handler_map.end()) {
-      auto &handler = it->second;
-      if (it->second->object_ptr == actor.get()) {
-        unsubscribe_actor(handler);
-        // it = handler_map.erase(it);
-      } else {
-      }
-      ++it;
+    auto &points = actor->get_subscription_points();
+    for (auto it : points) {
+      auto &address = it.first;
+      auto &handler = it.second;
+      unsubscription_queue.emplace_back(
+          subscription_request_t{handler, address});
     }
     if (remove_actor) {
       auto it_actor = actors_map.find(actor->get_address());
@@ -281,29 +250,27 @@ protected:
     item_t(const address_ptr_t &address_, message_ptr_t message_)
         : address{address_}, message{message_} {}
   };
-  struct subscription_request_t {
-    handler_ptr_t handler;
-    address_ptr_t address;
-  };
-  struct unsubscription_request_t {
-    handler_ptr_t handler;
-  };
 
   using subscription_queue_t = std::deque<subscription_request_t>;
-  using unsubscription_queue_t = std::deque<unsubscription_request_t>;
+  using unsubscription_queue_t = std::deque<subscription_request_t>;
   using queue_t = std::deque<item_t>;
+  using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
+  /*
   using handler_map_t = std::unordered_multimap<address_ptr_t, handler_ptr_t>;
   using reverser_handler_map_t =
       std::unordered_multimap<handler_ptr_t, address_ptr_t>;
+  */
   using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
-  using handler_fn_t = void (*actor_base_t::*)(message_base_t *);
   using timer_t = asio::deadline_timer;
 
   system_context_t &system_context;
   asio::io_context::strand strand;
   queue_t outbound;
+  /*
   handler_map_t handler_map;
   reverser_handler_map_t reverser_handler_map;
+  */
+  subscription_map_t subscription_map;
   actors_map_t actors_map;
   state_t state;
   supervisor_config_t config;

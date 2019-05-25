@@ -18,13 +18,15 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
 };
 
 struct handler_base_t : public arc_base_t<handler_base_t> {
-  void *object_ptr; /* pointer to actor address */
-  handler_base_t(void *object_ptr_) : object_ptr{object_ptr_} {}
-  bool operator==(void *ptr) const noexcept { return ptr == object_ptr; }
+  actor_base_t *raw_actor_ptr; /* non-owning pointer to actor address */
+  handler_base_t(actor_base_t *actor) : raw_actor_ptr{actor} {}
+  bool operator==(actor_base_t *ptr) const noexcept {
+    return ptr == raw_actor_ptr;
+  }
   virtual bool operator==(const handler_base_t &) const noexcept = 0;
   virtual size_t hash() const noexcept = 0;
   virtual void call(message_ptr_t &) = 0;
-  // virtual void op(message_base_t& message) override {
+  virtual const std::type_index &get_type_index() const noexcept = 0;
 
   virtual inline ~handler_base_t() {}
 };
@@ -43,13 +45,10 @@ template <typename Handler> struct handler_t : public handler_base_t {
 
   handler_t(actor_base_t &actor, Handler &&handler_)
       : handler_base_t{&actor}, handler{handler_} {
-    auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(object_ptr));
+    auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(raw_actor_ptr));
     auto h2 = index.hash_code();
     precalc_hash = h1 ^ (h2 << 1);
     actor_ptr.reset(&actor);
-  }
-  ~handler_t() {
-    // std::cout << "~handler_t for actor " << object_ptr << "\n";
   }
 
   void call(message_ptr_t &message) override {
@@ -61,12 +60,16 @@ template <typename Handler> struct handler_t : public handler_base_t {
   }
 
   bool operator==(const handler_base_t &rhs) const noexcept override {
-    if (object_ptr != rhs.object_ptr) {
+    if (raw_actor_ptr != rhs.raw_actor_ptr) {
       return false;
     }
     auto *other = dynamic_cast<const handler_t *>(&rhs);
     return other && other->handler == handler;
   }
+
+  const std::type_index &get_type_index() const noexcept override {
+    return final_message_t::message_type;
+  };
 
   virtual size_t hash() const noexcept override { return precalc_hash; }
 };

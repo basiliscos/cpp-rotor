@@ -22,12 +22,6 @@ template <typename T> struct message_t : public message_base_t {
   virtual const std::type_index &get_type_index() const noexcept {
     return message_type;
   }
-  // virtual void dispatch(handler_base_t* handler) noexcept override;
-
-  /* virtual void dispatch(handler_base_t* handler) override {
-      handler->(*this);
-  }
-  */
 
   T payload;
   static const std::type_index message_type; //{typeid (message_t)};
