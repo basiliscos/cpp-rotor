@@ -24,40 +24,41 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
   virtual bool operator==(const handler_base_t &) const noexcept = 0;
   virtual size_t hash() const noexcept = 0;
   virtual void call(message_ptr_t &) = 0;
+  // virtual void op(message_base_t& message) override {
+
   virtual inline ~handler_base_t() {}
 };
 
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 template <typename Handler> struct handler_t : public handler_base_t {
-  using underlying_fn_t = std::function<void(message_ptr_t &)>;
+  using traits = handler_traits<Handler>;
+  using final_message_t = typename traits::message_t;
+  using final_actor_t = typename traits::actor_t;
 
   std::type_index index = typeid(Handler);
   Handler handler;
-  underlying_fn_t fn;
+  std::size_t precalc_hash;
+  actor_ptr_t actor_ptr;
 
   handler_t(actor_base_t &actor, Handler &&handler_)
       : handler_base_t{&actor}, handler{handler_} {
-    auto actor_ptr = &actor;
-    // std::cout << "handler_t for actor " << object_ptr << "\n";
-    fn = [actor_ptr = actor_ptr,
-          handler = std::move(handler)](message_ptr_t &msg) mutable {
-      using traits = handler_traits<Handler>;
-      using final_message_t = typename traits::message_t;
-      using final_actor_t = typename traits::actor_t;
-
-      auto final_message = dynamic_cast<final_message_t *>(msg.get());
-      if (final_message) {
-        auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
-        (final_obj.*handler)(*final_message);
-      }
-    };
+    auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(object_ptr));
+    auto h2 = index.hash_code();
+    precalc_hash = h1 ^ (h2 << 1);
+    actor_ptr.reset(&actor);
   }
   ~handler_t() {
     // std::cout << "~handler_t for actor " << object_ptr << "\n";
   }
 
-  void call(message_ptr_t &message) override { fn(message); }
+  void call(message_ptr_t &message) override {
+    if (message->get_type_index() == final_message_t::message_type) {
+      auto final_message = static_cast<final_message_t *>(message.get());
+      auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
+      (final_obj.*handler)(*final_message);
+    }
+  }
 
   bool operator==(const handler_base_t &rhs) const noexcept override {
     if (object_ptr != rhs.object_ptr) {
@@ -67,12 +68,17 @@ template <typename Handler> struct handler_t : public handler_base_t {
     return other && other->handler == handler;
   }
 
-  virtual size_t hash() const noexcept override {
-    auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(object_ptr));
-    auto h2 = index.hash_code();
-    return h1 ^ (h2 << 1);
-  }
+  virtual size_t hash() const noexcept override { return precalc_hash; }
 };
+
+/* third-party classes implementations */
+
+/*
+template <typename T>
+void message_t<T>::dispatch(handler_base_t* handler) noexcept  {
+    handler->call(*this);
+}
+*/
 
 } // namespace rotor
 

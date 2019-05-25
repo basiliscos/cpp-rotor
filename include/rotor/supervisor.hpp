@@ -122,9 +122,12 @@ public:
             seen_by.emplace(handler->hash());
             handler->call(message);
 
-            bool chanded_subs = proccess_subscriptions(ptr);
-            bool changed_unsubs = proccess_unsubscriptions(ptr);
-            changed = chanded_subs || changed_unsubs;
+            if (!subscription_queue.empty()) {
+              changed = proccess_subscriptions(ptr);
+            }
+            if (!unsubscription_queue.empty()) {
+              changed = proccess_unsubscriptions(ptr);
+            }
             if (changed) {
               // std::cout << "changes has been detected\n";
               range = handler_map.equal_range(item.address);
