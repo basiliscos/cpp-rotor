@@ -60,11 +60,13 @@ public:
     return wrapper_t{raw_object};
   }
 
+  void do_start() noexcept { send<payload::start_supervisor_t>(address); }
+
   void start() {
     auto actor_ptr = actor_ptr_t(this);
     asio::defer(strand, [actor_ptr = std::move(actor_ptr)]() {
       auto &self = static_cast<supervisor_t &>(*actor_ptr);
-      self.send<payload::start_supervisor_t>(self.address);
+      self.do_start();
       self.process();
     });
   }
@@ -78,7 +80,7 @@ public:
     });
   }
 
-  void on_start(message_t<payload::start_supervisor_t> &) {
+  virtual void on_start(message_t<payload::start_supervisor_t> &) noexcept {
     std::cout << "supervisor_t::on_start\n";
   }
 
@@ -167,7 +169,8 @@ protected:
   }
   */
 
-  void on_initialize(message_t<payload::initialize_actor_t> &msg) override {
+  void
+  on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept override {
     auto actor_addr = msg.payload.actor_address;
     if (actor_addr != address) {
       // TODO: forward?
@@ -175,7 +178,7 @@ protected:
     }
   }
 
-  void on_shutdown(message_t<payload::shutdown_request_t> &) override {
+  void on_shutdown(message_t<payload::shutdown_request_t> &) noexcept override {
     std::cout << "supervisor_t::on_shutdown\n";
     state = state_t::SHUTTING_DOWN;
     for (auto pair : actors_map) {
@@ -221,8 +224,8 @@ protected:
     }
   }
 
-  void
-  on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) {
+  void on_shutdown_confirm(
+      message_t<payload::shutdown_confirmation_t> &message) noexcept {
     std::cout << "supervisor_t::on_shutdown_confirm\n";
     unsubscribe_actor(message.payload.actor);
     if (actors_map.empty()) {
@@ -232,7 +235,7 @@ protected:
       state = state_t::SHUTTED_DOWN;
       shutdown_timer.cancel();
       actor_ptr_t self{this};
-      // unsubscribe_actor(self, false);
+      unsubscribe_actor(self, false);
       send<payload::shutdown_confirmation_t>(supervisor.get_address(), self);
     }
   }
@@ -280,11 +283,9 @@ auto system_context_t::create_supervisor(const supervisor_config_t &config,
     -> intrusive_ptr_t<Supervisor> {
   using wrapper_t = intrusive_ptr_t<Supervisor>;
   auto raw_object = new Supervisor{*this, config, std::forward<Args>(args)...};
-  /*
   supervisor = supervisor_ptr_t{raw_object};
   auto address = supervisor->get_address();
   supervisor->send<payload::initialize_actor_t>(address, address);
-  */
   return wrapper_t{raw_object};
 }
 
@@ -293,7 +294,8 @@ void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
   supervisor.enqueue<M>(addr, std::forward<Args>(args)...);
 }
 
-void actor_base_t::on_shutdown(message_t<payload::shutdown_request_t> &) {
+void actor_base_t::on_shutdown(
+    message_t<payload::shutdown_request_t> &) noexcept {
   std::cout << "actor_base_t::on_shutdown()\n";
   auto destination = supervisor.get_address();
   send<payload::shutdown_confirmation_t>(destination, this);

@@ -36,3 +36,6 @@ add_executable(forwarder_sample src/forwarder_sample.cpp)
 target_include_directories(forwarder_sample PUBLIC ${ROTOR_INCLUDE_DIRS})
 target_link_libraries(forwarder_sample PUBLIC ${Boost_LIBRARIES})
 
+enable_testing()
+add_subdirectory("tests")
+

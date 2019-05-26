@@ -12,7 +12,8 @@ namespace rotor {
 struct actor_base_t;
 
 template <typename T> struct handler_traits {};
-template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
+template <typename A, typename M>
+struct handler_traits<void (A::*)(M &) noexcept> {
   using actor_t = A;
   using message_t = M;
 };
@@ -25,7 +26,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
   }
   virtual bool operator==(const handler_base_t &) const noexcept = 0;
   virtual size_t hash() const noexcept = 0;
-  virtual void call(message_ptr_t &) = 0;
+  virtual void call(message_ptr_t &) noexcept = 0;
   virtual const std::type_index &get_type_index() const noexcept = 0;
 
   virtual inline ~handler_base_t() {}
@@ -51,7 +52,7 @@ template <typename Handler> struct handler_t : public handler_base_t {
     actor_ptr.reset(&actor);
   }
 
-  void call(message_ptr_t &message) override {
+  void call(message_ptr_t &message) noexcept override {
     if (message->get_type_index() == final_message_t::message_type) {
       auto final_message = static_cast<final_message_t *>(message.get());
       auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
