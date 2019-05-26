@@ -1,5 +1,6 @@
 #include "rotor.hpp"
 #include <boost/asio.hpp>
+#include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <functional>
 #include <iomanip>
@@ -85,13 +86,18 @@ int main(int argc, char **argv) {
 
   asio::io_context io_context{1};
   try {
+    std::uint32_t count = 10000;
+    if (argc > 1 ){
+        boost::conversion::try_lexical_convert(argv[1], count);
+    }
+
     rotor::system_context_t system_context(io_context);
     rotor::supervisor_config_t conf{pt::milliseconds{500}};
     auto supervisor =
         system_context.create_supervisor<rotor::supervisor_t>(conf);
     auto addr_sup = supervisor->get_address();
 
-    auto pinger = supervisor->create_actor<pinger_t>(44000000u);
+    auto pinger = supervisor->create_actor<pinger_t>(count);
     auto ponger = supervisor->create_actor<ponger_t>();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

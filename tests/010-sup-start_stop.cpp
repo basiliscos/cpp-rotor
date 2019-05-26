@@ -44,3 +44,4 @@ TEST_CASE("on_initialize && on_start", "[supervisor]") {
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->start_invoked == 1);
 }
+
