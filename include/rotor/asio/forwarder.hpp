@@ -1,11 +1,12 @@
 #pragma once
 
-#include "actor.hpp"
+#include "actor_base.h"
 #include <boost/asio.hpp>
 #include <tuple>
 
 namespace rotor {
 
+#if 0
 namespace asio = boost::asio;
 
 template <typename... Args> struct curry_arg_t {
@@ -101,5 +102,6 @@ struct forwarder_t {
   Handler handler;
   ErrHandler err_handler;
 };
+#endif
 
 } // namespace rotor

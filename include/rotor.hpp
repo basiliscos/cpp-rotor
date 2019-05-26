@@ -1,9 +1,9 @@
 #pragma once
 
-#include "rotor/actor.hpp"
+#include "rotor/actor_base.h"
 #include "rotor/address.hpp"
-#include "rotor/message.hpp"
-#include "rotor/supervisor.hpp"
-#include "rotor/system_context.hpp"
+#include "rotor/message.h"
+#include "rotor/supervisor.h"
+#include "rotor/system_context.h"
 
 namespace rotor {} // namespace rotor

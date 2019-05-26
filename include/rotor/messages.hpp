@@ -1,6 +1,6 @@
 #pragma once
 #include "address.hpp"
-#include "message.hpp"
+#include "message.h"
 
 namespace rotor {
 

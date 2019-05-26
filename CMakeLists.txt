@@ -4,11 +4,24 @@ project (rotor)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 set(ROTOR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_library(rotor INTERFACE)
-target_include_directories(rotor INTERFACE include/)
+add_library(rotor
+    src/rotor/actor_base.cpp
+    src/rotor/error_code.cpp
+    src/rotor/message.cpp
+    src/rotor/subscription.cpp
+    src/rotor/supervisor.cpp
+    src/rotor/system_context.cpp
+)
+
+add_library(rotor_boost
+    src/rotor/asio/supervisor_asio.cpp
+)
+
+target_include_directories(rotor PUBLIC include/)
+target_include_directories(rotor_boost PUBLIC include/)
+target_link_libraries(rotor_boost PUBLIC ${Boost_LIBRARIES})
 
 #add_executable(rotor src/main.cpp)
 #target_include_directories(rotor PUBLIC ${ROTOR_INCLUDE_DIRS})
@@ -29,4 +42,3 @@ target_include_directories(rotor INTERFACE include/)
 add_subdirectory("tests")
 
 add_subdirectory("examples")
-

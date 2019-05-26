@@ -5,12 +5,9 @@
 
 namespace rotor {
 
-struct handler_base_t;
-
 struct message_base_t : public arc_base_t<message_base_t> {
-  virtual ~message_base_t() {}
+  virtual ~message_base_t();
   virtual const std::type_index &get_type_index() const noexcept = 0;
-  // virtual void dispatch(handler_base_t*) noexcept = 0;
 };
 
 template <typename T> struct message_t : public message_base_t {

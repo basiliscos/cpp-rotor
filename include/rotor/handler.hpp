@@ -1,6 +1,6 @@
 #pragma once
-#include "actor.hpp"
-#include "message.hpp"
+#include "actor_base.h"
+#include "message.h"
 #include <functional>
 #include <memory>
 #include <typeindex>
@@ -39,7 +39,6 @@ template <typename Handler> struct handler_t : public handler_base_t {
   using final_message_t = typename traits::message_t;
   using final_actor_t = typename traits::actor_t;
 
-  std::type_index index = typeid(Handler);
   Handler handler;
   std::size_t precalc_hash;
   actor_ptr_t actor_ptr;
@@ -47,7 +46,7 @@ template <typename Handler> struct handler_t : public handler_base_t {
   handler_t(actor_base_t &actor, Handler &&handler_)
       : handler_base_t{&actor}, handler{handler_} {
     auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(raw_actor_ptr));
-    auto h2 = index.hash_code();
+    auto h2 = std::type_index(typeid(Handler)).hash_code();
     precalc_hash = h1 ^ (h2 << 1);
     actor_ptr.reset(&actor);
   }
@@ -70,19 +69,12 @@ template <typename Handler> struct handler_t : public handler_base_t {
 
   const std::type_index &get_type_index() const noexcept override {
     return final_message_t::message_type;
-  };
+  }
 
   virtual size_t hash() const noexcept override { return precalc_hash; }
 };
 
 /* third-party classes implementations */
-
-/*
-template <typename T>
-void message_t<T>::dispatch(handler_base_t* handler) noexcept  {
-    handler->call(*this);
-}
-*/
 
 } // namespace rotor
 

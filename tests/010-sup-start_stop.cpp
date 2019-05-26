@@ -1,16 +1,15 @@
 #include "catch.hpp"
 #include "rotor.hpp"
-#include <boost/asio.hpp>
+#include "supervisor_test.h"
 
 namespace r = rotor;
-namespace asio = boost::asio;
 
-struct sample_sup_t : public r::supervisor_t {
+struct sample_sup_t : public r::test::supervisor_test_t {
   std::uint32_t init_invoked;
   std::uint32_t start_invoked;
   r::address_ptr_t init_addr;
 
-  sample_sup_t(r::system_context_t &ctx,const r::supervisor_config_t &config_) : r::supervisor_t{ctx, config_} {
+  sample_sup_t() : r::test::supervisor_test_t{nullptr} {
       init_invoked = 0;
       start_invoked = 0;
   }
@@ -27,11 +26,9 @@ struct sample_sup_t : public r::supervisor_t {
 };
 
 TEST_CASE("on_initialize & on_start", "[supervisor]") {
-    asio::io_context io_context{1};
-    r::supervisor_config_t conf;
-    r::system_context_t system_context(io_context);
+    r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<sample_sup_t>(conf);
+    auto sup = system_context.create_supervisor<sample_sup_t>();
     sup->process();
 
     REQUIRE(sup->init_invoked == 1);

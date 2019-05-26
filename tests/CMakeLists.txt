@@ -1,6 +1,11 @@
 enable_testing()
-add_library(test_lib test-main.cpp)
-target_include_directories(test_lib INTERFACE include/)
+
+add_library(test_lib
+    supervisor_test.cpp
+    test-main.cpp
+)
+#target_include_directories(test_lib INTERFACE include/)
+target_link_libraries(test_lib rotor)
 
 find_package(
     Boost
