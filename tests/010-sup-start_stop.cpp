@@ -7,9 +7,8 @@ namespace asio = boost::asio;
 
 struct sample_sup_t : public r::supervisor_t {
   std::uint32_t init_invoked;
-  r::address_ptr_t init_addr;
-
   std::uint32_t start_invoked;
+  r::address_ptr_t init_addr;
 
   sample_sup_t(r::system_context_t &ctx,const r::supervisor_config_t &config_) : r::supervisor_t{ctx, config_} {
       init_invoked = 0;
@@ -25,10 +24,9 @@ struct sample_sup_t : public r::supervisor_t {
   virtual void on_start(r::message_t<r::payload::start_supervisor_t> &) noexcept override {
       ++start_invoked;
   }
-
 };
 
-TEST_CASE("on_initialize && on_start", "[supervisor]") {
+TEST_CASE("on_initialize & on_start", "[supervisor]") {
     asio::io_context io_context{1};
     r::supervisor_config_t conf;
     r::system_context_t system_context(io_context);

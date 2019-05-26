@@ -61,22 +61,21 @@ public:
   }
 
   void do_start() noexcept { send<payload::start_supervisor_t>(address); }
+  void do_shutdown() noexcept { send<payload::shutdown_request_t>(address); }
 
   void start() {
-    auto actor_ptr = actor_ptr_t(this);
-    asio::defer(strand, [actor_ptr = std::move(actor_ptr)]() {
-      auto &self = static_cast<supervisor_t &>(*actor_ptr);
-      self.do_start();
-      self.process();
+    auto actor_ptr = supervisor_ptr_t(this);
+    asio::defer(strand, [self = std::move(actor_ptr)]() {
+      self->do_start();
+      self->process();
     });
   }
 
   void shutdown() {
-    auto actor_ptr = actor_ptr_t(this);
-    asio::defer(strand, [actor_ptr = std::move(actor_ptr)]() {
-      auto &self = static_cast<supervisor_t &>(*actor_ptr);
-      self.send<payload::shutdown_request_t>(self.address);
-      self.process();
+    auto actor_ptr = supervisor_ptr_t(this);
+    asio::defer(strand, [self = std::move(actor_ptr)]() {
+      self->do_shutdown();
+      self->process();
     });
   }
 
