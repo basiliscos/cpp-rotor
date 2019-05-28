@@ -12,6 +12,8 @@ struct supervisor_test_t : public supervisor_t {
 
     virtual void start_shutdown_timer() noexcept override;
     virtual void cancel_shutdown_timer() noexcept override;
+    virtual void start() noexcept override;
+    virtual void shutdown() noexcept override;
 };
 
 

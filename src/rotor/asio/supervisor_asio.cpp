@@ -33,7 +33,7 @@ void supervisor_asio_t::start_shutdown_timer() noexcept {
 
 void supervisor_asio_t::on_shutdown_timer_error(
     const boost::system::error_code &ec) noexcept {
-    system_context->on_error(ec);
+  system_context->on_error(ec);
 }
 
 void supervisor_asio_t::cancel_shutdown_timer() noexcept {

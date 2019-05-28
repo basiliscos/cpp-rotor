@@ -14,3 +14,11 @@ void supervisor_test_t::start_shutdown_timer() noexcept {
 void supervisor_test_t::cancel_shutdown_timer() noexcept {
     INFO("supervisor_test_t::cancel_shutdown_timer()")
 }
+
+void supervisor_test_t::start() noexcept {
+    INFO("supervisor_test_t::start()")
+}
+
+void supervisor_test_t::shutdown() noexcept {
+    INFO("supervisor_test_t::shutdown()")
+}
