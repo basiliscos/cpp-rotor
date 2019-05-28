@@ -2,13 +2,14 @@
 
 #include "rotor/supervisor.h"
 #include "supervisor_config.h"
-#include "system_context_base.h"
+#include "system_context_asio.h"
 #include <boost/asio.hpp>
 
 namespace rotor {
 namespace asio {
 
 namespace asio = boost::asio;
+namespace sys = boost::system;
 
 struct supervisor_asio_t : public supervisor_t {
   using timer_t = asio::deadline_timer;
@@ -17,19 +18,16 @@ struct supervisor_asio_t : public supervisor_t {
   supervisor_asio_t(system_context_ptr_t system_context_,
                     const supervisor_config_t &config_);
 
-  /*
-  supervisor_asio_t(system_context_ptr_t system_context_,
-               const supervisor_config_t &config_)
-      : actor_base_t{*this},
-        system_context{std::move(system_context_)},
-        strand{system_context->io_context},
-        config{config_},
-        shutdown_timer{system_context->io_context} {
+  virtual void start() noexcept override;
+  virtual void shutdown() noexcept override;
+  virtual void start_shutdown_timer() noexcept override;
+  virtual void cancel_shutdown_timer() noexcept override;
+  virtual void on_shutdown_timer_error(const sys::error_code &ec) noexcept;
 
+  template <typename Actor, typename... Args>
+  intrusive_ptr_t<Actor> create_actor(Args... args) {
+    return supervisor_t::create_actor<Actor>(std::forward<Args>(args)...);
   }
-  */
-  virtual void start() noexcept;
-  virtual void shutdown() noexcept;
 
   inline asio::io_context::strand &get_strand() noexcept { return strand; }
 
@@ -37,8 +35,6 @@ struct supervisor_asio_t : public supervisor_t {
   asio::io_context::strand strand;
   timer_t shutdown_timer;
   supervisor_config_t config;
-
-private:
 };
 
 } // namespace asio

@@ -1,4 +1,5 @@
 #include "rotor.hpp"
+#include "rotor/asio.hpp"
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 #include <chrono>
@@ -12,6 +13,8 @@
 
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
+namespace ra = rotor::asio;
+
 
 struct ping_t {};
 struct pong_t {};
@@ -91,11 +94,11 @@ int main(int argc, char **argv) {
         boost::conversion::try_lexical_convert(argv[1], count);
     }
 
-    rotor::system_context_t system_context(io_context);
-    rotor::supervisor_config_t conf{pt::milliseconds{500}};
-    auto supervisor =
-        system_context.create_supervisor<rotor::supervisor_t>(conf);
+    ra::system_context_asio_t system_context(io_context);
+    ra::supervisor_config_t conf{pt::milliseconds{500}};
+    auto supervisor = system_context.create_supervisor<ra::supervisor_asio_t>(conf);
     auto addr_sup = supervisor->get_address();
+
 
     auto pinger = supervisor->create_actor<pinger_t>(count);
     auto ponger = supervisor->create_actor<ponger_t>();

@@ -9,7 +9,7 @@ find_package(
 )
 find_package(Threads)
 
-set(rotor_EXAMPLES_LIBS rotor ${Boost_LIBRARIES} Threads::Threads)
+set(rotor_EXAMPLES_LIBS rotor_boost rotor ${Boost_LIBRARIES} Threads::Threads)
 
 add_executable(ping_pong-single-simple ping_pong-single-simple.cpp)
 target_link_libraries(ping_pong-single-simple ${rotor_EXAMPLES_LIBS})

@@ -23,6 +23,10 @@ struct sample_sup_t : public r::test::supervisor_test_t {
   virtual void on_start(r::message_t<r::payload::start_supervisor_t> &) noexcept override {
       ++start_invoked;
   }
+
+  void start() noexcept override {};
+  void shutdown() noexcept override {};
+
 };
 
 TEST_CASE("on_initialize & on_start", "[supervisor]") {

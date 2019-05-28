@@ -48,6 +48,8 @@ struct supervisor_t : public actor_base_t {
   virtual void on_shutdown_timer_trigger() noexcept;
   virtual void start_shutdown_timer() noexcept = 0;
   virtual void cancel_shutdown_timer() noexcept = 0;
+  virtual void start() noexcept = 0;
+  virtual void shutdown() noexcept = 0;
 
   enum class state_t {
     OPERATIONAL,
@@ -93,17 +95,13 @@ struct supervisor_t : public actor_base_t {
     subscription_queue.emplace_back(
         subscription_request_t{std::move(handler_ptr), std::move(address)});
   }
-};
 
-using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
-
-#if 0
-public:
   template <typename Actor, typename... Args>
   intrusive_ptr_t<Actor> create_actor(Args... args) {
     using wrapper_t = intrusive_ptr_t<Actor>;
     assert((state == state_t::OPERATIONAL) && "supervisor isn't operational");
     auto raw_object = new Actor{*this, std::forward<Args>(args)...};
+    raw_object->do_initialize();
     subscribe_actor(*raw_object, &actor_base_t::on_initialize);
     subscribe_actor(*raw_object, &actor_base_t::on_shutdown);
     auto actor_address = raw_object->get_address();
@@ -112,7 +110,8 @@ public:
     return wrapper_t{raw_object};
   }
 };
-#endif
+
+using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /* third-party classes implementations */
 

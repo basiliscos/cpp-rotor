@@ -1,12 +1,14 @@
 #pragma once
 
-#include "actor_base.h"
+#include "rotor/actor_base.h"
+#include "rotor/asio/supervisor_asio.h"
 #include <boost/asio.hpp>
 #include <tuple>
 
 namespace rotor {
 
-#if 0
+namespace asio {
+
 namespace asio = boost::asio;
 
 template <typename... Args> struct curry_arg_t {
@@ -67,6 +69,7 @@ F&& fn) const noexcept{ (obj.*fn)();
 template <typename Actor, typename Handler, typename ErrHandler>
 struct forwarder_t {
   using typed_actor_ptr_t = intrusive_ptr_t<Actor>;
+  using typed_sup_t = supervisor_asio_t;
 
   forwarder_t(Actor &actor_, Handler &&handler_, ErrHandler &&err_handler_)
       : typed_actor{&actor_}, handler{std::move(handler_)},
@@ -74,7 +77,9 @@ struct forwarder_t {
 
   template <typename... Args>
   void operator()(const boost::system::error_code &ec, Args... args) noexcept {
-    auto &strand = typed_actor->get_supevisor().get_strand();
+
+    auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supevisor());
+    auto &strand = sup.get_strand();
     if (ec) {
       asio::defer(strand, [actor = typed_actor,
                            handler = std::move(err_handler), ec = ec]() {
@@ -102,6 +107,7 @@ struct forwarder_t {
   Handler handler;
   ErrHandler err_handler;
 };
-#endif
+
+} // namespace asio
 
 } // namespace rotor
