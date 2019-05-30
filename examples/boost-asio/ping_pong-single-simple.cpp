@@ -29,12 +29,16 @@ struct pinger_t : public rotor::actor_base_t {
   void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
   void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t>
-                         &) noexcept override {
+                         &msg) noexcept override {
+    rotor::actor_base_t::on_initialize(msg);
     std::cout << "pinger_t::on_initialize\n";
     subscribe(&pinger_t::on_pong);
-    std::cout << "pings start (" << pings_left << ")\n";
-    send_ping();
-    start = std::chrono::high_resolution_clock::now();
+  }
+
+  void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+      std::cout << "pings start (" << pings_left << ")\n";
+      start = std::chrono::high_resolution_clock::now();
+      send_ping();
   }
 
   void on_pong(rotor::message_t<pong_t> &) noexcept {
@@ -72,7 +76,8 @@ struct ponger_t : public rotor::actor_base_t {
   void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
   void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t>
-                         &) noexcept override {
+                         &msg) noexcept override {
+    rotor::actor_base_t::on_initialize(msg);
     std::cout << "ponger_t::on_initialize\n";
     subscribe(&ponger_t::on_ping);
   }

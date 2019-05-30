@@ -34,7 +34,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
     init_addr = msg.payload.actor_address;
   }
 
-  virtual void on_start(r::message_t<r::payload::start_supervisor_t> &msg) noexcept override {
+  virtual void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
       ++start_invoked;
       sup_base_t::on_start(msg);
   }

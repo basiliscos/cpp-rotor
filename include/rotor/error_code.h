@@ -5,24 +5,22 @@
 namespace rotor {
 
 enum class error_code_t {
-  success = 0,
-  shutdown_timeout,
+    success = 0,
+    shutdown_timeout,
 };
 
 namespace detail {
 
 class error_code_category : public std::error_category {
-  virtual const char *name() const noexcept override;
-  virtual std::string message(int c) const override;
+    virtual const char *name() const noexcept override;
+    virtual std::string message(int c) const override;
 };
 
 }; // namespace detail
 
 const detail::error_code_category &error_code_category();
 
-inline std::error_code make_error_code(error_code_t e) {
-  return {static_cast<int>(e), error_code_category()};
-}
+inline std::error_code make_error_code(error_code_t e) { return {static_cast<int>(e), error_code_category()}; }
 
 } // namespace rotor
 
