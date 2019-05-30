@@ -12,7 +12,7 @@ void supervisor_asio_t::start() noexcept {
   auto actor_ptr = supervisor_ptr_t(this);
   asio::defer(strand, [self = std::move(actor_ptr)]() {
     self->do_start();
-    self->process();
+    self->do_process();
   });
 }
 
@@ -20,7 +20,7 @@ void supervisor_asio_t::shutdown() noexcept {
   auto actor_ptr = supervisor_ptr_t(this);
   asio::defer(strand, [self = std::move(actor_ptr)]() {
     self->do_shutdown();
-    self->process();
+    self->do_process();
   });
 }
 

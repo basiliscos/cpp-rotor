@@ -27,7 +27,7 @@ struct supervisor_t : public actor_base_t {
   virtual void do_initialize() noexcept override;
   virtual void do_start() noexcept;
   virtual void do_shutdown() noexcept;
-  virtual void process() noexcept;
+  virtual void do_process() noexcept;
 
   virtual void proccess_subscriptions() noexcept;
   virtual void proccess_unsubscriptions() noexcept;

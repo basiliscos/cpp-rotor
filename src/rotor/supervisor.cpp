@@ -23,7 +23,7 @@ void supervisor_t::do_shutdown() noexcept {
   send<payload::shutdown_request_t>(address);
 }
 
-void supervisor_t::process() noexcept {
+void supervisor_t::do_process() noexcept {
   proccess_subscriptions();
   proccess_unsubscriptions();
 

@@ -1,3 +1,9 @@
+Разобраться с семантикой
+
+методы:
+on_*
+do_*
+
 1. check handler signature
 
 supervisor -> abstract_supervisor
