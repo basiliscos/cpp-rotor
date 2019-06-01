@@ -43,7 +43,7 @@ TEST_CASE("actor litetimes", "[actor]") {
 
     sup->do_start();
     sup->do_process();
-    sup->do_shutdown();
+    act->do_shutdown();
     sup->do_process();
 
     REQUIRE(act->event_current == 4);
