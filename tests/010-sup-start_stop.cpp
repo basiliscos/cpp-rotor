@@ -74,6 +74,6 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     sup->do_process();
     REQUIRE(sup->shutdown_req_invoked == 1);
     REQUIRE(sup->shutdown_conf_invoked == 1);
-    REQUIRE(dynamic_cast<sample_sup_t*>(sup->shutdown_actor.get()));
+    REQUIRE(dynamic_cast<sample_sup_t*>(sup->shutdown_actor.get()) == sup.get());
 }
 

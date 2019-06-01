@@ -7,27 +7,17 @@ supervisor_asio_t::supervisor_asio_t(system_context_ptr_t system_context_, const
     : system_context{system_context_}, strand{system_context_->io_context},
       shutdown_timer{system_context->io_context}, config{config_} {}
 
-void supervisor_asio_t::start() noexcept {
-    auto actor_ptr = supervisor_ptr_t(this);
-    asio::defer(strand, [self = std::move(actor_ptr)]() {
-        self->do_start();
-        self->do_process();
-    });
-}
+void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_start)(); }
 
 void supervisor_asio_t::shutdown() noexcept {
     auto actor_ptr = supervisor_ptr_t(this);
-    asio::defer(strand, [self = std::move(actor_ptr)]() {
-        self->do_shutdown();
-        self->do_process();
-    });
+    create_forwarder (&supervisor_asio_t::do_shutdown)();
 }
 
 void supervisor_asio_t::start_shutdown_timer() noexcept {
     shutdown_timer.expires_from_now(config.shutdown_timeout);
-    auto forwarder =
-        forwarder_t(*this, &supervisor_t::on_shutdown_timer_trigger, &supervisor_asio_t::on_shutdown_timer_error);
-    shutdown_timer.async_wait(std::move(forwarder));
+    auto fwd = create_forwarder(&supervisor_t::on_shutdown_timer_trigger, &supervisor_asio_t::on_shutdown_timer_error);
+    shutdown_timer.async_wait(std::move(fwd));
 }
 
 void supervisor_asio_t::on_shutdown_timer_error(const boost::system::error_code &ec) noexcept {

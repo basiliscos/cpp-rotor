@@ -15,9 +15,8 @@ namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 namespace ra = rotor::asio;
 
-
-struct ping_t {};
-struct pong_t {};
+struct ping_t{};
+struct pong_t{};
 
 struct pinger_t : public rotor::actor_base_t {
   using timepoint_t =
