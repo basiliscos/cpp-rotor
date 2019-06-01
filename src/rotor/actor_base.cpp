@@ -21,7 +21,7 @@ address_ptr_t actor_base_t::create_address() noexcept {
 
 void actor_base_t::on_initialize(message_t<payload::initialize_actor_t> &) noexcept {
     auto destination = supervisor.get_address();
-    send<payload::initialize_confirmation_t>(destination, get_address());
+    send<payload::initialize_confirmation_t>(destination, address);
 }
 
 void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept {}

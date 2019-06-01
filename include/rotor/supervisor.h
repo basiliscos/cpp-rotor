@@ -76,7 +76,7 @@ struct supervisor_t : public actor_base_t {
     subscription_queue_t subscription_queue;
 
     template <typename M, typename... Args> void enqueue(address_ptr_t addr, Args &&... args) {
-        auto raw_message = new message_t<M>(std::forward<Args>(args)...);
+        auto raw_message = new message_t<M>(addr, std::forward<Args>(args)...);
         outbound.emplace_back(std::move(addr), raw_message);
     }
 

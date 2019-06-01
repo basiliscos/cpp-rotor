@@ -1,6 +1,7 @@
 #pragma once
 
 #include "arc.hpp"
+#include "address.hpp"
 #include <typeindex>
 
 namespace rotor {
@@ -8,11 +9,17 @@ namespace rotor {
 struct message_base_t : public arc_base_t<message_base_t> {
     virtual ~message_base_t();
     virtual const std::type_index &get_type_index() const noexcept = 0;
+
+    message_base_t(address_ptr_t addr) : address{std::move(addr)} {}
+
+    address_ptr_t address;
 };
 
 template <typename T> struct message_t : public message_base_t {
     using payload_t = T;
-    template <typename... Args> message_t(Args... args) : payload{std::forward<Args>(args)...} {}
+    template <typename... Args>
+    message_t(address_ptr_t addr, Args... args)
+        : message_base_t{std::move(addr)}, payload{std::forward<Args>(args)...} {}
     virtual ~message_t() {}
 
     virtual const std::type_index &get_type_index() const noexcept { return message_type; }
