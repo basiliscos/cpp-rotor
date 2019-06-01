@@ -80,8 +80,11 @@ void supervisor_t::proccess_unsubscriptions() noexcept {
         auto &address = it.address;
         auto &subscriptions = subscription_map.at(address);
         auto &actor_ptr = handler->raw_actor_ptr;
-        subscriptions.unsubscribe(handler);
+        auto left = subscriptions.unsubscribe(handler);
         actor_ptr->forget_subscription(it);
+        if (!left) {
+            subscription_map.erase(address);
+        }
     }
     unsubscription_queue.clear();
 }

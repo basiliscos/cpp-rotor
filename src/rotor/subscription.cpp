@@ -12,7 +12,7 @@ subscription_t::list_t *subscription_t::get_recipients(const subscription_t::slo
     return nullptr;
 }
 
-void subscription_t::unsubscribe(handler_ptr_t handler) {
+std::size_t subscription_t::unsubscribe(handler_ptr_t handler) {
     auto &list = map.at(handler->get_type_index());
     auto it = list.begin();
     while (it != list.end()) {
@@ -22,4 +22,5 @@ void subscription_t::unsubscribe(handler_ptr_t handler) {
             ++it;
         }
     }
+    return map.size();
 }

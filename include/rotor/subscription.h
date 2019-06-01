@@ -14,7 +14,7 @@ struct subscription_t {
     using map_t = std::unordered_map<slot_t, list_t>;
 
     void subscribe(handler_ptr_t handler);
-    void unsubscribe(handler_ptr_t handler);
+    std::size_t unsubscribe(handler_ptr_t handler);
     list_t *get_recipients(const slot_t &slot);
 
   private:
