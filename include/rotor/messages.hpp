@@ -21,7 +21,9 @@ struct create_actor_t {
     actor_ptr_t actor;
 };
 
-struct shutdown_request_t {};
+struct shutdown_request_t {
+    actor_ptr_t actor;
+};
 struct shutdown_confirmation_t {
     actor_ptr_t actor;
 };

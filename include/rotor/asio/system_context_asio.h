@@ -23,10 +23,11 @@ struct system_context_asio_t : public system_context_t, arc_base_t<system_contex
     auto create_supervisor(const supervisor_config_t &config, Args... args) -> intrusive_ptr_t<Supervisor> {
         if (supervisor) {
             on_error(make_error_code(error_code_t::supervisor_defined));
-        }else {
+            return intrusive_ptr_t<Supervisor>{};
+        } else {
             ptr_t self{this};
-            return system_context_t::create_supervisor<Supervisor>(std::move(self), config, std::forward<Args>(args)...);
-
+            return system_context_t::create_supervisor<Supervisor>(std::move(self), config,
+                                                                   std::forward<Args>(args)...);
         }
     }
 

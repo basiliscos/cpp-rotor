@@ -24,6 +24,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual ~actor_base_t();
 
     virtual void do_initialize() noexcept;
+    virtual void do_shutdown() noexcept;
     virtual address_ptr_t create_address() noexcept;
 
     void remember_subscription(const subscription_request_t &req) noexcept;

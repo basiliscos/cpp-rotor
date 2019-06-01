@@ -19,7 +19,7 @@ struct system_context_t {
     system_context_t(const system_context_t &) = delete;
     system_context_t(system_context_t &&) = delete;
     virtual ~system_context_t();
-    [[ noreturn ]] virtual void on_error(const std::error_code &ec) noexcept;
+    virtual void on_error(const std::error_code &ec) noexcept;
 
   private:
     friend struct supervisor_t;

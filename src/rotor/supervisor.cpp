@@ -33,8 +33,6 @@ void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmat
 
 void supervisor_t::do_start() noexcept { send<payload::start_actor_t>(address); }
 
-void supervisor_t::do_shutdown() noexcept { send<payload::shutdown_request_t>(address); }
-
 void supervisor_t::do_process() noexcept {
     proccess_subscriptions();
     proccess_unsubscriptions();
@@ -101,7 +99,9 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor
     }
     if (remove_actor) {
         auto it_actor = actors_map.find(actor->get_address());
-        if (it_actor == actors_map.end()) { context->on_error(make_error_code(error_code_t::missing_actor)); }
+        if (it_actor == actors_map.end()) {
+            context->on_error(make_error_code(error_code_t::missing_actor));
+        }
         actors_map.erase(it_actor);
     }
 }
@@ -117,18 +117,23 @@ void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) no
     }
 }
 
-void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &) noexcept {
-    state = state_t::SHUTTING_DOWN;
-    for (auto pair : actors_map) {
-        auto addr = pair.first;
-        send<payload::shutdown_request_t>(addr);
-    }
-    if (!actors_map.empty()) {
-        start_shutdown_timer();
+void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noexcept {
+    auto &source = msg.payload.actor;
+    if (source.get() == this) {
+        state = state_t::SHUTTING_DOWN;
+        for (auto pair : actors_map) {
+            auto addr = pair.first;
+            send<payload::shutdown_request_t>(addr);
+        }
+        if (!actors_map.empty()) {
+            start_shutdown_timer();
+        } else {
+            actor_ptr_t self{this};
+            // unsubscribe_actor(self, false);
+            send<payload::shutdown_confirmation_t>(supervisor.get_address(), self);
+        }
     } else {
-        actor_ptr_t self{this};
-        // unsubscribe_actor(self, false);
-        send<payload::shutdown_confirmation_t>(supervisor.get_address(), self);
+        send<payload::shutdown_request_t>(source->get_address(), source);
     }
 }
 

@@ -65,7 +65,7 @@ private:
 
 
 
-TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
+TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>();

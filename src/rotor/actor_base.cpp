@@ -9,6 +9,11 @@ actor_base_t::~actor_base_t() {}
 
 void actor_base_t::do_initialize() noexcept { address = create_address(); }
 
+void actor_base_t::do_shutdown() noexcept {
+    actor_ptr_t self{this};
+    send<payload::shutdown_request_t>(supervisor.get_address(), std::move(self));
+}
+
 address_ptr_t actor_base_t::create_address() noexcept {
     auto addr = new address_t(static_cast<void *>(&supervisor));
     return address_ptr_t{addr};

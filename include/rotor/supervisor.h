@@ -25,7 +25,6 @@ struct supervisor_t : public actor_base_t {
 
     virtual void do_initialize() noexcept override;
     virtual void do_start() noexcept;
-    virtual void do_shutdown() noexcept;
     virtual void do_process() noexcept;
 
     virtual void proccess_subscriptions() noexcept;
@@ -92,7 +91,8 @@ struct supervisor_t : public actor_base_t {
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
         using wrapper_t = intrusive_ptr_t<Actor>;
-        if (state != state_t::INITIALIZED) context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
+        if (state != state_t::INITIALIZED)
+            context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
         auto raw_object = new Actor{*this, std::forward<Args>(args)...};
         raw_object->do_initialize();
         auto wrapper = wrapper_t{raw_object};
