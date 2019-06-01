@@ -81,12 +81,15 @@ struct supervisor_t : public actor_base_t {
     }
 
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
+        subscribe_actor(actor.get_address(), actor, std::move(handler));
+    }
+
+    template <typename Handler> void subscribe_actor(address_ptr_t addr, actor_base_t &actor, Handler &&handler) {
         using final_handler_t = handler_t<Handler>;
-        auto address = actor.get_address();
         auto handler_raw = new final_handler_t(actor, std::move(handler));
         auto handler_ptr = handler_ptr_t{handler_raw};
 
-        subscription_queue.emplace_back(subscription_request_t{std::move(handler_ptr), std::move(address)});
+        subscription_queue.emplace_back(subscription_request_t{std::move(handler_ptr), std::move(addr)});
     }
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
@@ -120,7 +123,11 @@ template <typename M, typename... Args> void actor_base_t::send(const address_pt
 }
 
 template <typename Handler> void actor_base_t::subscribe(Handler &&h) {
-    supervisor.subscribe_actor(*this, std::forward<Handler>(h));
+    supervisor.subscribe_actor(address, *this, std::forward<Handler>(h));
+}
+
+template <typename Handler> void actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) {
+    supervisor.subscribe_actor(addr, *this, std::forward<Handler>(h));
 }
 
 } // namespace rotor

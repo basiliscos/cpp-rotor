@@ -41,6 +41,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
 
     template <typename Handler> void subscribe(Handler &&h);
+    template <typename Handler> void subscribe(Handler &&h, address_ptr_t &addr);
 
   protected:
     supervisor_t &supervisor;
