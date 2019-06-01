@@ -6,7 +6,6 @@
 #include "messages.hpp"
 #include "subscription.h"
 #include "system_context.h"
-#include <cassert>
 #include <chrono>
 #include <deque>
 #include <functional>
@@ -93,7 +92,7 @@ struct supervisor_t : public actor_base_t {
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
         using wrapper_t = intrusive_ptr_t<Actor>;
-        assert((state == state_t::INITIALIZED) && "supervisor is in wrong state");
+        if (state != state_t::INITIALIZED) context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
         auto raw_object = new Actor{*this, std::forward<Args>(args)...};
         raw_object->do_initialize();
         auto wrapper = wrapper_t{raw_object};

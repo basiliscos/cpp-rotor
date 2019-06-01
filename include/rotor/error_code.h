@@ -7,6 +7,9 @@ namespace rotor {
 enum class error_code_t {
     success = 0,
     shutdown_timeout,
+    missing_actor,
+    supervisor_defined,
+    supervisor_wrong_state,
 };
 
 namespace detail {

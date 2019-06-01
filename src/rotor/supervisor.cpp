@@ -101,7 +101,7 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor
     }
     if (remove_actor) {
         auto it_actor = actors_map.find(actor->get_address());
-        assert(it_actor != actors_map.end());
+        if (it_actor == actors_map.end()) { context->on_error(make_error_code(error_code_t::missing_actor)); }
         actors_map.erase(it_actor);
     }
 }

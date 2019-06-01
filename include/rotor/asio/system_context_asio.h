@@ -4,7 +4,6 @@
 #include "rotor/asio/supervisor_config.h"
 #include "rotor/system_context.h"
 #include <boost/asio.hpp>
-#include <cassert>
 
 namespace rotor {
 namespace asio {
@@ -22,9 +21,13 @@ struct system_context_asio_t : public system_context_t, arc_base_t<system_contex
 
     template <typename Supervisor = supervisor_t, typename... Args>
     auto create_supervisor(const supervisor_config_t &config, Args... args) -> intrusive_ptr_t<Supervisor> {
-        assert(!supervisor && "supervisor is already defined");
-        ptr_t self{this};
-        return system_context_t::create_supervisor<Supervisor>(std::move(self), config, std::forward<Args>(args)...);
+        if (supervisor) {
+            on_error(make_error_code(error_code_t::supervisor_defined));
+        }else {
+            ptr_t self{this};
+            return system_context_t::create_supervisor<Supervisor>(std::move(self), config, std::forward<Args>(args)...);
+
+        }
     }
 
     system_context_asio_t(const system_context_t &) = delete;
