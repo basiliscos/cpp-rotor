@@ -1,6 +1,5 @@
 1. create sub-supervisor
 2. allow to dispatch messsages on sub-supervisor
-3. allow to subscribe to arbitrary address
 
 supervisor -> abstract_supervisor
 get_supevisor -> get_supervisor
