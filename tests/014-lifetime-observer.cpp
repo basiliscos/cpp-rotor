@@ -5,8 +5,6 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-struct foo_t {};
-
 struct sample_actor_t  : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };

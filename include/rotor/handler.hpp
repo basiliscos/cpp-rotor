@@ -19,12 +19,16 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
 
 struct handler_base_t : public arc_base_t<handler_base_t> {
     actor_base_t *raw_actor_ptr; /* non-owning pointer to actor address */
-    handler_base_t(actor_base_t *actor) : raw_actor_ptr{actor} {}
+    const void *type_index;
+    size_t precalc_hash;
+    handler_base_t(actor_base_t *actor, const void *type_index_) : raw_actor_ptr{actor}, type_index{type_index_} {
+        auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(raw_actor_ptr));
+        auto h2 = reinterpret_cast<std::size_t>(type_index);
+        precalc_hash = h1 ^ (h2 << 1);
+    }
     bool operator==(actor_base_t *ptr) const noexcept { return ptr == raw_actor_ptr; }
     virtual bool operator==(const handler_base_t &) const noexcept = 0;
-    virtual size_t hash() const noexcept = 0;
     virtual void call(message_ptr_t &) noexcept = 0;
-    virtual const std::type_index &get_type_index() const noexcept = 0;
 
     virtual inline ~handler_base_t() {}
 };
@@ -37,13 +41,10 @@ template <typename Handler> struct handler_t : public handler_base_t {
     using final_actor_t = typename traits::actor_t;
 
     Handler handler;
-    std::size_t precalc_hash;
     actor_ptr_t actor_ptr;
 
-    handler_t(actor_base_t &actor, Handler &&handler_) : handler_base_t{&actor}, handler{handler_} {
-        auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(raw_actor_ptr));
-        auto h2 = std::type_index(typeid(Handler)).hash_code();
-        precalc_hash = h1 ^ (h2 << 1);
+    handler_t(actor_base_t &actor, Handler &&handler_)
+        : handler_base_t{&actor, final_message_t::message_type}, handler{handler_} {
         actor_ptr.reset(&actor);
     }
 
@@ -62,10 +63,6 @@ template <typename Handler> struct handler_t : public handler_base_t {
         auto *other = dynamic_cast<const handler_t *>(&rhs);
         return other && other->handler == handler;
     }
-
-    const std::type_index &get_type_index() const noexcept override { return final_message_t::message_type; }
-
-    virtual size_t hash() const noexcept override { return precalc_hash; }
 };
 
 /* third-party classes implementations */
@@ -75,7 +72,7 @@ template <typename Handler> struct handler_t : public handler_base_t {
 namespace std {
 template <> struct hash<rotor::handler_ptr_t> {
     size_t operator()(const rotor::handler_ptr_t &handler) const noexcept {
-        return reinterpret_cast<size_t>(handler->hash());
+        return reinterpret_cast<size_t>(handler->precalc_hash);
     }
 };
 } // namespace std

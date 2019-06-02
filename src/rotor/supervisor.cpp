@@ -40,7 +40,7 @@ void supervisor_t::do_process() noexcept {
     while (outbound.size()) {
         auto &item = outbound.front();
         auto &address = item.address;
-        auto &message = item.message;
+        auto message = item.message;
         auto it_subscriptions = subscription_map.find(address);
         bool finished = address->ctx_addr == this && state == state_t::SHUTTED_DOWN;
         bool has_recipients = it_subscriptions != subscription_map.end();

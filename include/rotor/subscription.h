@@ -10,12 +10,12 @@ namespace rotor {
 
 struct subscription_t {
     using list_t = std::vector<handler_ptr_t>;
-    using slot_t = std::type_index;
+    using slot_t = const void *;
     using map_t = std::unordered_map<slot_t, list_t>;
 
     void subscribe(handler_ptr_t handler);
     std::size_t unsubscribe(handler_ptr_t handler);
-    list_t *get_recipients(const slot_t &slot);
+    list_t *get_recipients(const slot_t &slot) noexcept;
 
   private:
     map_t map;
