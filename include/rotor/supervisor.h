@@ -54,16 +54,9 @@ struct supervisor_t : public actor_base_t {
         SHUTTED_DOWN,
     };
 
-    struct item_t {
-        address_ptr_t address;
-        message_ptr_t message;
-
-        item_t(const address_ptr_t &address_, message_ptr_t message_) : address{address_}, message{message_} {}
-    };
-
     using subscription_queue_t = std::deque<subscription_request_t>;
     using unsubscription_queue_t = std::deque<subscription_request_t>;
-    using queue_t = std::deque<item_t>;
+    using queue_t = std::deque<message_ptr_t>;
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
@@ -76,8 +69,8 @@ struct supervisor_t : public actor_base_t {
     subscription_queue_t subscription_queue;
 
     template <typename M, typename... Args> void enqueue(address_ptr_t addr, Args &&... args) {
-        auto raw_message = new message_t<M>(addr, std::forward<Args>(args)...);
-        outbound.emplace_back(std::move(addr), raw_message);
+        auto raw_message = new message_t<M>(std::move(addr), std::forward<Args>(args)...);
+        outbound.emplace_back(raw_message);
     }
 
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {

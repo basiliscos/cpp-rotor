@@ -38,19 +38,20 @@ void supervisor_t::do_process() noexcept {
     proccess_unsubscriptions();
 
     while (outbound.size()) {
-        auto &item = outbound.front();
-        auto &address = item.address;
-        auto message = item.message;
-        auto it_subscriptions = subscription_map.find(address);
-        bool finished = address->ctx_addr == this && state == state_t::SHUTTED_DOWN;
+        auto message = outbound.front();
+        auto &dest = message->address;
+        outbound.pop_front();
+        auto it_subscriptions = subscription_map.find(dest);
+        bool finished = dest->ctx_addr == this && state == state_t::SHUTTED_DOWN;
         bool has_recipients = it_subscriptions != subscription_map.end();
         if (!finished && has_recipients) {
             auto &subscription = it_subscriptions->second;
             auto recipients = subscription.get_recipients(message->get_type_index());
             if (recipients) {
-                for (auto it : *recipients) {
-                    auto &handler = *it;
-                    handler.call(message);
+                for (auto &it : *recipients) {
+                    if (it.mine) {
+                        it.handler->call(message);
+                    }
                 }
             }
             if (!unsubscription_queue.empty()) {
@@ -60,16 +61,16 @@ void supervisor_t::do_process() noexcept {
                 proccess_subscriptions();
             }
         }
-        outbound.pop_front();
     }
 }
 
 void supervisor_t::proccess_subscriptions() noexcept {
     for (auto it : subscription_queue) {
-        auto handler_ptr = it.handler;
-        auto address = it.address;
+        auto &handler_ptr = it.handler;
+        auto &address = it.address;
         handler_ptr->raw_actor_ptr->remember_subscription(it);
-        subscription_map[address].subscribe(handler_ptr);
+        auto subs_info = subscription_map.try_emplace(address, *this);
+        subs_info.first->second.subscribe(handler_ptr);
     }
     subscription_queue.clear();
 }

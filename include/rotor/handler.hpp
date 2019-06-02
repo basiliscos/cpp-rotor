@@ -26,8 +26,8 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
         auto h2 = reinterpret_cast<std::size_t>(type_index);
         precalc_hash = h1 ^ (h2 << 1);
     }
-    bool operator==(actor_base_t *ptr) const noexcept { return ptr == raw_actor_ptr; }
-    bool operator==(const handler_base_t &rhs) const noexcept {
+    inline bool operator==(actor_base_t *ptr) const noexcept { return ptr == raw_actor_ptr; }
+    inline bool operator==(const handler_base_t &rhs) const noexcept {
         return raw_actor_ptr == rhs.raw_actor_ptr && type_index == rhs.type_index;
     }
     virtual void call(message_ptr_t &) noexcept = 0;
