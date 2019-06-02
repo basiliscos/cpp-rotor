@@ -27,7 +27,9 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
         precalc_hash = h1 ^ (h2 << 1);
     }
     bool operator==(actor_base_t *ptr) const noexcept { return ptr == raw_actor_ptr; }
-    virtual bool operator==(const handler_base_t &) const noexcept = 0;
+    bool operator==(const handler_base_t &rhs) const noexcept {
+        return raw_actor_ptr == rhs.raw_actor_ptr && type_index == rhs.type_index;
+    }
     virtual void call(message_ptr_t &) noexcept = 0;
 
     virtual inline ~handler_base_t() {}
@@ -54,14 +56,6 @@ template <typename Handler> struct handler_t : public handler_base_t {
             auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
             (final_obj.*handler)(*final_message);
         }
-    }
-
-    bool operator==(const handler_base_t &rhs) const noexcept override {
-        if (raw_actor_ptr != rhs.raw_actor_ptr) {
-            return false;
-        }
-        auto *other = dynamic_cast<const handler_t *>(&rhs);
-        return other && other->handler == handler;
     }
 };
 
