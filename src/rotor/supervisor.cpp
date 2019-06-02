@@ -1,4 +1,5 @@
 #include "rotor/supervisor.h"
+//#include <iostream>
 
 using namespace rotor;
 
@@ -163,6 +164,9 @@ void supervisor_t::on_shutdown_timer_trigger() noexcept {
 
 void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept {
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
+    if (message.payload.actor.get() != this) {
+        unsubscribe_actor(message.payload.actor, true);
+    }
     if (actors_map.empty()) {
         // std::cout << "supervisor_t::on_shutdown_confirm (unsubscribing self)\n";
         state = state_t::SHUTTED_DOWN;

@@ -58,7 +58,9 @@ private:
       std::cout << "pings finishes (" << pings_left << ") in " << diff.count()
                 << "s"
                 << ", freq = " << std::fixed << std::setprecision(10) << freq
+                << ", real freq = " << std::fixed << std::setprecision(10) << freq * 2
                 << "\n";
+      supervisor.shutdown();
     }
   }
 
@@ -98,9 +100,9 @@ int main(int argc, char **argv) {
         boost::conversion::try_lexical_convert(argv[1], count);
     }
 
-    ra::system_context_asio_t system_context(io_context);
+    auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     ra::supervisor_config_t conf{pt::milliseconds{500}};
-    auto supervisor = system_context.create_supervisor<ra::supervisor_asio_t>(conf);
+    auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
     auto addr_sup = supervisor->get_address();
 
 
@@ -110,7 +112,6 @@ int main(int argc, char **argv) {
     ponger->set_pinger_addr(pinger->get_address());
 
     supervisor->start();
-
     io_context.run();
   } catch (const std::exception &ex) {
     std::cout << "exception : " << ex.what();

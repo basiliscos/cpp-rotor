@@ -8,6 +8,8 @@ namespace rt = r::test;
 struct ping_t{};
 struct pong_t{};
 
+static std::uint32_t destroyed = 0;
+
 struct pinger_t : public r::actor_base_t {
     std::uint32_t ping_sent;
     std::uint32_t pong_received;
@@ -15,6 +17,7 @@ struct pinger_t : public r::actor_base_t {
   pinger_t(r::supervisor_t &sup) : r::actor_base_t{sup}{
       ping_sent = pong_received = 0;
   }
+  ~pinger_t() override { destroyed += 1; }
 
   void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
@@ -44,6 +47,7 @@ struct ponger_t : public r::actor_base_t {
   ponger_t(r::supervisor_t &sup) : r::actor_base_t{sup} {
       ping_received = pong_sent = 0;
   }
+  ~ponger_t() override { destroyed += 3; }
 
   void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
@@ -84,5 +88,13 @@ TEST_CASE("ping-pong", "[supervisor]") {
 
     sup->do_shutdown();
     sup->do_process();
+    REQUIRE(sup->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+
+    pinger.reset();
+    ponger.reset();
+    REQUIRE(destroyed == 4);
 }
 

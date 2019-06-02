@@ -54,4 +54,9 @@ TEST_CASE("lifetime observer", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
     REQUIRE(observer->event == 7);
+
+    REQUIRE(sup->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
 }

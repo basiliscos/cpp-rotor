@@ -13,8 +13,7 @@ namespace asio = boost::asio;
 struct supervisor_asio_t;
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
-// struct system_context_asio_t : public arc_base_t<system_context_asio_t> {
-struct system_context_asio_t : public system_context_t, arc_base_t<system_context_asio_t> {
+struct system_context_asio_t : public system_context_t {
     using ptr_t = rotor::intrusive_ptr_t<system_context_asio_t>;
 
     system_context_asio_t(asio::io_context &io_context_) : io_context{io_context_} {}

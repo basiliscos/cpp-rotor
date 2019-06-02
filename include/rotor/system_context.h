@@ -9,7 +9,7 @@ namespace rotor {
 struct supervisor_t;
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
-struct system_context_t {
+struct system_context_t : arc_base_t<system_context_t> {
   public:
     template <typename Supervisor = supervisor_t, typename... Args>
     auto create_supervisor(Args... args) -> intrusive_ptr_t<Supervisor>;
