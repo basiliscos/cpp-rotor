@@ -60,7 +60,6 @@ private:
                 << ", freq = " << std::fixed << std::setprecision(10) << freq
                 << ", real freq = " << std::fixed << std::setprecision(10) << freq * 2
                 << "\n";
-      supervisor.shutdown();
     }
   }
 
@@ -112,6 +111,9 @@ int main(int argc, char **argv) {
     ponger->set_pinger_addr(pinger->get_address());
 
     supervisor->start();
+    io_context.run();
+
+    supervisor->shutdown();
     io_context.run();
   } catch (const std::exception &ex) {
     std::cout << "exception : " << ex.what();

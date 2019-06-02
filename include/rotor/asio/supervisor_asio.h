@@ -42,7 +42,8 @@ struct supervisor_asio_t : public supervisor_t {
         return forwarder_t{*this, std::move(handler)};
     }
 
-    system_context_ptr_t system_context;
+    inline system_context_asio_t &get_asio_context() noexcept { return static_cast<system_context_asio_t &>(*context); }
+
     asio::io_context::strand strand;
     timer_t shutdown_timer;
     supervisor_config_t config;

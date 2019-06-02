@@ -4,8 +4,7 @@
 using namespace rotor::asio;
 
 supervisor_asio_t::supervisor_asio_t(system_context_ptr_t system_context_, const supervisor_config_t &config_)
-    : system_context{system_context_}, strand{system_context_->io_context},
-      shutdown_timer{system_context->io_context}, config{config_} {}
+    : strand{system_context_->io_context}, shutdown_timer{system_context_->io_context}, config{config_} {}
 
 void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_start)(); }
 
@@ -19,7 +18,7 @@ void supervisor_asio_t::start_shutdown_timer() noexcept {
 
 void supervisor_asio_t::on_shutdown_timer_error(const boost::system::error_code &ec) noexcept {
     if (ec != asio::error::operation_aborted) {
-        system_context->on_error(ec);
+        get_asio_context().on_error(ec);
     }
 }
 
@@ -27,7 +26,7 @@ void supervisor_asio_t::cancel_shutdown_timer() noexcept {
     boost::system::error_code ec;
     shutdown_timer.cancel(ec);
     if (ec) {
-        system_context->on_error(ec);
+        get_asio_context().on_error(ec);
     }
 }
 
