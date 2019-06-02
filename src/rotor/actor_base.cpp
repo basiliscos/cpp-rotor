@@ -1,5 +1,6 @@
 #include "rotor/actor_base.h"
 #include "rotor/supervisor.h"
+//#include <iostream>
 
 using namespace rotor;
 
@@ -14,10 +15,7 @@ void actor_base_t::do_shutdown() noexcept {
     send<payload::shutdown_request_t>(supervisor.get_address(), std::move(self));
 }
 
-address_ptr_t actor_base_t::create_address() noexcept {
-    auto addr = new address_t(static_cast<void *>(&supervisor));
-    return address_ptr_t{addr};
-}
+address_ptr_t actor_base_t::create_address() noexcept { return supervisor.make_address(); }
 
 void actor_base_t::on_initialize(message_t<payload::initialize_actor_t> &) noexcept {
     auto destination = supervisor.get_address();
@@ -32,16 +30,22 @@ void actor_base_t::on_shutdown(message_t<payload::shutdown_request_t> &) noexcep
 }
 
 void actor_base_t::remember_subscription(const subscription_request_t &req) noexcept {
-    points.emplace(req.address, req.handler);
+    points[req.address].push_back(req.handler);
+    // std::cout << "points size: " <<  points.size() << "\n";
 }
 
 void actor_base_t::forget_subscription(const subscription_request_t &req) noexcept {
-    auto it = points.begin();
-    while (it != points.end()) {
-        if (it->first == req.address && it->second == req.handler) {
-            it = points.erase(it);
+    auto &subs = points[req.address];
+    auto it = subs.begin();
+    while (it != subs.end()) {
+        if (*it == req.handler) {
+            // std::cout << "forgot subscription\n";
+            it = subs.erase(it);
         } else {
             ++it;
         }
+    }
+    if (subs.empty()) {
+        points.erase(req.address);
     }
 }

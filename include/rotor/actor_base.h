@@ -18,7 +18,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         address_ptr_t address;
     };
 
-    using subscription_points_t = std::unordered_map<address_ptr_t, handler_ptr_t>;
+    using subscription_points_t = std::unordered_map<address_ptr_t, std::vector<handler_ptr_t>>;
 
     actor_base_t(supervisor_t &supervisor_);
     virtual ~actor_base_t();

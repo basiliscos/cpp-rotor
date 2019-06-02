@@ -22,6 +22,7 @@ struct supervisor_asio_t : public supervisor_t {
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
+    virtual void enqueue(message_ptr_t message) noexcept override;
     virtual void start_shutdown_timer() noexcept override;
     virtual void cancel_shutdown_timer() noexcept override;
     virtual void on_shutdown_timer_error(const sys::error_code &ec) noexcept;

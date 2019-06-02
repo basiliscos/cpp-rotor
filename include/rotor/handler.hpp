@@ -10,6 +10,8 @@
 namespace rotor {
 
 struct actor_base_t;
+struct supervisor_t;
+using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 template <typename T> struct handler_traits {};
 template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcept> {
@@ -20,8 +22,10 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
 struct handler_base_t : public arc_base_t<handler_base_t> {
     actor_base_t *raw_actor_ptr; /* non-owning pointer to actor address */
     const void *type_index;
+    supervisor_ptr_t supervisor;
     size_t precalc_hash;
     handler_base_t(actor_base_t *actor, const void *type_index_) : raw_actor_ptr{actor}, type_index{type_index_} {
+        supervisor.reset(&actor->get_supevisor());
         auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(raw_actor_ptr));
         auto h2 = reinterpret_cast<std::size_t>(type_index);
         precalc_hash = h1 ^ (h2 << 1);
@@ -48,7 +52,14 @@ template <typename Handler> struct handler_t : public handler_base_t {
     handler_t(actor_base_t &actor, Handler &&handler_)
         : handler_base_t{&actor, final_message_t::message_type}, handler{handler_} {
         actor_ptr.reset(&actor);
+        // std::cout << "handler_t\n";
     }
+
+    /*
+    ~handler_t() {
+        std::cout << "~handler_t\n";
+    }
+    */
 
     void call(message_ptr_t &message) noexcept override {
         if (message->get_type_index() == final_message_t::message_type) {

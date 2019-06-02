@@ -1,4 +1,5 @@
 #include "rotor/subscription.h"
+#include "rotor/supervisor.h"
 
 using namespace rotor;
 
@@ -26,6 +27,9 @@ std::size_t subscription_t::unsubscribe(handler_ptr_t handler) {
         } else {
             ++it;
         }
+    }
+    if (list.empty()) {
+        map.erase(handler->type_index);
     }
     return map.size();
 }

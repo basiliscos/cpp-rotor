@@ -4,6 +4,8 @@ using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(sup ? *sup : *this), state{state_t::NEW} {}
 
+address_ptr_t supervisor_t::make_address() noexcept { return new address_t{*this}; }
+
 void supervisor_t::do_initialize() noexcept {
     state = state_t::INITIALIZED;
     actor_base_t::do_initialize();
@@ -41,25 +43,34 @@ void supervisor_t::do_process() noexcept {
         auto message = outbound.front();
         auto &dest = message->address;
         outbound.pop_front();
-        auto it_subscriptions = subscription_map.find(dest);
-        bool finished = dest->ctx_addr == this && state == state_t::SHUTTED_DOWN;
-        bool has_recipients = it_subscriptions != subscription_map.end();
-        if (!finished && has_recipients) {
-            auto &subscription = it_subscriptions->second;
-            auto recipients = subscription.get_recipients(message->get_type_index());
-            if (recipients) {
-                for (auto &it : *recipients) {
-                    if (it.mine) {
-                        it.handler->call(message);
+        if (&dest->supervisor == this) { /* subscriptions are handled by me */
+            if (state == state_t::SHUTTED_DOWN)
+                continue;
+            auto it_subscriptions = subscription_map.find(dest);
+            if (it_subscriptions != subscription_map.end()) {
+                auto &subscription = it_subscriptions->second;
+                auto recipients = subscription.get_recipients(message->get_type_index());
+                if (recipients) {
+                    for (auto &it : *recipients) {
+                        if (it.mine) {
+                            it.handler->call(message);
+                        } else {
+                            auto &sup = it.handler->supervisor;
+                            auto wrapped_message =
+                                make_message<payload::handler_call_t>(sup->get_address(), message, it.handler);
+                            sup->enqueue(std::move(wrapped_message));
+                        }
                     }
                 }
+                if (!unsubscription_queue.empty()) {
+                    proccess_unsubscriptions();
+                }
+                if (!subscription_queue.empty()) {
+                    proccess_subscriptions();
+                }
             }
-            if (!unsubscription_queue.empty()) {
-                proccess_unsubscriptions();
-            }
-            if (!subscription_queue.empty()) {
-                proccess_subscriptions();
-            }
+        } else {
+            dest->supervisor.enqueue(std::move(message));
         }
     }
 }
@@ -71,6 +82,7 @@ void supervisor_t::proccess_subscriptions() noexcept {
         handler_ptr->raw_actor_ptr->remember_subscription(it);
         auto subs_info = subscription_map.try_emplace(address, *this);
         subs_info.first->second.subscribe(handler_ptr);
+        // std::cout << "remberign subscription ...\n";
     }
     subscription_queue.clear();
 }
@@ -86,6 +98,7 @@ void supervisor_t::proccess_unsubscriptions() noexcept {
         if (!left) {
             subscription_map.erase(address);
         }
+        // std::cout << "unsubscribing..., left: " << left << "\n";
     }
     unsubscription_queue.clear();
 }
@@ -96,10 +109,13 @@ void supervisor_t::unsubscribe_actor(address_ptr_t addr, handler_ptr_t &handler_
 
 void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor) noexcept {
     auto &points = actor->get_subscription_points();
+    // std::cout << "unsubscribing actor..." << points.size() << "\n";
     for (auto it : points) {
         auto &address = it.first;
-        auto &handler = it.second;
-        unsubscription_queue.emplace_back(subscription_request_t{handler, address});
+        for (auto &handler : it.second) {
+            unsubscription_queue.emplace_back(subscription_request_t{handler, address});
+        }
+        // std::cout << "unsubscribing point...\n";
     }
     if (remove_actor) {
         auto it_actor = actors_map.find(actor->get_address());
@@ -133,7 +149,6 @@ void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noex
             start_shutdown_timer();
         } else {
             actor_ptr_t self{this};
-            // unsubscribe_actor(self, false);
             send<payload::shutdown_confirmation_t>(supervisor.get_address(), self);
         }
     } else {

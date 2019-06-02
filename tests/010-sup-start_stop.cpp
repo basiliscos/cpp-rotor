@@ -5,6 +5,8 @@
 namespace r = rotor;
 namespace rt = rotor::test;
 
+static std::uint32_t destroyed = 0;
+
 struct sample_sup_t : public rt::supervisor_test_t {
   using sup_base_t = rt::supervisor_test_t;
   std::uint32_t initialized;
@@ -22,6 +24,8 @@ struct sample_sup_t : public rt::supervisor_test_t {
       shutdown_req_invoked = 0;
       shutdown_conf_invoked = 0;
   }
+
+  ~sample_sup_t() override { ++destroyed; }
 
   void do_initialize() noexcept override {
       ++initialized;
@@ -53,9 +57,10 @@ struct sample_sup_t : public rt::supervisor_test_t {
 };
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
-    r::system_context_t system_context;
+    r::system_context_t* system_context = new r::system_context_t{};
 
-    auto sup = system_context.create_supervisor<sample_sup_t>();
+    auto sup = system_context->create_supervisor<sample_sup_t>();
+
     REQUIRE(&sup->get_supevisor() == sup.get());
     REQUIRE(sup->initialized == 1);
 
@@ -75,5 +80,16 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->shutdown_req_invoked == 1);
     REQUIRE(sup->shutdown_conf_invoked == 1);
     REQUIRE(dynamic_cast<sample_sup_t*>(sup->shutdown_actor.get()) == sup.get());
+
+    REQUIRE(sup->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+
+    REQUIRE(destroyed == 0);
+    delete system_context;
+    sup->shutdown_actor.reset();
+    sup.reset();
+    REQUIRE(destroyed == 1);
 }
 

@@ -1,4 +1,5 @@
 #include "rotor/message.h"
+#include "rotor/supervisor.h"
 
 using namespace rotor;
 

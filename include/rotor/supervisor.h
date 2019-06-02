@@ -9,9 +9,9 @@
 #include <chrono>
 #include <deque>
 #include <functional>
-#include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+//#include <iostream>
 
 namespace rotor {
 
@@ -31,8 +31,8 @@ struct supervisor_t : public actor_base_t {
     virtual void proccess_unsubscriptions() noexcept;
     virtual void unsubscribe_actor(address_ptr_t addr, handler_ptr_t &handler_ptr) noexcept;
     virtual void unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor = true) noexcept;
+    virtual address_ptr_t make_address() noexcept;
 
-    // virtual void on_start(message_t<payload::start_actor_t> &) noexcept override;
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
     virtual void on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept override;
     virtual void on_initialize_confirm(message_t<payload::initialize_confirmation_t> &msg) noexcept;
@@ -45,6 +45,7 @@ struct supervisor_t : public actor_base_t {
     virtual void cancel_shutdown_timer() noexcept = 0;
     virtual void start() noexcept = 0;
     virtual void shutdown() noexcept = 0;
+    virtual void enqueue(message_ptr_t message) noexcept = 0;
 
     enum class state_t {
         NEW,
@@ -68,10 +69,7 @@ struct supervisor_t : public actor_base_t {
     unsubscription_queue_t unsubscription_queue;
     subscription_queue_t subscription_queue;
 
-    template <typename M, typename... Args> void enqueue(address_ptr_t addr, Args &&... args) {
-        auto raw_message = new message_t<M>(std::move(addr), std::forward<Args>(args)...);
-        outbound.emplace_back(raw_message);
-    }
+    inline void put(message_ptr_t message) { outbound.emplace_back(std::move(message)); }
 
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
         subscribe_actor(actor.get_address(), actor, std::move(handler));
@@ -101,6 +99,10 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /* third-party classes implementations */
 
+template <typename M, typename... Args> auto make_message(address_ptr_t addr, Args &&... args) -> message_ptr_t {
+    return message_ptr_t{new message_t<M>(std::move(addr), std::forward<Args>(args)...)};
+};
+
 template <typename Supervisor, typename... Args>
 auto system_context_t::create_supervisor(Args... args) -> intrusive_ptr_t<Supervisor> {
     using wrapper_t = intrusive_ptr_t<Supervisor>;
@@ -112,7 +114,8 @@ auto system_context_t::create_supervisor(Args... args) -> intrusive_ptr_t<Superv
 }
 
 template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
-    supervisor.enqueue<M>(addr, std::forward<Args>(args)...);
+    supervisor.put(make_message<M>(addr, std::forward<Args>(args)...));
+    // supervisor.enqueue<M>(addr, std::forward<Args>(args)...);
 }
 
 template <typename Handler> void actor_base_t::subscribe(Handler &&h) {

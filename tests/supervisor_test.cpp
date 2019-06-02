@@ -22,3 +22,7 @@ void supervisor_test_t::start() noexcept {
 void supervisor_test_t::shutdown() noexcept {
     INFO("supervisor_test_t::shutdown()")
 }
+
+void supervisor_test_t::enqueue(message_ptr_t message) noexcept {
+    outbound.emplace_back(std::move(message));
+}

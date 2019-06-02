@@ -81,5 +81,8 @@ TEST_CASE("ping-pong", "[supervisor]") {
     REQUIRE(pinger->pong_received == 1);
     REQUIRE(ponger->pong_sent == 1);
     REQUIRE(ponger->ping_received == 1);
+
+    sup->do_shutdown();
+    sup->do_process();
 }
 
