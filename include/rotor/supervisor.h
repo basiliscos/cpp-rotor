@@ -21,9 +21,7 @@ struct supervisor_t : public actor_base_t {
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 
-    inline void set_context(system_context_t *ctx) { context = ctx; }
-
-    virtual void do_initialize() noexcept override;
+    virtual void do_initialize(system_context_t *ctx) noexcept override;
     virtual void do_start() noexcept;
     virtual void do_process() noexcept;
 
@@ -88,7 +86,7 @@ struct supervisor_t : public actor_base_t {
         if (state != state_t::INITIALIZED)
             context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
         auto raw_object = new Actor{*this, std::forward<Args>(args)...};
-        raw_object->do_initialize();
+        raw_object->do_initialize(context);
         auto wrapper = wrapper_t{raw_object};
         send<payload::create_actor_t>(address, wrapper);
         return wrapper;
@@ -107,15 +105,13 @@ template <typename Supervisor, typename... Args>
 auto system_context_t::create_supervisor(Args... args) -> intrusive_ptr_t<Supervisor> {
     using wrapper_t = intrusive_ptr_t<Supervisor>;
     auto raw_object = new Supervisor{std::forward<Args>(args)...};
-    raw_object->set_context(this);
+    raw_object->do_initialize(this);
     supervisor = supervisor_ptr_t{raw_object};
-    supervisor->do_initialize();
     return wrapper_t{raw_object};
 }
 
 template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
     supervisor.put(make_message<M>(addr, std::forward<Args>(args)...));
-    // supervisor.enqueue<M>(addr, std::forward<Args>(args)...);
 }
 
 template <typename Handler> void actor_base_t::subscribe(Handler &&h) {

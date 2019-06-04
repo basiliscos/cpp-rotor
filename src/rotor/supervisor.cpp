@@ -7,9 +7,10 @@ supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(sup ? *sup : *this)
 
 address_ptr_t supervisor_t::make_address() noexcept { return new address_t{*this}; }
 
-void supervisor_t::do_initialize() noexcept {
+void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
+    context = ctx;
     state = state_t::INITIALIZED;
-    actor_base_t::do_initialize();
+    actor_base_t::do_initialize(ctx);
     subscribe(&actor_base_t::on_initialize);
     subscribe(&supervisor_t::on_initialize_confirm);
     subscribe(&supervisor_t::on_shutdown);

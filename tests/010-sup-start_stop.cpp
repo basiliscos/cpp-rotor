@@ -27,9 +27,9 @@ struct sample_sup_t : public rt::supervisor_test_t {
 
   ~sample_sup_t() override { ++destroyed; }
 
-  void do_initialize() noexcept override {
+  void do_initialize(r::system_context_t* ctx) noexcept override {
       ++initialized;
-      sup_base_t::do_initialize();
+      sup_base_t::do_initialize(ctx);
   }
 
   void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {

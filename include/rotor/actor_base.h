@@ -23,7 +23,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     actor_base_t(supervisor_t &supervisor_);
     virtual ~actor_base_t();
 
-    virtual void do_initialize() noexcept;
+    virtual void do_initialize(system_context_t *ctx) noexcept;
     virtual void do_shutdown() noexcept;
     virtual address_ptr_t create_address() noexcept;
 

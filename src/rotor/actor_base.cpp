@@ -8,7 +8,7 @@ actor_base_t::actor_base_t(supervisor_t &supervisor_) : supervisor{supervisor_} 
 
 actor_base_t::~actor_base_t() {}
 
-void actor_base_t::do_initialize() noexcept { address = create_address(); }
+void actor_base_t::do_initialize(system_context_t *) noexcept { address = create_address(); }
 
 void actor_base_t::do_shutdown() noexcept {
     actor_ptr_t self{this};
