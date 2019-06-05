@@ -15,6 +15,24 @@
 
 namespace rotor {
 
+struct supervisor_t;
+
+template <typename Actor, typename IsSupervisor = void> struct actor_ctor_t;
+
+template <typename Actor> struct actor_ctor_t<Actor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
+    template <typename... Args>
+    static auto construct(supervisor_t *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
+        return new Actor{sup, std::forward<Args>(args)...};
+    }
+};
+
+template <typename Actor> struct actor_ctor_t<Actor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
+    template <typename... Args>
+    static auto construct(supervisor_t *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
+        return new Actor{*sup, std::forward<Args>(args)...};
+    }
+};
+
 struct supervisor_t : public actor_base_t {
 
     supervisor_t(supervisor_t *sup = nullptr);
@@ -45,6 +63,8 @@ struct supervisor_t : public actor_base_t {
     virtual void shutdown() noexcept = 0;
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
+    inline supervisor_t *get_parent_supevisor() noexcept { return parent; }
+
     enum class state_t {
         NEW,
         INITIALIZED,
@@ -59,11 +79,12 @@ struct supervisor_t : public actor_base_t {
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
+    state_t state;
+    supervisor_t *parent;
     system_context_t *context;
     queue_t outbound;
     subscription_map_t subscription_map;
     actors_map_t actors_map;
-    state_t state;
     unsubscription_queue_t unsubscription_queue;
     subscription_queue_t subscription_queue;
 
@@ -77,19 +98,18 @@ struct supervisor_t : public actor_base_t {
         using final_handler_t = handler_t<Handler>;
         auto handler_raw = new final_handler_t(actor, std::move(handler));
         auto handler_ptr = handler_ptr_t{handler_raw};
-
-        subscription_queue.emplace_back(subscription_request_t{std::move(handler_ptr), std::move(addr)});
+        auto &sup = actor.get_supevisor();
+        sup.subscription_queue.emplace_back(subscription_request_t{std::move(handler_ptr), std::move(addr)});
     }
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        using wrapper_t = intrusive_ptr_t<Actor>;
+        using ctor_t = actor_ctor_t<Actor>;
         if (state != state_t::INITIALIZED)
             context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
-        auto raw_object = new Actor{*this, std::forward<Args>(args)...};
-        raw_object->do_initialize(context);
-        auto wrapper = wrapper_t{raw_object};
-        send<payload::create_actor_t>(address, wrapper);
-        return wrapper;
+        auto actor = ctor_t::construct(this, std::forward<Args>(args)...);
+        actor->do_initialize(context);
+        send<payload::create_actor_t>(address, actor);
+        return actor;
     }
 };
 

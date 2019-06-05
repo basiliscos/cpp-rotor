@@ -3,7 +3,7 @@
 
 using namespace rotor;
 
-supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(sup ? *sup : *this), state{state_t::NEW} {}
+supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(*this), state{state_t::NEW}, parent{sup} {}
 
 address_ptr_t supervisor_t::make_address() noexcept { return new address_t{*this}; }
 
@@ -142,16 +142,17 @@ void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) no
 void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noexcept {
     auto &source = msg.payload.actor;
     if (source.get() == this) {
+        actor_ptr_t self{this};
         state = state_t::SHUTTING_DOWN;
         for (auto pair : actors_map) {
-            auto addr = pair.first;
-            send<payload::shutdown_request_t>(addr);
+            auto &addr = pair.first;
+            auto &actor = pair.second;
+            send<payload::shutdown_request_t>(addr, actor);
         }
         if (!actors_map.empty()) {
             start_shutdown_timer();
         } else {
-            actor_ptr_t self{this};
-            send<payload::shutdown_confirmation_t>(supervisor.get_address(), self);
+            send<payload::shutdown_confirmation_t>(address, self);
         }
     } else {
         send<payload::shutdown_request_t>(source->get_address(), source);
@@ -174,6 +175,8 @@ void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_
         cancel_shutdown_timer();
         actor_ptr_t self{this};
         unsubscribe_actor(self, false);
-        send<payload::shutdown_confirmation_t>(supervisor.get_address(), self);
+        if (parent) {
+            send<payload::shutdown_confirmation_t>(parent->get_address(), self);
+        }
     }
 }

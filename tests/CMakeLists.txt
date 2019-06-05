@@ -36,5 +36,9 @@ add_test(013-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/013-observer")
 
 add_executable(014-lifetime-observer 014-lifetime-observer.cpp)
 target_link_libraries(014-lifetime-observer ${rotor_TEST_LIBS})
-add_test(014-lifetime-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/013-observer")
+add_test(014-lifetime-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/014-lifetime-observer")
+
+add_executable(020-two-supervisors 020-two-supervisors.cpp)
+target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})
+add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervisors")
 
