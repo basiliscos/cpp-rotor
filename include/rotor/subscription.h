@@ -3,7 +3,7 @@
 #include "handler.hpp"
 #include "message.h"
 #include <typeindex>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 namespace rotor {
@@ -15,7 +15,7 @@ struct subscription_t {
     };
     using list_t = std::vector<classified_handlers_t>;
     using slot_t = const void *;
-    using map_t = std::unordered_map<slot_t, list_t>;
+    using map_t = std::map<slot_t, list_t>;
 
     subscription_t(supervisor_t &sup);
 

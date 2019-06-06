@@ -11,11 +11,8 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
     state = state_t::INITIALIZED;
     actor_base_t::do_initialize(ctx);
-    subscribe(&actor_base_t::on_initialize);
     subscribe(&supervisor_t::on_initialize_confirm);
-    subscribe(&supervisor_t::on_shutdown);
     subscribe(&supervisor_t::on_shutdown_confirm);
-    subscribe(&supervisor_t::on_start);
     subscribe(&supervisor_t::on_create);
     auto addr = supervisor.get_address();
     send<payload::initialize_actor_t>(addr, addr);
@@ -23,9 +20,6 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
 
 void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     auto actor = msg.payload.actor;
-    subscribe_actor(*actor, &actor_base_t::on_initialize);
-    subscribe_actor(*actor, &actor_base_t::on_start);
-    subscribe_actor(*actor, &actor_base_t::on_shutdown);
     auto actor_address = actor->get_address();
     actors_map.emplace(actor_address, std::move(actor));
     send<payload::initialize_actor_t>(address, actor_address);
@@ -84,6 +78,7 @@ void supervisor_t::proccess_subscriptions() noexcept {
         handler_ptr->raw_actor_ptr->remember_subscription(it);
         auto subs_info = subscription_map.try_emplace(address, *this);
         subs_info.first->second.subscribe(handler_ptr);
+        // assert(&address->supervisor == handler_ptr->supervisor.get());
         // std::cout << "remberign subscription ...\n";
     }
     subscription_queue.clear();

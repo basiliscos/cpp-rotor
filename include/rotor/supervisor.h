@@ -88,18 +88,18 @@ struct supervisor_t : public actor_base_t {
     unsubscription_queue_t unsubscription_queue;
     subscription_queue_t subscription_queue;
 
-    inline void put(message_ptr_t message) { outbound.emplace_back(std::move(message)); }
+    inline void put(message_ptr_t &&message) { outbound.emplace_back(std::move(message)); }
 
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
-        subscribe_actor(actor.get_address(), actor, std::move(handler));
+        supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
-    template <typename Handler> void subscribe_actor(address_ptr_t addr, actor_base_t &actor, Handler &&handler) {
-        using final_handler_t = handler_t<Handler>;
-        auto handler_raw = new final_handler_t(actor, std::move(handler));
-        auto handler_ptr = handler_ptr_t{handler_raw};
-        auto &sup = actor.get_supevisor();
-        sup.subscription_queue.emplace_back(subscription_request_t{std::move(handler_ptr), std::move(addr)});
+    inline void subscribe_actor(address_ptr_t addr, handler_ptr_t &&handler) {
+        if (&addr->supervisor == &supervisor) {
+            subscription_queue.emplace_back(subscription_request_t{std::move(handler), std::move(addr)});
+        } else {
+            send<payload::external_subscription_t>(addr->supervisor.address, addr, std::move(handler));
+        }
     }
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
@@ -134,12 +134,18 @@ template <typename M, typename... Args> void actor_base_t::send(const address_pt
     supervisor.put(make_message<M>(addr, std::forward<Args>(args)...));
 }
 
+template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Handler &&handler) {
+    using final_handler_t = handler_t<Handler>;
+    auto handler_raw = new final_handler_t(actor, std::move(handler));
+    return handler_ptr_t{handler_raw};
+}
+
 template <typename Handler> void actor_base_t::subscribe(Handler &&h) {
-    supervisor.subscribe_actor(address, *this, std::forward<Handler>(h));
+    supervisor.subscribe_actor(address, wrap_handler(*this, std::move(h)));
 }
 
 template <typename Handler> void actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) {
-    supervisor.subscribe_actor(addr, *this, std::forward<Handler>(h));
+    supervisor.subscribe_actor(addr, wrap_handler(*this, std::move(h)));
 }
 
 } // namespace rotor

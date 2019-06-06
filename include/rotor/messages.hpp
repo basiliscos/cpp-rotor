@@ -36,6 +36,11 @@ struct handler_call_t {
     handler_ptr_t handler;
 };
 
+struct external_subscription_t {
+    address_ptr_t addr;
+    handler_ptr_t handler;
+};
+
 } // namespace payload
 
 } // namespace rotor
