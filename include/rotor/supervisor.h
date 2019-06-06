@@ -56,6 +56,10 @@ struct supervisor_t : public actor_base_t {
     virtual void on_shutdown(message_t<payload::shutdown_request_t> &) noexcept override;
     virtual void on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept;
 
+    virtual void on_subscription(message_t<payload::external_subscription_t> &message) noexcept;
+    virtual void on_unsubscription(message_t<payload::external_unsubscription_t> &message) noexcept;
+    virtual void on_call(message_t<payload::handler_call_t> &message) noexcept;
+
     virtual void on_shutdown_timer_trigger() noexcept;
     virtual void start_shutdown_timer() noexcept = 0;
     virtual void cancel_shutdown_timer() noexcept = 0;

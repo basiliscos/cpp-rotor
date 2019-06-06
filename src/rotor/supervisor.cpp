@@ -1,5 +1,5 @@
 #include "rotor/supervisor.h"
-//#include <iostream>
+#include <assert.h>
 
 using namespace rotor;
 
@@ -11,9 +11,12 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
     state = state_t::INITIALIZED;
     actor_base_t::do_initialize(ctx);
+    subscribe(&supervisor_t::on_call);
     subscribe(&supervisor_t::on_initialize_confirm);
     subscribe(&supervisor_t::on_shutdown_confirm);
     subscribe(&supervisor_t::on_create);
+    subscribe(&supervisor_t::on_subscription);
+    subscribe(&supervisor_t::on_unsubscription);
     auto addr = supervisor.get_address();
     send<payload::initialize_actor_t>(addr, addr);
 }
@@ -108,9 +111,15 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor
     auto &points = actor->get_subscription_points();
     // std::cout << "unsubscribing actor..." << points.size() << "\n";
     for (auto it : points) {
-        auto &address = it.first;
-        for (auto &handler : it.second) {
-            unsubscription_queue.emplace_back(subscription_request_t{handler, address});
+        auto &addr = it.first;
+        if (&addr->supervisor == this) {
+            for (auto &handler : it.second) {
+                unsubscription_queue.emplace_back(subscription_request_t{handler, addr});
+            }
+        } else {
+            for (auto &handler : it.second) {
+                send<payload::external_unsubscription_t>(addr->supervisor.address, addr, handler);
+            }
         }
         // std::cout << "unsubscribing point...\n";
     }
@@ -174,4 +183,24 @@ void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_
             send<payload::shutdown_confirmation_t>(parent->get_address(), self);
         }
     }
+}
+
+void supervisor_t::on_subscription(message_t<payload::external_subscription_t> &message) noexcept {
+    auto &handler = message.payload.handler;
+    auto &addr = message.payload.addr;
+    assert(&addr->supervisor == this);
+    subscription_queue.emplace_back(subscription_request_t{handler, addr});
+}
+
+void supervisor_t::on_unsubscription(message_t<payload::external_unsubscription_t> &message) noexcept {
+    auto &handler = message.payload.handler;
+    auto &addr = message.payload.addr;
+    assert(&addr->supervisor == this);
+    unsubscription_queue.emplace_back(subscription_request_t{handler, addr});
+}
+
+void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept {
+    auto &handler = message.payload.handler;
+    auto &orig_message = message.payload.orig_message;
+    handler->call(orig_message);
 }
