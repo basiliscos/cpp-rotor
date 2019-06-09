@@ -4,7 +4,6 @@ add_library(test_lib
     supervisor_test.cpp
     test-main.cpp
 )
-#target_include_directories(test_lib INTERFACE include/)
 target_link_libraries(test_lib rotor)
 
 find_package(
@@ -16,7 +15,8 @@ find_package(
 )
 find_package(Threads)
 
-set(rotor_TEST_LIBS rotor test_lib ${Boost_LIBRARIES} Threads::Threads)
+set(rotor_TEST_LIBS rotor test_lib Threads::Threads)
+set(rotor_BOOTS_TEST_LIBS ${rotor_TEST_LIBS} rotor_boost rotor ${Boost_LIBRARIES})
 
 add_executable(010-sup-start_stop 010-sup-start_stop.cpp)
 target_link_libraries(010-sup-start_stop ${rotor_TEST_LIBS})
@@ -46,3 +46,7 @@ add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
 add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong-external")
 
+# boost::asio tests
+add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
+target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})
+add_test(101-asio_ping-pong-1-strand "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/101-asio_ping-pong-1-strand")

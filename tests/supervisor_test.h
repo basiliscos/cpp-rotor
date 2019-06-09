@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include "rotor/supervisor.h"
 
 namespace rotor {
