@@ -16,24 +16,24 @@ TEST_CASE("two supervisors", "[supervisor]") {
 
     sup1->do_start();
     sup1->do_process();
-    REQUIRE(sup1->get_state() == r::supervisor_t::state_t::OPERATIONAL);
-    REQUIRE(sup2->get_state() == r::supervisor_t::state_t::INITIALIZED);
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::INITIALIZED);
 
     sup2->do_process();
-    REQUIRE(sup2->get_state() == r::supervisor_t::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
 
     sup1->do_shutdown();
     sup1->do_process();
 
-    REQUIRE(sup1->get_state() == r::supervisor_t::state_t::SHUTTING_DOWN);
-    REQUIRE(sup2->get_state() == r::supervisor_t::state_t::OPERATIONAL);
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTING_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
 
     sup2->do_process();
-    REQUIRE(sup1->get_state() == r::supervisor_t::state_t::SHUTTING_DOWN);
-    REQUIRE(sup2->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTING_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
 
     sup1->do_process();
-    REQUIRE(sup1->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
 
     REQUIRE(sup1->get_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);

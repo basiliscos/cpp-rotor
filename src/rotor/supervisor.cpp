@@ -1,5 +1,6 @@
 #include "rotor/supervisor.h"
 #include <assert.h>
+#include <iostream>
 
 using namespace rotor;
 
@@ -17,6 +18,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     subscribe(&supervisor_t::on_create);
     subscribe(&supervisor_t::on_subscription);
     subscribe(&supervisor_t::on_unsubscription);
+    subscribe(&supervisor_t::on_state_request);
     auto addr = supervisor.get_address();
     send<payload::initialize_actor_t>(addr, addr);
 }
@@ -29,7 +31,8 @@ void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
 }
 
 void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmation_t> &msg) noexcept {
-    send<payload::start_actor_t>(msg.payload.actor_address);
+    auto &addr = msg.payload.actor_address;
+    send<payload::start_actor_t>(addr, addr);
 }
 
 void supervisor_t::do_start() noexcept { send<payload::start_actor_t>(address); }
@@ -103,8 +106,12 @@ void supervisor_t::proccess_unsubscriptions() noexcept {
     unsubscription_queue.clear();
 }
 
-void supervisor_t::unsubscribe_actor(address_ptr_t addr, handler_ptr_t &handler_ptr) noexcept {
-    unsubscription_queue.emplace_back(subscription_request_t{handler_ptr, addr});
+void supervisor_t::unsubscribe_actor(address_ptr_t addr, handler_ptr_t &&handler) noexcept {
+    if (&addr->supervisor == &supervisor) {
+        unsubscription_queue.emplace_back(subscription_request_t{std::move(handler), addr});
+    } else {
+        send<payload::external_unsubscription_t>(addr->supervisor.address, addr, std::move(handler));
+    }
 }
 
 void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor) noexcept {
@@ -203,4 +210,19 @@ void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept
     auto &handler = message.payload.handler;
     auto &orig_message = message.payload.orig_message;
     handler->call(orig_message);
+}
+
+void supervisor_t::on_state_request(message_t<payload::state_request_t> &message) noexcept {
+    auto &addr = message.payload.subject_addr;
+    auto &reply_to = message.payload.reply_addr;
+    state_t target_state = state_t::UNKNOWN;
+    if (addr == address) {
+        target_state = state;
+    } else {
+        auto it = actors_map.find(addr);
+        if (it != actors_map.end()) {
+            target_state = it->second->state;
+        }
+    }
+    send<payload::state_response_t>(reply_to, addr, target_state);
 }

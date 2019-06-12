@@ -3,6 +3,7 @@
 #include "address.hpp"
 #include "messages.hpp"
 #include <unordered_map>
+#include "state.h"
 #include <vector>
 
 namespace rotor {
@@ -40,11 +41,15 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
 
-    template <typename Handler> void subscribe(Handler &&h);
-    template <typename Handler> void subscribe(Handler &&h, address_ptr_t &addr);
+    template <typename Handler> void subscribe(Handler &&h) noexcept;
+    template <typename Handler> void subscribe(Handler &&h, address_ptr_t &addr) noexcept;
+    template <typename Handler> void unsubscribe(Handler &&h) noexcept;
+    template <typename Handler> void unsubscribe(Handler &&h, address_ptr_t &addr) noexcept;
 
   protected:
+    friend struct supervisor_t;
     supervisor_t &supervisor;
+    state_t state;
     address_ptr_t address;
     subscription_points_t points;
 };

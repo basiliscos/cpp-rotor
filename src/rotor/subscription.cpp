@@ -22,7 +22,7 @@ std::size_t subscription_t::unsubscribe(handler_ptr_t handler) {
     auto &list = map.at(handler->type_index);
     auto it = list.begin();
     while (it != list.end()) {
-        if (it->handler == handler) {
+        if (*it->handler == *handler) {
             it = list.erase(it);
         } else {
             ++it;

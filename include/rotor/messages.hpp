@@ -1,6 +1,7 @@
 #pragma once
 #include "address.hpp"
 #include "message.h"
+#include "state.h"
 
 namespace rotor {
 
@@ -44,6 +45,16 @@ struct external_subscription_t {
 struct external_unsubscription_t {
     address_ptr_t addr;
     handler_ptr_t handler;
+};
+
+struct state_request_t {
+    address_ptr_t reply_addr;
+    address_ptr_t subject_addr;
+};
+
+struct state_response_t {
+    address_ptr_t subject_addr;
+    state_t state;
 };
 
 } // namespace payload

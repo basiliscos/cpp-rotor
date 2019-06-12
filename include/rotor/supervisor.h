@@ -45,7 +45,7 @@ struct supervisor_t : public actor_base_t {
 
     virtual void proccess_subscriptions() noexcept;
     virtual void proccess_unsubscriptions() noexcept;
-    virtual void unsubscribe_actor(address_ptr_t addr, handler_ptr_t &handler_ptr) noexcept;
+    virtual void unsubscribe_actor(address_ptr_t addr, handler_ptr_t &&handler_ptr) noexcept;
     virtual void unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor = true) noexcept;
     virtual address_ptr_t make_address() noexcept;
 
@@ -59,6 +59,7 @@ struct supervisor_t : public actor_base_t {
     virtual void on_subscription(message_t<payload::external_subscription_t> &message) noexcept;
     virtual void on_unsubscription(message_t<payload::external_unsubscription_t> &message) noexcept;
     virtual void on_call(message_t<payload::handler_call_t> &message) noexcept;
+    virtual void on_state_request(message_t<payload::state_request_t> &message) noexcept;
 
     virtual void on_shutdown_timer_trigger() noexcept;
     virtual void start_shutdown_timer() noexcept = 0;
@@ -68,14 +69,6 @@ struct supervisor_t : public actor_base_t {
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
     inline supervisor_t *get_parent_supevisor() noexcept { return parent; }
-
-    enum class state_t {
-        NEW,
-        INITIALIZED,
-        OPERATIONAL,
-        SHUTTING_DOWN,
-        SHUTTED_DOWN,
-    };
 
     using subscription_queue_t = std::deque<subscription_request_t>;
     using unsubscription_queue_t = std::deque<subscription_request_t>;
@@ -92,7 +85,8 @@ struct supervisor_t : public actor_base_t {
     unsubscription_queue_t unsubscription_queue;
     subscription_queue_t subscription_queue;
 
-    inline void put(message_ptr_t &&message) { outbound.emplace_back(std::move(message)); }
+    inline void put(message_ptr_t message) { outbound.emplace_back(std::move(message)); }
+    // inline void put(const message_ptr_t &message) { outbound.push_back(message); }
 
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
@@ -144,12 +138,20 @@ template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Hand
     return handler_ptr_t{handler_raw};
 }
 
-template <typename Handler> void actor_base_t::subscribe(Handler &&h) {
+template <typename Handler> void actor_base_t::subscribe(Handler &&h) noexcept {
     supervisor.subscribe_actor(address, wrap_handler(*this, std::move(h)));
 }
 
-template <typename Handler> void actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) {
+template <typename Handler> void actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) noexcept {
     supervisor.subscribe_actor(addr, wrap_handler(*this, std::move(h)));
+}
+
+template <typename Handler> void actor_base_t::unsubscribe(Handler &&h) noexcept {
+    supervisor.unsubscribe_actor(address, wrap_handler(*this, std::move(h)));
+}
+
+template <typename Handler> void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
+    supervisor.unsubscribe_actor(addr, wrap_handler(*this, std::move(h)));
 }
 
 } // namespace rotor

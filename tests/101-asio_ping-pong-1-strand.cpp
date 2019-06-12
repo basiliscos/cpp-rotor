@@ -92,7 +92,7 @@ TEST_CASE("ping/pong ", "[supervisor][asio]") {
     REQUIRE(ponger->pong_sent == 1);
     REQUIRE(ponger->ping_received == 1);
 
-    REQUIRE(sup->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);

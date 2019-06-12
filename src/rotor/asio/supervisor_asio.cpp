@@ -3,8 +3,10 @@
 
 using namespace rotor::asio;
 
-supervisor_asio_t::supervisor_asio_t(system_context_ptr_t system_context_, const supervisor_config_t &config_)
-    : strand{system_context_->io_context}, shutdown_timer{system_context_->io_context}, config{config_} {}
+supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_,
+                                     const supervisor_config_t &config_)
+    : supervisor_t{sup}, strand{system_context_->io_context},
+      shutdown_timer{system_context_->io_context}, config{config_} {}
 
 void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_start)(); }
 
@@ -32,9 +34,10 @@ void supervisor_asio_t::cancel_shutdown_timer() noexcept {
 
 void supervisor_asio_t::enqueue(message_ptr_t message) noexcept {
     auto actor_ptr = supervisor_ptr_t(this);
-    asio::defer(strand, [actor = std::move(actor_ptr), message = std::move(message)]() {
+    asio::defer(strand, [actor = std::move(actor_ptr), message = std::move(message)]() mutable {
         auto &sup = *actor;
-        sup.enqueue(std::move(message));
+        // sup.enqueue(std::move(message));
+        sup.put(std::move(message));
         sup.do_process();
     });
 }

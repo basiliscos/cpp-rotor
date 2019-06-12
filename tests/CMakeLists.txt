@@ -1,6 +1,7 @@
 enable_testing()
 
 add_library(test_lib
+    actor_test.cpp
     supervisor_test.cpp
     test-main.cpp
 )
@@ -38,6 +39,10 @@ add_executable(014-lifetime-observer 014-lifetime-observer.cpp)
 target_link_libraries(014-lifetime-observer ${rotor_TEST_LIBS})
 add_test(014-lifetime-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/014-lifetime-observer")
 
+add_executable(015-actor-statuses 015-actor-statuses.cpp)
+target_link_libraries(015-actor-statuses ${rotor_TEST_LIBS})
+add_test(015-actor-statuses "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/015-actor-statuses")
+
 add_executable(020-two-supervisors 020-two-supervisors.cpp)
 target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})
 add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervisors")
@@ -50,3 +55,8 @@ add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong
 add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
 target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})
 add_test(101-asio_ping-pong-1-strand "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/101-asio_ping-pong-1-strand")
+
+add_executable(102-asio_ping-pong-2-strands 102-asio_ping-pong-2-strands.cpp)
+target_link_libraries(102-asio_ping-pong-2-strands ${rotor_BOOTS_TEST_LIBS})
+add_test(102-asio_ping-pong-2-strands "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/102-asio_ping-pong-2-strands")
+

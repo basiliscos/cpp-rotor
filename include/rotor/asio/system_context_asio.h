@@ -25,7 +25,7 @@ struct system_context_asio_t : public system_context_t {
             return intrusive_ptr_t<Supervisor>{};
         } else {
             ptr_t self{this};
-            return system_context_t::create_supervisor<Supervisor>(std::move(self), config,
+            return system_context_t::create_supervisor<Supervisor>(nullptr, std::move(self), config,
                                                                    std::forward<Args>(args)...);
         }
     }

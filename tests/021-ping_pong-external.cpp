@@ -131,12 +131,12 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
     sup2->do_process();
     sup1->do_process();
 
-    REQUIRE(sup1->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->get_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
-    REQUIRE(sup2->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup2->get_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);
@@ -185,12 +185,12 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
     sup2->do_process();
     sup1->do_process();
 
-    REQUIRE(sup1->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->get_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
-    REQUIRE(sup2->get_state() == r::supervisor_t::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup2->get_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);

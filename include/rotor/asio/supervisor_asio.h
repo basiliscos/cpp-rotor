@@ -18,7 +18,7 @@ struct supervisor_asio_t : public supervisor_t {
     using timer_t = asio::deadline_timer;
     using supervisor_ptr_t = intrusive_ptr_t<supervisor_asio_t>;
 
-    supervisor_asio_t(system_context_ptr_t system_context_, const supervisor_config_t &config_);
+    supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_, const supervisor_config_t &config);
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
