@@ -70,11 +70,11 @@ void actor_base_t::confirm_shutdown() noexcept {
 }
 
 void actor_base_t::remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
-    // TODO: iterate backwards
-    auto it = points.begin();
-    while (it != points.end()) {
+    auto it = points.rbegin();
+    while (it != points.rend()) {
         if (it->address == addr && *it->handler == *handler) {
-            it = points.erase(it);
+            auto dit = it.base();
+            points.erase(--dit);
             return;
         } else {
             ++it;
