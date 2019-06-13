@@ -43,7 +43,7 @@ struct supervisor_t : public actor_base_t {
     virtual void do_start() noexcept;
     virtual void do_process() noexcept;
 
-    virtual void proccess_subscriptions() noexcept;
+    // virtual void proccess_subscriptions() noexcept;
 
     virtual size_t unsubscribe_actor(const actor_ptr_t &actor) noexcept;
     virtual address_ptr_t make_address() noexcept;
@@ -83,7 +83,6 @@ struct supervisor_t : public actor_base_t {
     queue_t outbound;
     subscription_map_t subscription_map;
     actors_map_t actors_map;
-    subscription_queue_t subscription_queue;
 
     inline void put(message_ptr_t message) { outbound.emplace_back(std::move(message)); }
 
@@ -91,11 +90,14 @@ struct supervisor_t : public actor_base_t {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
-    inline void subscribe_actor(address_ptr_t addr, handler_ptr_t &&handler) {
+    inline void subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) {
         if (&addr->supervisor == &supervisor) {
-            subscription_queue.emplace_back(subscription_request_t{std::move(handler), std::move(addr)});
+            auto &actor_ptr = handler->raw_actor_ptr;
+            auto subs_info = subscription_map.try_emplace(addr, *this);
+            subs_info.first->second.subscribe(handler);
+            send<payload::subscription_confirmation_t>(actor_ptr->get_address(), addr, handler);
         } else {
-            send<payload::external_subscription_t>(addr->supervisor.address, addr, std::move(handler));
+            send<payload::external_subscription_t>(addr->supervisor.address, addr, handler);
         }
     }
 

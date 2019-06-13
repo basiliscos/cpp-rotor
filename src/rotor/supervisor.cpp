@@ -38,8 +38,6 @@ void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmat
 void supervisor_t::do_start() noexcept { send<payload::start_actor_t>(address); }
 
 void supervisor_t::do_process() noexcept {
-    proccess_subscriptions();
-
     while (outbound.size()) {
         auto message = outbound.front();
         auto &dest = message->address;
@@ -63,26 +61,11 @@ void supervisor_t::do_process() noexcept {
                         }
                     }
                 }
-                if (!subscription_queue.empty()) {
-                    proccess_subscriptions();
-                }
             }
         } else {
             dest->supervisor.enqueue(std::move(message));
         }
     }
-}
-
-void supervisor_t::proccess_subscriptions() noexcept {
-    for (auto it : subscription_queue) {
-        auto &handler = it.handler;
-        auto &address = it.address;
-        auto &actor_ptr = handler->raw_actor_ptr;
-        auto subs_info = subscription_map.try_emplace(address, *this);
-        subs_info.first->second.subscribe(handler);
-        send<payload::subscription_confirmation_t>(actor_ptr->get_address(), address, handler);
-    }
-    subscription_queue.clear();
 }
 
 size_t supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
@@ -150,7 +133,7 @@ void supervisor_t::on_external_subs(message_t<payload::external_subscription_t> 
     auto &handler = message.payload.handler;
     auto &addr = message.payload.addr;
     assert(&addr->supervisor == this);
-    subscription_queue.emplace_back(subscription_request_t{handler, addr});
+    subscribe_actor(addr, handler);
 }
 
 void supervisor_t::on_commit_unsubscription(message_t<payload::commit_unsubscription_t> &message) noexcept {
