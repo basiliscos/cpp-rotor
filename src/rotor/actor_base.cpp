@@ -10,9 +10,12 @@ actor_base_t::~actor_base_t() {}
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
     address = create_address();
+    supervisor.subscribe_actor(*this, &actor_base_t::on_unsubscription);
+    supervisor.subscribe_actor(*this, &actor_base_t::on_external_unsubscription);
     supervisor.subscribe_actor(*this, &actor_base_t::on_initialize);
     supervisor.subscribe_actor(*this, &actor_base_t::on_start);
     supervisor.subscribe_actor(*this, &actor_base_t::on_shutdown);
+    supervisor.subscribe_actor(*this, &actor_base_t::on_subscription);
     state = state_t::INITIALIZING;
 }
 
@@ -33,28 +36,49 @@ void actor_base_t::on_initialize(message_t<payload::initialize_actor_t> &) noexc
 void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept { state = state_t::OPERATIONAL; }
 
 void actor_base_t::on_shutdown(message_t<payload::shutdown_request_t> &) noexcept {
+    state = state_t::SHUTTING_DOWN;
+    actor_ptr_t self{this};
+    supervisor.unsubscribe_actor(self);
+}
+
+void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
+    points.push_back(subscription_request_t{msg.payload.handler, msg.payload.addr});
+}
+
+void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmation_t> &msg) noexcept {
+    auto &addr = msg.payload.addr;
+    auto &handler = msg.payload.handler;
+    remove_subscription(addr, handler);
+    supervisor.commit_unsubscription(addr, handler);
+    if (points.empty() && state == state_t::SHUTTING_DOWN) {
+        state = state_t::SHUTTED_DOWN;
+        confirm_shutdown();
+    }
+}
+
+void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubscription_t> &msg) noexcept {
+    auto &addr = msg.payload.addr;
+    auto &handler = msg.payload.handler;
+    remove_subscription(addr, msg.payload.handler);
+    auto sup_addr = addr->supervisor.get_address();
+    send<payload::commit_unsubscription_t>(std::move(sup_addr), addr, handler);
+}
+
+void actor_base_t::confirm_shutdown() noexcept {
     auto destination = supervisor.get_address();
-    state = state_t::SHUTTED_DOWN;
     send<payload::shutdown_confirmation_t>(destination, this);
 }
 
-void actor_base_t::remember_subscription(const subscription_request_t &req) noexcept {
-    points[req.address].push_back(req.handler);
-    // std::cout << "points size: " <<  points.size() << "\n";
-}
-
-void actor_base_t::forget_subscription(const subscription_request_t &req) noexcept {
-    auto &subs = points[req.address];
-    auto it = subs.begin();
-    while (it != subs.end()) {
-        if (**it == *req.handler) {
-            // std::cout << "forgot subscription\n";
-            it = subs.erase(it);
+void actor_base_t::remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
+    // TODO: iterate backwards
+    auto it = points.begin();
+    while (it != points.end()) {
+        if (it->address == addr && *it->handler == *handler) {
+            it = points.erase(it);
+            return;
         } else {
             ++it;
         }
     }
-    if (subs.empty()) {
-        points.erase(req.address);
-    }
+    assert(0 && "no subscription found");
 }

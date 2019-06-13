@@ -42,7 +42,22 @@ struct external_subscription_t {
     handler_ptr_t handler;
 };
 
+struct subscription_confirmation_t {
+    address_ptr_t addr;
+    handler_ptr_t handler;
+};
+
 struct external_unsubscription_t {
+    address_ptr_t addr;
+    handler_ptr_t handler;
+};
+
+struct commit_unsubscription_t {
+    address_ptr_t addr;
+    handler_ptr_t handler;
+};
+
+struct unsubscription_confirmation_t {
     address_ptr_t addr;
     handler_ptr_t handler;
 };

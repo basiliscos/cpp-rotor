@@ -78,8 +78,8 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
     REQUIRE(sup->shutdown_req_invoked == 1);
-    REQUIRE(sup->shutdown_conf_invoked == 1);
-    REQUIRE(dynamic_cast<sample_sup_t*>(sup->shutdown_actor.get()) == sup.get());
+    //REQUIRE(sup->shutdown_conf_invoked == 1);
+    //REQUIRE(dynamic_cast<sample_sup_t*>(sup->shutdown_actor.get()) == sup.get());
 
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);

@@ -127,19 +127,19 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
     REQUIRE(ponger->pong_sent == 1);
 
     sup1->do_shutdown();
-    sup1->do_process();
-    sup2->do_process();
-    sup1->do_process();
+    while (!sup1->get_queue().empty() || !sup2->get_queue().empty()) {
+        sup1->do_process();
+        sup2->do_process();
+    }
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_points().size() == 0);
+    REQUIRE(sup2->get_subscription().size() == 0);
 
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->get_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
-
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup2->get_queue().size() == 0);
-    REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
 }
 
 TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervisor]") {
@@ -181,17 +181,18 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
     REQUIRE(ponger->pong_sent == 1);
 
     sup1->do_shutdown();
-    sup1->do_process();
-    sup2->do_process();
-    sup1->do_process();
+    while (!sup1->get_queue().empty() || !sup2->get_queue().empty()) {
+        sup1->do_process();
+        sup2->do_process();
+    }
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_points().size() == 0);
+    REQUIRE(sup2->get_subscription().size() == 0);
 
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->get_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup2->get_queue().size() == 0);
-    REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
 }

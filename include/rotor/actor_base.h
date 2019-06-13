@@ -4,7 +4,7 @@
 #include "messages.hpp"
 #include <unordered_map>
 #include "state.h"
-#include <vector>
+#include <list>
 
 namespace rotor {
 
@@ -19,7 +19,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         address_ptr_t address;
     };
 
-    using subscription_points_t = std::unordered_map<address_ptr_t, std::vector<handler_ptr_t>>;
+    using subscription_points_t = std::list<subscription_request_t>;
 
     actor_base_t(supervisor_t &supervisor_);
     virtual ~actor_base_t();
@@ -27,17 +27,20 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual void do_initialize(system_context_t *ctx) noexcept;
     virtual void do_shutdown() noexcept;
     virtual address_ptr_t create_address() noexcept;
-
-    void remember_subscription(const subscription_request_t &req) noexcept;
-    void forget_subscription(const subscription_request_t &req) noexcept;
+    virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
     inline address_ptr_t get_address() const noexcept { return address; }
     inline supervisor_t &get_supevisor() const noexcept { return supervisor; }
     inline subscription_points_t &get_subscription_points() noexcept { return points; }
 
+    virtual void confirm_shutdown() noexcept;
+
     virtual void on_initialize(message_t<payload::initialize_actor_t> &) noexcept;
     virtual void on_start(message_t<payload::start_actor_t> &) noexcept;
     virtual void on_shutdown(message_t<payload::shutdown_request_t> &) noexcept;
+    virtual void on_subscription(message_t<payload::subscription_confirmation_t> &) noexcept;
+    virtual void on_unsubscription(message_t<payload::unsubscription_confirmation_t> &) noexcept;
+    virtual void on_external_unsubscription(message_t<payload::external_unsubscription_t> &) noexcept;
 
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
 

@@ -4,22 +4,22 @@
 
 using namespace rotor;
 
-supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(*this), state{state_t::NEW}, parent{sup} {}
+supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(*this), parent{sup} {}
 
 address_ptr_t supervisor_t::make_address() noexcept { return new address_t{*this}; }
 
 void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
-    state = state_t::INITIALIZED;
     actor_base_t::do_initialize(ctx);
     subscribe(&supervisor_t::on_call);
     subscribe(&supervisor_t::on_initialize_confirm);
     subscribe(&supervisor_t::on_shutdown_confirm);
     subscribe(&supervisor_t::on_create);
-    subscribe(&supervisor_t::on_subscription);
-    subscribe(&supervisor_t::on_unsubscription);
+    subscribe(&supervisor_t::on_external_subs);
+    subscribe(&supervisor_t::on_commit_unsubscription);
     subscribe(&supervisor_t::on_state_request);
     auto addr = supervisor.get_address();
+    state = state_t::INITIALIZED;
     send<payload::initialize_actor_t>(addr, addr);
 }
 
@@ -39,7 +39,6 @@ void supervisor_t::do_start() noexcept { send<payload::start_actor_t>(address); 
 
 void supervisor_t::do_process() noexcept {
     proccess_subscriptions();
-    proccess_unsubscriptions();
 
     while (outbound.size()) {
         auto message = outbound.front();
@@ -64,9 +63,6 @@ void supervisor_t::do_process() noexcept {
                         }
                     }
                 }
-                if (!unsubscription_queue.empty()) {
-                    proccess_unsubscriptions();
-                }
                 if (!subscription_queue.empty()) {
                     proccess_subscriptions();
                 }
@@ -79,67 +75,29 @@ void supervisor_t::do_process() noexcept {
 
 void supervisor_t::proccess_subscriptions() noexcept {
     for (auto it : subscription_queue) {
-        auto &handler_ptr = it.handler;
+        auto &handler = it.handler;
         auto &address = it.address;
-        handler_ptr->raw_actor_ptr->remember_subscription(it);
+        auto &actor_ptr = handler->raw_actor_ptr;
         auto subs_info = subscription_map.try_emplace(address, *this);
-        subs_info.first->second.subscribe(handler_ptr);
-        // assert(&address->supervisor == handler_ptr->supervisor.get());
-        // std::cout << "remberign subscription ...\n";
+        subs_info.first->second.subscribe(handler);
+        send<payload::subscription_confirmation_t>(actor_ptr->get_address(), address, handler);
     }
     subscription_queue.clear();
 }
 
-void supervisor_t::proccess_unsubscriptions() noexcept {
-    for (auto it : unsubscription_queue) {
-        auto &handler = it.handler;
-        auto &address = it.address;
-        auto &subscriptions = subscription_map.at(address);
-        auto &actor_ptr = handler->raw_actor_ptr;
-        auto left = subscriptions.unsubscribe(handler);
-        actor_ptr->forget_subscription(it);
-        if (!left) {
-            subscription_map.erase(address);
-        }
-        // std::cout << "unsubscribing..., left: " << left << "\n";
-    }
-    unsubscription_queue.clear();
-}
-
-void supervisor_t::unsubscribe_actor(address_ptr_t addr, handler_ptr_t &&handler) noexcept {
-    if (&addr->supervisor == &supervisor) {
-        unsubscription_queue.emplace_back(subscription_request_t{std::move(handler), addr});
-    } else {
-        send<payload::external_unsubscription_t>(addr->supervisor.address, addr, std::move(handler));
-    }
-}
-
-void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor) noexcept {
+size_t supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
     auto &points = actor->get_subscription_points();
-    // std::cout << "unsubscribing actor..." << points.size() << "\n";
-    for (auto it : points) {
-        auto &addr = it.first;
-        if (&addr->supervisor == this) {
-            for (auto &handler : it.second) {
-                unsubscription_queue.emplace_back(subscription_request_t{handler, addr});
-            }
-        } else {
-            for (auto &handler : it.second) {
-                send<payload::external_unsubscription_t>(addr->supervisor.address, addr, handler);
-            }
-        }
-        // std::cout << "unsubscribing point...\n";
+    auto count = points.size();
+    /* TODO: unsubscribe backwards */
+    auto it = points.rbegin();
+    while (it != points.rend()) {
+        auto &addr = it->address;
+        auto &handler = it->handler;
+        unsubscribe_actor(addr, handler);
+        ++it;
     }
-    if (remove_actor) {
-        auto it_actor = actors_map.find(actor->get_address());
-        if (it_actor == actors_map.end()) {
-            context->on_error(make_error_code(error_code_t::missing_actor));
-        }
-        actors_map.erase(it_actor);
-    }
+    return count;
 }
-
-// void supervisor_t::on_start(message_t<payload::start_supervisor_t> &) noexcept {}
 
 void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept {
     auto actor_addr = msg.payload.actor_address;
@@ -163,7 +121,8 @@ void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noex
         if (!actors_map.empty()) {
             start_shutdown_timer();
         } else {
-            send<payload::shutdown_confirmation_t>(address, self);
+            actor_ptr_t self{this};
+            unsubscribe_actor(self);
         }
     } else {
         send<payload::shutdown_request_t>(source->get_address(), source);
@@ -177,33 +136,25 @@ void supervisor_t::on_shutdown_timer_trigger() noexcept {
 
 void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept {
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
-    if (message.payload.actor.get() != this) {
-        unsubscribe_actor(message.payload.actor, true);
+    actor_base_t &actor = *message.payload.actor;
+    if (&actor != this) {
+        remove_actor(actor);
     }
-    if (actors_map.empty()) {
-        // std::cout << "supervisor_t::on_shutdown_confirm (unsubscribing self)\n";
-        state = state_t::SHUTTED_DOWN;
-        cancel_shutdown_timer();
+    if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
         actor_ptr_t self{this};
-        unsubscribe_actor(self, false);
-        if (parent) {
-            send<payload::shutdown_confirmation_t>(parent->get_address(), self);
-        }
+        unsubscribe_actor(self);
     }
 }
 
-void supervisor_t::on_subscription(message_t<payload::external_subscription_t> &message) noexcept {
+void supervisor_t::on_external_subs(message_t<payload::external_subscription_t> &message) noexcept {
     auto &handler = message.payload.handler;
     auto &addr = message.payload.addr;
     assert(&addr->supervisor == this);
     subscription_queue.emplace_back(subscription_request_t{handler, addr});
 }
 
-void supervisor_t::on_unsubscription(message_t<payload::external_unsubscription_t> &message) noexcept {
-    auto &handler = message.payload.handler;
-    auto &addr = message.payload.addr;
-    assert(&addr->supervisor == this);
-    unsubscription_queue.emplace_back(subscription_request_t{handler, addr});
+void supervisor_t::on_commit_unsubscription(message_t<payload::commit_unsubscription_t> &message) noexcept {
+    commit_unsubscription(message.payload.addr, message.payload.handler);
 }
 
 void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept {
@@ -225,4 +176,32 @@ void supervisor_t::on_state_request(message_t<payload::state_request_t> &message
         }
     }
     send<payload::state_response_t>(reply_to, addr, target_state);
+}
+
+void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
+    auto &subscriptions = subscription_map.at(addr);
+    auto left = subscriptions.unsubscribe(handler);
+    if (!left) {
+        subscription_map.erase(addr);
+    }
+}
+
+void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
+    auto it_actor = actors_map.find(actor.address);
+    if (it_actor == actors_map.end()) {
+        context->on_error(make_error_code(error_code_t::missing_actor));
+    }
+    actors_map.erase(it_actor);
+    if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
+        cancel_shutdown_timer();
+        actor_ptr_t self{this};
+        unsubscribe_actor(self);
+    }
+}
+
+void supervisor_t::confirm_shutdown() noexcept {
+    if (parent) {
+        actor_ptr_t self{this};
+        send<payload::shutdown_confirmation_t>(parent->get_address(), self);
+    }
 }

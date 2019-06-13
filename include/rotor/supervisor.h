@@ -44,10 +44,12 @@ struct supervisor_t : public actor_base_t {
     virtual void do_process() noexcept;
 
     virtual void proccess_subscriptions() noexcept;
-    virtual void proccess_unsubscriptions() noexcept;
-    virtual void unsubscribe_actor(address_ptr_t addr, handler_ptr_t &&handler_ptr) noexcept;
-    virtual void unsubscribe_actor(const actor_ptr_t &actor, bool remove_actor = true) noexcept;
+
+    virtual size_t unsubscribe_actor(const actor_ptr_t &actor) noexcept;
     virtual address_ptr_t make_address() noexcept;
+    virtual void commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
+    virtual void remove_actor(actor_base_t &actor) noexcept;
+    virtual void confirm_shutdown() noexcept override;
 
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
     virtual void on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept override;
@@ -56,8 +58,8 @@ struct supervisor_t : public actor_base_t {
     virtual void on_shutdown(message_t<payload::shutdown_request_t> &) noexcept override;
     virtual void on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept;
 
-    virtual void on_subscription(message_t<payload::external_subscription_t> &message) noexcept;
-    virtual void on_unsubscription(message_t<payload::external_unsubscription_t> &message) noexcept;
+    virtual void on_external_subs(message_t<payload::external_subscription_t> &message) noexcept;
+    virtual void on_commit_unsubscription(message_t<payload::commit_unsubscription_t> &message) noexcept;
     virtual void on_call(message_t<payload::handler_call_t> &message) noexcept;
     virtual void on_state_request(message_t<payload::state_request_t> &message) noexcept;
 
@@ -76,17 +78,14 @@ struct supervisor_t : public actor_base_t {
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
-    state_t state;
     supervisor_t *parent;
     system_context_t *context;
     queue_t outbound;
     subscription_map_t subscription_map;
     actors_map_t actors_map;
-    unsubscription_queue_t unsubscription_queue;
     subscription_queue_t subscription_queue;
 
     inline void put(message_ptr_t message) { outbound.emplace_back(std::move(message)); }
-    // inline void put(const message_ptr_t &message) { outbound.push_back(message); }
 
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
@@ -97,6 +96,16 @@ struct supervisor_t : public actor_base_t {
             subscription_queue.emplace_back(subscription_request_t{std::move(handler), std::move(addr)});
         } else {
             send<payload::external_subscription_t>(addr->supervisor.address, addr, std::move(handler));
+        }
+    }
+
+    template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
+        auto &actor = handler->raw_actor_ptr;
+        auto dest = actor->get_address();
+        if (&addr->supervisor == &supervisor) {
+            send<payload::unsubscription_confirmation_t>(std::move(dest), addr, std::forward<Handler>(handler));
+        } else {
+            send<payload::external_unsubscription_t>(std::move(dest), addr, std::forward<Handler>(handler));
         }
     }
 
@@ -115,8 +124,8 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /* third-party classes implementations */
 
-template <typename M, typename... Args> auto make_message(address_ptr_t addr, Args &&... args) -> message_ptr_t {
-    return message_ptr_t{new message_t<M>(std::move(addr), std::forward<Args>(args)...)};
+template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&... args) -> message_ptr_t {
+    return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
 };
 
 template <typename Supervisor, typename... Args>

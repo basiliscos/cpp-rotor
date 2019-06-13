@@ -22,17 +22,19 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
 struct handler_base_t : public arc_base_t<handler_base_t> {
     actor_base_t *raw_actor_ptr; /* non-owning pointer to actor address */
     const void *type_index;
+    const void *handler_index;
     supervisor_ptr_t supervisor;
     size_t precalc_hash;
-    handler_base_t(actor_base_t *actor, const void *type_index_) : raw_actor_ptr{actor}, type_index{type_index_} {
+    handler_base_t(actor_base_t *actor, const void *type_index_, const void *handler_index_)
+        : raw_actor_ptr{actor}, type_index{type_index_}, handler_index{handler_index_} {
         supervisor.reset(&actor->get_supevisor());
         auto h1 = reinterpret_cast<std::size_t>(static_cast<void *>(raw_actor_ptr));
-        auto h2 = reinterpret_cast<std::size_t>(type_index);
+        auto h2 = reinterpret_cast<std::size_t>(handler_index);
         precalc_hash = h1 ^ (h2 << 1);
     }
     inline bool operator==(actor_base_t *ptr) const noexcept { return ptr == raw_actor_ptr; }
     inline bool operator==(const handler_base_t &rhs) const noexcept {
-        return raw_actor_ptr == rhs.raw_actor_ptr && type_index == rhs.type_index;
+        return raw_actor_ptr == rhs.raw_actor_ptr && handler_index == rhs.handler_index;
     }
     virtual void call(message_ptr_t &) noexcept = 0;
 
@@ -50,16 +52,9 @@ template <typename Handler> struct handler_t : public handler_base_t {
     actor_ptr_t actor_ptr;
 
     handler_t(actor_base_t &actor, Handler &&handler_)
-        : handler_base_t{&actor, final_message_t::message_type}, handler{handler_} {
+        : handler_base_t{&actor, final_message_t::message_type, typeid(Handler).name()}, handler{handler_} {
         actor_ptr.reset(&actor);
-        // std::cout << "handler_t\n";
     }
-
-    /*
-    ~handler_t() {
-        std::cout << "~handler_t\n";
-    }
-    */
 
     void call(message_ptr_t &message) noexcept override {
         if (message->get_type_index() == final_message_t::message_type) {
