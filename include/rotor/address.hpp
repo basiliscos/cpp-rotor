@@ -24,7 +24,7 @@ using address_ptr_t = intrusive_ptr_t<address_t>;
 namespace std {
 template <> struct hash<rotor::address_ptr_t> {
     inline size_t operator()(const rotor::address_ptr_t &address) const noexcept {
-        return reinterpret_cast<size_t>(&address->supervisor);
+        return reinterpret_cast<size_t>(address.get());
     }
 };
 

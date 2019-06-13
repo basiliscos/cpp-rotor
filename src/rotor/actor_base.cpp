@@ -60,8 +60,8 @@ void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubs
     auto &addr = msg.payload.addr;
     auto &handler = msg.payload.handler;
     remove_subscription(addr, msg.payload.handler);
-    auto sup_addr = addr->supervisor.get_address();
-    send<payload::commit_unsubscription_t>(std::move(sup_addr), addr, handler);
+    auto &sup_addr = addr->supervisor.address;
+    send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
 }
 
 void actor_base_t::confirm_shutdown() noexcept {

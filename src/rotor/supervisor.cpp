@@ -43,8 +43,10 @@ void supervisor_t::do_process() noexcept {
         auto &dest = message->address;
         outbound.pop_front();
         if (&dest->supervisor == this) { /* subscriptions are handled by me */
+            /*
             if (state == state_t::SHUTTED_DOWN)
                 continue;
+            */
             auto it_subscriptions = subscription_map.find(dest);
             if (it_subscriptions != subscription_map.end()) {
                 auto &subscription = it_subscriptions->second;
@@ -56,7 +58,7 @@ void supervisor_t::do_process() noexcept {
                         } else {
                             auto &sup = it.handler->supervisor;
                             auto wrapped_message =
-                                make_message<payload::handler_call_t>(sup->get_address(), message, it.handler);
+                                make_message<payload::handler_call_t>(sup->address, message, it.handler);
                             sup->enqueue(std::move(wrapped_message));
                         }
                     }

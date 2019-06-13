@@ -7,7 +7,7 @@ subscription_t::subscription_t(supervisor_t &sup) : supervisor{sup} {}
 
 void subscription_t::subscribe(handler_ptr_t handler) {
     bool mine = &handler->raw_actor_ptr->get_supevisor() == &supervisor;
-    map[handler->type_index].emplace_back(classified_handlers_t{mine, std::move(handler)});
+    map[handler->message_type].emplace_back(classified_handlers_t{mine, std::move(handler)});
 }
 
 subscription_t::list_t *subscription_t::get_recipients(const subscription_t::slot_t &slot) noexcept {
@@ -19,7 +19,7 @@ subscription_t::list_t *subscription_t::get_recipients(const subscription_t::slo
 }
 
 std::size_t subscription_t::unsubscribe(handler_ptr_t handler) {
-    auto &list = map.at(handler->type_index);
+    auto &list = map.at(handler->message_type);
     auto it = list.begin();
     while (it != list.end()) {
         if (*it->handler == *handler) {
@@ -29,7 +29,7 @@ std::size_t subscription_t::unsubscribe(handler_ptr_t handler) {
         }
     }
     if (list.empty()) {
-        map.erase(handler->type_index);
+        map.erase(handler->message_type);
     }
     return map.size();
 }

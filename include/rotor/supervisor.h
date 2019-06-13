@@ -72,8 +72,6 @@ struct supervisor_t : public actor_base_t {
 
     inline supervisor_t *get_parent_supevisor() noexcept { return parent; }
 
-    using subscription_queue_t = std::deque<subscription_request_t>;
-    using unsubscription_queue_t = std::deque<subscription_request_t>;
     using queue_t = std::deque<message_ptr_t>;
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
@@ -103,11 +101,11 @@ struct supervisor_t : public actor_base_t {
 
     template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
         auto &actor = handler->raw_actor_ptr;
-        auto dest = actor->get_address();
+        auto &dest = actor->address;
         if (&addr->supervisor == &supervisor) {
-            send<payload::unsubscription_confirmation_t>(std::move(dest), addr, std::forward<Handler>(handler));
+            send<payload::unsubscription_confirmation_t>(dest, addr, std::forward<Handler>(handler));
         } else {
-            send<payload::external_unsubscription_t>(std::move(dest), addr, std::forward<Handler>(handler));
+            send<payload::external_unsubscription_t>(dest, addr, std::forward<Handler>(handler));
         }
     }
 
