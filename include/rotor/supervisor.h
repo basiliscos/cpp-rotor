@@ -90,18 +90,16 @@ struct supervisor_t : public actor_base_t {
 
     inline void subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) {
         if (&addr->supervisor == &supervisor) {
-            auto &actor_ptr = handler->raw_actor_ptr;
             auto subs_info = subscription_map.try_emplace(addr, *this);
             subs_info.first->second.subscribe(handler);
-            send<payload::subscription_confirmation_t>(actor_ptr->get_address(), addr, handler);
+            send<payload::subscription_confirmation_t>(handler->actor_addr, addr, handler);
         } else {
             send<payload::external_subscription_t>(addr->supervisor.address, addr, handler);
         }
     }
 
     template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
-        auto &actor = handler->raw_actor_ptr;
-        auto &dest = actor->address;
+        auto &dest = handler->actor_addr;
         if (&addr->supervisor == &supervisor) {
             send<payload::unsubscription_confirmation_t>(dest, addr, std::forward<Handler>(handler));
         } else {
