@@ -60,3 +60,7 @@ add_executable(102-asio_ping-pong-2-strands 102-asio_ping-pong-2-strands.cpp)
 target_link_libraries(102-asio_ping-pong-2-strands ${rotor_BOOTS_TEST_LIBS})
 add_test(102-asio_ping-pong-2-strands "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/102-asio_ping-pong-2-strands")
 
+add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
+target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
+add_test(103-asio_ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/103-asio_ping-pong-2-threads")
+

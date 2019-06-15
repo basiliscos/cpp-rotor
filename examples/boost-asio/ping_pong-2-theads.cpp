@@ -59,8 +59,8 @@ struct pinger_t : public r::actor_base_t {
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         std::cout << "pinger::on_start\n";
         r::actor_base_t::on_start(msg);
-        // unsubscribe(&pinger_t::on_ponger_start, ponger_addr);
-        // unsubscribe(&pinger_t::on_state);
+        unsubscribe(&pinger_t::on_ponger_start, ponger_addr);
+        unsubscribe(&pinger_t::on_state);
         start = std::chrono::high_resolution_clock::now();
         do_send_ping();
     }
@@ -163,10 +163,6 @@ int main(int argc, char **argv) {
             boost::conversion::try_lexical_convert(argv[1], count);
         }
 
-        /*
-        asio::executor_work_guard<asio::io_context::executor_type> work1 = asio::make_work_guard(io_ctx1);
-        asio::executor_work_guard<asio::io_context::executor_type> work2 = asio::make_work_guard(io_ctx2);
-        */
 
         auto sys_ctx1 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx1)};
         auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
