@@ -1,6 +1,7 @@
 #include "rotor/supervisor.h"
 #include <assert.h>
 #include <iostream>
+//#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 
@@ -42,7 +43,10 @@ void supervisor_t::do_process() noexcept {
         auto message = outbound.front();
         auto &dest = message->address;
         outbound.pop_front();
-        if (&dest->supervisor == this) { /* subscriptions are handled by me */
+        auto internal = &dest->supervisor == this;
+        // std::cout << "msg [" << (internal ? "i" : "e") << "] :" << boost::core::demangle((const char*)
+        // message->get_type_index()) << "\n";
+        if (internal) { /* subscriptions are handled by me */
             /*
             if (state == state_t::SHUTTED_DOWN)
                 continue;

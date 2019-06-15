@@ -30,6 +30,8 @@ struct system_context_asio_t : public system_context_t {
         }
     }
 
+    inline asio::io_context &get_io_context() noexcept { return io_context; }
+
     system_context_asio_t(const system_context_t &) = delete;
     system_context_asio_t(system_context_t &&) = delete;
 

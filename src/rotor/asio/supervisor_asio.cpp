@@ -34,8 +34,10 @@ void supervisor_asio_t::cancel_shutdown_timer() noexcept {
 
 void supervisor_asio_t::enqueue(message_ptr_t message) noexcept {
     auto actor_ptr = supervisor_ptr_t(this);
+    // std::cout << "deferring on " << this << ", stopped : " << strand.get_io_context().stopped() << "\n";
     asio::defer(strand, [actor = std::move(actor_ptr), message = std::move(message)]() mutable {
         auto &sup = *actor;
+        // std::cout << "deferred processing on" << &sup << "\n";
         // sup.enqueue(std::move(message));
         sup.put(std::move(message));
         sup.do_process();
