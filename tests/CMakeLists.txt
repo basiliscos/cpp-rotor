@@ -5,19 +5,9 @@ add_library(test_lib
     supervisor_test.cpp
     test-main.cpp
 )
-target_link_libraries(test_lib rotor)
+target_link_libraries(test_lib rotor_core)
 
-find_package(
-    Boost
-    COMPONENTS
-        date_time
-        system
-    REQUIRED
-)
-find_package(Threads)
-
-set(rotor_TEST_LIBS rotor test_lib Threads::Threads)
-set(rotor_BOOTS_TEST_LIBS ${rotor_TEST_LIBS} rotor_boost rotor ${Boost_LIBRARIES})
+set(rotor_TEST_LIBS rotor_core test_lib)
 
 add_executable(010-sup-start_stop 010-sup-start_stop.cpp)
 target_link_libraries(010-sup-start_stop ${rotor_TEST_LIBS})
@@ -51,16 +41,27 @@ add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
 add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong-external")
 
-# boost::asio tests
-add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
-target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})
-add_test(101-asio_ping-pong-1-strand "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/101-asio_ping-pong-1-strand")
 
-add_executable(102-asio_ping-pong-2-strands 102-asio_ping-pong-2-strands.cpp)
-target_link_libraries(102-asio_ping-pong-2-strands ${rotor_BOOTS_TEST_LIBS})
-add_test(102-asio_ping-pong-2-strands "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/102-asio_ping-pong-2-strands")
+if (BUILD_BOOST_ASIO)
+    set(rotor_BOOTS_TEST_LIBS test_lib rotor_boost)
 
-add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
-target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
-add_test(103-asio_ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/103-asio_ping-pong-2-threads")
+    # boost::asio tests
+    add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
+    target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})
+    add_test(101-asio_ping-pong-1-strand "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/101-asio_ping-pong-1-strand")
 
+    add_executable(102-asio_ping-pong-2-strands 102-asio_ping-pong-2-strands.cpp)
+    target_link_libraries(102-asio_ping-pong-2-strands ${rotor_BOOTS_TEST_LIBS})
+    add_test(102-asio_ping-pong-2-strands "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/102-asio_ping-pong-2-strands")
+
+    add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
+    target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
+    add_test(103-asio_ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/103-asio_ping-pong-2-threads")
+endif()
+
+
+if (BUILD_WX)
+    add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
+    target_link_libraries(121-wx_ping_ping test_lib rotor_wx)
+    add_test(121-wx_ping_ping "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/121-wx_ping_ping")
+endif()

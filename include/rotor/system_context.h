@@ -13,6 +13,7 @@ struct system_context_t : arc_base_t<system_context_t> {
   public:
     template <typename Supervisor = supervisor_t, typename... Args>
     auto create_supervisor(Args... args) -> intrusive_ptr_t<Supervisor>;
+    inline supervisor_ptr_t get_supervisor() noexcept { return supervisor; }
 
     system_context_t();
 

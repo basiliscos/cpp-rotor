@@ -163,7 +163,6 @@ int main(int argc, char **argv) {
             boost::conversion::try_lexical_convert(argv[1], count);
         }
 
-
         auto sys_ctx1 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx1)};
         auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
         ra::supervisor_config_t conf{pt::milliseconds{500}};

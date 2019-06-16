@@ -1,15 +1,16 @@
 #include "catch.hpp"
 #include "rotor.hpp"
-#include "rotor/asio.hpp"
-#include "supervisor_asio_test.h"
-
+#include "rotor/wx.hpp"
+#include "supervisor_wx_test.h"
+#include <wx/evtloop.h>
+#include <wx/apptrait.h>
 #include <iostream>
 
+IMPLEMENT_APP_NO_MAIN(rotor::test::RotorApp);
+
 namespace r = rotor;
-namespace ra = rotor::asio;
-namespace rt = r::test;
-namespace asio = boost::asio;
-namespace pt = boost::posix_time;
+namespace rx = rotor::wx;
+namespace rt = rotor::test;
 
 struct ping_t{};
 struct pong_t{};
@@ -42,6 +43,8 @@ struct pinger_t : public r::actor_base_t {
   void on_pong(rotor::message_t<pong_t> &) noexcept {
       ++pong_received;
       supervisor.shutdown();
+      auto loop = wxEventLoopBase::GetActive();
+      loop->ScheduleExit();
   }
 };
 
@@ -71,11 +74,18 @@ struct ponger_t : public r::actor_base_t {
 };
 
 
-TEST_CASE("ping/pong ", "[supervisor][asio]") {
-    asio::io_context io_context{1};
-    auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-    ra::supervisor_config_t conf{pt::milliseconds{500}};
-    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
+TEST_CASE("ping/pong ", "[supervisor][wx]") {
+    using app_t = rotor::test::RotorApp;
+    auto app = new app_t();
+
+    app->CallOnInit();
+    wxEventLoopBase *loop = app->GetTraits()->CreateEventLoop();
+    wxEventLoopBase::SetActive(loop);
+    rx::system_context_ptr_t system_context{new rx::system_context_wx_t(app)};
+    wxEvtHandler handler;
+    rx::supervisor_config_t conf{rx::supervisor_config_t::duration_t{1000}, &handler};
+    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(conf);
+    sup->start();
 
     auto pinger = sup->create_actor<pinger_t>();
     auto ponger = sup->create_actor<ponger_t>();
@@ -83,19 +93,21 @@ TEST_CASE("ping/pong ", "[supervisor][asio]") {
     ponger->set_pinger_addr(pinger->get_address());
 
     sup->start();
-    io_context.run();
+    loop->Run();
 
     REQUIRE(pinger->ping_sent == 1);
     REQUIRE(pinger->pong_received == 1);
     REQUIRE(ponger->pong_sent == 1);
     REQUIRE(ponger->ping_received == 1);
 
+    pinger.reset();
+    ponger.reset();
+    REQUIRE(destroyed == 4);
+
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
 
-    pinger.reset();
-    ponger.reset();
-    REQUIRE(destroyed == 4);
+    delete app;
 }

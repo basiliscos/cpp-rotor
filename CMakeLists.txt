@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(ROTOR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+option(BUILD_BOOST_ASIO "Enable building with boost::asio support [default: OFF]" OFF)
+option(BUILD_WX         "Enable building with wxWidgets support   [default: OFF]" OFF)
+option(BUILD_EXAMPLES   "Enable building examples [default: OFF]"           OFF)
+option(BUILD_TESTS      "Enable building tests    [default: OFF]"           OFF)
+
+
 add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/error_code.cpp
@@ -14,31 +20,43 @@ add_library(rotor
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
 )
-
-add_library(rotor_boost
-    src/rotor/asio/supervisor_asio.cpp
-)
-
 target_include_directories(rotor PUBLIC include/)
-target_include_directories(rotor_boost PUBLIC include/)
-target_link_libraries(rotor_boost PUBLIC ${Boost_LIBRARIES})
 
-#add_executable(rotor src/main.cpp)
-#target_include_directories(rotor PUBLIC ${ROTOR_INCLUDE_DIRS})
-#target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
+add_library(rotor_core ALIAS rotor)
 
-#add_executable(rotor-ping_pong src/rotor-ping_pong.cpp)
-#target_include_directories(rotor-ping_pong PUBLIC ${ROTOR_INCLUDE_DIRS})
-#target_link_libraries(rotor-ping_pong PUBLIC ${Boost_LIBRARIES})
+if (BUILD_BOOST_ASIO)
+    find_package(
+        Boost
+        COMPONENTS
+            date_time
+            system
+        REQUIRED
+    )
+    find_package(Threads)
 
-#add_executable(ping_pong_asio src/ping_pong_asio.cpp)
-#target_include_directories(ping_pong_asio PUBLIC ${ROTOR_INCLUDE_DIRS})
-#target_link_libraries(ping_pong_asio PUBLIC ${Boost_LIBRARIES})
+    add_library(rotor_boost
+        src/rotor/asio/supervisor_asio.cpp
+    )
+    target_include_directories(rotor_boost PUBLIC include/)
+    target_link_libraries(rotor_boost PUBLIC rotor ${Boost_LIBRARIES} Threads::Threads)
+endif()
 
-#add_executable(forwarder_sample src/forwarder_sample.cpp)
-#target_include_directories(forwarder_sample PUBLIC ${ROTOR_INCLUDE_DIRS})
-#target_link_libraries(forwarder_sample PUBLIC ${Boost_LIBRARIES})
+if (BUILD_WX)
+    find_package(wxWidgets COMPONENTS base core REQUIRED)
+    include(${wxWidgets_USE_FILE})
+    add_library(rotor_wx
+        src/rotor/wx/supervisor_wx.cpp
+        src/rotor/wx/system_context_wx.cpp
+    )
+    target_include_directories(rotor_wx PUBLIC include/)
+    target_link_libraries(rotor_wx PUBLIC rotor ${wxWidgets_LIBRARIES})
+endif()
 
-add_subdirectory("tests")
+if (BUILD_TESTS)
+    add_subdirectory("tests")
+endif()
 
-add_subdirectory("examples")
+if (BUILD_EXAMPLES)
+    add_subdirectory("examples")
+endif()
+
