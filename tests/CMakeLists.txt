@@ -43,7 +43,7 @@ add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong
 
 
 if (BUILD_BOOST_ASIO)
-    set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_boost)
+    set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_asio)
 
     # boost::asio tests
     add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)

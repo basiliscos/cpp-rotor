@@ -34,11 +34,11 @@ if (BUILD_BOOST_ASIO)
     )
     find_package(Threads)
 
-    add_library(rotor_boost
+    add_library(rotor_asio
         src/rotor/asio/supervisor_asio.cpp
     )
-    target_include_directories(rotor_boost PUBLIC include/)
-    target_link_libraries(rotor_boost PUBLIC rotor ${Boost_LIBRARIES} Threads::Threads)
+    target_include_directories(rotor_asio PUBLIC include/)
+    target_link_libraries(rotor_asio PUBLIC rotor ${Boost_LIBRARIES} Threads::Threads)
 endif()
 
 if (BUILD_WX)
