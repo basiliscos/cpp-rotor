@@ -42,7 +42,7 @@ if (BUILD_BOOST_ASIO)
 endif()
 
 if (BUILD_WX)
-    find_package(wxWidgets COMPONENTS base core REQUIRED)
+    find_package(wxWidgets COMPONENTS base REQUIRED)
     include(${wxWidgets_USE_FILE})
     add_library(rotor_wx
         src/rotor/wx/supervisor_wx.cpp

@@ -1,13 +1,13 @@
 enable_testing()
 
-add_library(test_lib
+add_library(rotor_test_lib
     actor_test.cpp
     supervisor_test.cpp
     test-main.cpp
 )
-target_link_libraries(test_lib rotor_core)
+target_link_libraries(rotor_test_lib rotor_core)
 
-set(rotor_TEST_LIBS rotor_core test_lib)
+set(rotor_TEST_LIBS rotor_core rotor_test_lib)
 
 add_executable(010-sup-start_stop 010-sup-start_stop.cpp)
 target_link_libraries(010-sup-start_stop ${rotor_TEST_LIBS})
@@ -43,7 +43,7 @@ add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong
 
 
 if (BUILD_BOOST_ASIO)
-    set(rotor_BOOTS_TEST_LIBS test_lib rotor_boost)
+    set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_boost)
 
     # boost::asio tests
     add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
@@ -61,7 +61,10 @@ endif()
 
 
 if (BUILD_WX)
+    find_package(wxWidgets COMPONENTS base core REQUIRED)
+    include(${wxWidgets_USE_FILE})
+
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
-    target_link_libraries(121-wx_ping_ping test_lib rotor_wx)
+    target_link_libraries(121-wx_ping_ping rotor_test_lib rotor_wx)
     add_test(121-wx_ping_ping "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/121-wx_ping_ping")
 endif()
