@@ -65,6 +65,6 @@ if (BUILD_WX)
     include(${wxWidgets_USE_FILE})
 
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
-    target_link_libraries(121-wx_ping_ping rotor_test_lib rotor_wx)
+    target_link_libraries(121-wx_ping_ping rotor_test_lib rotor_wx ${wxWidgets_LIBRARIES})
     add_test(121-wx_ping_ping "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/121-wx_ping_ping")
 endif()

@@ -31,6 +31,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     inline address_ptr_t get_address() const noexcept { return address; }
     inline supervisor_t &get_supevisor() const noexcept { return supervisor; }
+    inline state_t &get_state() noexcept { return state; }
     inline subscription_points_t &get_subscription_points() noexcept { return points; }
 
     virtual void confirm_shutdown() noexcept;

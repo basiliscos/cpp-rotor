@@ -30,7 +30,7 @@ struct supervisor_asio_t : public supervisor_t {
     inline asio::io_context::strand &get_strand() noexcept { return strand; }
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        return supervisor_t::create_actor<Actor>(std::forward<Args>(args)...);
+        return make_actor<Actor>(*this, std::forward<Args>(args)...);
     }
 
     template <typename Handler, typename ErrHandler>

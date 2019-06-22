@@ -17,21 +17,26 @@ namespace rotor {
 
 struct supervisor_t;
 
-template <typename Actor, typename IsSupervisor = void> struct actor_ctor_t;
+template <typename Actor, typename Supervisor, typename IsSupervisor = void> struct actor_ctor_t;
 
-template <typename Actor> struct actor_ctor_t<Actor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
+template <typename Actor, typename Supervisor>
+struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
     template <typename... Args>
-    static auto construct(supervisor_t *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
+    static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
         return new Actor{sup, std::forward<Args>(args)...};
     }
 };
 
-template <typename Actor> struct actor_ctor_t<Actor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
+template <typename Actor, typename Supervisor>
+struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
     template <typename... Args>
-    static auto construct(supervisor_t *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
+    static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
         return new Actor{*sup, std::forward<Args>(args)...};
     }
 };
+
+template <typename Actor, typename Supervisor, typename... Args>
+intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
 
 struct supervisor_t : public actor_base_t {
 
@@ -108,13 +113,7 @@ struct supervisor_t : public actor_base_t {
     }
 
     template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        using ctor_t = actor_ctor_t<Actor>;
-        if (state != state_t::INITIALIZED)
-            context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
-        auto actor = ctor_t::construct(this, std::forward<Args>(args)...);
-        actor->do_initialize(context);
-        send<payload::create_actor_t>(address, actor);
-        return actor;
+        return make_actor<Actor>(*this, std::forward<Args>(args)...);
     }
 };
 
@@ -159,6 +158,17 @@ template <typename Handler> void actor_base_t::unsubscribe(Handler &&h) noexcept
 
 template <typename Handler> void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
     supervisor.unsubscribe_actor(addr, wrap_handler(*this, std::move(h)));
+}
+
+template <typename Actor, typename Supervisor, typename... Args>
+intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
+    using ctor_t = actor_ctor_t<Actor, Supervisor>;
+    if (sup.get_state() != state_t::INITIALIZED)
+        sup.context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
+    auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);
+    actor->do_initialize(sup.context);
+    sup.template send<payload::create_actor_t>(sup.get_address(), actor);
+    return actor;
 }
 
 } // namespace rotor
