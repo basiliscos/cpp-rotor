@@ -19,6 +19,10 @@ struct supervisor_wx_t : public supervisor_t {
 
     supervisor_wx_t(supervisor_wx_t *sup, system_context_ptr_t system_context_, const supervisor_config_t &config);
 
+    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
+        return make_actor<Actor>(*this, std::forward<Args>(args)...);
+    }
+
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
