@@ -12,6 +12,7 @@ struct sample_actor_t : public r::actor_base_t {
     std::uint32_t event_init;
     std::uint32_t event_start;
     std::uint32_t event_shutdown;
+    std::uint32_t event_shutingdown;
 
     r::state_t& get_state() noexcept { return  state; }
 
@@ -20,6 +21,7 @@ struct sample_actor_t : public r::actor_base_t {
         event_init = 0;
         event_start = 0;
         event_shutdown = 0;
+        event_shutingdown = 0;
     }
     ~sample_actor_t() override { ++destroyed; }
 
@@ -36,6 +38,7 @@ struct sample_actor_t : public r::actor_base_t {
     void on_shutdown(r::message_t<r::payload::shutdown_request_t> &msg) noexcept override {
         event_shutdown = event_current++;
         r::actor_base_t::on_shutdown(msg);
+        if (state == r::state_t::SHUTTING_DOWN) ++event_shutingdown;
     }
 };
 
@@ -53,11 +56,10 @@ TEST_CASE("actor litetimes", "[actor]") {
     REQUIRE(act->get_state() == r::state_t::OPERATIONAL);
 
     act->do_shutdown();
-    REQUIRE(act->get_state() == r::state_t::SHUTTING_DOWN);
-
     sup->do_process();
     REQUIRE(act->event_current == 4);
     REQUIRE(act->event_shutdown == 3);
+    REQUIRE(act->event_shutingdown == 1);
     REQUIRE(act->event_start == 2);
     REQUIRE(act->event_init == 1);
 

@@ -21,7 +21,6 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
 
 void actor_base_t::do_shutdown() noexcept {
     actor_ptr_t self{this};
-    state = state_t::SHUTTING_DOWN;
     send<payload::shutdown_request_t>(supervisor.get_address(), std::move(self));
 }
 
