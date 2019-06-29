@@ -11,6 +11,12 @@ option(BUILD_WX         "Enable building with wxWidgets support   [default: OFF]
 option(BUILD_EXAMPLES   "Enable building examples [default: OFF]"           OFF)
 option(BUILD_TESTS      "Enable building tests    [default: OFF]"           OFF)
 
+set(ROTOR_BOOST_COMPONENTS)
+if (BUILD_BOOST_ASIO)
+    set(ROTOR_BOOST_COMPONENTS date_time system)
+endif()
+
+find_package(Boost COMPONENTS ${ROTOR_BOOST_COMPONENTS} REQUIRED)
 
 add_library(rotor
     src/rotor/actor_base.cpp
@@ -20,25 +26,18 @@ add_library(rotor
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
 )
-target_include_directories(rotor PUBLIC include/)
+target_include_directories(rotor PUBLIC ${Boost_INCLUDE_DIRS} include/)
+target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
 
 add_library(rotor_core ALIAS rotor)
 
 if (BUILD_BOOST_ASIO)
-    find_package(
-        Boost
-        COMPONENTS
-            date_time
-            system
-        REQUIRED
-    )
     find_package(Threads)
-
     add_library(rotor_asio
         src/rotor/asio/supervisor_asio.cpp
     )
-    target_include_directories(rotor_asio PUBLIC include/)
-    target_link_libraries(rotor_asio PUBLIC rotor ${Boost_LIBRARIES} Threads::Threads)
+    target_include_directories(rotor_asio PUBLIC ${Boost_INCLUDE_DIRS} include/)
+    target_link_libraries(rotor_asio PUBLIC rotor Threads::Threads)
 endif()
 
 if (BUILD_WX)
