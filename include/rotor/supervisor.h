@@ -163,8 +163,10 @@ template <typename Handler> void actor_base_t::unsubscribe(Handler &&h, address_
 template <typename Actor, typename Supervisor, typename... Args>
 intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
     using ctor_t = actor_ctor_t<Actor, Supervisor>;
-    if (sup.get_state() != state_t::INITIALIZED)
+    auto state = sup.get_state();
+    if ((state != state_t::INITIALIZED) && (state != state_t::OPERATIONAL)) {
         sup.context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
+    }
     auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);
     actor->do_initialize(sup.context);
     sup.template send<payload::create_actor_t>(sup.get_address(), actor);
