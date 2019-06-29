@@ -98,14 +98,13 @@ void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) no
 }
 
 void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noexcept {
-    auto &source = msg.payload.actor;
-    if (source.get() == this) {
+    auto &source_addr = msg.payload.actor_address;
+    if (source_addr == address) {
         actor_ptr_t self{this};
         state = state_t::SHUTTING_DOWN;
         for (auto pair : actors_map) {
             auto &addr = pair.first;
-            auto &actor = pair.second;
-            send<payload::shutdown_request_t>(addr, actor);
+            send<payload::shutdown_request_t>(addr, addr);
         }
         if (!actors_map.empty()) {
             start_shutdown_timer();
@@ -114,7 +113,7 @@ void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noex
             unsubscribe_actor(self);
         }
     } else {
-        send<payload::shutdown_request_t>(source->get_address(), source);
+        send<payload::shutdown_request_t>(source_addr, source_addr);
     }
 }
 
@@ -125,9 +124,10 @@ void supervisor_t::on_shutdown_timer_trigger() noexcept {
 
 void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept {
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
-    actor_base_t &actor = *message.payload.actor;
-    if (&actor != this) {
-        remove_actor(actor);
+    auto &source_addr = message.payload.actor_address;
+    if (source_addr != address) {
+        auto &actor = actors_map.at(source_addr);
+        remove_actor(*actor);
     }
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
         actor_ptr_t self{this};
@@ -190,7 +190,6 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
 
 void supervisor_t::confirm_shutdown() noexcept {
     if (parent) {
-        actor_ptr_t self{this};
-        send<payload::shutdown_confirmation_t>(parent->get_address(), self);
+        send<payload::shutdown_confirmation_t>(parent->get_address(), address);
     }
 }

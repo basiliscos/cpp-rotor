@@ -15,7 +15,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
   std::uint32_t shutdown_req_invoked;
   std::uint32_t shutdown_conf_invoked;
   r::address_ptr_t init_addr;
-  r::actor_ptr_t shutdown_actor;
+  r::address_ptr_t shutdown_addr;
 
   sample_sup_t() : r::test::supervisor_test_t{nullptr} {
       initialized = 0;
@@ -50,7 +50,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
 
   virtual void on_shutdown_confirm(r::message_t<r::payload::shutdown_confirmation_t> &msg) noexcept override {
       ++shutdown_conf_invoked;
-      shutdown_actor = msg.payload.actor;
+      shutdown_addr = msg.payload.actor_address;
       sup_base_t::on_shutdown_confirm(msg);
   }
 
@@ -88,7 +88,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
 
     REQUIRE(destroyed == 0);
     delete system_context;
-    sup->shutdown_actor.reset();
+    sup->shutdown_addr.reset();
     sup.reset();
     REQUIRE(destroyed == 1);
 }

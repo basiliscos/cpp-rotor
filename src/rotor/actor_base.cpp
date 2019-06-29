@@ -19,10 +19,7 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
     state = state_t::INITIALIZING;
 }
 
-void actor_base_t::do_shutdown() noexcept {
-    actor_ptr_t self{this};
-    send<payload::shutdown_request_t>(supervisor.get_address(), std::move(self));
-}
+void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_request_t>(supervisor.get_address(), address); }
 
 address_ptr_t actor_base_t::create_address() noexcept { return supervisor.make_address(); }
 
@@ -65,7 +62,7 @@ void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubs
 
 void actor_base_t::confirm_shutdown() noexcept {
     auto destination = supervisor.get_address();
-    send<payload::shutdown_confirmation_t>(destination, this);
+    send<payload::shutdown_confirmation_t>(destination, address);
 }
 
 void actor_base_t::remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {

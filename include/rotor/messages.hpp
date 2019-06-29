@@ -26,10 +26,11 @@ struct create_actor_t {
 };
 
 struct shutdown_request_t {
-    actor_ptr_t actor;
+    address_ptr_t actor_address;
 };
+
 struct shutdown_confirmation_t {
-    actor_ptr_t actor;
+    address_ptr_t actor_address;
 };
 
 struct handler_call_t {
