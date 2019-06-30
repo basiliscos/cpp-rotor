@@ -10,6 +10,7 @@ option(BUILD_BOOST_ASIO "Enable building with boost::asio support [default: OFF]
 option(BUILD_WX         "Enable building with wxWidgets support   [default: OFF]" OFF)
 option(BUILD_EXAMPLES   "Enable building examples [default: OFF]"           OFF)
 option(BUILD_TESTS      "Enable building tests    [default: OFF]"           OFF)
+option(BUILD_DOC        "Enable building documentation [default: OFF]"       OFF)
 
 set(ROTOR_BOOST_COMPONENTS)
 if (BUILD_BOOST_ASIO)
@@ -59,3 +60,20 @@ if (BUILD_EXAMPLES)
     add_subdirectory("examples")
 endif()
 
+if(BUILD_DOC)
+    find_package(Doxygen)
+    if (DOXYGEN_FOUND)
+        if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")
+            set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+            set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+            configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+            add_custom_target( doc_doxygen ALL
+                    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                    COMMENT "Generating API documentation with Doxygen"
+                    VERBATIM )
+            endif()
+    else()
+        message("Doxygen need to be installed to generate the doxygen documentation")
+    endif()
+endif()
