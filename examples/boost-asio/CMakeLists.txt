@@ -1,5 +1,9 @@
 include_directories(${rotor_SOURCE_DIR}/src)
 
+add_executable(hello_asio hello_asio.cpp)
+target_link_libraries(hello_asio rotor_asio)
+add_test(hello_asio "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hello_asio")
+
 add_executable(ping_pong-single-simple ping_pong-single-simple.cpp)
 target_link_libraries(ping_pong-single-simple rotor_asio)
 add_test(ping_pong-single-simple "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong-single-simple")
