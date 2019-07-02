@@ -1,4 +1,4 @@
-#include "rotor/asio.hpp"
+#include "rotor.hpp"
 #include <iostream>
 
 struct hello_actor : public rotor::actor_base_t {

@@ -5,7 +5,7 @@
 [actor-model]: https://en.wikipedia.org/wiki/Actor_model "Actor Model"
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
 
-Rotor is event loop friendly C++ actor micro framework.
+`rotor` is event loop friendly C++ actor micro framework.
 
 That means, that rotor is probably useless without **event loop**, e.g.
 [boost-asio] or [wx-widgets] event loop; as a **framework** rotor imposes
@@ -18,12 +18,17 @@ messages between actors, making high-level messages abstrated from the event loo
 hence `rotor` should provide message passing facilities between actors
 *independenly* from the used event loop(s).
 
-Rotor should be considered **experimental** project, i.e. no stability in
+`rotor` can be used in the applications, where different loop engines are used
+together and it is desirable to write some loop-agnostic logic still having
+message passing interface. The library can be used as lightweight loop abstraction
+with actor-like flavor.
+
+`rotor` should be considered **experimental** project, i.e. no stability in
 API is guaranteed.
 
-Rotor is licenced on *MIT* license.
+`rotor` is licenced on *MIT* license.
 
-Rotor is influenced by [sobjectizer].
+`rotor` is influenced by [sobjectizer].
 
 ## Hello World (loop-less)
 
@@ -31,14 +36,14 @@ This example is very artificial, and probably will never be met in the real-life
 as the supervisor does not uses any event loop:
 
 ~~~{.cpp}
-#include "rotor/asio.hpp"
+#include "rotor.hpp"
 #include <iostream>
 
 struct hello_actor: public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
         std::cout << "hello world\n";
-        do_shutdown();
+        supervisor.do_shutdown();   // optional
     }
 };
 
@@ -73,7 +78,7 @@ struct hello_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
         std::cout << "hello world\n";
-        supervisor.do_shutdown();
+        supervisor.do_shutdown();   // optional
     }
 };
 
@@ -90,3 +95,102 @@ int main() {
     return 0;
 }
 ~~~
+
+It is obvious that the actor code is the same in both cases, however the system environment
+and supervisors are different. In the last example the important property of `rotor` is
+shown : it is **not intrusive** to event loops, i.e. an event loop runs on by itself, not
+introducing additional environment/thread; as the consequence, rotor actor can be seamlessly
+integrated with loops.
+
+The `supervisor.do_shutdown()` just sends message to supervisor to perform shutdown procedure.
+Then, in the code `io_context.run()` loop terminates, as long as *there are no any pending
+event*. `rotor` does not makes run loop endlessly.
+
+## Ping-pong example
+
+The following example demonstrates how to send messages between actors.
+
+~~~{.cpp}
+#include "rotor.hpp"
+#include <iostream>
+
+namespace r = rotor;
+
+struct ping_t{};
+struct pong_t{};
+
+
+struct pinger_t : public r::actor_base_t {
+    using rotor::actor_base_t::actor_base_t;
+
+    void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
+
+    void on_initialize(r::message_t<r::payload::initialize_actor_t>
+                           &msg) noexcept override {
+      r::actor_base_t::on_initialize(msg);
+      subscribe(&pinger_t::on_pong);
+    }
+
+    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        send<ping_t>(ponger_addr);
+    }
+
+    void on_pong(r::message_t<pong_t> &) noexcept {
+        std::cout << "pong\n";
+        supervisor.do_shutdown();   // optional
+    }
+
+    r::address_ptr_t ponger_addr;
+};
+
+struct ponger_t : public r::actor_base_t {
+    using rotor::actor_base_t::actor_base_t;
+    void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
+
+  void on_initialize(r::message_t<r::payload::initialize_actor_t>
+                         &msg) noexcept override {
+    r::actor_base_t::on_initialize(msg);
+    subscribe(&ponger_t::on_ping);
+  }
+
+  void on_ping(r::message_t<ping_t> &) noexcept {
+    std::cout << "ping\n";
+    send<pong_t>(pinger_addr);
+  }
+
+private:
+  r::address_ptr_t pinger_addr;
+};
+
+
+struct dummy_supervisor : public rotor::supervisor_t {
+    void start_shutdown_timer() noexcept override {}
+    void cancel_shutdown_timer() noexcept override {}
+    void start() noexcept override {}
+    void shutdown() noexcept override {}
+    void enqueue(rotor::message_ptr_t) noexcept override {}
+};
+
+int main() {
+    rotor::system_context_t ctx{};
+    auto sup = ctx.create_supervisor<dummy_supervisor>();
+
+    auto pinger = sup->create_actor<pinger_t>();
+    auto ponger = sup->create_actor<ponger_t>();
+    pinger->set_ponger_addr(ponger->get_address());
+    ponger->set_pinger_addr(pinger->get_address());
+
+    sup->do_process();
+    return 0;
+}
+~~~
+
+Without loss of generality the system context/supervisor can be switched to
+any other and the example will still work, because the actors in the sample
+are **loop-agnostic**, as well as the messages.
+
+In the real world scenarios, actors might be not so pure, i.e. they
+will interact with timers and other system events, however the interface for
+sending messages is still the same (i.e. loop-agnostic), which makes it
+quite a convenient way to send messages to actors running on *diffent loops*.
