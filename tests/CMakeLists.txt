@@ -33,6 +33,10 @@ add_executable(015-actor-statuses 015-actor-statuses.cpp)
 target_link_libraries(015-actor-statuses ${rotor_TEST_LIBS})
 add_test(015-actor-statuses "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/015-actor-statuses")
 
+add_executable(016-pub_sub 016-pub_sub.cpp)
+target_link_libraries(016-pub_sub ${rotor_TEST_LIBS})
+add_test(016-pub_sub "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/016-pub_sub")
+
 add_executable(020-two-supervisors 020-two-supervisors.cpp)
 target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})
 add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervisors")
@@ -40,7 +44,6 @@ add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervis
 add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
 add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong-external")
-
 
 if (BUILD_BOOST_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_asio)
