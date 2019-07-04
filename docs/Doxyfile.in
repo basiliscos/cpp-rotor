@@ -816,7 +816,9 @@ WARN_LOGFILE           =
 INPUT                  =  @CMAKE_CURRENT_SOURCE_DIR@/docs/Introduction.md   \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Compilation.md    \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Design.md         \
-                          @CMAKE_CURRENT_SOURCE_DIR@/docs/Rationale.md
+                          @CMAKE_CURRENT_SOURCE_DIR@/docs/Rationale.md      \
+                          @CMAKE_CURRENT_SOURCE_DIR@/docs/Loops.md          \
+                          @CMAKE_CURRENT_SOURCE_DIR@/docs/License.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

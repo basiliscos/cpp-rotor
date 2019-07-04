@@ -26,7 +26,7 @@ with actor-like flavor.
 `rotor` should be considered **experimental** project, i.e. no stability in
 API is guaranteed.
 
-`rotor` is licenced on *MIT* license.
+`rotor` is licensed on *MIT* license.
 
 `rotor` is influenced by [sobjectizer].
 

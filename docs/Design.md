@@ -43,7 +43,8 @@ from some other actor, located on the same supervisor, if needed.
 Unlike supervisors in [Erlang], the [let-it-crash] principle is not acceptable in C++,
 hence it is expected that actors will perform `shutdown` procedure. It is expected
 that an user will inherit `supervisor` class and write application specific reaction
-on an actor shutdown.
+on an actor shutdown. For proper `supervisor` destruction, all extenrally held
+`addresses` should be destroyed.
 
 The `system_context` is runtime environmen for supervisors, which holds `loop` or
 some other context, which should be accessible in thread-safe way. When an fatal
