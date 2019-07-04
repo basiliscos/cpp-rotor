@@ -1,10 +1,9 @@
-# Design
+# Design & Notions
 
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
+[boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
 [Erlang]: https://en.wikipedia.org/wiki/Erlang_(programming_language)
 [let-it-crash]: http://wiki.c2.com/?LetItCrash
-
-## Notions
 
 `address` is runtime entity, served as subscription and delivery point. Any `message` can
 be sent to an address; any `actor` can subscribe on any kind of messages on any address.
@@ -51,6 +50,7 @@ some other context, which should be accessible in thread-safe way. When an fatal
 error is encounted, it is delegated to `system_context`, which by default just prints
 it to `std::cerr` and invokes `std::abort()`.
 
-
-iptr, noexcept
-
+All `rotor` entities above use *intrusive pointer* approach from [boost-smartptr], with
+the thread-safe atomic counters by default. If it is known, that `rotor` actors
+will be used strictly on single thread, then it is possible to use faster non-atomic
+counters.

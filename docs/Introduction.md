@@ -276,24 +276,3 @@ The address in the line `(1)` is arbitrary: the address of pub-actor itself
 as well as the address of the supervisor can be used... even address of different
 supervisor can be used.
 
-# Compiling & building
-
-`rotor` uses `cmake` for building; it supports the following building options
-
-- `BUILD_BOOST_ASIO` - build with [boost-asio] support (`off` by default)
-- `BUILD_WX` build with [wx-widgets] support (`off` by default)
-- `BUILD_EXAMPLES` build examples (`off` by default)
-- `BUILD_TESTS` build tests (`off` by default)
-- `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default)
-- `BUILD_DOC` generate documentation (`off` by default, only in release mode)
-
-~~~
-git clone https://github.com/basiliscos/cpp-rotor rotor
-cd rotor
-mkdir build
-cd build
-cmake --build . --config Release
-cmake -DCMAKE_INSTALL_PREFIX=target -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 15 2017" ../dev
-cmake --build . --config Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on
-~~~
-
