@@ -1,6 +1,8 @@
 # Design
 
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
+[Erlang]: https://en.wikipedia.org/wiki/Erlang_(programming_language)
+[let-it-crash]: http://wiki.c2.com/?LetItCrash
 
 ## Notions
 
@@ -22,7 +24,8 @@ application deadlock).
 
 The messaging in `rotor` resembles IP protocol: it is quite simple (compared to TCP),
 without delivery/delivery order guarantees, no streams, no timers etc., however solid
-foundation should be build on top of `rotor`, adding only *needed guarantees*.
+foundation of distributed actors can be build on top of `rotor`, adding only
+*required guarantees*.
 
 `actor` is runtime entity, with user-defined reaction on incoming messages. An `actor`
 can send messages to other actors, as well as do interaction with with outer world (i.e.
@@ -33,14 +36,21 @@ An `actor` always is executed *in the constext* of some `supervisor`.
 i.e. responsible for spawning/terminating actors, interaction with loop (timeouts),
 and for message dispatching/delivering. All messages sent by spawned actors, are
 put into outbound queue of supervisor. `supervisor` was designed to represent
-sequential execution context, similar to `strand` from [boost-asio], in other
-words all messages are devivered sequentially within the context of an `supervisor`.
+sequential execution context, similar to `strand` from [boost-asio] (in fact has
+`starnd` object for `rotor-boost`); in other words all messages are devivered sequentially
+within the context of an `supervisor`, and it is safe to call one some actor's method
+from some other actor, located on the same supervisor, if needed.
 
-`environment`
+Unlike supervisors in [Erlang], the [let-it-crash] principle is not acceptable in C++,
+hence it is expected that actors will perform `shutdown` procedure. It is expected
+that an user will inherit `supervisor` class and write application specific reaction
+on an actor shutdown.
+
+The `system_context` is runtime environmen for supervisors, which holds `loop` or
+some other context, which should be accessible in thread-safe way. When an fatal
+error is encounted, it is delegated to `system_context`, which by default just prints
+it to `std::cerr` and invokes `std::abort()`.
 
 
 iptr, noexcept
 
-termination
-
-inbound/ outboud queues
