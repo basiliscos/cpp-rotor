@@ -5,7 +5,11 @@
 
 namespace rotor {
 
+#ifdef ROTOR_REFCOUNT_THREADUNSAFE
+using counter_policy_t = boost::thread_unsafe_counter;
+#else
 using counter_policy_t = boost::thread_safe_counter;
+#endif
 
 template <typename T> using arc_base_t = boost::intrusive_ref_counter<T, counter_policy_t>;
 

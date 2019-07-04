@@ -6,11 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(ROTOR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-option(BUILD_BOOST_ASIO "Enable building with boost::asio support [default: OFF]" OFF)
-option(BUILD_WX         "Enable building with wxWidgets support   [default: OFF]" OFF)
-option(BUILD_EXAMPLES   "Enable building examples [default: OFF]"           OFF)
-option(BUILD_TESTS      "Enable building tests    [default: OFF]"           OFF)
-option(BUILD_DOC        "Enable building documentation [default: OFF]"       OFF)
+option(BUILD_BOOST_ASIO    "Enable building with boost::asio support [default: OFF]"    OFF)
+option(BUILD_WX            "Enable building with wxWidgets support   [default: OFF]"    OFF)
+option(BUILD_EXAMPLES      "Enable building examples [default: OFF]"                    OFF)
+option(BUILD_TESTS         "Enable building tests    [default: OFF]"                    OFF)
+option(BUILD_DOC           "Enable building documentation [default: OFF]"               OFF)
+option(BUILD_THREAD_UNSAFE "Enable building thead-unsafe library [default: OFF]"        OFF)
+
 
 set(ROTOR_BOOST_COMPONENTS)
 if (BUILD_BOOST_ASIO)
@@ -29,6 +31,9 @@ add_library(rotor
 )
 target_include_directories(rotor PUBLIC ${Boost_INCLUDE_DIRS} include/)
 target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
+if (BUILD_THREAD_UNSAFE)
+    target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
+endif()
 
 add_library(rotor_core ALIAS rotor)
 

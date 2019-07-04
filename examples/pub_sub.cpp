@@ -3,38 +3,37 @@
 
 namespace r = rotor;
 
-struct payload_t{};
+struct payload_t {};
 
 struct pub_t : public r::actor_base_t {
 
-  using r::actor_base_t::actor_base_t;
+    using r::actor_base_t::actor_base_t;
 
-  void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
+    void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-  void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_start(msg);
-      send<payload_t>(pub_addr);
-  }
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        send<payload_t>(pub_addr);
+    }
 
-  r::address_ptr_t pub_addr;
+    r::address_ptr_t pub_addr;
 };
 
 struct sub_t : public r::actor_base_t {
-  using r::actor_base_t::actor_base_t;
+    using r::actor_base_t::actor_base_t;
 
-  void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
+    void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-  void on_initialize(r::message_t<r::payload::initialize_actor_t>
-                         &msg) noexcept override {
-    r::actor_base_t::on_initialize(msg);
-    subscribe(&sub_t::on_payload, pub_addr);
-  }
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_initialize(msg);
+        subscribe(&sub_t::on_payload, pub_addr);
+    }
 
-  void on_payload(r::message_t<payload_t> &) noexcept {
-       std::cout << "received on " << static_cast<void*>(this) << "\n";
-  }
+    void on_payload(r::message_t<payload_t> &) noexcept {
+        std::cout << "received on " << static_cast<void *>(this) << "\n";
+    }
 
-  r::address_ptr_t pub_addr;
+    r::address_ptr_t pub_addr;
 };
 
 struct dummy_supervisor : public rotor::supervisor_t {
