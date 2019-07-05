@@ -76,4 +76,3 @@ instance is caputred via intrusive pointer to make sure it is alive in the loop 
 invocations.
 
 The shutdown timer as well as some timeout value are loop- or application-specific.
-
