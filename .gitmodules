@@ -1,0 +1,3 @@
+[submodule "doxygen"]
+	path = doxygen
+	url = git@github.com:basiliscos/cpp-rotor-docs.git
