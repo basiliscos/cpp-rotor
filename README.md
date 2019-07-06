@@ -5,3 +5,7 @@
 [![Travis](https://img.shields.io/travis/basiliscos/cpp-rotor.svg)](https://travis-ci.org/basiliscos/cpp-bredis)
 [![license](https://img.shields.io/github/license/basiliscos/cpp-rotor.svg)](https://github.com/basiliscos/cpp-rotor/blob/master/LICENSE)
 
+## features
+
+- minimalistic loop agnostic core
+- MPMC (multiple producers mupltiple consumers) messaging

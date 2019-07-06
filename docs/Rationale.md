@@ -33,7 +33,7 @@ that*.
 As the last point, it should be noted, that [sobjectizer] is not that intrusive as [caf],
 because it supports various [infrastructures][so_5_infra] and because there is an additional
 external module [so_5_extra], which already has [boost-asio] support. Alas, it has different
-licence, not so commerce-friendly as [sobjectizer]. The external loop integration is still
+license, not so commerce-friendly as [sobjectizer]. The external loop integration is still
 [non-trivial task][so_5_loops] compared to `rotor`, and I'm still not sure
 whether is is possible to integrate more than one event loop.
 
