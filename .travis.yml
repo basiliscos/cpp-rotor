@@ -34,7 +34,7 @@ addons:
 script:
     - $CXX --version
     - make
-    - make test
+    - cd tests && ctest .
     - if [ "$CXX" == "g++-8" ]; then whereis gcov-8; fi
     - if [ "$CXX" == "g++-8" ]; then make coverage VERBOSE=1; bash <(curl -s https://codecov.io/bash) -X gcov; fi
 
