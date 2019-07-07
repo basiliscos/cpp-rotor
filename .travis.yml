@@ -35,7 +35,7 @@ addons:
 
 script:
     - $CXX --version
-    - make
+    - make VERBOSE=1
     - cd tests && ctest .
     - if [ "$CXX" == "g++-8" ]; then whereis gcov-8; fi
     - if [ "$CXX" == "g++-8" ]; then lcov --directory . --zerocounters; echo `pwd`; fi
