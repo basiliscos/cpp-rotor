@@ -24,7 +24,7 @@ environment. So, for the frameworks own intrusive runtime was developed.
 be handled by external libraries (loops), while `rotor` responsibiliy is just internal message
 delivery (and a few build-in rules for initialization/termiation of actors etc.). As the result
 `rotor` is quite lightweigth micro-framework; the main infrastructure units of execution (aka
-`supevisors`) are tightly coupled to the concrete event loop. However the last point shouldn't
+`supervisors`) are tightly coupled to the concrete event loop. However the last point shouldn't
 be a big issue, as soon as the `rotor` *messaging interface* does not depend on underlying
 loop. In `rotor` messages can be passed between actors running on different threads or even
 actors running on different event loops, as *soon as underlying supervisors/loops support

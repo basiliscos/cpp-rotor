@@ -46,7 +46,7 @@ void start_shutdown_timer() noexcept;
 void cancel_shutdown_timer() noexcept;
 ~~~
 
-The `enqueue` method is responsible for puting an `message` into `supevisor`
+The `enqueue` method is responsible for puting an `message` into `supervisor`
 inbound queue *probably* in **thread-safe manner** to allow accept messages
 from other supervisors/loops (thread-safety requirement) or just from some
 outer context, when supervisor is still not running on the loop (can be

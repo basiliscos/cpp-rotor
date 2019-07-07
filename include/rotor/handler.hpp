@@ -29,7 +29,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     size_t precalc_hash;
     handler_base_t(actor_base_t *actor, const void *message_type_, const void *handler_type_)
         : raw_actor_ptr{actor}, message_type{message_type_}, handler_type{handler_type_},
-          supervisor(&actor->get_supevisor()), actor_addr{actor->get_address()} {
+          supervisor(&actor->get_supervisor()), actor_addr{actor->get_address()} {
         auto h1 = reinterpret_cast<std::size_t>(raw_actor_ptr);
         auto h2 = reinterpret_cast<std::size_t>(handler_type);
         precalc_hash = h1 ^ (h2 << 1);

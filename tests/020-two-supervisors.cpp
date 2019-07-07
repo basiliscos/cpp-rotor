@@ -11,8 +11,8 @@ TEST_CASE("two supervisors", "[supervisor]") {
     auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>();
     auto sup2 = sup1->create_actor<rt::supervisor_test_t>();
 
-    REQUIRE(&sup2->get_supevisor() == sup2.get());
-    REQUIRE(sup2->get_parent_supevisor() == sup1.get());
+    REQUIRE(&sup2->get_supervisor() == sup2.get());
+    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
 
     sup1->do_start();
     sup1->do_process();

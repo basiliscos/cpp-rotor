@@ -31,24 +31,24 @@ template <typename Actor, typename Handler, typename ErrHandler> struct forwarde
         : typed_actor{&actor_}, handler{std::move(handler_)}, err_handler{std::move(err_handler_)} {}
 
     template <typename... Args> void operator()(const boost::system::error_code &ec, Args... args) noexcept {
-        auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supevisor());
+        auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
         if (ec) {
             asio::defer(strand, [actor = typed_actor, handler = std::move(err_handler), ec = ec]() {
                 ((*actor).*handler)(ec);
-                actor->get_supevisor().do_process();
+                actor->get_supervisor().do_process();
             });
         } else {
             if constexpr (sizeof...(Args) == 0) {
                 asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
                     ((*actor).*handler)();
-                    actor->get_supevisor().do_process();
+                    actor->get_supervisor().do_process();
                 });
             } else {
                 asio::defer(strand,
                             [actor = typed_actor, handler = std::move(handler), args_fwd = curry_arg_t{args...}]() {
                                 args_fwd.call(*actor, std::move(handler));
-                                actor->get_supevisor().do_process();
+                                actor->get_supervisor().do_process();
                             });
             }
         }
@@ -66,18 +66,18 @@ template <typename Actor, typename Handler> struct forwarder_t<Actor, Handler, v
     forwarder_t(Actor &actor_, Handler &&handler_) : typed_actor{&actor_}, handler{std::move(handler_)} {}
 
     template <typename... Args> void operator()(Args... args) noexcept {
-        auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supevisor());
+        auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
 
         if constexpr (sizeof...(Args) == 0) {
             asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
                 ((*actor).*handler)();
-                actor->get_supevisor().do_process();
+                actor->get_supervisor().do_process();
             });
         } else {
             asio::defer(strand, [actor = typed_actor, handler = std::move(handler), args_fwd = curry_arg_t{args...}]() {
                 args_fwd.call(*actor, std::move(handler));
-                actor->get_supevisor().do_process();
+                actor->get_supervisor().do_process();
             });
         }
     }

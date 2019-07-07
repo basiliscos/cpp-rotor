@@ -30,7 +30,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
     inline address_ptr_t get_address() const noexcept { return address; }
-    inline supervisor_t &get_supevisor() const noexcept { return supervisor; }
+    inline supervisor_t &get_supervisor() const noexcept { return supervisor; }
     inline state_t &get_state() noexcept { return state; }
     inline subscription_points_t &get_subscription_points() noexcept { return points; }
 

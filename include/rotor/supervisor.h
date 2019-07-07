@@ -75,7 +75,7 @@ struct supervisor_t : public actor_base_t {
     virtual void shutdown() noexcept = 0;
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
-    inline supervisor_t *get_parent_supevisor() noexcept { return parent; }
+    inline supervisor_t *get_parent_supervisor() noexcept { return parent; }
 
     using queue_t = std::deque<message_ptr_t>;
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;

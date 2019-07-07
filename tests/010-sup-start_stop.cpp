@@ -61,7 +61,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
 
     auto sup = system_context->create_supervisor<sample_sup_t>();
 
-    REQUIRE(&sup->get_supevisor() == sup.get());
+    REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
