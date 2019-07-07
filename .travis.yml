@@ -38,7 +38,7 @@ script:
     - make
     - cd tests && ctest .
     - if [ "$CXX" == "g++-8" ]; then whereis gcov-8; fi
-    - if [ "$CXX" == "g++-8" ]; then lcov --directory . --zerocounters; echo $PWD; fi
+    - if [ "$CXX" == "g++-8" ]; then lcov --directory . --zerocounters; echo `pwd`; fi
     - if [ "$CXX" == "g++-8" ]; then lcov --directory . --capture --output-file coverage.info --gcov-tool gcov-8; fi
     - if [ "$CXX" == "g++-8" ]; then cd tests && lcov --remove coverage.info '/tests/*' '/examples/*'  '/boost_1_70_0/*' '/usr/*' --output-file coverage.info.cleaned; fi
     - if [ "$CXX" == "g++-8" ]; then cd tests && rm coverage.info; fi
