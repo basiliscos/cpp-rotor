@@ -14,7 +14,7 @@ before_script:
     - mkdir build
     - cd build
     - if [ "$CXX" = "clang++" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer" .. ; fi
-    - if [ "$CXX" = "g++-9" ]; then cmake -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage" .. ; fi
+    - if [ "$CXX" = "g++-7" ]; then cmake -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage" .. ; fi
 
 addons:
   apt:
@@ -27,8 +27,8 @@ addons:
     - wx3.0-headers
     - wx-common
     - libwxgtk3.0-dev
-    - gcc-9
-    - g++-9
+    - gcc-7
+    - g++-7
     - clang-6.0
     - libstdc++6
     - lcov
@@ -36,19 +36,18 @@ addons:
 script:
     - $CXX --version
     - make VERBOSE=1
-    - if [ "$CXX" == "g++-9" ]; then whereis gcov-9; fi
-    - if [ "$CXX" == "g++-9" ]; then lcov --directory . --zerocounters; fi
+    - if [ "$CXX" == "g++-7" ]; then whereis gcov-7; fi
+    - if [ "$CXX" == "g++-7" ]; then lcov --directory . --zerocounters; fi
     - cd tests && ctest . && cd ..
     - find .
-    - find . -iname '*.gcda' -delete
-    - if [ "$CXX" == "g++-9" ]; then lcov --directory . --capture --output-file coverage.info --gcov-tool gcov-9 ; fi
-    - if [ "$CXX" == "g++-9" ]; then lcov --remove coverage.info '/tests/*' '/examples/*'  '/boost_1_70_0/*' '/usr/*' --output-file coverage.info.cleaned; fi
-    - if [ "$CXX" == "g++-9" ]; then rm coverage.info; fi
-    - if [ "$CXX" == "g++-9" ]; then genhtml -o coverage coverage.info.cleaned; fi
-    - if [ "$CXX" == "g++-9" ]; then bash <(curl -s https://codecov.io/bash) -X gcov; fi
+    - if [ "$CXX" == "g++-7" ]; then lcov --directory . --capture --output-file coverage.info --gcov-tool gcov-7 ; fi
+    - if [ "$CXX" == "g++-7" ]; then lcov --remove coverage.info '/tests/*' '/examples/*'  '/boost_1_70_0/*' '/usr/*' --output-file coverage.info.cleaned; fi
+    - if [ "$CXX" == "g++-7" ]; then rm coverage.info; fi
+    - if [ "$CXX" == "g++-7" ]; then genhtml -o coverage coverage.info.cleaned; fi
+    - if [ "$CXX" == "g++-7" ]; then bash <(curl -s https://codecov.io/bash) -X gcov; fi
 
 install:
-    - if [ "$CXX" = "g++" ]; then export CXX="g++-9"; export CC="gcc-9"; fi
+    - if [ "$CXX" = "g++" ]; then export CXX="g++-7"; export CC="gcc-7"; fi
     - if [ "$CXX" = "clang++" ]; then export CXX="clang++"; fi
 
 
