@@ -14,7 +14,7 @@ before_script:
     - mkdir build
     - cd build
     - if [ "$CXX" = "clang++" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer" .. ; fi
-    - if [ "$CXX" = "g++-8" ]; then cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage" .. ; fi
+    - if [ "$CXX" = "g++-8" ]; then cmake -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-g -O0 -fprofile-arcs -ftest-coverage" .. ; fi
 
 addons:
   apt:
