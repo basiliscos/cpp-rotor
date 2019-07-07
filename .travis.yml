@@ -37,8 +37,10 @@ script:
     - $CXX --version
     - make VERBOSE=1
     - cd tests && rm -rf CMakeFiles Testing
+    - if [ "$CXX" == "g++-8" ]; then find . ; fi
     - if [ "$CXX" == "g++-8" ]; then whereis gcov-8; fi
     - if [ "$CXX" == "g++-8" ]; then lcov --directory . --zerocounters; fi
+    - if [ "$CXX" == "g++-8" ]; then find . ; fi
     - ctest .
     - if [ "$CXX" == "g++-8" ]; then find . ; fi
     - if [ "$CXX" == "g++-8" ]; then lcov --directory `pwd` --initial --capture --output-file coverage.info --gcov-tool gcov-8 ; fi
