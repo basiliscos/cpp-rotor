@@ -33,12 +33,12 @@ script:
     - $CXX --version
     - make
     - make test
-    - if [ "$CXX" == "g++-5" ]; then whereis gcov-5; fi
-    - if [ "$CXX" == "g++-5" ]; then make coverage VERBOSE=1; bash <(curl -s https://codecov.io/bash) -X gcov; fi
+    - if [ "$CXX" == "g++-8" ]; then whereis gcov-8; fi
+    - if [ "$CXX" == "g++-8" ]; then make coverage VERBOSE=1; bash <(curl -s https://codecov.io/bash) -X gcov; fi
 
 
 install:
-    - if [ "$CXX" = "g++" ]; then export CXX="g++-5"; export CC="gcc-5"; fi
+    - if [ "$CXX" = "g++" ]; then export CXX="g++-8"; export CC="gcc-5"; fi
     - if [ "$CXX" = "clang++" ]; then export CXX="clang++"; fi
 
 
