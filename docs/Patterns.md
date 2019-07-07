@@ -1,11 +1,13 @@
 # Patterns
 
+[sobjectizer]: https://github.com/Stiffstream/sobjectizer
+
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
 the same host), and actors as an opened ports (or as endpoints, i.e. as
 IP-address:port).
 
-## Multiple Producers Multiple Consumers (MPMC)
+## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
 An `message` is delivered to `address`, independently subscriber or subscribers,
 i.e. to one `address` there can subscribed many actors, as well as messages
@@ -251,5 +253,53 @@ the `actor_b` should shutdown itself after certain number of attemps (or after s
 timeout). Within `rotor` all timers are event loop specific, and timeouts are
 application-specific, so, there is no generaral example, just an sketch of the idea.
 
+## Actor overload protection (workload balancing)
 
-## real networking
+[sobjectizer] ships with build-in message box protection, i.e. when inbound
+message queue hits certain threshold an predefined action can be performed:
+an message can be silently dropped (the oldest one or the newest one),
+it can be transformed to some other kind of message, or actor or application
+can be shutted down etc.
+
+In `rotor` there is no "inbound" queue, and the [sobjectizer]'s approach is
+not flexible enough: the overloading not always measured in number of
+unprocessed messages, it can be measured in time for processing single message.
+For example, there is a queue of request to compute Nth-prime number. If the
+N lies within 1000, then queue size of 1000 messages is probably OK; however
+if there is an request to compute 10_000_000-th prime number an actor will
+certainly be overloaded.
+
+There can be at least two approaches, depending how fast the reaction to overload
+should be triggered. In the simplest case, when there is no timeframe guarantee
+for overload reaction, it can be do as the following: an custom `supervisor`
+shoud be written, messages to protected supervisor should be delivered not
+immediately, but with some delay (i.e. `loop->postone([&](supervisor->do_process())`)
+and before message delivery to the actor the queue size (or other criteria for
+overloading condition) should be checked, then overload-action should be performed.
+
+Another approach will be write an front-actor, which will run on dedicated supervisor
+/ thread. The actor will forward requests to protected worker-actor, if the
+worker-actor answers within certain timeframe, or immediately react with overload
+action. This will work, if the request-message, contains reply address, which
+will be remembered and overwritten by front-actor, before forwaring the message
+to worker-actor, and in the reply-message the address might be needed to be
+overwritten too. The strategy can be extended to use several workers, and,
+hence, provide application-specific load balancing.
+
+## Real networking
+
+This is not yet started, however a lot of building blocks for networking are
+already here: the **location transparency**, message passing and reactiveness
+are here. The missing blocks are: service discovery, handshake, and message
+serialization.
+
+The final goal is: the `send<payload>(destination_address, args...)` should
+send the message to some *local* `destination_address`, which is the representative
+of some *remote* peer actor address, where the addresses will be NAT-ed and message
+will be serialized and transferred over the wire to remote host, where it (request)
+will be deserialized, processed and replied back and reverse procedure will
+happen.
+
+Whilst the actual network transmission cannot implemented in a event loop agnostic
+way, *I think* the abovementioned protocol seems quite an loop independent.
+This is the area of further `rotor` research & development.
