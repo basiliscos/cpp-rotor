@@ -1,0 +1,44 @@
+language: cpp
+dist: trusty
+sudo: false
+compiler:
+    - clang
+    - gcc
+os:
+    - linux
+
+before_script:
+    - wget -q -O - https://sourceforge.net/projects/boost/files/boost/1.70.0/boost_1_70_0.tar.gz | tar -xz
+    - cd boost_1_70_0 && ./bootstrap.sh --with-libraries=coroutine,context,chrono,system,thread,regex,filesystem,program_options
+    - ./b2  --ignore-site-config && cd ..
+    - mkdir build
+    - cd build
+    - cmake -DBOOST_ROOT=`pwd`/../boost_1_70_0 ..
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-trusty-6.0
+    - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main'
+      key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+    packages:
+    - gcc-8
+    - g++-8
+    - clang-6.0
+    - libstdc++6
+    - lcov
+
+script:
+    - $CXX --version
+    - make
+    - make test
+    - if [ "$CXX" == "g++-5" ]; then whereis gcov-5; fi
+    - if [ "$CXX" == "g++-5" ]; then make coverage VERBOSE=1; bash <(curl -s https://codecov.io/bash) -X gcov; fi
+
+
+install:
+    - if [ "$CXX" = "g++" ]; then export CXX="g++-5"; export CC="gcc-5"; fi
+    - if [ "$CXX" = "clang++" ]; then export CXX="clang++"; fi
+
+
