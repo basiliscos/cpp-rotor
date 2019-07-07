@@ -26,6 +26,7 @@ addons:
     packages:
     - wx3.0-headers
     - wx-common
+    - libwxgtk3.0-dev
     - gcc-8
     - g++-8
     - clang-6.0
