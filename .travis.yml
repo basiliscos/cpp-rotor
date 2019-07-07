@@ -13,7 +13,9 @@ before_script:
     - ./b2  --ignore-site-config && cd ..
     - mkdir build
     - cd build
-    - cmake -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer" ..
+    - cmake -DBUILD_BOOST_ASIO=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer" ..
+
+# -DBUILD_WX=on
 
 addons:
   apt:
