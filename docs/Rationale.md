@@ -30,6 +30,11 @@ loop. In `rotor` messages can be passed between actors running on different thre
 actors running on different event loops, as *soon as underlying supervisors/loops support
 that*.
 
+Another design feature of `rotor` is it's **testability**: as long as core application
+logic is I/O-pure (and no timeouts), the whole testing scenario is fully deterministic
+and without event loop. Rotor-based applications should have moderate complexity
+test-environment setup.
+
 As the last point, it should be noted, that [sobjectizer] is not that intrusive as [caf],
 because it supports various [infrastructures][so_5_infra] and because there is an additional
 external module [so_5_extra], which already has [boost-asio] support. Alas, it has different
