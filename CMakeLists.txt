@@ -59,24 +59,6 @@ endif()
 
 if (BUILD_TESTS)
     add_subdirectory("tests")
-    if (NOT "$ENV{TRAVIS}" STREQUAL "")
-        set(GCOV_TOOL "gcov-8")
-
-        add_custom_target("coverage"
-            COMMAND "lcov" --directory . --zerocounters
-            COMMAND ctest
-            COMMAND "lcov" --directory . --capture --output-file coverage.info --gcov-tool ${GCOV_TOOL}
-            COMMAND "lcov" --remove coverage.info "'/t/*'" "'/boost_1_70_0/*'" "'/usr/*'" --output-file coverage.info.cleaned
-            COMMAND "rm" coverage.info
-
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
-        )
-        add_custom_target("coverage-report"
-            COMMAND "genhtml" -o coverage coverage.info.cleaned
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
-            DEPENDS "coverage"
-        )
-    endif()
 endif()
 
 if (BUILD_EXAMPLES)
