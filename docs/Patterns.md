@@ -2,8 +2,8 @@
 
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
-the same host), and actors as an opened ports (or as endpoints, i.e. as IPv4
-address + port).
+the same host), and actors as an opened ports (or as endpoints, i.e. as
+IP-address:port).
 
 ## Multiple Producers Multiple Consumers (MPMC)
 
@@ -73,8 +73,8 @@ delivery guaranties; hence, an observer might be subscired *too late*, while the
 messages has already been delivered to original recipient and the observer "misses" the
 message. See the pattern below how to synronize actors.
 
-The distinguish of *foreign and non-foreign* actors or MPMC-address is completely
-**architectural** and application specific, i.e. whether is is known apriory that
+The distinguish of *foreign and non-foreign* actors or MPMC pattern is completely
+**architectural** and application specific, i.e. whether is is known apriori that
 there are multiple subscribers (MPMC) or single subsciber and other subscribes
 are are hidden from the original message flow. There is no difference between them
 at the `rotor` core, i.e.
@@ -105,7 +105,19 @@ namespace r = rotor;
 
 struct payload{};
 
-struct actor_A_t : public r::actor_base_t {
+struct actor_A_t: public r::actor_base_t {
+
+  void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+      r::actor_base_t::on_start(msg);
+      subscribe(&actor_A_t::on_message);
+  }
+
+  void on_message(r::message_t<payload> &msg) noexcept {
+    //processing logic is here
+  }
+};
+
+struct actor_B_t : public r::actor_base_t {
   void set_target_addr(const r::address_ptr_t &addr) { target_addr = addr; }
 
   void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -116,34 +128,128 @@ struct actor_A_t : public r::actor_base_t {
   r::address_ptr_t target_addr;
 };
 
-struct actor_B_t: public r::actor_base_t {
-
-  void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_start(msg);
-      subscribe(&actor_B_t::on_message);
-  }
-
-  void on_message(r::message_t<payload> &msg) noexcept {
-    //processing logic is here
-  }
-};
-
 int main() {
     ...;
     auto supervisor = ...;
-    auto actor_a = sup->create_actor<actor_A_t>();
-    auto actor_b = sup->create_actor<actor_B_t>();
+    auto actor_a = supervisor->create_actor<actor_A_t>();
+    auto actor_b = supervisor->create_actor<actor_B_t>();
 
-    actor_a->set_target_addr(actor_b->get_address());
+    actor_b->set_target_addr(actor_b->get_address());
     supervisor->start();
     ...;
 };
 ~~~
 
 However here is a problem: the message delivery order is not guaranteed, it migth
-happen `actor_a` started be before `actor_b`, and the message with payload will be
+happen `actor_b` started be before `actor_a`, and the message with payload will be
 lost.
+
+The following trick is possible:
+
+~~~{.cpp}
+struct actor_A_t: public r::actor_base_t {
+    // instead of on_start
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+      r::actor_base_t::on_initialize(msg);
+      subscribe(&actor_A_t::on_message);
+    }
+}
+~~~
+
+or even that way:
+
+~~~{.cpp}
+struct actor_A_t: public r::actor_base_t {
+    // instead of on_start / on_initialize
+    void do_initialize(r::system_context_t* ctx) noexcept override {
+        r::actor_base_t::do_initialize(ctx);
+        subscribe(&actor_A_t::on_message);
+    }
+}
+~~~
+
+That tricky way will definitely work under certain circumstances, i.e. when
+actors are created sequentially and they use the same supervisor etc.; however
+in generaral case there will be unavoidable race, and the approach will not
+work when different supervisors / event loops are used, or when some I/O
+is involved in the scheme (i.e. it needed to establish connection before
+subscription). This is not networking mindset neither.
+
+The more robust approach is to start `actor_b` as usual, observe `on_start` event
+from `on_initialize` and poll the `actor_a` status. Then, `actor_b` will either
+first receive the `on_start` event from `actor_a`, which means that `actor_a` is ready,
+or it will receive `r::message_t<r::payload::state_response_t>` and further analysis
+should be checked (i.e. if status is `initialized` or `started` etc.).
+
+Further, if it is desirable to scale this pattern, then `actor_b` should not even start
+unless `actor_a` is started, then `actor_b` should suspend it's `on_initialize`
+message. The following code demonstrates this approach:
+
+~~~{.cpp}
+
+struct actor_A_t: public r::actor_base_t {
+    // we need to be ready to accept messages, when on_start message arrives
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+      r::actor_base_t::on_initialize(msg);
+      subscribe(&actor_A_t::on_message);
+    }
+}
+
+struct actor_B_t : public r::actor_base_t {
+    r::message_t<r::payload::initialize_actor_t> init_message;
+
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        // we are not finished initialization:
+        // r::actor_base_t::on_initialize(msg);
+        init_message = msg;
+        subscribe(&actor_B_t::on_a_state);
+        subscribe(&actor_B_t::on_a_start, target_addr);
+        poll_a_state();
+    }
+
+    void poll_a_state() noexcept {
+        auto& sup_addr   = target_addr->supervisor.get_address();
+        auto reply_addr  = get_address();
+        // ask actor_a supervisor about actor_a state, and deliver reply back to me
+        send<r::payload::state_request_t>(sup_addr, reply_addr, target_addr);
+    }
+
+    void finish_init() noexcept {
+        r::actor_base_t::on_initialize(init_message);
+        init_message.reset();
+        unsubscribe(&actor_B_t::on_a_state);                // optional
+        unsubscribe(&actor_B_t::on_a_start, target_addr);   // optional
+    }
+
+    void on_a_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
+        // initialization is not finished
+        if (init_message) {
+            auto& state = msg.payload.state;
+            if (state == r::state_t::OPERATIONAL) {
+                finish_init();
+            } else {
+                poll_a_state();
+            }
+        }
+    }
+
+    void on_a_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        if (init_message) {
+            finish_init();
+        }
+    }
+}
+~~~
+
+In real life, the things are a little bit more complex, however: `actor_a` might
+*never* start, or it might not start withing the certain timeframe, or actor_a's
+supervisor might not even reply. If nothing will be done, then `actor_b` will stuck
+in inifinte polling, consuming CPU resources. Do handle the cases, in `poll_a_state` method
+the timeout timer should be started and in `finish_init` it should be stopped; the
+re-poll should be performed not immediately, but again after some timeout. Plus,
+the `actor_b` should shutdown itself after certain number of attemps (or after some
+timeout). Within `rotor` all timers are event loop specific, and timeouts are
+application-specific, so, there is no generaral example, just an sketch of the idea.
 
 
 ## real networking
-
