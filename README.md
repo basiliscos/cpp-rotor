@@ -14,7 +14,7 @@
 - various event loops supported (wx, boost-asio) or planned (ev, gtk, etc.)
 - MPMC (multiple producers mupltiple consumers) messaging, aka pub-sub
 - cross-platform (windows, linux)
-- inspired by [The Reactive Manifesto] [reactive] and [sobjectizer]
+- inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
 
 ## license
 
@@ -22,4 +22,4 @@ MIT
 
 ## documentation
 
-Please read tutorial, design principles and manual [here][https://basiliscos.github.io/cpp-rotor-docs/index.html]
+Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
