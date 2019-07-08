@@ -13,10 +13,10 @@ An `message` is delivered to `address`, independently subscriber or subscribers,
 i.e. to one `address` there can subscribed many actors, as well as messages
 can be send from multiple sources to the same `address`.
 
-It should be noted, that an **message delivery order is undefined**, so it is wrong
-assumption that the same message will be delivered simultaneously to different
-subscribers (actors), if they belong to different supervisors/threads. Never
-assume that, nor assume that the message will be delivered with some guaranteed
+It should be noted, that an **message delivery order is source-actor sequenced**,
+so it is wrong assumption that the same message will be delivered simultaneously
+to different subscribers (actors), if they belong to different supervisors/threads.
+Never assume that, nor assume that the message will be delivered with some guaranteed
 timeframe.
 
 Technically in `rotor` it is implemented the following way: `address` is produced
@@ -70,8 +70,9 @@ int main() {
 }
 ~~~
 
-It should noted, that subscription request is regular `rotor` message, i.e. no any order
-delivery guaranties; hence, an observer might be subscired *too late*, while the original
+It should noted, that subscription request is regular `rotor` message, i.e. sequence
+of arrival of messages is undefined as soon as they are generated in different places;
+hence, an observer might be subscired *too late*, while the original
 messages has already been delivered to original recipient and the observer "misses" the
 message. See the pattern below how to synronize actors.
 
@@ -142,9 +143,9 @@ int main() {
 };
 ~~~
 
-However here is a problem: the message delivery order is not guaranteed, it migth
-happen `actor_b` started be before `actor_a`, and the message with payload will be
-lost.
+However here is a problem: the message delivery order is source-actor sequenced,
+it migth happen `actor_b` started be before `actor_a`, and the message with payload
+will be lost.
 
 The following trick is possible:
 
