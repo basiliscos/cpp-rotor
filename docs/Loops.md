@@ -29,10 +29,7 @@ event loop   | support status
 -------------|---------------
 linux        | supported
 windows      | supported
-macos        | unknown (*)
-
-(*) `rotor` should work on macos due to rather minimalistic requirements.
-If you succesfully run `rotor` on macos let me know.
+macos        | supported
 
 ## Adding loop support guide
 
