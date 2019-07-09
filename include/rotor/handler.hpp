@@ -76,8 +76,6 @@ const void *handler_t<Handler>::handler_type = static_cast<const void *>(typeid(
 
 namespace std {
 template <> struct hash<rotor::handler_ptr_t> {
-    size_t operator()(const rotor::handler_ptr_t &handler) const noexcept {
-        return reinterpret_cast<size_t>(handler->precalc_hash);
-    }
+    size_t operator()(const rotor::handler_ptr_t &handler) const noexcept { return handler->precalc_hash; }
 };
 } // namespace std

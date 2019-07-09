@@ -7,7 +7,7 @@ struct hello_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
         std::cout << "hello world\n";
-        supervisor.do_shutdown();   // optional
+        supervisor.do_shutdown(); // optional
     }
 };
 
