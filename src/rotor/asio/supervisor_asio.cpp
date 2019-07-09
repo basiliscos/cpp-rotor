@@ -2,7 +2,6 @@
 #include "rotor/asio/forwarder.hpp"
 
 using namespace rotor::asio;
-using namespace rotor;
 
 supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_,
                                      const supervisor_config_t &config_)
@@ -33,7 +32,7 @@ void supervisor_asio_t::cancel_shutdown_timer() noexcept {
     }
 }
 
-void supervisor_asio_t::enqueue(message_ptr_t message) noexcept {
+void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
     auto actor_ptr = supervisor_ptr_t(this);
     // std::cout << "deferring on " << this << ", stopped : " << strand.get_io_context().stopped() << "\n";
     asio::defer(strand, [actor = std::move(actor_ptr), message = std::move(message)]() mutable {
