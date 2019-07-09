@@ -16,7 +16,7 @@ option(BUILD_THREAD_UNSAFE "Enable building thead-unsafe library [default: OFF]"
 
 set(ROTOR_BOOST_COMPONENTS)
 if (BUILD_BOOST_ASIO)
-    set(ROTOR_BOOST_COMPONENTS date_time system)
+    set(ROTOR_BOOST_COMPONENTS date_time system regex)
 endif()
 
 find_package(Boost COMPONENTS ${ROTOR_BOOST_COMPONENTS} REQUIRED)
