@@ -24,7 +24,7 @@ struct observer_t: public r::actor_base_t {
         subscribe(&observer_t::on_sample_shutdown, observable);
     }
 
-    void on_sample_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept {
+    void on_sample_initialize(r::message_t<r::payload::initialize_actor_t>&) noexcept {
         event += 1;
     }
 

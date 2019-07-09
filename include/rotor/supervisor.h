@@ -123,7 +123,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&... args) -> message_ptr_t {
     return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
-};
+}
 
 template <typename Supervisor, typename... Args>
 auto system_context_t::create_supervisor(Args... args) -> intrusive_ptr_t<Supervisor> {

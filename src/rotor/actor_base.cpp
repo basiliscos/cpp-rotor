@@ -4,7 +4,7 @@
 
 using namespace rotor;
 
-actor_base_t::actor_base_t(supervisor_t &supervisor_) : state{state_t::NEW}, supervisor{supervisor_} {}
+actor_base_t::actor_base_t(supervisor_t &supervisor_) : supervisor{supervisor_}, state{state_t::NEW} {}
 
 actor_base_t::~actor_base_t() {}
 

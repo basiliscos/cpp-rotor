@@ -19,7 +19,7 @@ class error_code_category : public std::error_category {
     virtual std::string message(int c) const override;
 };
 
-}; // namespace detail
+} // namespace detail
 
 const detail::error_code_category &error_code_category();
 

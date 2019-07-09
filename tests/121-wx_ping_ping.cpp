@@ -6,7 +6,7 @@
 #include <wx/apptrait.h>
 #include <iostream>
 
-IMPLEMENT_APP_NO_MAIN(rotor::test::RotorApp);
+IMPLEMENT_APP_NO_MAIN(rotor::test::RotorApp)
 
 namespace r = rotor;
 namespace rx = rotor::wx;
