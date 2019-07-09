@@ -258,9 +258,8 @@ application-specific, so, there is no generaral example, just an sketch of the i
 
 [sobjectizer] ships with build-in message box protection, i.e. when inbound
 message queue hits certain threshold an predefined action can be performed:
-an message can be silently dropped (the oldest one or the newest one),
-it can be transformed to some other kind of message, or actor or application
-can be shutted down etc.
+an message can be silently dropped (the newest one), it can be transformed to
+some other kind of message, or actor or application can be shutted down etc.
 
 In `rotor` there is no "inbound" queue, and the [sobjectizer]'s approach is
 not flexible enough: the overloading not always measured in number of
@@ -276,7 +275,7 @@ for overload reaction, it can be do as the following: an custom `supervisor`
 shoud be written, messages to protected supervisor should be delivered not
 immediately, but with some delay (i.e. `loop->postone([&](supervisor->do_process())`)
 and before message delivery to the actor the queue size (or other criteria for
-overloading condition) should be checked, then overload-action should be performed.
+overloading condition) should be checked, then overload-reaction should be performed.
 
 Another approach will be write an front-actor, which will run on dedicated supervisor
 / thread. The actor will forward requests to protected worker-actor, if the
