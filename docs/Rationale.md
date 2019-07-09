@@ -8,7 +8,6 @@
 [qpcpp]: https://www.state-machine.com/qpcpp/
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/
 
-
 There are few main actor frameworks in C++ world: [sobjectizer], [c++ actor framework][caf]
 and [QP/C++][qpcpp]. There is major a issue with them, as they offer some actor runtime, which
 has own rules for execution, which user have to comply. On the other hand there are a lot of
@@ -39,7 +38,7 @@ test-environment setup.
 
 As the last point, it should be noted, that [sobjectizer] is not that intrusive as [caf],
 because it supports various [infrastructures][so_5_infra] and because there is an additional
-external module [so_5_extra], which already has [boost-asio] support. Alas, it has different
+external module [so_5_extra], which already has [boost-asio] support. Alas... it has different
 license, not so commerce-friendly as [sobjectizer]. The external loop integration is still
 [non-trivial task][so_5_loops] compared to `rotor`, and I'm still not sure
 whether is is possible to integrate more than one event loop.
