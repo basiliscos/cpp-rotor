@@ -12,7 +12,7 @@ struct supervisor_test_t : public supervisor_t {
     virtual void cancel_shutdown_timer() noexcept override;
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
-    virtual void enqueue(message_ptr_t message) noexcept override;
+    virtual void enqueue(rotor::message_ptr_t message) noexcept override;
 
     state_t& get_state() noexcept { return  state; }
     queue_t& get_queue() noexcept { return outbound; }
