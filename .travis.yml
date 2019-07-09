@@ -13,8 +13,8 @@ before_script:
     - ./b2  --ignore-site-config && cd ..
     - mkdir build
     - cd build
-    - if [ "$CXX" = "clang++" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer" .. ; fi
-    - if [ "$CXX" = "g++-7" ]; then cmake -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage" .. ; fi
+    - if [ "$CXX" = "clang++" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer -Wall -Wextra -pedantic -Werror" .. ; fi
+    - if [ "$CXX" = "g++-7" ]; then cmake -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_DOC=on -DBUILD_TESTS=on -DBOOST_ROOT=`pwd`/../boost_1_70_0 -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage -Wall -Wextra -pedantic -Werror" .. ; fi
 
 addons:
   apt:
