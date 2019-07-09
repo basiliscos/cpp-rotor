@@ -1,0 +1,37 @@
+# Operating system (build VM template)
+os: Visual Studio 2017
+
+platform:
+#    x64
+    - Win32
+#configuration: Release
+
+# enable rdp
+#init:
+#  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+environment:
+    BOOST_ROOT: "C:\\Libraries\\boost_1_69_0"
+
+
+before_build:
+    # boost
+    - cmake --version
+    - echo %BOOST_ROOT%
+    - dir "C:\Libraries"
+    - dir "%BOOST_ROOT%"
+    - set PATH=%BOOST_ROOT%\lib64-msvc-14.1;%PATH%
+    - echo %PATH%
+
+build_script:
+  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_builds -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_BOOST_ASIO=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on
+#  -DBOOST_LIBRARYDIR="%BOOST_LIBRARYDIR%"
+  - cmake --build _builds
+
+test_script:
+  - ps: cd "_builds\tests"
+  - ctest -VV -C "%CONFIG%"
+
