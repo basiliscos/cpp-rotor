@@ -2,6 +2,7 @@
 #include "catch.hpp"
 
 using namespace rotor::test;
+using namespace rotor;
 
 supervisor_test_t::supervisor_test_t(supervisor_t *sup): supervisor_t{sup} {
 
@@ -23,6 +24,6 @@ void supervisor_test_t::shutdown() noexcept {
     INFO("supervisor_test_t::shutdown()")
 }
 
-void supervisor_test_t::enqueue(rotor::message_ptr_t message) noexcept {
+void supervisor_test_t::enqueue(message_ptr_t message) noexcept {
     outbound.emplace_back(std::move(message));
 }

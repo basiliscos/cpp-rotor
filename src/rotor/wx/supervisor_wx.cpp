@@ -2,6 +2,7 @@
 #include <wx/timer.h>
 
 using namespace rotor::wx;
+using namespace rotor;
 
 shutdown_timer_t::shutdown_timer_t(supervisor_wx_t &sup_) : sup{sup_} {}
 

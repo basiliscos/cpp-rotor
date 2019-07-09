@@ -2,6 +2,7 @@
 #include "rotor/asio/forwarder.hpp"
 
 using namespace rotor::asio;
+using namespace rotor;
 
 supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_,
                                      const supervisor_config_t &config_)
