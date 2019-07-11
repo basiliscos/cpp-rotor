@@ -12,7 +12,7 @@ enum class error_code_t {
     supervisor_wrong_state,
 };
 
-namespace detail {
+namespace details {
 
 class error_code_category : public std::error_category {
     virtual const char *name() const noexcept override;
@@ -21,7 +21,7 @@ class error_code_category : public std::error_category {
 
 } // namespace detail
 
-const detail::error_code_category &error_code_category();
+const details::error_code_category &error_code_category();
 
 inline std::error_code make_error_code(error_code_t e) { return {static_cast<int>(e), error_code_category()}; }
 

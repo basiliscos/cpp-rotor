@@ -27,7 +27,7 @@ std::string error_code_category::message(int c) const {
 
 namespace rotor {
 
-const static detail::error_code_category category;
-const detail::error_code_category &error_code_category() { return category; }
+const static details::error_code_category category;
+const details::error_code_category &error_code_category() { return category; }
 
 } // namespace rotor
