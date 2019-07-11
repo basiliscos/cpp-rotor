@@ -58,3 +58,41 @@ All `rotor` entities above use *intrusive pointer* approach from [boost-smartptr
 the thread-safe atomic counters by default. If it is known, that `rotor` actors
 will be used strictly on single thread, then it is possible to use faster non-atomic
 counters.
+
+## Actor states
+
+![actor-states](actor-states.png)
+
+(blue - call/messages from an actor to supervisor; yellow - actor state, orange -
+call/messages from supervisor to an actor).
+
+An actor is constructed via a `supervisor` or in some thread-safe context (i.e. when
+`supervisor` is inactive). Then, within the same context the `do_initialize` method
+is invoked; it performs *early initialization*, i.e. subscription to rotor-message
+via the `supervisor`.
+
+Then `supervisor` delivers a message for `on_initialize` method. By default `actor`
+immediately replies to it with `initialize_confirmation` message and moving it's
+state to `INITIALIZED`. Then `supervisor` delivers a message for `on_start` method,
+moving actor's start to `OPERATIONAL`.
+
+The derived class from `actor` is capable to suspend, for example, `intialization`
+message; that will trigger suspension of the `start` message send by supervisor.
+This is useful, when some other `actor` observes initialization of the current actor,
+i.e. the initialization of 2nd actor depends on the initialization of the 1st actor, so
+it is possible to have some kind of initialization chains. The "suspension"
+of message is done via holding `initialization` message and NOT invoking the
+`on_initialize` method of base actor until, according to the logic of the actor,
+initialization is finished.
+
+Actor shutdown is reverse process: `supervisor` sends `shutdown_request` message
+(`on_shutdown`), the actor changes it's state to `SHUTTING_DOWN`, and initiates
+unsubscription for all subscriptions. The `supervisor` sends back
+`unsubscription_confirmation_t` to the actor; when there are no more subscriptions
+actor changes state to `SHUTTED_DOWN` and sends the confirmation to the supervisor
+address.
+
+The approach makes it possible for external actors observe when observable
+actor changes state (`INITIALIZED`, `OPERATIONAL`, `SHUTTING_DOWN`, `SHUTTED_DOWN`)
+and react appropriately.
+
