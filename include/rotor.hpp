@@ -6,6 +6,10 @@
 // Distributed under the MIT Software License
 //
 
+/** \file rotor.hpp
+ * A convenience header to include rotor core.
+ */
+
 #include "rotor/actor_base.h"
 #include "rotor/address.hpp"
 #include "rotor/message.h"

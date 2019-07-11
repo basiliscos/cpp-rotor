@@ -6,6 +6,10 @@
 // Distributed under the MIT Software License
 //
 
+/** \file asio.hpp
+ * A convenience header to include rotor support for boost::asio
+ */
+
 #include "rotor/asio/forwarder.hpp"
 #include "rotor/asio/supervisor_asio.h"
 #include "rotor/asio/supervisor_config.h"
