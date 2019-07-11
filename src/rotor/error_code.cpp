@@ -1,7 +1,13 @@
+//
+// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+//
+// Distributed under the MIT Software License
+//
+
 #include "rotor/error_code.h"
 
 namespace rotor {
-namespace detail {
+namespace details {
 
 const char *error_code_category::name() const noexcept { return "rotor_error"; }
 
@@ -22,7 +28,7 @@ std::string error_code_category::message(int c) const {
     }
 }
 
-} // namespace detail
+} // namespace details
 } // namespace rotor
 
 namespace rotor {

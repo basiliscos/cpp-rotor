@@ -1,4 +1,11 @@
 #pragma once
+
+//
+// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+//
+// Distributed under the MIT Software License
+//
+
 #include <string>
 #include <system_error>
 
@@ -19,7 +26,7 @@ class error_code_category : public std::error_category {
     virtual std::string message(int c) const override;
 };
 
-} // namespace detail
+} // namespace details
 
 const details::error_code_category &error_code_category();
 
