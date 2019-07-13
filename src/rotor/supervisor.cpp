@@ -143,13 +143,13 @@ void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_
 
 void supervisor_t::on_external_subs(message_t<payload::external_subscription_t> &message) noexcept {
     auto &handler = message.payload.handler;
-    auto &addr = message.payload.addr;
+    auto &addr = message.payload.target_address;
     assert(&addr->supervisor == this);
     subscribe_actor(addr, handler);
 }
 
 void supervisor_t::on_commit_unsubscription(message_t<payload::commit_unsubscription_t> &message) noexcept {
-    commit_unsubscription(message.payload.addr, message.payload.handler);
+    commit_unsubscription(message.payload.target_address, message.payload.handler);
 }
 
 void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept {

@@ -44,11 +44,11 @@ void actor_base_t::on_shutdown(message_t<payload::shutdown_request_t> &) noexcep
 }
 
 void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
-    points.push_back(subscription_request_t{msg.payload.handler, msg.payload.addr});
+    points.push_back(subscription_request_t{msg.payload.handler, msg.payload.target_address});
 }
 
 void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmation_t> &msg) noexcept {
-    auto &addr = msg.payload.addr;
+    auto &addr = msg.payload.target_address;
     auto &handler = msg.payload.handler;
     remove_subscription(addr, handler);
     supervisor.commit_unsubscription(addr, handler);
@@ -59,7 +59,7 @@ void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmat
 }
 
 void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubscription_t> &msg) noexcept {
-    auto &addr = msg.payload.addr;
+    auto &addr = msg.payload.target_address;
     auto &handler = msg.payload.handler;
     remove_subscription(addr, msg.payload.handler);
     auto &sup_addr = addr->supervisor.address;

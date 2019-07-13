@@ -24,7 +24,8 @@ struct supervisor_t;
  * for initial delivery of messages on the address. Address lifetime *should*
  * be no longer then corresponding supervisor lifetime.
  *
- * Addresses are non-copyable and non-moveable.
+ * Addresses are non-copyable and non-moveable. The constructor is private
+ * and it is intended to be created by supervisor only.
  *
  */
 
