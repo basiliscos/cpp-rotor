@@ -47,7 +47,11 @@ using address_ptr_t = intrusive_ptr_t<address_t>;
 } // namespace rotor
 
 namespace std {
+/** \struct hash<rotor::address_ptr_t>
+ *  \brief Hash calculator for address
+ */
 template <> struct hash<rotor::address_ptr_t> {
+    /** \brief Calculates hash for the address */
     inline size_t operator()(const rotor::address_ptr_t &address) const noexcept {
         return reinterpret_cast<size_t>(address.get());
     }
