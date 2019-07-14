@@ -87,6 +87,10 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
 
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
+/** \struct handler_t
+ *  \brief the generic handler meant to hold user-specific pointer-to-member function
+ *  \tparam Handler pointer-to-member function type
+ */
 template <typename Handler> struct handler_t : public handler_base_t {
     /** \brief static pointer to unique pointer-to-member function ( `typeid(Handler).name()` ) */
     static const void *handler_type;
@@ -94,11 +98,12 @@ template <typename Handler> struct handler_t : public handler_base_t {
     /** \brief pointer-to-member function instance */
     Handler handler;
 
+    /** \brief constructs handler from actor & pointer-to-member function  */
     handler_t(actor_base_t &actor, Handler &&handler_)
         : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
-        if (message->get_type_index() == final_message_t::message_type) {
+        if (message->type_index == final_message_t::message_type) {
             auto final_message = static_cast<final_message_t *>(message.get());
             auto &final_obj = static_cast<final_actor_t &>(*actor_ptr);
             (final_obj.*handler)(*final_message);
@@ -119,7 +124,12 @@ const void *handler_t<Handler>::handler_type = static_cast<const void *>(typeid(
 } // namespace rotor
 
 namespace std {
+/** \struct hash<rotor::handler_ptr_t>
+ *  \brief Hash calculator for handler
+ */
 template <> struct hash<rotor::handler_ptr_t> {
+
+    /** \brief Returns the precalculated hash for the hanlder */
     size_t operator()(const rotor::handler_ptr_t &handler) const noexcept { return handler->precalc_hash; }
 };
 } // namespace std

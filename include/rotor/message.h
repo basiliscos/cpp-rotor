@@ -26,19 +26,19 @@ struct message_base_t : public arc_base_t<message_base_t> {
     virtual ~message_base_t();
 
     /**
-     * \brief returns unique message type pointer.
+     * \brief unique message type pointer.
      *
      * The unique message type pointer is used to runtime check message type
      *  match when the message is delivered to subscribers.
      *
      */
-    virtual const void *get_type_index() const noexcept = 0;
-
-    /** \brief constructor which takes destination address */
-    message_base_t(const address_ptr_t &addr) : address{addr} {}
+    const void *type_index;
 
     /** \brief message destination address */
     address_ptr_t address;
+
+    /** \brief constructor which takes destination address */
+    message_base_t(const void *type_index_, const address_ptr_t &addr) : type_index{type_index_}, address{addr} {}
 };
 
 inline message_base_t::~message_base_t() {}
@@ -50,9 +50,8 @@ inline message_base_t::~message_base_t() {}
 template <typename T> struct message_t : public message_base_t {
     /** \brief forwards `args` for payload construction */
     template <typename... Args>
-    message_t(const address_ptr_t &addr, Args... args) : message_base_t{addr}, payload{std::forward<Args>(args)...} {}
-
-    virtual const void *get_type_index() const noexcept { return message_type; }
+    message_t(const address_ptr_t &addr, Args... args)
+        : message_base_t{message_type, addr}, payload{std::forward<Args>(args)...} {}
 
     /** \brief user-defined payload */
     T payload;

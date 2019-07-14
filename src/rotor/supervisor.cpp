@@ -60,7 +60,7 @@ void supervisor_t::do_process() noexcept {
             auto it_subscriptions = subscription_map.find(dest);
             if (it_subscriptions != subscription_map.end()) {
                 auto &subscription = it_subscriptions->second;
-                auto recipients = subscription.get_recipients(message->get_type_index());
+                auto recipients = subscription.get_recipients(message->type_index);
                 if (recipients) {
                     for (auto &it : *recipients) {
                         if (it.mine) {
