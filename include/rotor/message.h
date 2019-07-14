@@ -26,12 +26,12 @@ struct message_base_t : public arc_base_t<message_base_t> {
     virtual ~message_base_t();
 
     /**
-    * \brief returns unique message type pointer.
-    *
-    * The unique message type pointer is used to runtime check message type
-    *  match when the message is delivered to subscribers.
-    *
-    */
+     * \brief returns unique message type pointer.
+     *
+     * The unique message type pointer is used to runtime check message type
+     *  match when the message is delivered to subscribers.
+     *
+     */
     virtual const void *get_type_index() const noexcept = 0;
 
     /** \brief constructor which takes destination address */

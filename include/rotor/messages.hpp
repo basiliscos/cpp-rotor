@@ -108,7 +108,7 @@ struct shutdown_confirmation_t {
  *
  */
 struct handler_call_t {
-   /** \brief The original message (intrusive pointer) sent to an address */
+    /** \brief The original message (intrusive pointer) sent to an address */
     message_ptr_t orig_message;
 
     /** \brief The handler (intrusive pointer) on some external supervisor,
@@ -163,7 +163,6 @@ struct external_unsubscription_t {
     /** \brief The handler (intrusive pointer) for processing message */
     handler_ptr_t handler;
 };
-
 
 /** \struct commit_unsubscription_t
  *  \brief Message with this payload is sent to the target address supervisor

@@ -66,7 +66,7 @@ void supervisor_t::do_process() noexcept {
                         if (it.mine) {
                             it.handler->call(message);
                         } else {
-                            auto &sup = it.handler->supervisor;
+                            auto sup = it.handler->raw_supervisor_ptr;
                             auto wrapped_message =
                                 make_message<payload::handler_call_t>(sup->address, message, it.handler);
                             sup->enqueue(std::move(wrapped_message));

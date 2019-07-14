@@ -12,7 +12,7 @@ using namespace rotor;
 subscription_t::subscription_t(supervisor_t &sup) : supervisor{sup} {}
 
 void subscription_t::subscribe(handler_ptr_t handler) {
-    bool mine = handler->supervisor.get() == &supervisor;
+    bool mine = handler->raw_supervisor_ptr == &supervisor;
     map[handler->message_type].emplace_back(classified_handlers_t{std::move(handler), mine});
 }
 

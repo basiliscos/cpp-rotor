@@ -25,7 +25,7 @@ struct subscription_t {
     /** \struct classified_handlers_t
      *  \brief Holds @{link handler_base_t} and flag wheher it belongs to the
      * source supervisor
-      */
+     */
     struct classified_handlers_t {
         /** \brief intrusive pointer to the handler */
         handler_ptr_t handler;

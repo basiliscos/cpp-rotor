@@ -47,13 +47,14 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief pointer to unique handler type ( `typeid(Handler).name()` ) */
     const void *handler_type;
 
-    /** \brief intrusive poiter to {@link supervisor_t} which owns the
-     * actor of the handler
-     */
-    supervisor_ptr_t supervisor;
+    /** \brief intrusive poiter to {@link actor_base_t} the actor of the handler */
+    actor_ptr_t actor_ptr;
 
-    /** \brief intrusive poiter to {@link address_t} of the actor of the handler */
-    address_ptr_t actor_addr;
+    /** \brief non-owning raw poiter to acto r*/
+    const void *raw_actor_ptr;
+
+    /** \brief non-owning raw poiter to acto r*/
+    supervisor_t *raw_supervisor_ptr;
 
     /** \brief precalculated hash for the handler */
     size_t precalc_hash;
@@ -61,17 +62,17 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief constructs `handler_base_t` from raw pointer to actor, raw
      * pointer to message type and raw pointer to handler type
      */
-    handler_base_t(actor_base_t *actor, const void *message_type_, const void *handler_type_)
-        : message_type{message_type_}, handler_type{handler_type_},
-          supervisor(&actor->get_supervisor()), actor_addr{actor->get_address()} {
+    handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_)
+        : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor}, raw_actor_ptr{&actor},
+          raw_supervisor_ptr{&actor.get_supervisor()} {
         auto h1 = reinterpret_cast<std::size_t>(handler_type);
-        auto h2 = reinterpret_cast<std::size_t>(actor_addr.get());
+        auto h2 = reinterpret_cast<std::size_t>(&actor);
         precalc_hash = h1 ^ (h2 << 1);
     }
 
     /** \brief compare two handler for equality */
     inline bool operator==(const handler_base_t &rhs) const noexcept {
-        return handler_type == rhs.handler_type && actor_addr == rhs.actor_addr;
+        return handler_type == rhs.handler_type && raw_actor_ptr == rhs.raw_actor_ptr;
     }
 
     /** \brief attempt to delivery message to he handler
@@ -87,14 +88,14 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 template <typename Handler> struct handler_t : public handler_base_t {
+    /** \brief static pointer to unique pointer-to-member function ( `typeid(Handler).name()` ) */
     static const void *handler_type;
+
+    /** \brief pointer-to-member function instance */
     Handler handler;
-    actor_ptr_t actor_ptr;
 
     handler_t(actor_base_t &actor, Handler &&handler_)
-        : handler_base_t{&actor, final_message_t::message_type, handler_type}, handler{handler_} {
-        actor_ptr.reset(&actor);
-    }
+        : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->get_type_index() == final_message_t::message_type) {
@@ -103,7 +104,8 @@ template <typename Handler> struct handler_t : public handler_base_t {
             (final_obj.*handler)(*final_message);
         }
     }
-private:
+
+  private:
     using traits = handler_traits<Handler>;
     using final_message_t = typename traits::message_t;
     using final_actor_t = typename traits::actor_t;
