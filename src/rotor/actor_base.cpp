@@ -44,7 +44,7 @@ void actor_base_t::on_shutdown(message_t<payload::shutdown_request_t> &) noexcep
 }
 
 void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
-    points.push_back(subscription_request_t{msg.payload.handler, msg.payload.target_address});
+    points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
 }
 
 void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmation_t> &msg) noexcept {
