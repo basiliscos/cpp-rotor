@@ -35,7 +35,7 @@ struct supervisor_wx_t : public supervisor_t {
     virtual void start_shutdown_timer() noexcept override;
     virtual void cancel_shutdown_timer() noexcept override;
 
-    inline system_context_wx_t &get_context() noexcept { return static_cast<system_context_wx_t &>(*context); }
+    inline system_context_wx_t *get_context() noexcept { return static_cast<system_context_wx_t *>(context); }
 
   private:
     supervisor_config_t config;

@@ -80,10 +80,8 @@ void supervisor_t::do_process() noexcept {
     }
 }
 
-size_t supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
+void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
     auto &points = actor->get_subscription_points();
-    auto count = points.size();
-    /* TODO: unsubscribe backwards */
     auto it = points.rbegin();
     while (it != points.rend()) {
         auto &addr = it->address;
@@ -91,7 +89,6 @@ size_t supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
         unsubscribe_actor(addr, handler);
         ++it;
     }
-    return count;
 }
 
 void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept {
