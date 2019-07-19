@@ -17,6 +17,8 @@ namespace rotor {
 struct supervisor_t;
 struct system_context_t;
 struct handler_base_t;
+
+/** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 /** \struct actor_base_t
@@ -186,6 +188,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     subscription_points_t points;
 };
 
+/** \brief intrusive pointer for actor*/
 using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
 
 } // namespace rotor

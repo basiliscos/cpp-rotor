@@ -15,3 +15,6 @@
 #include "rotor/message.h"
 #include "rotor/supervisor.h"
 #include "rotor/system_context.h"
+
+/// Basic namespace for all rotor functionalities
+namespace rotor {}

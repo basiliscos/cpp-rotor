@@ -18,6 +18,8 @@ namespace rotor {
 
 struct actor_base_t;
 struct supervisor_t;
+
+/** \brief intrusive pointer for supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /** \struct handler_traits

@@ -13,3 +13,10 @@
 #include "rotor/wx/supervisor_config.h"
 #include "rotor/wx/supervisor_wx.h"
 #include "rotor/wx/system_context_wx.h"
+
+namespace rotor {
+
+/// namespace for wxWidgets adapters for `rotor`
+namespace wx {}
+
+} // namespace rotor

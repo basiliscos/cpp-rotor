@@ -8,6 +8,7 @@
 
 namespace rotor {
 
+/** \brief state of actor in `rotor` */
 enum class state_t {
     UNKNOWN,
     NEW,

@@ -14,3 +14,10 @@
 #include "rotor/asio/supervisor_asio.h"
 #include "rotor/asio/supervisor_config.h"
 #include "rotor/asio/system_context_asio.h"
+
+namespace rotor {
+
+/// namespace for boost::asio adapters for `rotor`
+namespace asio {}
+
+} // namespace rotor

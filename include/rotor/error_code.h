@@ -11,6 +11,7 @@
 
 namespace rotor {
 
+/** \brief fatal error codes in rotor */
 enum class error_code_t {
     success = 0,
     shutdown_timeout,
@@ -21,6 +22,7 @@ enum class error_code_t {
 
 namespace details {
 
+/** \brief category support for `rotor` error codes */
 class error_code_category : public std::error_category {
     virtual const char *name() const noexcept override;
     virtual std::string message(int c) const override;
@@ -28,8 +30,10 @@ class error_code_category : public std::error_category {
 
 } // namespace details
 
+/** \brief returns error code category for `rotor` error codes */
 const details::error_code_category &error_code_category();
 
+/** \brief makes `std::error_code` from rotor error_code enumerations */
 inline std::error_code make_error_code(error_code_t e) { return {static_cast<int>(e), error_code_category()}; }
 
 } // namespace rotor

@@ -49,6 +49,7 @@ struct system_context_t : arc_base_t<system_context_t> {
     supervisor_ptr_t supervisor;
 };
 
+/** \brief intrusive pointer for system context */
 using system_context_ptr_t = intrusive_ptr_t<system_context_t>;
 
 } // namespace rotor

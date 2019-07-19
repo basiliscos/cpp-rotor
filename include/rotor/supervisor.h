@@ -23,6 +23,7 @@ namespace rotor {
 
 struct supervisor_t;
 
+/** \brief constucts actor on the supervisor */
 template <typename Actor, typename Supervisor, typename... Args>
 intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
 
@@ -275,6 +276,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /* third-party classes implementations */
 
+/** \brief constucts message by constructing it's payload; intrusive pointer for the message is returned */
 template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&... args) -> message_ptr_t {
     return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
 }
@@ -292,6 +294,7 @@ template <typename M, typename... Args> void actor_base_t::send(const address_pt
     supervisor.put(make_message<M>(addr, std::forward<Args>(args)...));
 }
 
+/** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
 template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Handler &&handler) {
     using final_handler_t = handler_t<Handler>;
     auto handler_raw = new final_handler_t(actor, std::move(handler));
@@ -318,6 +321,7 @@ namespace details {
 
 template <typename Actor, typename Supervisor, typename IsSupervisor = void> struct actor_ctor_t;
 
+/** \brief constructs new actor (derived from supervisor), SFINAE-class */
 template <typename Actor, typename Supervisor>
 struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
     template <typename... Args>
@@ -327,6 +331,7 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<superv
     }
 };
 
+/** \brief constructs new actor (not derived from supervisor), SFINAE-class */
 template <typename Actor, typename Supervisor>
 struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
     template <typename... Args>

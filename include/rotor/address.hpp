@@ -42,6 +42,7 @@ struct address_t : public arc_base_t<address_t> {
     inline bool operator==(const address_t &other) const { return this == &other; }
 };
 
+/** \brief intrusive pointer for address */
 using address_ptr_t = intrusive_ptr_t<address_t>;
 
 } // namespace rotor
