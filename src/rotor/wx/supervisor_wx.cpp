@@ -14,7 +14,7 @@ shutdown_timer_t::shutdown_timer_t(supervisor_wx_t &sup_) : sup{sup_} {}
 
 void shutdown_timer_t::Notify() noexcept { sup.on_shutdown_timer_trigger(); }
 
-supervisor_wx_t::supervisor_wx_t(supervisor_wx_t *sup, system_context_ptr_t, const supervisor_config_t &config_)
+supervisor_wx_t::supervisor_wx_t(supervisor_wx_t *sup, const supervisor_config_t &config_)
     : supervisor_t{sup}, config{config_}, shutdown_timer(*this) {}
 
 void supervisor_wx_t::start() noexcept {
