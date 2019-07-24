@@ -26,3 +26,9 @@ MIT
 ## documentation
 
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
+
+## Changelog
+
+### 0.01 (24-Jul-2019)
+
+Initial version
