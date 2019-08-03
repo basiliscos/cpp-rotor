@@ -24,7 +24,21 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
     queue_t& get_inbound_queue() noexcept { return inbound; }
     subscription_points_t& get_points() noexcept { return points; }
     subscription_map_t& get_subscription() noexcept { return subscription_map; }
+
+    void on_shutdown_timer_trigger() noexcept override {
+        re::supervisor_ev_t::on_shutdown_timer_trigger();
+        ev_break(get_loop());
+    }
+
 };
+
+struct system_context_ev_test_t : public re::system_context_ev_t {
+    std::error_code code;
+    void on_error(const std::error_code &ec) noexcept override {
+        code = ec;
+    }
+};
+
 
 struct ping_t{};
 struct pong_t{};
@@ -83,6 +97,18 @@ struct ponger_t : public r::actor_base_t {
   }
 };
 
+struct bad_actor_t : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override {
+        supervisor.do_shutdown();
+    }
+
+    virtual void confirm_shutdown() noexcept override {
+        // suppress sending shutdown confirmation to trigger shutdown timeout
+        // r::actor_base_t::confirm_shutdown();
+    }
+};
 
 TEST_CASE("ping/pong", "[supervisor][ev]") {
     auto* loop = ev_loop_new(0);
@@ -119,14 +145,6 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     REQUIRE(destroyed == 1 + 2 + 4);
 }
 
-
-struct system_context_ev_test_t : public re::system_context_ev_t {
-    std::error_code code;
-    void on_error(const std::error_code &ec) noexcept override {
-        code = ec;
-    }
-};
-
 TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
     auto* loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
@@ -147,3 +165,24 @@ TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
     system_context.reset();
 }
 
+TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
+    auto* loop = ev_loop_new(0);
+    auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
+    auto conf = re::supervisor_config_t{loop, true, 0.1};
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+
+    sup->start();
+    auto actor = sup->create_actor<bad_actor_t>();
+    ev_run(loop);
+
+    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::shutdown_timeout));
+
+    actor.reset();
+    sup->get_inbound_queue().clear();
+    sup->get_points().clear();
+    sup->get_queue().clear();
+    sup->get_subscription().clear();
+
+    sup.reset();
+    system_context.reset();
+};
