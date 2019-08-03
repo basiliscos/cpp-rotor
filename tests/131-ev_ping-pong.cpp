@@ -116,8 +116,6 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     auto conf = re::supervisor_config_t{loop, true, 1.0};
     auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
 
-    sup->start();
-
     auto pinger = sup->create_actor<pinger_t>();
     auto ponger = sup->create_actor<ponger_t>();
     pinger->set_ponger_addr(ponger->get_address());
