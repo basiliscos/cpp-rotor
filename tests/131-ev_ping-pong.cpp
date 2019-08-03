@@ -11,12 +11,23 @@
 
 namespace r = rotor;
 namespace re = rotor::ev;
-//namespace rt = rotor::test;
+
+static std::uint32_t destroyed = 0;
+
+struct supervisor_ev_test_t : public re::supervisor_ev_t {
+    using re::supervisor_ev_t::supervisor_ev_t;
+
+    ~supervisor_ev_test_t() { destroyed += 4; }
+
+    r::state_t& get_state() noexcept { return state; }
+    queue_t& get_queue() noexcept { return outbound; }
+    queue_t& get_inbound_queue() noexcept { return inbound; }
+    subscription_points_t& get_points() noexcept { return points; }
+    subscription_map_t& get_subscription() noexcept { return subscription_map; }
+};
 
 struct ping_t{};
 struct pong_t{};
-
-static std::uint32_t destroyed = 0;
 
 struct pinger_t : public r::actor_base_t {
     std::uint32_t ping_sent;
@@ -72,18 +83,6 @@ struct ponger_t : public r::actor_base_t {
   }
 };
 
-struct supervisor_ev_test_t : public re::supervisor_ev_t {
-    using re::supervisor_ev_t::supervisor_ev_t;
-
-    ~supervisor_ev_test_t() { destroyed += 4; }
-
-    r::state_t& get_state() noexcept { return state; }
-    queue_t& get_queue() noexcept { return outbound; }
-    queue_t& get_inbound_queue() noexcept { return inbound; }
-    subscription_points_t& get_points() noexcept { return points; }
-    subscription_map_t& get_subscription() noexcept { return subscription_map; }
-};
-
 
 TEST_CASE("ping/pong", "[supervisor][ev]") {
     auto* loop = ev_loop_new(0);
@@ -109,9 +108,42 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     pinger.reset();
     ponger.reset();
 
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+
     sup.reset();
     system_context.reset();
-    //ev_loop_destroy(loop);
 
     REQUIRE(destroyed == 1 + 2 + 4);
 }
+
+
+struct system_context_ev_test_t : public re::system_context_ev_t {
+    std::error_code code;
+    void on_error(const std::error_code &ec) noexcept override {
+        code = ec;
+    }
+};
+
+TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
+    auto* loop = ev_loop_new(0);
+    auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
+    auto conf = re::supervisor_config_t{loop, true, 1.0};
+    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    REQUIRE(system_context->code.value() == 0);
+
+    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    REQUIRE(!sup2);
+    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::supervisor_defined));
+
+    sup1->get_inbound_queue().clear();
+    sup1->get_points().clear();
+    sup1->get_queue().clear();
+    sup1->get_subscription().clear();
+
+    sup1.reset();
+    system_context.reset();
+}
+
