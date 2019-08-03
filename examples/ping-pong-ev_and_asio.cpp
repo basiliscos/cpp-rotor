@@ -105,7 +105,6 @@ struct ponger_t : public rotor::actor_base_t {
 };
 
 int main(int argc, char **argv) {
-    using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
     try {
         std::uint32_t count = 10000;
         if (argc > 1) {
