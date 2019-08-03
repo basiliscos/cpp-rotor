@@ -9,7 +9,7 @@
 #include "rotor/arc.hpp"
 #include "rotor/ev/supervisor_config.h"
 #include "rotor/system_context.h"
-#include <ev++.h>
+#include <ev.h>
 
 namespace rotor {
 namespace ev {
