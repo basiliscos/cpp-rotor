@@ -185,4 +185,4 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
 
     sup.reset();
     system_context.reset();
-};
+}
