@@ -7,7 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "rotor/ev.hpp"
-#include <ev++.h>
+#include <ev.h>
 
 namespace r = rotor;
 namespace re = rotor::ev;
