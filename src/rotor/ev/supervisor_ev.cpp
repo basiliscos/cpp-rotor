@@ -10,15 +10,17 @@
 
 using namespace rotor::ev;
 
-void supervisor_ev_t::async_cb(EV_P_ ev_async *w, int revents) noexcept {
+void supervisor_ev_t::async_cb(struct ev_loop *, ev_async *w, int revents) noexcept {
     assert(revents & EV_ASYNC);
+    (void)revents;
     auto *sup = static_cast<supervisor_ev_t *>(w->data);
     sup->on_async();
     intrusive_ptr_release(sup);
 }
 
-static void timer_cb(EV_P_ ev_timer *w, int revents) noexcept {
+static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     assert(revents & EV_TIMER);
+    (void)revents;
     auto *sup = static_cast<supervisor_ev_t *>(w->data);
     sup->on_shutdown_timer_trigger();
     intrusive_ptr_release(sup);
