@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project (rotor)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +9,7 @@ set(ROTOR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 option(BUILD_BOOST_ASIO    "Enable building with boost::asio support [default: OFF]"    OFF)
 option(BUILD_WX            "Enable building with wxWidgets support   [default: OFF]"    OFF)
+option(BUILD_EV            "Enable building with libev support   [default: OFF]"        OFF)
 option(BUILD_EXAMPLES      "Enable building examples [default: OFF]"                    OFF)
 option(BUILD_TESTS         "Enable building tests    [default: OFF]"                    OFF)
 option(BUILD_DOC           "Enable building documentation [default: OFF]"               OFF)
@@ -56,6 +58,17 @@ if (BUILD_WX)
     target_include_directories(rotor_wx PUBLIC include/)
     target_link_libraries(rotor_wx PUBLIC rotor ${wxWidgets_LIBRARIES})
 endif()
+
+if (BUILD_EV)
+    find_package(Libev REQUIRED)
+    add_library(rotor_ev
+        src/rotor/ev/supervisor_ev.cpp
+        src/rotor/ev/system_context_ev.cpp
+    )
+    target_include_directories(rotor_ev PUBLIC include/ ${LIBEV_INCLUDE_DIRS})
+    target_link_libraries(rotor_ev PUBLIC rotor ${LIBEV_LIBRARY})
+endif()
+
 
 if (BUILD_TESTS)
     add_subdirectory("tests")

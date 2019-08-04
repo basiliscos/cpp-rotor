@@ -45,6 +45,7 @@ add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
 add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong-external")
 
+
 if (BUILD_BOOST_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_asio)
 
@@ -70,4 +71,11 @@ if (BUILD_WX)
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
     target_link_libraries(121-wx_ping_ping rotor_test_lib rotor_wx ${wxWidgets_LIBRARIES})
     add_test(121-wx_ping_ping "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/121-wx_ping_ping")
+endif()
+
+
+if (BUILD_EV)
+    add_executable(131-ev_ping-pong 131-ev_ping-pong.cpp)
+    target_link_libraries(131-ev_ping-pong rotor_test_lib rotor_ev)
+    add_test(131-ev_ping-pong "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/131-ev_ping-pong")
 endif()

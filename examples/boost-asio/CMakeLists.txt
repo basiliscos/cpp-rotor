@@ -1,5 +1,3 @@
-include_directories(${rotor_SOURCE_DIR}/src)
-
 add_executable(hello_asio hello_asio.cpp)
 target_link_libraries(hello_asio rotor_asio)
 add_test(hello_asio "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hello_asio")

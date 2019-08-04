@@ -7,7 +7,7 @@
 //
 
 /** \file wx.hpp
- * A convenience header to include rotor support for boost::asio
+ * A convenience header to include rotor support for wxWidgets
  */
 
 #include "rotor/wx/supervisor_config.h"
