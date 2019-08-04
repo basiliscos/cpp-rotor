@@ -16,6 +16,20 @@
 namespace rotor {
 namespace ev {
 
+/** \struct supervisor_ev_t
+ *  \brief delivers rotor-messages on top of libev event loop
+ *
+ * Basically it uses libev `ev_async` watcher to deliver `rotor` messages
+ * on top of ev event loop.
+ *
+ * Since ev event loop is not thread-safe and do not provide different
+ * execution context (theads), creating sub-supervisors (non-root) will
+ * not bring concurrency advantages. It is possible, however, create
+ * different event loops and let them be used by different threads;
+ * in that case different supervisors, and they will be able to communicate
+ * via rotor-messaging.
+ *
+ */
 struct supervisor_ev_t : public supervisor_t {
 
     /** \brief constructs new supervisor from parent supervisor and supervisor config
