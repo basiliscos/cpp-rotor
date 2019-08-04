@@ -55,7 +55,7 @@ struct supervisor_wx_t : public supervisor_t {
 
     /** \brief constructs new supervisor from parent supervisor and supervisor config
      *
-     * the `parent` supervisor can be null
+     * the `parent` supervisor can be `null`
      *
      */
     supervisor_wx_t(supervisor_wx_t *parent, const supervisor_config_t &config);

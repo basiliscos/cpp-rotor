@@ -17,6 +17,12 @@ namespace rotor {
 namespace ev {
 
 struct supervisor_ev_t : public supervisor_t {
+
+    /** \brief constructs new supervisor from parent supervisor and supervisor config
+     *
+     * the `parent` supervisor can be `null`
+     *
+     */
     supervisor_ev_t(supervisor_ev_t *parent, const supervisor_config_t &config);
     ~supervisor_ev_t();
 
@@ -35,22 +41,41 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void cancel_shutdown_timer() noexcept override;
     virtual void confirm_shutdown() noexcept override;
 
+    /** \brief retuns ev-loop associated with the supervisor */
     inline struct ev_loop *get_loop() noexcept { return config.loop; }
 
     /** \brief returns pointer to the wx system context */
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
   protected:
+
+    /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
 
+    /** \brief Process external messages (from inbound queue).
+     *
+     * Used for moving messages in a thread-safe way for the supervisor
+     * from external (inbound) queue into internal queue and do further
+     * processing / delivery of the messages.
+     *
+     */
     virtual void on_async() noexcept;
 
     /** \brief timeout value, EV event loop pointer and loop ownership flag */
     supervisor_config_t config;
+
+    /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
     ev_async async_watcher;
+
+    /** \brief timer used in shutdown procedure */
     ev_timer shutdown_watcher;
 
+    /** \brief mutex for protecting inbound queue */
     std::mutex inbound_mutex;
+
+    /** \brief inbound messages queue, i.e.the structure to hold messages
+     * received from other supervisors / threads
+     */
     queue_t inbound;
 };
 
