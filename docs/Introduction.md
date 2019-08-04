@@ -13,10 +13,10 @@ some usage patters of [actor-model], however their amount a bare minimum,
 hence it is **micro** framework.
 
 As actor model and event loops are asynchronous by their nature, the underlying
-intuion is to uplift the low level *events* of an event loop into hight-level
-messages between actors, making high-level messages abstrated from the event loop;
+intuition is to uplift the low level *events* of an event loop into high level
+messages between actors, making high-level messages abstracted from the event loop;
 hence `rotor` should provide message passing facilities between actors
-*independenly* from the used event loop(s).
+*independently* from the used event loop(s).
 
 `rotor` can be used in the applications, where different loop engines are used
 together and it is desirable to write some loop-agnostic logic still having
@@ -186,7 +186,7 @@ are **loop-agnostic**, as well as the messages.
 In the real world scenarios, actors might be not so pure, i.e. they
 will interact with timers and other system events, however the interface for
 sending messages is still the same (i.e. loop-agnostic), which makes it
-quite a convenient way to send messages to actors running on *diffent loops*.
+quite a convenient way to send messages to actors running on *different loops*.
 
 
 ## pub-sub example

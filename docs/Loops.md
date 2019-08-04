@@ -15,7 +15,7 @@
 --------------|---------------
 [boost-asio]  | supported
 [wx-widgets]  | supported
-[ev]          | planned
+[ev]          | supported
 [libevent]    | planned
 [libuv]       | planned
 [gtk]         | planned
