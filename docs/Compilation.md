@@ -5,6 +5,7 @@
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
 [wx-widgets]: https://www.wxwidgets.org/ "wxWidgets"
+[ev]: http://software.schmorp.de/pkg/libev.html
 
 C++ 17 is required to use rotor.
 
@@ -19,6 +20,7 @@ The optional event-loop specific supervisors depend on corresponding loop librar
 
 - `BUILD_BOOST_ASIO` - build with [boost-asio] support (`off` by default)
 - `BUILD_WX` build with [wx-widgets] support (`off` by default)
+- `BUILD_EV` build with [libev] support (`off` by default)
 - `BUILD_EXAMPLES` build examples (`off` by default)
 - `BUILD_TESTS` build tests (`off` by default)
 - `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default)
