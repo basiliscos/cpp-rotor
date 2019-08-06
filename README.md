@@ -13,7 +13,7 @@
 ## features
 
 - minimalistic loop agnostic core
-- various event loops supported (wx, boost-asio) or planned (ev, gtk, etc.)
+- various event loops supported (wx, boost-asio, ev) or planned (uv, gtk, etc.)
 - asynchornous message passing interface
 - MPMC (multiple producers mupltiple consumers) messaging, aka pub-sub
 - cross-platform (windows, macosx, linux)
