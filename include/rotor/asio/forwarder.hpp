@@ -17,19 +17,6 @@ namespace asio {
 
 namespace asio = boost::asio;
 
-/** \struct curry_arg_t
- * \brief curries agruments for furthe function ivocation */
-template <typename... Args> struct curry_arg_t {
-    /** \brief args wrapped as tuple */
-    std::tuple<Args...> args;
-
-    /** \brief class the member function `fn` of the object `obj` with the curried args */
-    template <typename O, typename F> void inline call(O &obj, F &&fn) const noexcept {
-        using seq_t = std::make_index_sequence<sizeof...(Args)>;
-        (obj.*fn)(std::get<seq_t>(args));
-    }
-};
-
 /** \brief return `strand` of the boost::asio aware actor */
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor);
 
@@ -39,7 +26,7 @@ template <typename Actor, typename Handler, typename ErrHandler = void> struct f
  * into two differnt functions of the `actor`. After the invocation, actor's supervisor
  * `do_process` method is called to process message queue.
  *
- * The invocation is `starnd`-aware.
+ * The invocation is `strand`-aware.
  *
  */
 template <typename Actor, typename Handler, typename ErrHandler> struct forwarder_t {
@@ -58,7 +45,7 @@ template <typename Actor, typename Handler, typename ErrHandler> struct forwarde
     /** \brief mimics boost::asio handler, which will be forwarded/decomposed into
      * two different methods of the actor
      */
-    template <typename... Args> void operator()(const boost::system::error_code &ec, Args... args) noexcept {
+    template <typename T = void> inline void operator()(const boost::system::error_code &ec) noexcept {
         auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
         if (ec) {
@@ -67,18 +54,29 @@ template <typename Actor, typename Handler, typename ErrHandler> struct forwarde
                 actor->get_supervisor().do_process();
             });
         } else {
-            if constexpr (sizeof...(Args) == 0) {
-                asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
-                    ((*actor).*handler)();
-                    actor->get_supervisor().do_process();
-                });
-            } else {
-                asio::defer(strand,
-                            [actor = typed_actor, handler = std::move(handler), args_fwd = curry_arg_t{args...}]() {
-                                args_fwd.call(*actor, std::move(handler));
-                                actor->get_supervisor().do_process();
-                            });
-            }
+            asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
+                ((*actor).*handler)();
+                actor->get_supervisor().do_process();
+            });
+        }
+    }
+
+    /** \brief mimics boost::asio handler, which will be forwarded/decomposed into
+     * two different methods of the actor
+     */
+    template <typename T> inline void operator()(const boost::system::error_code &ec, T arg) noexcept {
+        auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
+        auto &strand = get_strand(sup);
+        if (ec) {
+            asio::defer(strand, [actor = typed_actor, handler = std::move(err_handler), ec = ec]() {
+                ((*actor).*handler)(ec);
+                actor->get_supervisor().do_process();
+            });
+        } else {
+            asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = arg]() {
+                ((*actor).*handler)(arg);
+                actor->get_supervisor().do_process();
+            });
         }
     }
 
@@ -106,21 +104,25 @@ template <typename Actor, typename Handler> struct forwarder_t<Actor, Handler, v
     /** \brief mimics boost::asio handler, which will be forwarded to the appropriate
      * actor's member method.
      */
-    template <typename... Args> void operator()(Args... args) noexcept {
+    template <typename T> inline void operator()(T arg) noexcept {
         auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
+        asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = arg]() {
+            ((*actor).*handler)(arg);
+            actor->get_supervisor().do_process();
+        });
+    }
 
-        if constexpr (sizeof...(Args) == 0) {
-            asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
-                ((*actor).*handler)();
-                actor->get_supervisor().do_process();
-            });
-        } else {
-            asio::defer(strand, [actor = typed_actor, handler = std::move(handler), args_fwd = curry_arg_t{args...}]() {
-                args_fwd.call(*actor, std::move(handler));
-                actor->get_supervisor().do_process();
-            });
-        }
+    /** \brief mimics boost::asio handler, which will be forwarded/decomposed into
+     * two different methods of the actor
+     */
+    template <typename T = void> inline void operator()() noexcept {
+        auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
+        auto &strand = get_strand(sup);
+        asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
+            ((*actor).*handler)();
+            actor->get_supervisor().do_process();
+        });
     }
 
     /** intrusive pointer to the actor */
