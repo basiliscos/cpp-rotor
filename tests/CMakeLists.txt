@@ -1,5 +1,3 @@
-enable_testing()
-
 add_library(rotor_test_lib
     actor_test.cpp
     supervisor_test.cpp

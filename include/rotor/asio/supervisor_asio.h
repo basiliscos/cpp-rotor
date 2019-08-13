@@ -57,6 +57,8 @@ struct supervisor_asio_t : public supervisor_t {
      */
     supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_, const supervisor_config_t &config);
 
+    virtual address_ptr_t make_address() noexcept override;
+
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
@@ -99,10 +101,7 @@ struct supervisor_asio_t : public supervisor_t {
     inline system_context_asio_t &get_asio_context() noexcept { return static_cast<system_context_asio_t &>(*context); }
 
     /** \brief returns exeuction strand */
-    inline asio::io_context::strand &get_strand() noexcept { return strand; }
-
-    /** \brief boost::asio execution strand */
-    asio::io_context::strand strand;
+    inline asio::io_context::strand &get_strand() noexcept { return *config.strand; }
 
     /** \brief timer used to shutdown timeout trigger */
     timer_t shutdown_timer;

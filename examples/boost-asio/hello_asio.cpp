@@ -20,7 +20,8 @@ struct hello_actor : public rotor::actor_base_t {
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
-    rotor::asio::supervisor_config_t conf{pt::milliseconds{500}};
+    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    rotor::asio::supervisor_config_t conf{std::move(stand), pt::milliseconds{500}};
     auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
 
     auto hello = sup->create_actor<hello_actor>();

@@ -153,9 +153,12 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
 
     auto sys_ctx1 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx1)};
     auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
-    ra::supervisor_config_t conf{pt::milliseconds{500}};
-    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(conf);
-    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(conf);
+    auto stand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
+    auto stand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
+    ra::supervisor_config_t conf1{std::move(stand1), pt::milliseconds{500}};
+    ra::supervisor_config_t conf2{std::move(stand2), pt::milliseconds{500}};
+    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(conf1);
+    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(conf2);
 
     auto pinger = sup1->create_actor<pinger_t>();
     auto ponger = sup2->create_actor<ponger_t>();

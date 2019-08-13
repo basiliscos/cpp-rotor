@@ -135,7 +135,8 @@ private:
 TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
     asio::io_context io_context{1};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-    ra::supervisor_config_t conf{pt::milliseconds{500}};
+    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    ra::supervisor_config_t conf{std::move(stand), pt::milliseconds{500}};
 
     auto sup1 = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
     auto sup2 = sup1->create_actor<rt::supervisor_asio_test_t>(system_context, conf);
