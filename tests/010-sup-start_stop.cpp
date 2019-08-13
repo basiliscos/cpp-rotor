@@ -23,7 +23,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
   r::address_ptr_t init_addr;
   r::address_ptr_t shutdown_addr;
 
-  sample_sup_t() : r::test::supervisor_test_t{nullptr} {
+  sample_sup_t() : r::test::supervisor_test_t{nullptr, nullptr} {
       initialized = 0;
       init_invoked = 0;
       start_invoked = 0;

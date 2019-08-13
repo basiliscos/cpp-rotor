@@ -64,7 +64,7 @@ struct statuses_observer_t: public r::actor_base_t {
 TEST_CASE("statuses observer", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
     auto observer = sup->create_actor<statuses_observer_t>();
     auto sample_actor = sup->create_actor<sample_actor_t>();
     observer->observable_addr = sample_actor->get_address();

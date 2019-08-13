@@ -52,7 +52,7 @@ struct sample_actor_t : public r::actor_base_t {
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
     auto act = sup->create_actor<sample_actor_t>();
 
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);

@@ -15,7 +15,9 @@ actor_base_t::actor_base_t(supervisor_t &supervisor_) : supervisor{supervisor_},
 actor_base_t::~actor_base_t() {}
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
-    address = create_address();
+    if (!address) {
+        address = create_address();
+    }
     supervisor.subscribe_actor(*this, &actor_base_t::on_unsubscription);
     supervisor.subscribe_actor(*this, &actor_base_t::on_external_unsubscription);
     supervisor.subscribe_actor(*this, &actor_base_t::on_initialize);

@@ -76,7 +76,7 @@ void supervisor_ev_t::on_async() noexcept {
     bool ok{false};
     try {
         std::lock_guard<std::mutex> lock(inbound_mutex);
-        std::move(inbound.begin(), inbound.end(), std::back_inserter(outbound));
+        std::move(inbound.begin(), inbound.end(), std::back_inserter(*effective_queue));
         inbound.clear();
         ok = true;
     } catch (const std::system_error &err) {

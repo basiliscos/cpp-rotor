@@ -13,10 +13,24 @@ using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(*this), parent{sup} {}
 
-address_ptr_t supervisor_t::make_address() noexcept { return new address_t{*this}; }
+address_ptr_t supervisor_t::make_address() noexcept {
+    auto root_sup = this;
+    while (root_sup->parent) {
+        root_sup = root_sup->parent;
+    }
+    return instantiate_address(root_sup);
+}
+
+address_ptr_t supervisor_t::instantiate_address(const void *locality) noexcept {
+    return new address_t{*this, locality};
+}
 
 void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
+    // should be created very early
+    address = create_address();
+    effective_queue = parent && parent->address->same_locality(*address) ? &parent->queue : &queue;
+
     actor_base_t::do_initialize(ctx);
     subscribe(&supervisor_t::on_call);
     subscribe(&supervisor_t::on_initialize_confirm);
@@ -45,37 +59,39 @@ void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmat
 void supervisor_t::do_start() noexcept { send<payload::start_actor_t>(address); }
 
 void supervisor_t::do_process() noexcept {
-    while (outbound.size()) {
-        auto message = outbound.front();
+    while (effective_queue->size()) {
+        auto message = effective_queue->front();
         auto &dest = message->address;
-        outbound.pop_front();
-        auto internal = &dest->supervisor == this;
+        effective_queue->pop_front();
+        auto &dest_sup = dest->supervisor;
+        auto internal = &dest_sup == this;
         // std::cout << "msg [" << (internal ? "i" : "e") << "] :" << boost::core::demangle((const char*)
         // message->get_type_index()) << "\n";
         if (internal) { /* subscriptions are handled by me */
-            /*
-            if (state == state_t::SHUTTED_DOWN)
-                continue;
-            */
-            auto it_subscriptions = subscription_map.find(dest);
-            if (it_subscriptions != subscription_map.end()) {
-                auto &subscription = it_subscriptions->second;
-                auto recipients = subscription.get_recipients(message->type_index);
-                if (recipients) {
-                    for (auto &it : *recipients) {
-                        if (it.mine) {
-                            it.handler->call(message);
-                        } else {
-                            auto sup = it.handler->raw_supervisor_ptr;
-                            auto wrapped_message =
-                                make_message<payload::handler_call_t>(sup->address, message, it.handler);
-                            sup->enqueue(std::move(wrapped_message));
-                        }
-                    }
+            deliver_local(std::move(message));
+        } else if (dest_sup.address->same_locality(*address)) {
+            dest_sup.deliver_local(std::move(message));
+        } else {
+            dest_sup.enqueue(std::move(message));
+        }
+    }
+}
+
+void supervisor_t::deliver_local(message_ptr_t &&message) noexcept {
+    auto it_subscriptions = subscription_map.find(message->address);
+    if (it_subscriptions != subscription_map.end()) {
+        auto &subscription = it_subscriptions->second;
+        auto recipients = subscription.get_recipients(message->type_index);
+        if (recipients) {
+            for (auto &it : *recipients) {
+                if (it.mine) {
+                    it.handler->call(message);
+                } else {
+                    auto sup = it.handler->raw_supervisor_ptr;
+                    auto wrapped_message = make_message<payload::handler_call_t>(sup->address, message, it.handler);
+                    sup->enqueue(std::move(wrapped_message));
                 }
             }
-        } else {
-            dest->supervisor.enqueue(std::move(message));
         }
     }
 }

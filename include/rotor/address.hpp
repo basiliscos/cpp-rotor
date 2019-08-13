@@ -32,14 +32,18 @@ struct supervisor_t;
 struct address_t : public arc_base_t<address_t> {
     /// reference to {@link supervisor_t}, which generated the address
     supervisor_t &supervisor;
+    const void *locality;
 
     address_t(const address_t &) = delete;
     address_t(address_t &&) = delete;
 
+    inline bool operator==(const address_t &other) const noexcept { return this == &other; }
+
+    inline bool same_locality(const address_t &other) const noexcept { return this->locality == other.locality; }
+
   private:
     friend struct supervisor_t;
-    address_t(supervisor_t &sup) : supervisor{sup} {}
-    inline bool operator==(const address_t &other) const { return this == &other; }
+    address_t(supervisor_t &sup, const void *locality_) : supervisor{sup}, locality{locality_} {}
 };
 
 /** \brief intrusive pointer for address */

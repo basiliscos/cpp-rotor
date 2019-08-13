@@ -78,7 +78,7 @@ private:
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
     auto pinger = sup->create_actor<pinger_t>();
     auto ponger = sup->create_actor<ponger_t>();
 

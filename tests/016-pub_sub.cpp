@@ -51,7 +51,7 @@ struct sub_t : public r::actor_base_t {
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
     auto pub_addr = sup->create_address();
     auto pub = sup->create_actor<pub_t>();
     auto sub1 = sup->create_actor<sub_t>();

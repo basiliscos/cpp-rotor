@@ -62,7 +62,6 @@ struct supervisor_ev_t : public supervisor_t {
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
   protected:
-
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
 
