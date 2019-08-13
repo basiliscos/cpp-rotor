@@ -104,7 +104,7 @@ template <typename Actor, typename Handler> struct forwarder_t<Actor, Handler, v
     /** \brief mimics boost::asio handler, which will be forwarded to the appropriate
      * actor's member method.
      */
-    template <typename T> void operator()(T arg) noexcept {
+    template <typename T> inline void operator()(T arg) noexcept {
         auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
         asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = arg]() {
@@ -116,7 +116,7 @@ template <typename Actor, typename Handler> struct forwarder_t<Actor, Handler, v
     /** \brief mimics boost::asio handler, which will be forwarded/decomposed into
      * two different methods of the actor
      */
-    template <typename T = void> void operator()() noexcept {
+    template <typename T = void> inline void operator()() noexcept {
         auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
         asio::defer(strand, [actor = typed_actor, handler = std::move(handler)]() {
