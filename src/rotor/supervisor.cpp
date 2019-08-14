@@ -29,7 +29,8 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
     // should be created very early
     address = create_address();
-    effective_queue = parent && parent->address->same_locality(*address) ? &parent->queue : &queue;
+    bool use_other = parent && parent->address->same_locality(*address);
+    effective_queue = use_other ? parent->effective_queue : &queue;
 
     actor_base_t::do_initialize(ctx);
     subscribe(&supervisor_t::on_call);
