@@ -25,6 +25,8 @@ struct supervisor_test_t : public supervisor_t {
     queue_t& get_queue() noexcept { return *effective_queue; }
     subscription_points_t& get_points() noexcept { return points; }
     subscription_map_t& get_subscription() noexcept { return subscription_map; }
+    actors_map_t& get_children() noexcept { return  actors_map; }
+
     const void* locality;
 };
 
