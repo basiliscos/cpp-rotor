@@ -28,6 +28,7 @@ struct pinger_t : public r::actor_base_t {
   }
 
   void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+      r::actor_base_t::on_start(msg);
       request_status();
   }
 
