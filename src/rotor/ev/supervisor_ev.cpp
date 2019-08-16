@@ -56,7 +56,7 @@ void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
     }
 }
 
-void supervisor_ev_t::start() noexcept { enqueue(make_message<payload::start_actor_t>(address)); }
+void supervisor_ev_t::start() noexcept { ev_async_send(config.loop, &async_watcher); }
 
 void supervisor_ev_t::shutdown() noexcept {
     supervisor.enqueue(make_message<payload::shutdown_request_t>(supervisor.get_address(), address));
