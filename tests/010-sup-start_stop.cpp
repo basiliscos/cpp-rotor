@@ -73,9 +73,6 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     sup->do_process();
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->init_addr == sup->get_address());
-
-    sup->do_start();
-    sup->do_process();
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->start_invoked == 1);
     REQUIRE(sup->shutdown_req_invoked == 0);

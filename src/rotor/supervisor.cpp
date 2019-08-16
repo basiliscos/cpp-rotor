@@ -41,7 +41,6 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     subscribe(&supervisor_t::on_commit_unsubscription);
     subscribe(&supervisor_t::on_state_request);
     auto addr = supervisor.get_address();
-    state = state_t::INITIALIZED;
     send<payload::initialize_actor_t>(addr, addr);
 }
 
@@ -56,8 +55,6 @@ void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmat
     auto &addr = msg.payload.actor_address;
     send<payload::start_actor_t>(addr, addr);
 }
-
-void supervisor_t::do_start() noexcept { send<payload::start_actor_t>(address); }
 
 void supervisor_t::do_process() noexcept {
     while (effective_queue->size()) {
@@ -111,7 +108,7 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
 void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept {
     auto actor_addr = msg.payload.actor_address;
     if (actor_addr == address) {
-        state = state_t::OPERATIONAL;
+        actor_base_t::on_initialize(msg);
     } else {
         send<payload::initialize_actor_t>(actor_addr, actor_addr);
     }

@@ -15,7 +15,7 @@ supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, system_context_ptr_t sys
 
 rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(config.strand.get()); }
 
-void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_start)(); }
+void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_process)(); }
 
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 

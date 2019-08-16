@@ -65,11 +65,6 @@ struct supervisor_t : public actor_base_t {
 
     virtual void do_initialize(system_context_t *ctx) noexcept override;
 
-    /** \brief convenient method to send {@link payload::start_actor_t}
-     * message to supervisor itself.
-     */
-    virtual void do_start() noexcept;
-
     /** \brief process internal messages queue and exists when it's empty
      *
      * -# It takes message from the queue
@@ -351,11 +346,7 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
 template <typename Actor, typename Supervisor, typename... Args>
 intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
     using ctor_t = details::actor_ctor_t<Actor, Supervisor>;
-    auto state = sup.get_state();
     auto context = sup.get_context();
-    if ((state != state_t::INITIALIZED) && (state != state_t::OPERATIONAL)) {
-        context->on_error(make_error_code(error_code_t::supervisor_wrong_state));
-    }
     auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);
     actor->do_initialize(context);
     sup.template send<payload::create_actor_t>(sup.get_address(), actor);

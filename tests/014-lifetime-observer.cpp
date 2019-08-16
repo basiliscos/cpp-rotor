@@ -53,7 +53,6 @@ TEST_CASE("lifetime observer", "[actor]") {
     auto sample_actor = sup->create_actor<sample_actor_t>();
     observer->set_observable(sample_actor->get_address());
 
-    sup->do_start();
     sup->do_process();
     REQUIRE(observer->event == 3);
 

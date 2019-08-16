@@ -57,7 +57,6 @@ TEST_CASE("actor litetimes", "[actor]") {
 
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
-    sup->do_start();
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::OPERATIONAL);
 

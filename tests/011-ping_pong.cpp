@@ -85,7 +85,6 @@ TEST_CASE("ping-pong", "[supervisor]") {
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
-    sup->do_start();
     sup->do_process();
     REQUIRE(pinger->ping_sent == 1);
     REQUIRE(pinger->pong_received == 1);

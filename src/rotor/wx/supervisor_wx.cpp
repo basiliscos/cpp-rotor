@@ -21,7 +21,6 @@ void supervisor_wx_t::start() noexcept {
     supervisor_ptr_t self{this};
     config.handler->CallAfter([self = std::move(self)]() {
         auto &sup = *self;
-        sup.do_start();
         sup.do_process();
     });
 }

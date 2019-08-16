@@ -70,7 +70,6 @@ TEST_CASE("statuses observer", "[actor]") {
     observer->observable_addr = sample_actor->get_address();
     observer->dummy_addr = sup->create_address();
 
-    sup->do_start();
     sup->do_process();
     REQUIRE(observer->dummy_status == r::state_t::UNKNOWN);
     REQUIRE(observer->observable_status == r::state_t::OPERATIONAL);

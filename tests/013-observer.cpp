@@ -63,7 +63,6 @@ TEST_CASE("obsrever", "[actor]") {
     auto observer = sup->create_actor<foo_observer_t>();
     observer->set_simpleton(simpleton->get_address());
 
-    sup->do_start();
     sup->do_process();
 
     REQUIRE(simpleton->foo_count == 1);

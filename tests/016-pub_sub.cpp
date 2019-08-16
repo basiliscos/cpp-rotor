@@ -61,7 +61,6 @@ TEST_CASE("ping-pong", "[supervisor]") {
     sub1->set_pub_addr(pub_addr);
     sub2->set_pub_addr(pub_addr);
 
-    sup->do_start();
     sup->do_process();
 
     REQUIRE(sub1->received == 1);
