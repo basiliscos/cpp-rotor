@@ -67,6 +67,9 @@ struct start_actor_t {
 struct create_actor_t {
     /** \brief the intrusive pointer to created actor */
     actor_ptr_t actor;
+
+    /** \brief whether the created actor is supervisor or not */
+    bool is_supervisor;
 };
 
 /** \struct shutdown_request_t

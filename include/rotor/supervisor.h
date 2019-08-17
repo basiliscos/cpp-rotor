@@ -103,7 +103,12 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void confirm_shutdown() noexcept override;
 
-    /** \brief records just created actor and starts its initialization  */
+    /** \brief records just created actor and starts its initialization
+     *
+     * If the created actor is supervisor, then it is assumed self-managed, and no additional
+     * initialization message is sent (it should be send by child-supervisor itself).
+     *
+     */
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
 
     virtual void on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept override;
@@ -325,9 +330,12 @@ template <typename Actor, typename Supervisor, typename IsSupervisor = void> str
 /** \brief constructs new actor (derived from supervisor), SFINAE-class */
 template <typename Actor, typename Supervisor>
 struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
+
+    /** \brief supervisor flag */
+    static constexpr const bool is_supervisor = true;
+    /** \brief constructs new actor (derived from supervisor) */
     template <typename... Args>
     static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
-        /** \brief constructs new actor (derived from supervisor) */
         return new Actor{sup, std::forward<Args>(args)...};
     }
 };
@@ -335,8 +343,12 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<superv
 /** \brief constructs new actor (not derived from supervisor), SFINAE-class */
 template <typename Actor, typename Supervisor>
 struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
-    template <typename... Args>
+
+    /** \brief non-supervisor flag */
+    static constexpr const bool is_supervisor = false;
+
     /** \brief constructs new actor (not derived from supervisor) */
+    template <typename... Args>
     static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
         return new Actor{*sup, std::forward<Args>(args)...};
     }
@@ -349,7 +361,7 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
     auto context = sup.get_context();
     auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);
     actor->do_initialize(context);
-    sup.template send<payload::create_actor_t>(sup.get_address(), actor);
+    sup.template send<payload::create_actor_t>(sup.get_address(), actor, ctor_t::is_supervisor);
     return actor;
 }
 

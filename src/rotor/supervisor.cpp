@@ -48,7 +48,9 @@ void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     auto actor = msg.payload.actor;
     auto actor_address = actor->get_address();
     actors_map.emplace(actor_address, std::move(actor));
-    send<payload::initialize_actor_t>(address, actor_address);
+    if (!msg.payload.is_supervisor) {
+        send<payload::initialize_actor_t>(address, actor_address);
+    }
 }
 
 void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmation_t> &msg) noexcept {
