@@ -21,8 +21,6 @@ std::string error_code_category::message(int c) const {
         return "missing actor";
     case error_code_t::supervisor_defined:
         return "supervisor is already defined";
-    case error_code_t::supervisor_wrong_state:
-        return "supervisor is in the wrong state";
     default:
         return "unknown";
     }

@@ -80,7 +80,8 @@ struct ponger_t : public r::actor_base_t {
 TEST_CASE("ping/pong ", "[supervisor][asio]") {
     asio::io_context io_context{1};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-    ra::supervisor_config_t conf{pt::milliseconds{500}};
+    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    ra::supervisor_config_t conf{std::move(stand), pt::milliseconds{500}};
     auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
 
     auto pinger = sup->create_actor<pinger_t>();

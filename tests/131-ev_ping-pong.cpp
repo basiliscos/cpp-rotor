@@ -20,7 +20,7 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
     ~supervisor_ev_test_t() { destroyed += 4; }
 
     r::state_t& get_state() noexcept { return state; }
-    queue_t& get_queue() noexcept { return outbound; }
+    queue_t& get_queue() noexcept { return *effective_queue; }
     queue_t& get_inbound_queue() noexcept { return inbound; }
     subscription_points_t& get_points() noexcept { return points; }
     subscription_map_t& get_subscription() noexcept { return subscription_map; }

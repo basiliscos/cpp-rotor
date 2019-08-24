@@ -17,7 +17,6 @@ enum class error_code_t {
     shutdown_timeout,
     missing_actor,
     supervisor_defined,
-    supervisor_wrong_state,
 };
 
 namespace details {

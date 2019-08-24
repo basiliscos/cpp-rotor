@@ -96,8 +96,10 @@ private:
 TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>();
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>();
+    const char locality1[] = "l1";
+    const char locality2[] = "l2";
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, locality1);
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(locality2);
 
     auto pinger = sup1->create_actor<pinger_t>();
     auto ponger = sup2->create_actor<ponger_t>();
@@ -105,7 +107,6 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
-    sup1->do_start();
     sup1->do_process();
     sup2->do_process();
     REQUIRE(pinger->ping_sent == 0);
@@ -151,8 +152,10 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
 TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>();
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>();
+    const char locality1[] = "l1";
+    const char locality2[] = "l2";
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, locality1);
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(locality2);
 
     auto pinger = sup1->create_actor<pinger_autostart_t>();
     auto ponger = sup2->create_actor<ponger_t>();
@@ -160,7 +163,6 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
-    sup1->do_start();
     sup1->do_process();
     sup2->do_process();
     REQUIRE(pinger->ping_sent == 0);
@@ -200,5 +202,4 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
     REQUIRE(sup1->get_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
-
 }

@@ -83,8 +83,18 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief timer used in shutdown procedure */
     ev_timer shutdown_watcher;
 
-    /** \brief mutex for protecting inbound queue */
+    /** \brief mutex for protecting inbound queue and pending flag */
     std::mutex inbound_mutex;
+
+    /** \brief whether refcounter should be decreased
+     *
+     * Async events are "compressed" by EV, i.e. a few async sygnals can be
+     * delivere as one. As we do inc/dec for atomic counter, this might be
+     * a problem. So by the flag we are sure, that inc/dec will happen
+     * only once.
+     *
+     */
+    bool pending;
 
     /** \brief inbound messages queue, i.e.the structure to hold messages
      * received from other supervisors / threads

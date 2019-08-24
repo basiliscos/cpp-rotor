@@ -9,7 +9,7 @@ IP-address:port).
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
-An `message` is delivered to `address`, independently subscriber or subscribers,
+A `message` is delivered to `address`, independently of subscriber or subscribers,
 i.e. to one `address` there can subscribed many actors, as well as messages
 can be send from multiple sources to the same `address`.
 
@@ -83,14 +83,14 @@ are are hidden from the original message flow. There is no difference between th
 at the `rotor` core, i.e.
 
 ~~~{.cpp}
-    // MPMC
+    // MPMC: an address is shared between actors
     auto dest1 = supervisor->make_address();
     auto actor_a = sup->create_actor<...>();
     auto actor_b = sup->create_actor<...>();
     actor_a->set_destination(dest1);
     actor_b->set_destination(dest1);
 
-    // observer
+    // observer: actor_c own address is exposed for actor_d
     auto actor_c = sup->create_actor<...>();
     auto actor_d = sup->create_actor<...>();
     actor_d->set_c_addr(actor_c->get_address());
@@ -173,7 +173,7 @@ struct actor_A_t: public r::actor_base_t {
 
 That tricky way will definitely work under certain circumstances, i.e. when
 actors are created sequentially and they use the same supervisor etc.; however
-in generaral case there will be unavoidable race, and the approach will not
+in general case there will be unavoidable race, and the approach will not
 work when different supervisors / event loops are used, or when some I/O
 is involved in the scheme (i.e. it needed to establish connection before
 subscription). This is not networking mindset neither.

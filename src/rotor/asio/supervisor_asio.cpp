@@ -11,10 +11,11 @@ using namespace rotor::asio;
 
 supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_,
                                      const supervisor_config_t &config_)
-    : supervisor_t{sup}, strand{system_context_->io_context},
-      shutdown_timer{system_context_->io_context}, config{config_} {}
+    : supervisor_t{sup}, shutdown_timer{system_context_->io_context}, config{config_} {}
 
-void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_start)(); }
+rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(config.strand.get()); }
+
+void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_process)(); }
 
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 
@@ -41,7 +42,7 @@ void supervisor_asio_t::cancel_shutdown_timer() noexcept {
 void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
     auto actor_ptr = supervisor_ptr_t(this);
     // std::cout << "deferring on " << this << ", stopped : " << strand.get_io_context().stopped() << "\n";
-    asio::defer(strand, [actor = std::move(actor_ptr), message = std::move(message)]() mutable {
+    asio::defer(get_strand(), [actor = std::move(actor_ptr), message = std::move(message)]() mutable {
         auto &sup = *actor;
         // std::cout << "deferred processing on" << &sup << "\n";
         // sup.enqueue(std::move(message));

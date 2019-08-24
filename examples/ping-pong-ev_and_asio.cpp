@@ -114,7 +114,8 @@ int main(int argc, char **argv) {
         asio::io_context io_ctx;
         auto asio_guard = asio::make_work_guard(io_ctx);
         auto sys_ctx_asio = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_ctx)};
-        rotor::asio::supervisor_config_t conf_asio{boost::posix_time::milliseconds{500}};
+        auto stand = std::make_shared<asio::io_context::strand>(io_ctx);
+        rotor::asio::supervisor_config_t conf_asio{std::move(stand), boost::posix_time::milliseconds{500}};
 
         auto *loop = ev_loop_new(0);
         auto sys_ctx_ev = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};

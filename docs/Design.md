@@ -4,6 +4,7 @@
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
 [Erlang]: https://en.wikipedia.org/wiki/Erlang_(programming_language)
 [let-it-crash]: http://wiki.c2.com/?LetItCrash
+[blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
 
 `address` is runtime entity, served as subscription and delivery point. Any `message` can
 be sent to an address; any `actor` can subscribe on any kind of messages on any address.
@@ -15,8 +16,8 @@ is source-actor sequenced**: if a source-`actor` generates messages `m1` and the
 is is guaranteed that `m1` will arrive to destination earlier then `m2`. Meanwhile there
 can be other messages *for the destination* from other senders. Sometimes, the approach
 is named *per-sender-FIFO*. The delivery itself to an actor is *not guaranteed*, not in the
-sense the `rotor` will loose it, but because the actor migth be not yet ready for it
-(not subscribed), or the actor migth be no longer ready for it (i.e. already unsubscribed).
+sense the `rotor` will loose it, but because the actor might be not yet ready for it
+(not subscribed), or the actor might be no longer ready for it (i.e. already unsubscribed).
 `payload` is **mutable**. It is user responsibility to allowed for an `actor` to change
 a payload in a thread-safe way, but it is recommended to do modifications only
 when it is known that an `actor` is single consumer of the message; if there are multiple
@@ -32,24 +33,45 @@ solid foundation of distributed actors can be build on top of `rotor`, adding on
 `actor` is runtime entity, with user-defined reaction on incoming messages. An `actor`
 can send messages to other actors, as well as do interaction with with outer world (i.e.
 via loop, timers, I/O etc.). The main business-logic should be written in actors.
-An `actor` always is executed *in the constext* of some `supervisor`.
+An `actor` always is executed *in the context* of some `supervisor`.
 
 `supervisor` is special kind of `actor`, which encapsulates *infrastructure-logic*,
 i.e. responsible for spawning/terminating actors, interaction with loop (timeouts),
 and for message dispatching/delivering. All messages sent by spawned actors, are
 put into outbound queue of supervisor. `supervisor` was designed to represent
-sequential execution context, similar to `strand` from [boost-asio] (in fact has
-`starnd` object for `rotor-boost`); in other words all messages are devivered sequentially
+*sequential execution context*, similar to `strand` from [boost-asio] (in fact has
+`strand` object for `rotor-boost`); in other words all messages are delivered sequentially
 within the context of an `supervisor`, and it is safe to call one some actor's method
 from some other actor, located on the same supervisor, if needed.
+
+`locality` is rotor-specific marker of `sequential execution context`. An supervisor
+might have an independent locality, i.e. execute only on its own (`strand`); or a
+list of supervisors might share the same `locality`. For some event loops (i.e. other
+then [boost-asio]), it it the only option.
+
+Supervisors might form a tree-like structure making some kind of hierarchy of responsibilities.
+This allows to build a robust application via controlled degradation of its services
+when leaf-actors are restarted in case of error, then their supervisors (with all actors)
+are restarted and so on the error propagates until the root supervisor. The child restart
+policy is user-defined for each supervisor individually. For more details see the
+article [blog-cpp-supervisors].
+
+![supervising](supervising.png)
+
+For example, if actor `A3` is going down, the `supervisor_child` will receive a
+message about it, and it might decide either to spawn `A3` again, or if restart
+limit is reached, shutdown self and all other child actors `A1` and `A2`. The
+`supervisor_root` will receive down message of `supervisor_child`, and the
+decision to restart `supervisor_child` (with all it's children) or to shutdown self
+should be made again.
 
 Unlike supervisors in [Erlang], the [let-it-crash] principle is not acceptable in C++,
 hence it is expected that actors will perform `shutdown` procedure. It is expected
 that an user will inherit `supervisor` class and write application specific reaction
-on an actor shutdown. For proper `supervisor` destruction, all extenrally held
+on an actor shutdown. For proper `supervisor` destruction, all externally held
 `addresses` should be destroyed.
 
-The `system_context` is runtime environmen for supervisors, which holds `loop` or
+The `system_context` is runtime environment for supervisors, which holds `loop` or
 some other context, which should be accessible in thread-safe way. When an fatal
 error is encounted, it is delegated to `system_context`, which by default just prints
 it to `std::cerr` and invokes `std::abort()`.
@@ -76,7 +98,7 @@ immediately replies to it with `initialize_confirmation` message and moving it's
 state to `INITIALIZED`. Then `supervisor` delivers a message for `on_start` method,
 moving actor's start to `OPERATIONAL`.
 
-The derived class from `actor` is capable to suspend, for example, `intialization`
+The derived class from `actor` is capable to suspend, for example, `initialization`
 message; that will trigger suspension of the `start` message send by supervisor.
 This is useful, when some other `actor` observes initialization of the current actor,
 i.e. the initialization of 2nd actor depends on the initialization of the 1st actor, so

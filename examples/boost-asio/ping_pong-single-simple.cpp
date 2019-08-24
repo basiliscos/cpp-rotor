@@ -100,7 +100,8 @@ int main(int argc, char **argv) {
         }
 
         auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-        ra::supervisor_config_t conf{pt::milliseconds{500}};
+        auto stand = std::make_shared<asio::io_context::strand>(io_context);
+        ra::supervisor_config_t conf{std::move(stand), pt::milliseconds{500}};
         auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
 
         auto pinger = supervisor->create_actor<pinger_t>(count);

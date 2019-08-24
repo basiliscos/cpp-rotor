@@ -1,5 +1,3 @@
-enable_testing()
-
 add_library(rotor_test_lib
     actor_test.cpp
     supervisor_test.cpp
@@ -45,11 +43,13 @@ add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
 add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong-external")
 
+add_executable(022-supervisor-tree 022-supervisor-tree.cpp)
+target_link_libraries(022-supervisor-tree ${rotor_TEST_LIBS})
+add_test(022-supervisor-tree "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/022-supervisor-tree")
 
 if (BUILD_BOOST_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_asio)
 
-    # boost::asio tests
     add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
     target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})
     add_test(101-asio_ping-pong-1-strand "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/101-asio_ping-pong-1-strand")
