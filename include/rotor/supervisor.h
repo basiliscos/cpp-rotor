@@ -65,17 +65,19 @@ struct supervisor_t : public actor_base_t {
 
     virtual void do_initialize(system_context_t *ctx) noexcept override;
 
-    /** \brief process internal messages queue and exists when it's empty
+    /** \brief process effective_queue of messages.
+     *
+     * The `effective_queue` of messages is processed.
      *
      * -# It takes message from the queue
      * -# If the message destination address belongs to the foreing the supervisor,
-     * then it is forwarded to it immediately
-     * -# Otherwise it iterates on subscriptions (handlers) on the adddress
-     * -# If the handler is local (i.e. it's actor belongs to the same supervisor),
-     * the message is delivered immediately to it
-     * -# Otherwise it is forwareded for delivery for the foreign supervisor,
-     * which owns the handler.
-     * -# When queue is empty, it just exits
+     * then it is forwarded to it immediately.
+     * -# Otherwise, the message is local, i.e. either for the supervisor or one
+     * of its non-supervisor children (internal), or to other supervisor within
+     * the same locality.
+     * -# in the former case the message is immediately delivered locally in
+     * the context  of current supervisor; in the latter case in the context
+     * of other supervsior. In the both cases `deliver_local` method is used.
      *
      * It is expected, that derived classes should invoke `do_process` message,
      * whenever it is known that there are messages for processing.
@@ -85,6 +87,15 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void do_process() noexcept;
 
+    /** \brief delivers an message for self of one of child-actors  (non-supervisors)
+     *
+     * Supervisor iterates on subscriptions (handlers) on the message destination adddress:
+     *
+     * -# If the handler is local (i.e. it's actor belongs to the same supervisor),
+     * -# Otherwise the message is forwareded for delivery for the foreign supervisor,
+     * which owns the handler.
+     *
+     */
     virtual void deliver_local(message_ptr_t &&msg) noexcept;
 
     /** \brief unsubcribes all actor's handlers */
@@ -242,6 +253,7 @@ struct supervisor_t : public actor_base_t {
     inline system_context_t *get_context() noexcept { return context; }
 
   protected:
+    /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
 
     /** \brief structure to hold messages (intrusive pointers) */
@@ -262,6 +274,16 @@ struct supervisor_t : public actor_base_t {
     /** \brief non-owning pointer to system context. */
     system_context_t *context;
 
+    /** \brief the pointer to the queue of unprocessed messages
+     *
+     * It points to the internal `queue` member for root supervisors.
+     *
+     * For non-root supervisors with shared locality it points to the
+     * queue of locality owner queue.
+     *
+     * In other words it is pointer to the locality queue.
+     *
+     */
     queue_t *effective_queue;
 
     /** \brief queue of unprocessed messages */

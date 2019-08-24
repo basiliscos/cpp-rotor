@@ -32,13 +32,19 @@ struct supervisor_t;
 struct address_t : public arc_base_t<address_t> {
     /// reference to {@link supervisor_t}, which generated the address
     supervisor_t &supervisor;
+
+    /** \brief runtime label, describing some execution group */
     const void *locality;
 
     address_t(const address_t &) = delete;
     address_t(address_t &&) = delete;
 
+    /** \brief returns true if two addresses are the same, i.e. are located in the
+     * same memory region
+     */
     inline bool operator==(const address_t &other) const noexcept { return this == &other; }
 
+    /** \brief compares locality fields of the addresses */
     inline bool same_locality(const address_t &other) const noexcept { return this->locality == other.locality; }
 
   private:

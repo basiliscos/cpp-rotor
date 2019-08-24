@@ -12,18 +12,18 @@ There are few main actor frameworks in C++ world: [sobjectizer], [c++ actor fram
 and [QP/C++][qpcpp]. There is major a issue with them, as they offer some actor runtime, which
 has own rules for execution, which user have to comply. On the other hand there are a lot of
 third-party libraries, which offten have other runtime. As the result, the seamless usage of
-them together becomes hard or even impossible, or it might come at rather hight costs (i.e.
+them together becomes hard or even impossible, or it might come at rather high costs (i.e.
 running each environment /runtime  on it's own thread). In the other words they are **intrusive**.
 
-Their intrusiveness makes the frameworks samewhat unfriendly for cooperation with other C++
+Their intrusiveness makes the frameworks same sort unfriendly for cooperation with other C++
 libraries. However, why they are intrusive? To my opinion, this happens because the frameworks
 need, first, *timers* and, second, some inter-thread message passing and actor execution
 environment. So, for the frameworks own intrusive runtimes were developed.
 
 `rotor` was designed with the opposite approach: let timeouts and inter-thread communications
-be handled by external libraries (loops), while `rotor` responsibiliy is just internal message
-delivery (and a few build-in rules for initialization/termiation of actors etc.). As the result
-`rotor` is quite lightweigth micro-framework; the main infrastructure units of execution (aka
+be handled by external libraries (loops), while `rotor` responsibility is just internal message
+delivery (and a few build-in rules for initialization/termination of actors etc.). As the result
+`rotor` is quite lightweight micro-framework; the main infrastructure units of execution (aka
 `supervisors`) are tightly coupled to the concrete event loop. However the last point shouldn't
 be a big issue, as soon as the `rotor` *messaging interface* does not depend on underlying
 loop. In `rotor` messages can be passed between actors running on different threads or even
@@ -44,5 +44,5 @@ license of [sobjectizer]). The external loop integration is still [non-trivial t
 compared to `rotor`, and I'm still not sure whether is is possible to integrate more
 than one event loop.
 
-If you are familiar with [sobjectizer], the `supervisor` concept in `rotor` plays the similar
-role as `cooperation` in [sobjectizer].
+Eventually, `rotor` misses a lot of features of the named frameworks in the exchange for
+more *fine-gained* control.
