@@ -36,6 +36,8 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
 
     /** \brief message type, processed by the handler */
     using message_t = M;
+
+    using payload_t = typename M::payload_t;
 };
 
 /** \struct handler_base_t
@@ -52,7 +54,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief intrusive poiter to {@link actor_base_t} the actor of the handler */
     actor_ptr_t actor_ptr;
 
-    /** \brief non-owning raw poiter to acto r*/
+    /** \brief non-owning raw poiter to actor */
     const void *raw_actor_ptr;
 
     /** \brief non-owning raw poiter to acto r*/

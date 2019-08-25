@@ -21,8 +21,9 @@ int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
     auto stand = std::make_shared<asio::io_context::strand>(io_context);
-    rotor::asio::supervisor_config_t conf{std::move(stand), pt::milliseconds{500}};
-    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
+    auto shutdown_timeout = boost::posix_time::milliseconds{500};
+    rotor::asio::supervisor_config_t conf{std::move(stand)};
+    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(shutdown_timeout, conf);
 
     auto hello = sup->create_actor<hello_actor>();
 

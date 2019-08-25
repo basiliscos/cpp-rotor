@@ -31,13 +31,14 @@ struct system_context_ev_t : public system_context_t {
 
     /** \brief creates root supervior. `args` and config are forwared for supervisor constructor */
     template <typename Supervisor = supervisor_t, typename... Args>
-    auto create_supervisor(const supervisor_config_t &config, Args... args) -> intrusive_ptr_t<Supervisor> {
+    auto create_supervisor(const pt::time_duration &shutdown_timeout, const supervisor_config_t &config,
+                           Args &&... args) -> intrusive_ptr_t<Supervisor> {
         if (supervisor) {
             on_error(make_error_code(error_code_t::supervisor_defined));
             return intrusive_ptr_t<Supervisor>{};
         } else {
-            auto typed_sup =
-                system_context_t::create_supervisor<Supervisor>(nullptr, config, std::forward<Args>(args)...);
+            auto typed_sup = system_context_t::create_supervisor<Supervisor>(nullptr, shutdown_timeout, config,
+                                                                             std::forward<Args>(args)...);
             supervisor = typed_sup;
             return typed_sup;
         }

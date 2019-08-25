@@ -17,12 +17,6 @@ namespace wx {
  * a pointer to the "context window".
  */
 struct supervisor_config_t {
-    /** \brief alias for milliseconds */
-    using duration_t = std::chrono::milliseconds;
-
-    /** \brief shutdown timeout value in milliseconds */
-    duration_t shutdown_timeout;
-
     /** \brief the wx context, responsible for messages delivery
      *
      * Actuall rotor-message delivery for actors runnion on the

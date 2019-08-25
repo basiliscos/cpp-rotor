@@ -115,17 +115,17 @@ int main(int argc, char **argv) {
         auto asio_guard = asio::make_work_guard(io_ctx);
         auto sys_ctx_asio = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_ctx)};
         auto stand = std::make_shared<asio::io_context::strand>(io_ctx);
-        rotor::asio::supervisor_config_t conf_asio{std::move(stand), boost::posix_time::milliseconds{500}};
+        rotor::asio::supervisor_config_t conf_asio{std::move(stand)};
 
         auto *loop = ev_loop_new(0);
         auto sys_ctx_ev = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
         auto conf_ev = rotor::ev::supervisor_config_t{
             loop, true, /* let supervisor takes ownership on the loop */
-            1.0         /* shutdown timeout */
         };
 
-        auto sup_ev = sys_ctx_ev->create_supervisor<rotor::ev::supervisor_ev_t>(conf_ev);
-        auto sup_asio = sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>(conf_asio);
+        auto shutdown_timeout = boost::posix_time::milliseconds{500};
+        auto sup_ev = sys_ctx_ev->create_supervisor<rotor::ev::supervisor_ev_t>(shutdown_timeout, conf_ev);
+        auto sup_asio = sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>(shutdown_timeout, conf_asio);
 
         auto pinger = sup_ev->create_actor<pinger_t>(count);
         auto ponger = sup_asio->create_actor<ponger_t>();

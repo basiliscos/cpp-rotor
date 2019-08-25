@@ -12,6 +12,8 @@
 #include "rotor/system_context.h"
 #include <ev.h>
 #include <mutex>
+#include <memory>
+#include <unordered_map>
 
 namespace rotor {
 namespace ev {
@@ -32,12 +34,19 @@ namespace ev {
  */
 struct supervisor_ev_t : public supervisor_t {
 
+    struct timer_t : public ev_timer {
+        timer_id_t timer_id;
+    };
+
+    using timer_ptr_t = std::unique_ptr<timer_t>;
+
     /** \brief constructs new supervisor from parent supervisor and supervisor config
      *
      * the `parent` supervisor can be `null`
      *
      */
-    supervisor_ev_t(supervisor_ev_t *parent, const supervisor_config_t &config);
+    supervisor_ev_t(supervisor_ev_t *parent, const pt::time_duration &shutdown_timeout,
+                    const supervisor_config_t &config);
     ~supervisor_ev_t();
 
     /** \brief creates an actor by forwaring `args` to it
@@ -51,8 +60,9 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_shutdown_timer() noexcept override;
-    virtual void cancel_shutdown_timer() noexcept override;
+    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
+    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
     virtual void confirm_shutdown() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
@@ -62,6 +72,8 @@ struct supervisor_ev_t : public supervisor_t {
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
   protected:
+    using timers_map_t = std::unordered_map<timer_id_t, timer_ptr_t>;
+
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
 
@@ -80,9 +92,6 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
     ev_async async_watcher;
 
-    /** \brief timer used in shutdown procedure */
-    ev_timer shutdown_watcher;
-
     /** \brief mutex for protecting inbound queue and pending flag */
     std::mutex inbound_mutex;
 
@@ -100,6 +109,8 @@ struct supervisor_ev_t : public supervisor_t {
      * received from other supervisors / threads
      */
     queue_t inbound;
+
+    timers_map_t timers_map;
 };
 
 } // namespace ev

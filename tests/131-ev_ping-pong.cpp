@@ -19,57 +19,51 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
 
     ~supervisor_ev_test_t() { destroyed += 4; }
 
-    r::state_t& get_state() noexcept { return state; }
-    queue_t& get_queue() noexcept { return *effective_queue; }
-    queue_t& get_inbound_queue() noexcept { return inbound; }
-    subscription_points_t& get_points() noexcept { return points; }
-    subscription_map_t& get_subscription() noexcept { return subscription_map; }
+    r::state_t &get_state() noexcept { return state; }
+    queue_t &get_queue() noexcept { return *effective_queue; }
+    queue_t &get_inbound_queue() noexcept { return inbound; }
+    subscription_points_t &get_points() noexcept { return points; }
+    subscription_map_t &get_subscription() noexcept { return subscription_map; }
 
     void on_shutdown_timer_trigger() noexcept override {
         re::supervisor_ev_t::on_shutdown_timer_trigger();
         ev_break(get_loop());
     }
-
 };
 
 struct system_context_ev_test_t : public re::system_context_ev_t {
     std::error_code code;
-    void on_error(const std::error_code &ec) noexcept override {
-        code = ec;
-    }
+    void on_error(const std::error_code &ec) noexcept override { code = ec; }
 };
 
-
-struct ping_t{};
-struct pong_t{};
+struct ping_t {};
+struct pong_t {};
 
 struct pinger_t : public r::actor_base_t {
     std::uint32_t ping_sent;
     std::uint32_t pong_received;
     rotor::address_ptr_t ponger_addr;
 
-  pinger_t(rotor::supervisor_t &sup): r::actor_base_t{sup} {
-      ping_sent = pong_received = 0;
-  }
-  ~pinger_t() { destroyed += 1; }
+    pinger_t(rotor::supervisor_t &sup) : r::actor_base_t{sup} { ping_sent = pong_received = 0; }
+    ~pinger_t() { destroyed += 1; }
 
-  void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
+    void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-  void on_initialize(r::message_t<r::payload::initialize_actor_t>&msg) noexcept override {
-    r::actor_base_t::on_initialize(msg);
-    subscribe(&pinger_t::on_pong);
-  }
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_initialize(msg);
+        subscribe(&pinger_t::on_pong);
+    }
 
-  void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_start(msg);
-      send<ping_t>(ponger_addr);
-      ++ping_sent;
-  }
+    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        send<ping_t>(ponger_addr);
+        ++ping_sent;
+    }
 
-  void on_pong(rotor::message_t<pong_t> &) noexcept {
-      ++pong_received;
-      supervisor.shutdown();
-  }
+    void on_pong(rotor::message_t<pong_t> &) noexcept {
+        ++pong_received;
+        supervisor.shutdown();
+    }
 };
 
 struct ponger_t : public r::actor_base_t {
@@ -77,32 +71,27 @@ struct ponger_t : public r::actor_base_t {
     std::uint32_t ping_received;
     rotor::address_ptr_t pinger_addr;
 
-  ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {
-      pong_sent = ping_received = 0;
-  }
-  ~ponger_t() { destroyed += 2; }
+    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} { pong_sent = ping_received = 0; }
+    ~ponger_t() { destroyed += 2; }
 
-  void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
+    void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-  void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t>
-                         &msg) noexcept override {
-    rotor::actor_base_t::on_initialize(msg);
-    subscribe(&ponger_t::on_ping);
-  }
+    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
+        rotor::actor_base_t::on_initialize(msg);
+        subscribe(&ponger_t::on_ping);
+    }
 
-  void on_ping(rotor::message_t<ping_t> &) noexcept {
-    ++ping_received;
-    send<pong_t>(pinger_addr);
-    ++pong_sent;
-  }
+    void on_ping(rotor::message_t<ping_t> &) noexcept {
+        ++ping_received;
+        send<pong_t>(pinger_addr);
+        ++pong_sent;
+    }
 };
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override {
-        supervisor.do_shutdown();
-    }
+    virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { supervisor.do_shutdown(); }
 
     virtual void confirm_shutdown() noexcept override {
         // suppress sending shutdown confirmation to trigger shutdown timeout
@@ -111,10 +100,10 @@ struct bad_actor_t : public r::actor_base_t {
 };
 
 TEST_CASE("ping/pong", "[supervisor][ev]") {
-    auto* loop = ev_loop_new(0);
+    auto *loop = ev_loop_new(0);
     auto system_context = re::system_context_ev_t::ptr_t{new re::system_context_ev_t()};
-    auto conf = re::supervisor_config_t{loop, true, 1.0};
-    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto conf = re::supervisor_config_t{loop, true};
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(r::pt::seconds{1}, conf);
 
     auto pinger = sup->create_actor<pinger_t>();
     auto ponger = sup->create_actor<ponger_t>();
@@ -144,13 +133,13 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
 }
 
 TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
-    auto* loop = ev_loop_new(0);
+    auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
-    auto conf = re::supervisor_config_t{loop, true, 1.0};
-    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto conf = re::supervisor_config_t{loop, true};
+    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>(r::pt::seconds{1}, conf);
     REQUIRE(system_context->code.value() == 0);
 
-    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>(r::pt::seconds{1}, conf);
     REQUIRE(!sup2);
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::supervisor_defined));
 
@@ -164,10 +153,10 @@ TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
 }
 
 TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
-    auto* loop = ev_loop_new(0);
+    auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
-    auto conf = re::supervisor_config_t{loop, true, 0.1};
-    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto conf = re::supervisor_config_t{loop, true};
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(r::pt::milliseconds{100}, conf);
 
     sup->start();
     auto actor = sup->create_actor<bad_actor_t>();

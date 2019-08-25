@@ -12,14 +12,18 @@
 #include "messages.hpp"
 #include "subscription.h"
 #include "system_context.h"
+#include "request.h"
+
 #include <chrono>
 #include <deque>
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
-//#include <iostream>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace rotor {
+
+namespace pt = boost::posix_time;
 
 struct supervisor_t;
 
@@ -58,8 +62,10 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
  *
  */
 struct supervisor_t : public actor_base_t {
+    using timer_id_t = std::uint32_t;
+
     /** \brief constructs new supervisor with optional parent supervisor */
-    supervisor_t(supervisor_t *sup = nullptr);
+    supervisor_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 
@@ -157,19 +163,9 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_state_request(message_t<payload::state_request_t> &message) noexcept;
 
-    /** \brief default reaction on shutdown timer trigger
-     *
-     * If shutdown timer triggers it is treated as fatal error, which is printed
-     * to `stdout` followed by `std::abort`
-     *
-     */
-    virtual void on_shutdown_timer_trigger() noexcept;
-
-    /** \brief starts event-loop specific shutdown timer */
-    virtual void start_shutdown_timer() noexcept = 0;
-
-    /** \brief cancels event-loop specific shutdown timer */
-    virtual void cancel_shutdown_timer() noexcept = 0;
+    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept = 0;
+    virtual void cancel_timer(timer_id_t timer_id) noexcept = 0;
+    virtual void on_timer_trigger(timer_id_t timer_id);
 
     /** \brief thread-safe version of `do_start`, i.e. send start actor request
      * let it be processed by the supervisor */
@@ -252,7 +248,49 @@ struct supervisor_t : public actor_base_t {
     /** \brief returns system context */
     inline system_context_t *get_context() noexcept { return context; }
 
+    template <typename T> struct request_builder_t {
+
+        supervisor_t &sup;
+        const address_ptr_t &destination;
+        const address_ptr_t &reply_to;
+        request_ptr_t<T> req;
+
+        template <typename... Args>
+        request_builder_t(supervisor_t &sup_, const address_ptr_t &destination_, const address_ptr_t &reply_to_,
+                          Args &&... args)
+            : sup{sup_}, destination{destination_}, reply_to{reply_to_}, req{new wrapped_request_t<T>{
+                                                                             ++sup.last_req_id, sup.address,
+                                                                             std::forward<Args>(args)...}} {}
+
+        template <typename Handler> void timeout(pt::time_duration timeout, Handler &&handler) {
+            using traits = handler_traits<Handler>;
+            using message_t = typename traits::message_t;
+            using payload_t = typename traits::payload_t;
+
+            auto id = req.get_request().id;
+            auto message = message_ptr_t{new message_t{new payload_t{error_code_t::request_timeout, req}}};
+            sup.request_map.emplace(id, reply_to);
+            sup.start_timer(timeout, id);
+        }
+    };
+
+    template <typename T, typename... Args>
+    request_builder_t<T> request(const address_ptr_t &destination, const address_ptr_t &reply_to,
+                                 Args &&... args) noexcept {
+        return request_builder_t<T>(*this, destination, reply_to, std::forward<Args>(args)...);
+    }
+
   protected:
+    static constexpr const timer_id_t shutdown_timer_id = 0;
+
+    /** \brief default reaction on shutdown timer trigger
+     *
+     * If shutdown timer triggers it is treated as fatal error, which is printed
+     * to `stdout` followed by `std::abort`
+     *
+     */
+    virtual void on_shutdown_timer_trigger() noexcept;
+
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
 
@@ -264,6 +302,8 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief (local) address-to-actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
+
+    using request_map_t = std::unordered_map<timer_id_t, message_ptr_t>;
 
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
     virtual void remove_actor(actor_base_t &actor) noexcept;
@@ -298,6 +338,10 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
+
+    timer_id_t last_req_id;
+    request_map_t request_map;
+    pt::time_duration shutdown_timeout;
 };
 
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
@@ -310,7 +354,7 @@ template <typename M, typename... Args> auto make_message(const address_ptr_t &a
 }
 
 template <typename Supervisor, typename... Args>
-auto system_context_t::create_supervisor(Args... args) -> intrusive_ptr_t<Supervisor> {
+auto system_context_t::create_supervisor(Args &&... args) -> intrusive_ptr_t<Supervisor> {
     using wrapper_t = intrusive_ptr_t<Supervisor>;
     auto raw_object = new Supervisor{std::forward<Args>(args)...};
     raw_object->do_initialize(this);

@@ -101,8 +101,9 @@ int main(int argc, char **argv) {
 
         auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
         auto stand = std::make_shared<asio::io_context::strand>(io_context);
-        ra::supervisor_config_t conf{std::move(stand), pt::milliseconds{500}};
-        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
+        ra::supervisor_config_t conf{std::move(stand)};
+        auto shutdown_timeout = boost::posix_time::milliseconds{500};
+        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(shutdown_timeout, conf);
 
         auto pinger = supervisor->create_actor<pinger_t>(count);
         auto ponger = supervisor->create_actor<ponger_t>();

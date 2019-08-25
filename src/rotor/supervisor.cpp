@@ -11,7 +11,8 @@
 
 using namespace rotor;
 
-supervisor_t::supervisor_t(supervisor_t *sup) : actor_base_t(*this), parent{sup} {}
+supervisor_t::supervisor_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout_)
+    : actor_base_t(*this), parent{sup}, last_req_id{1}, shutdown_timeout{shutdown_timeout_} {}
 
 address_ptr_t supervisor_t::make_address() noexcept {
     auto root_sup = this;
@@ -126,7 +127,7 @@ void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noex
             send<payload::shutdown_request_t>(addr, addr);
         }
         if (!actors_map.empty()) {
-            start_shutdown_timer();
+            start_timer(shutdown_timeout, shutdown_timer_id);
         } else {
             actor_ptr_t self{this};
             unsubscribe_actor(self);
@@ -201,7 +202,7 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     }
     actors_map.erase(it_actor);
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        cancel_shutdown_timer();
+        cancel_timer(shutdown_timer_id);
         actor_ptr_t self{this};
         unsubscribe_actor(self);
     }
@@ -211,4 +212,11 @@ void supervisor_t::confirm_shutdown() noexcept {
     if (parent) {
         send<payload::shutdown_confirmation_t>(parent->get_address(), address);
     }
+}
+
+void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
+    if (timer_id == shutdown_timer_id) {
+        return on_shutdown_timer_trigger();
+    }
+    std::abort();
 }

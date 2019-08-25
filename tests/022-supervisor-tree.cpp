@@ -14,53 +14,51 @@ namespace rt = r::test;
 static std::uint32_t ping_received = 0;
 static std::uint32_t ping_sent = 0;
 
-struct ping_t{};
+struct ping_t {};
 
 struct pinger_t : public r::actor_base_t {
-  using r::actor_base_t::actor_base_t;
+    using r::actor_base_t::actor_base_t;
 
-  void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
+    void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-  void on_initialize(r::message_t<r::payload::initialize_actor_t>
-                         &msg) noexcept override {
-    r::actor_base_t::on_initialize(msg);
-    subscribe(&pinger_t::on_state);
-  }
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_initialize(msg);
+        subscribe(&pinger_t::on_state);
+    }
 
-  void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_start(msg);
-      request_status();
-  }
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        request_status();
+    }
 
-  void request_status() noexcept {
-      auto reply_addr = get_address();
-      send<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), reply_addr, ponger_addr);
-      ++attempts;
-  }
+    void request_status() noexcept {
+        auto reply_addr = get_address();
+        send<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), reply_addr, ponger_addr);
+        ++attempts;
+    }
 
-  void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-      if (msg.payload.state == r::state_t::OPERATIONAL) {
-          send<ping_t>(ponger_addr);
-          ponger_addr.reset();
-          ping_sent++;
-      } else if (attempts > 10) {
-          do_shutdown();
-      } else {
-          request_status();
-      }
-  }
+    void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
+        if (msg.payload.state == r::state_t::OPERATIONAL) {
+            send<ping_t>(ponger_addr);
+            ponger_addr.reset();
+            ping_sent++;
+        } else if (attempts > 10) {
+            do_shutdown();
+        } else {
+            request_status();
+        }
+    }
 
-  std::uint32_t attempts = 0;
-  r::address_ptr_t ponger_addr;
+    std::uint32_t attempts = 0;
+    r::address_ptr_t ponger_addr;
 };
 
 struct ponger_t : public r::actor_base_t {
-  using r::actor_base_t::actor_base_t;
+    using r::actor_base_t::actor_base_t;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t>
-                           &msg) noexcept override {
-      r::actor_base_t::on_initialize(msg);
-      subscribe(&ponger_t::on_ping);
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_initialize(msg);
+        subscribe(&ponger_t::on_ping);
     }
 
     void on_ping(r::message_t<ping_t> &) noexcept {
@@ -94,14 +92,15 @@ struct ponger_t : public r::actor_base_t {
  */
 TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     r::system_context_t system_context;
-    const void* locality = &system_context;
+    const void *locality = &system_context;
 
-    auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, locality);
-    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(locality);
-    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(locality);
+    auto sup_root =
+        system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, locality);
+    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
+    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
 
-    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(locality);
-    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(locality);
+    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
+    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
 
     auto pinger = sup_A2->create_actor<pinger_t>();
     auto ponger = sup_B2->create_actor<ponger_t>();
@@ -122,5 +121,4 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     REQUIRE(sup_A1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup_B1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup_root->get_state() == r::state_t::SHUTTED_DOWN);
-
 }

@@ -18,9 +18,6 @@ namespace pt = boost::posix_time;
 /** \struct supervisor_config_t
  *  \brief boost::asio supervisor config, which holds shutdowm timeout value */
 struct supervisor_config_t {
-    /** \brief time units type used for shutdown timeout timer */
-    using duration_t = pt::time_duration;
-
     /** \brief alias for boost::asio strand type */
     using strand_t = boost::asio::io_context::strand;
 
@@ -29,9 +26,6 @@ struct supervisor_config_t {
 
     /** \brief boost::asio execution strand (shared pointer) */
     strand_ptr_t strand;
-
-    /** \brief shutdown timeout value*/
-    duration_t shutdown_timeout;
 };
 
 } // namespace asio

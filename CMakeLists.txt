@@ -27,6 +27,7 @@ add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/error_code.cpp
     src/rotor/message.cpp
+    src/rotor/request.cpp
     src/rotor/subscription.cpp
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp

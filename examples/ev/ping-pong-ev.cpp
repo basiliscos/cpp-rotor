@@ -90,9 +90,9 @@ int main(int argc, char **argv) {
         auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
         auto conf = rotor::ev::supervisor_config_t{
             loop, true, /* let supervisor takes ownership on the loop */
-            1.0         /* shutdown timeout */
         };
-        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(conf);
+        auto shutdown_timeout = boost::posix_time::milliseconds{500};
+        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(shutdown_timeout, conf);
 
         auto pinger = sup->create_actor<pinger_t>(count);
         auto ponger = sup->create_actor<ponger_t>();

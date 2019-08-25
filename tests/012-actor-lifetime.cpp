@@ -20,9 +20,9 @@ struct sample_actor_t : public r::actor_base_t {
     std::uint32_t event_shutdown;
     std::uint32_t event_shutingdown;
 
-    r::state_t& get_state() noexcept { return  state; }
+    r::state_t &get_state() noexcept { return state; }
 
-    sample_actor_t(r::supervisor_t &sup): r::actor_base_t{sup} {
+    sample_actor_t(r::supervisor_t &sup) : r::actor_base_t{sup} {
         event_current = 1;
         event_init = 0;
         event_start = 0;
@@ -44,15 +44,15 @@ struct sample_actor_t : public r::actor_base_t {
     void on_shutdown(r::message_t<r::payload::shutdown_request_t> &msg) noexcept override {
         event_shutdown = event_current++;
         r::actor_base_t::on_shutdown(msg);
-        if (state == r::state_t::SHUTTING_DOWN) ++event_shutingdown;
+        if (state == r::state_t::SHUTTING_DOWN)
+            ++event_shutingdown;
     }
 };
-
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
     auto act = sup->create_actor<sample_actor_t>();
 
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);

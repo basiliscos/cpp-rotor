@@ -11,11 +11,11 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-struct sample_actor_t  : public r::actor_base_t {
+struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };
 
-struct statuses_observer_t: public r::actor_base_t {
+struct statuses_observer_t : public r::actor_base_t {
     r::address_ptr_t observable_addr;
     r::address_ptr_t dummy_addr;
     r::state_t observable_status;
@@ -23,11 +23,10 @@ struct statuses_observer_t: public r::actor_base_t {
     r::state_t supervisor_status;
     r::state_t self_status;
 
-    //statuses_observer_t()
-    statuses_observer_t(r::supervisor_t &supervisor_):r::actor_base_t(supervisor_){
+    // statuses_observer_t()
+    statuses_observer_t(r::supervisor_t &supervisor_) : r::actor_base_t(supervisor_) {
         observable_status = dummy_status = supervisor_status = r::state_t::UNKNOWN;
     }
-
 
     void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
@@ -45,8 +44,8 @@ struct statuses_observer_t: public r::actor_base_t {
     }
 
     void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        auto& addr = msg.payload.subject_addr;
-        auto& state = msg.payload.state;
+        auto &addr = msg.payload.subject_addr;
+        auto &state = msg.payload.state;
         if (addr == supervisor.get_address()) {
             supervisor_status = state;
         } else if (addr == get_address()) {
@@ -57,14 +56,12 @@ struct statuses_observer_t: public r::actor_base_t {
             observable_status = state;
         }
     }
-
 };
-
 
 TEST_CASE("statuses observer", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
     auto observer = sup->create_actor<statuses_observer_t>();
     auto sample_actor = sup->create_actor<sample_actor_t>();
     observer->observable_addr = sample_actor->get_address();

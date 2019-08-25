@@ -11,6 +11,8 @@
 #include "system_context_asio.h"
 #include "forwarder.hpp"
 #include <boost/asio.hpp>
+#include <unordered_map>
+#include <memory>
 
 namespace rotor {
 namespace asio {
@@ -47,7 +49,16 @@ template <typename Actor, typename Handler, typename ErrHandler> struct forwarde
  */
 struct supervisor_asio_t : public supervisor_t {
     /** \brief an alias for boos::asio::deadline_timer */
-    using timer_t = asio::deadline_timer;
+
+    struct timer_t : public asio::deadline_timer {
+        timer_id_t timer_id;
+
+        timer_t(timer_id_t timer_id_, asio::io_context &io_context)
+            : asio::deadline_timer(io_context), timer_id{timer_id_} {}
+    };
+
+    using timer_ptr_t = std::unique_ptr<timer_t>;
+    using timers_map_t = std::unordered_map<std::uint32_t, timer_ptr_t>;
 
     /** \brief constructs new supervisor from parent supervisor, intrusive
      * pointer to system context and supervisor config and
@@ -55,23 +66,17 @@ struct supervisor_asio_t : public supervisor_t {
      * the `parent` supervisor can be null
      *
      */
-    supervisor_asio_t(supervisor_t *sup, system_context_ptr_t system_context_, const supervisor_config_t &config);
+    supervisor_asio_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout, const supervisor_config_t &config);
 
     virtual address_ptr_t make_address() noexcept override;
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_shutdown_timer() noexcept override;
-    virtual void cancel_shutdown_timer() noexcept override;
+    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
+    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
 
-    /** \brief reaction when shutdown procedure takes too much time
-     *
-     * By default the error code is forwarded to system context, unless
-     * it is timer-aborted error code.
-     *
-     */
-    virtual void on_shutdown_timer_error(const sys::error_code &ec) noexcept;
+    virtual void on_timer_error(timer_id_t timer_id, const sys::error_code &ec) noexcept;
 
     /** \brief creates an actor by forwaring `args` to it
      *
@@ -103,8 +108,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *config.strand; }
 
-    /** \brief timer used to shutdown timeout trigger */
-    timer_t shutdown_timer;
+    timers_map_t timers_map;
 
     /** \brief config for the supervisor */
     supervisor_config_t config;

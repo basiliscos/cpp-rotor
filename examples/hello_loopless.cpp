@@ -16,8 +16,10 @@ struct hello_actor : public rotor::actor_base_t {
 };
 
 struct dummy_supervisor : public rotor::supervisor_t {
-    void start_shutdown_timer() noexcept override {}
-    void cancel_shutdown_timer() noexcept override {}
+    using rotor::supervisor_t::supervisor_t;
+
+    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
+    void cancel_timer(timer_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -25,7 +27,8 @@ struct dummy_supervisor : public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto sup = ctx.create_supervisor<dummy_supervisor>();
+    auto shutdown_timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, shutdown_timeout);
     sup->create_actor<hello_actor>();
     sup->do_process();
     return 0;

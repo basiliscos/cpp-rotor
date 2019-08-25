@@ -33,8 +33,8 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
 
     const char locality1[] = "abc";
     const char locality2[] = "def";
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, locality1);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(locality2);
+    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, r::pt::milliseconds{500}, locality1);
+    auto sup2 = sup1->create_actor<my_supervisor_t>(r::pt::milliseconds{500}, locality2);
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());
@@ -81,8 +81,8 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
     r::system_context_t system_context;
 
     const char locality[] = "locality";
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, locality);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(locality);
+    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, r::pt::milliseconds{500}, locality);
+    auto sup2 = sup1->create_actor<my_supervisor_t>(r::pt::milliseconds{500}, locality);
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());

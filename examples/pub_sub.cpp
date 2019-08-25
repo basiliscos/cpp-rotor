@@ -43,8 +43,9 @@ struct sub_t : public r::actor_base_t {
 };
 
 struct dummy_supervisor : public rotor::supervisor_t {
-    void start_shutdown_timer() noexcept override {}
-    void cancel_shutdown_timer() noexcept override {}
+    using rotor::supervisor_t::supervisor_t;
+    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
+    void cancel_timer(timer_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -52,7 +53,8 @@ struct dummy_supervisor : public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto sup = ctx.create_supervisor<dummy_supervisor>();
+    auto shutdown_timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, shutdown_timeout);
 
     auto pub_addr = sup->create_address(); // (1)
     auto pub = sup->create_actor<pub_t>();

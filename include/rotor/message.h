@@ -48,6 +48,8 @@ inline message_base_t::~message_base_t() {}
  *  \tparam T payload type
  */
 template <typename T> struct message_t : public message_base_t {
+    using payload_t = T;
+
     /** \brief forwards `args` for payload construction */
     template <typename... Args>
     message_t(const address_ptr_t &addr, Args... args)

@@ -11,11 +11,11 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-struct sample_actor_t  : public r::actor_base_t {
+struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };
 
-struct observer_t: public r::actor_base_t {
+struct observer_t : public r::actor_base_t {
     std::uint32_t event = 0;
     r::address_ptr_t observable;
 
@@ -30,25 +30,17 @@ struct observer_t: public r::actor_base_t {
         subscribe(&observer_t::on_sample_shutdown, observable);
     }
 
-    void on_sample_initialize(r::message_t<r::payload::initialize_actor_t>&) noexcept {
-        event += 1;
-    }
+    void on_sample_initialize(r::message_t<r::payload::initialize_actor_t> &) noexcept { event += 1; }
 
-    void on_sample_start(r::message_t<r::payload::start_actor_t> &) noexcept {
-        event += 2;
-    }
+    void on_sample_start(r::message_t<r::payload::start_actor_t> &) noexcept { event += 2; }
 
-    void on_sample_shutdown(r::message_t<r::payload::shutdown_request_t> &) noexcept {
-        event += 4;
-    }
-
+    void on_sample_shutdown(r::message_t<r::payload::shutdown_request_t> &) noexcept { event += 4; }
 };
-
 
 TEST_CASE("lifetime observer", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
     auto observer = sup->create_actor<observer_t>();
     auto sample_actor = sup->create_actor<sample_actor_t>();
     observer->set_observable(sample_actor->get_address());
