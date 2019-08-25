@@ -248,6 +248,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief returns system context */
     inline system_context_t *get_context() noexcept { return context; }
 
+    /*
     template <typename T> struct request_builder_t {
 
         supervisor_t &sup;
@@ -279,6 +280,7 @@ struct supervisor_t : public actor_base_t {
                                  Args &&... args) noexcept {
         return request_builder_t<T>(*this, destination, reply_to, std::forward<Args>(args)...);
     }
+    */
 
   protected:
     static constexpr const timer_id_t shutdown_timer_id = 0;
