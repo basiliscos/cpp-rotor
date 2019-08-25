@@ -128,8 +128,8 @@ struct holding_supervisor_t : public rt::supervisor_asio_test_t {
 
     holding_supervisor_t(ra::supervisor_asio_t *sup, const pt::time_duration &shutdown_timeout_,
                          const ra::supervisor_config_t &cfg)
-        : rt::supervisor_asio_test_t{sup, shutdown_timeout_, cfg}, guard{asio::make_work_guard(
-                                                                       cfg.strand->get_io_context())} {}
+        : rt::supervisor_asio_test_t{sup, shutdown_timeout_, cfg}, guard{asio::make_work_guard(cfg.strand->context())} {
+    }
     guard_t guard;
 
     void confirm_shutdown() noexcept override {
