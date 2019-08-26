@@ -316,6 +316,8 @@ struct supervisor_t : public actor_base_t {
     request_map_t request_map;
     pt::time_duration shutdown_timeout;
 
+    std::unordered_set<const void *> subscribed_responces;
+
     template <typename T> friend struct request_builder_t;
 };
 
@@ -421,12 +423,14 @@ template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeo
 
     auto msg_request = message_ptr_t{new request_message_t{destination, req}};
     auto msg_timeout = message_ptr_t{new res_msg_t{reply_to, wrap_res_t{error_code_t::request_timeout, req}}};
-    sup.subscribe(lambda<res_msg_t>([supervisor = &sup, request_id = request_id](res_msg_t &msg) {
-        supervisor->cancel_timer(request_id);
-        auto it = supervisor->request_map.find(request_id);
-        supervisor->template send<wrap_res_t>(it->second->address, std::move(msg.payload));
-        supervisor->request_map.erase(it);
-    }));
+    if (sup.subscribed_responces.count(msg_timeout->type_index) == 0) {
+        sup.subscribe(lambda<res_msg_t>([supervisor = &sup, request_id = request_id](res_msg_t &msg) {
+            supervisor->cancel_timer(request_id);
+            auto it = supervisor->request_map.find(request_id);
+            supervisor->template send<wrap_res_t>(it->second->address, std::move(msg.payload));
+            supervisor->request_map.erase(it);
+        }));
+    }
     sup.request_map.emplace(request_id, std::move(msg_timeout));
     sup.put(std::move(msg_request));
     sup.start_timer(timeout, request_id);
