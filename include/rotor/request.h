@@ -67,7 +67,6 @@ template <typename R> struct request_traits_t {
     using responce_message_t = message_t<wrapped_res_t>;
 };
 
-
 template <typename T> struct [[nodiscard]] request_builder_t {
     using traits_t = request_traits_t<T>;
     using responce_t = typename traits_t::responce_t;

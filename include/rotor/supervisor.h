@@ -166,8 +166,6 @@ struct supervisor_t : public actor_base_t {
     virtual void cancel_timer(timer_id_t timer_id) noexcept = 0;
     virtual void on_timer_trigger(timer_id_t timer_id);
 
-    virtual void on_responce(message_t<intrusive_ptr_t<responce_base_t>> &message) noexcept;
-
     /** \brief thread-safe version of `do_start`, i.e. send start actor request
      * let it be processed by the supervisor */
     virtual void start() noexcept = 0;
@@ -423,9 +421,13 @@ template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeo
     using res_msg_t = typename traits_t::responce_message_t;
 
     auto msg_request = message_ptr_t{new request_message_t{destination, req}};
-    //auto timeout_res = std::make_unique<wrap_res_t>(error_code_t::request_timeout, req);
-    //auto msg_timeout = message_ptr_t{new res_msg_t{reply_to, std::move(timeout_res)}};
     auto msg_timeout = message_ptr_t{new res_msg_t{reply_to, wrap_res_t{error_code_t::request_timeout, req}}};
+    sup.subscribe(lambda<res_msg_t>([supervisor = &sup, request_id = request_id](res_msg_t &msg) {
+        supervisor->cancel_timer(request_id);
+        auto it = supervisor->request_map.find(request_id);
+        supervisor->request_map.erase(it);
+        supervisor->template send<wrap_res_t>(it->second->address, std::move(msg.payload));
+    }));
     sup.request_map.emplace(request_id, msg_timeout);
     sup.put(std::move(msg_request));
     sup.start_timer(timeout, request_id);
@@ -445,7 +447,7 @@ template <typename Request, typename... Args> void actor_base_t::reply_to(const 
     using wrapped_res_t = typename traits_t::wrapped_res_t;
 
     auto res_payload = std::make_unique<responce_t>(std::forward<Args>(args)...);
-    auto& dest_addr = message.payload->reply_to;
+    auto &dest_addr = message.payload->reply_to;
     send<wrapped_res_t>(dest_addr, message.payload, std::move(res_payload));
 }
 

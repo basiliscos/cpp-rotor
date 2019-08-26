@@ -21,7 +21,6 @@ namespace rotor {
  * The actual message payload meant to be provided by derived classes
  *
  */
-
 struct message_base_t : public arc_base_t<message_base_t> {
     virtual ~message_base_t();
 

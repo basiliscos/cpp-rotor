@@ -12,12 +12,27 @@
 #include <memory>
 #include <typeindex>
 #include <typeinfo>
+#include <type_traits>
 //#include <iostream>
 
 namespace rotor {
 
 struct actor_base_t;
 struct supervisor_t;
+
+template <typename M, typename F> struct lambda_holder_t {
+    F fn;
+
+    lambda_holder_t(F &&fn_) : fn(std::forward<F>(fn_)) {}
+
+    static constexpr const bool message_supported = true;
+    using message_t = M;
+    using payload_t = typename M::payload_t;
+};
+
+template <typename M, typename F> constexpr lambda_holder_t<M, F> lambda(F &&fn) {
+    return lambda_holder_t<M, F>(std::forward<F>(fn));
+}
 
 /** \brief intrusive pointer for supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
@@ -91,11 +106,16 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
 
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
+template <typename Handler, typename Enable = void> struct handler_t;
+
 /** \struct handler_t
  *  \brief the generic handler meant to hold user-specific pointer-to-member function
  *  \tparam Handler pointer-to-member function type
  */
-template <typename Handler> struct handler_t : public handler_base_t {
+template <typename Handler>
+struct handler_t<Handler,
+                 std::enable_if_t<std::is_base_of_v<message_base_t, typename handler_traits<Handler>::message_t>>>
+    : public handler_base_t {
     /** \brief static pointer to unique pointer-to-member function ( `typeid(Handler).name()` ) */
     static const void *handler_type;
 
@@ -121,7 +141,34 @@ template <typename Handler> struct handler_t : public handler_base_t {
 };
 
 template <typename Handler>
-const void *handler_t<Handler>::handler_type = static_cast<const void *>(typeid(Handler).name());
+const void *handler_t<
+    Handler,
+    std::enable_if_t<std::is_base_of_v<message_base_t, typename handler_traits<Handler>::message_t>>>::handler_type =
+    static_cast<const void *>(typeid(Handler).name());
+
+template <typename Handler, typename M> struct handler_t<lambda_holder_t<Handler, M>> : public handler_base_t {
+    using handler_backend_t = lambda_holder_t<Handler, M>;
+    handler_backend_t handler;
+
+    static const void *handler_type;
+
+    handler_t(actor_base_t &actor, handler_backend_t &&handler_)
+        : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{std::forward<handler_backend_t>(
+                                                                                  handler_)} {}
+
+    void call(message_ptr_t &message) noexcept override {
+        if (message->type_index == final_message_t::message_type) {
+            auto final_message = static_cast<final_message_t *>(message.get());
+            handler.fn(*final_message);
+        }
+    }
+
+  private:
+    using final_message_t = typename handler_backend_t::message_t;
+};
+
+template <typename Handler, typename M>
+const void *handler_t<lambda_holder_t<Handler, M>>::handler_type = static_cast<const void *>(typeid(Handler).name());
 
 /* third-party classes implementations */
 
