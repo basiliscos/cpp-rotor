@@ -18,6 +18,8 @@ struct supervisor_t;
 struct system_context_t;
 struct handler_base_t;
 
+template <typename T> struct [[nodiscard]] request_builder_t;
+
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
@@ -156,6 +158,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
+    template <typename M, typename... Args> request_builder_t<M> request(const address_ptr_t &addr, Args &&... args);
+    template <typename Request, typename... Args> void reply_to(const Request &message, Args &&... args);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> void subscribe(Handler &&h, address_ptr_t &addr) noexcept;

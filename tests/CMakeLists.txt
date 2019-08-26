@@ -35,6 +35,10 @@ add_executable(016-pub_sub 016-pub_sub.cpp)
 target_link_libraries(016-pub_sub ${rotor_TEST_LIBS})
 add_test(016-pub_sub "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/016-pub_sub")
 
+add_executable(017-req-res 017-req-res.cpp)
+target_link_libraries(017-req-res ${rotor_TEST_LIBS})
+add_test(017-req-res "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/017-req-res")
+
 add_executable(020-two-supervisors 020-two-supervisors.cpp)
 target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})
 add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervisors")

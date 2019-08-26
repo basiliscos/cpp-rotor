@@ -7,11 +7,13 @@
 //
 
 #include "rotor/supervisor.h"
+#include <unordered_set>
 
 namespace rotor {
 namespace test {
 
 struct supervisor_test_t : public supervisor_t {
+    using set_t = std::unordered_set<timer_id_t>;
     supervisor_test_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout, const void *locality);
 
     virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
@@ -28,6 +30,7 @@ struct supervisor_test_t : public supervisor_t {
     actors_map_t &get_children() noexcept { return actors_map; }
 
     const void *locality;
+    set_t active_timers;
 };
 
 } // namespace test

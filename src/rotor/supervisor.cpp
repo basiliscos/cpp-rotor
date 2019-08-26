@@ -41,6 +41,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     subscribe(&supervisor_t::on_external_subs);
     subscribe(&supervisor_t::on_commit_unsubscription);
     subscribe(&supervisor_t::on_state_request);
+    subscribe(&supervisor_t::on_responce);
     auto addr = supervisor.get_address();
     send<payload::initialize_actor_t>(addr, addr);
 }
@@ -219,4 +220,10 @@ void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
         return on_shutdown_timer_trigger();
     }
     std::abort();
+}
+
+void supervisor_t::on_responce(message_t<intrusive_ptr_t<responce_base_t>> &message) noexcept {
+    auto id = message.payload->get_request().id;
+    request_map.erase(id);
+    cancel_timer(id);
 }

@@ -19,7 +19,6 @@
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace rotor {
 
@@ -167,6 +166,8 @@ struct supervisor_t : public actor_base_t {
     virtual void cancel_timer(timer_id_t timer_id) noexcept = 0;
     virtual void on_timer_trigger(timer_id_t timer_id);
 
+    virtual void on_responce(message_t<intrusive_ptr_t<responce_base_t>> &message) noexcept;
+
     /** \brief thread-safe version of `do_start`, i.e. send start actor request
      * let it be processed by the supervisor */
     virtual void start() noexcept = 0;
@@ -248,39 +249,11 @@ struct supervisor_t : public actor_base_t {
     /** \brief returns system context */
     inline system_context_t *get_context() noexcept { return context; }
 
-    /*
-    template <typename T> struct request_builder_t {
-
-        supervisor_t &sup;
-        const address_ptr_t &destination;
-        const address_ptr_t &reply_to;
-        request_ptr_t<T> req;
-
-        template <typename... Args>
-        request_builder_t(supervisor_t &sup_, const address_ptr_t &destination_, const address_ptr_t &reply_to_,
-                          Args &&... args)
-            : sup{sup_}, destination{destination_}, reply_to{reply_to_}, req{new wrapped_request_t<T>{
-                                                                             ++sup.last_req_id, sup.address,
-                                                                             std::forward<Args>(args)...}} {}
-
-        template <typename Handler> void timeout(pt::time_duration timeout, Handler &&handler) {
-            using traits = handler_traits<Handler>;
-            using message_t = typename traits::message_t;
-            using payload_t = typename traits::payload_t;
-
-            auto id = req.get_request().id;
-            auto message = message_ptr_t{new message_t{new payload_t{error_code_t::request_timeout, req}}};
-            sup.request_map.emplace(id, reply_to);
-            sup.start_timer(timeout, id);
-        }
-    };
-
     template <typename T, typename... Args>
     request_builder_t<T> request(const address_ptr_t &destination, const address_ptr_t &reply_to,
                                  Args &&... args) noexcept {
         return request_builder_t<T>(*this, destination, reply_to, std::forward<Args>(args)...);
     }
-    */
 
   protected:
     static constexpr const timer_id_t shutdown_timer_id = 0;
@@ -344,6 +317,8 @@ struct supervisor_t : public actor_base_t {
     timer_id_t last_req_id;
     request_map_t request_map;
     pt::time_duration shutdown_timeout;
+
+    template <typename T> friend struct request_builder_t;
 };
 
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
@@ -431,6 +406,47 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
     actor->do_initialize(context);
     sup.template send<payload::create_actor_t>(sup.get_address(), actor, ctor_t::is_supervisor);
     return actor;
+}
+
+template <typename T>
+template <typename... Args>
+request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t &destination_,
+                                        const address_ptr_t &reply_to_, Args &&... args)
+    : sup{sup_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
+      req{new wrapped_request_t<T>{request_id, address_ptr_t{sup.address}, std::forward<Args>(args)...}} {}
+
+template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) {
+    using traits_t = request_traits_t<T>;
+    using request_message_t = typename traits_t::request_message_t;
+    using wrap_res_t = typename traits_t::wrapped_res_t;
+    using wrap_res_ptr_t = typename traits_t::wrapped_res_ptr_t;
+    using res_msg_t = typename traits_t::responce_message_t;
+
+    auto msg_request = message_ptr_t{new request_message_t{destination, req}};
+    //auto timeout_res = std::make_unique<wrap_res_t>(error_code_t::request_timeout, req);
+    //auto msg_timeout = message_ptr_t{new res_msg_t{reply_to, std::move(timeout_res)}};
+    auto msg_timeout = message_ptr_t{new res_msg_t{reply_to, wrap_res_t{error_code_t::request_timeout, req}}};
+    sup.request_map.emplace(request_id, msg_timeout);
+    sup.put(std::move(msg_request));
+    sup.start_timer(timeout, request_id);
+}
+
+template <typename M, typename... Args>
+request_builder_t<M> actor_base_t::request(const address_ptr_t &addr, Args &&... args) {
+    return supervisor.request<M>(addr, address, std::forward<Args>(args)...);
+}
+
+template <typename Request, typename... Args> void actor_base_t::reply_to(const Request &message, Args &&... args) {
+    using payload_t = typename Request::payload_t;
+    using wrapped_request_t = typename payload_t::element_type;
+    using request_t = typename wrapped_request_t::request_t;
+    using traits_t = request_traits_t<request_t>;
+    using responce_t = typename traits_t::responce_t;
+    using wrapped_res_t = typename traits_t::wrapped_res_t;
+
+    auto res_payload = std::make_unique<responce_t>(std::forward<Args>(args)...);
+    auto& dest_addr = message.payload->reply_to;
+    send<wrapped_res_t>(dest_addr, message.payload, std::move(res_payload));
 }
 
 } // namespace rotor
