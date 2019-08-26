@@ -69,6 +69,10 @@ if (BUILD_BOOST_ASIO)
     add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
     target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
     add_test(103-asio_ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/103-asio_ping-pong-2-threads")
+
+    add_executable(104-asio_timer 104-asio_timer.cpp)
+    target_link_libraries(104-asio_timer ${rotor_BOOTS_TEST_LIBS})
+    add_test(104-asio_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/104-asio_timer")
 endif()
 
 
@@ -79,6 +83,10 @@ if (BUILD_WX)
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
     target_link_libraries(121-wx_ping_ping rotor_test_lib rotor_wx ${wxWidgets_LIBRARIES})
     add_test(121-wx_ping_ping "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/121-wx_ping_ping")
+
+    add_executable(122-wx_timer 122-wx_timer.cpp)
+    target_link_libraries(122-wx_timer rotor_test_lib rotor_wx ${wxWidgets_LIBRARIES})
+    add_test(122-wx_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/122-wx_timer")
 endif()
 
 
@@ -86,4 +94,9 @@ if (BUILD_EV)
     add_executable(131-ev_ping-pong 131-ev_ping-pong.cpp)
     target_link_libraries(131-ev_ping-pong rotor_test_lib rotor_ev)
     add_test(131-ev_ping-pong "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/131-ev_ping-pong")
+
+    add_executable(132-ev_timer 132-ev_timer.cpp)
+    target_link_libraries(132-ev_timer rotor_test_lib rotor_ev)
+    add_test(132-ev_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/132-ev_timer")
+
 endif()

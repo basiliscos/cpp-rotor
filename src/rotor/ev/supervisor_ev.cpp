@@ -23,6 +23,7 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     auto *sup = static_cast<supervisor_ev_t *>(w->data);
     auto timer = static_cast<supervisor_ev_t::timer_t *>(w);
     sup->on_timer_trigger(timer->timer_id);
+    sup->do_process();
 }
 
 supervisor_ev_t::supervisor_ev_t(supervisor_ev_t *parent_, const pt::time_duration &shutdown_timeout_,

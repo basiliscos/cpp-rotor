@@ -11,19 +11,16 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-struct payload{};
+struct payload {};
 
 struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     bool received = false;
 
-
     void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
         using message_t = r::message_t<payload>;
         r::actor_base_t::on_initialize(msg);
-        subscribe(r::lambda<message_t>([this](message_t&) noexcept {
-            received = true;
-        }));
+        subscribe(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {

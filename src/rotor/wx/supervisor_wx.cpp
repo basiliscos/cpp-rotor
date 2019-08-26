@@ -62,4 +62,5 @@ void supervisor_wx_t::cancel_timer(timer_id_t timer_id) noexcept {
 void supervisor_wx_t::on_timer_trigger(timer_id_t timer_id) noexcept {
     timers_map.erase(timer_id);
     supervisor_t::on_timer_trigger(timer_id);
+    do_process();
 }

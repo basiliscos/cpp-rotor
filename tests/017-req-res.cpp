@@ -18,7 +18,7 @@ struct responce_sample_t {
     responce_sample_t(responce_sample_t &&) = delete;
 };
 
-struct request_sample_t: r::arc_base_t<request_sample_t> {
+struct request_sample_t : r::arc_base_t<request_sample_t> {
     using responce_t = responce_sample_t;
 
     int value;
@@ -46,11 +46,9 @@ struct good_actor_t : public r::actor_base_t {
         request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
     }
 
-    void on_request(traits_t::request_message_t& msg) noexcept {
-        reply_to(msg, 5);
-    }
+    void on_request(traits_t::request_message_t &msg) noexcept { reply_to(msg, 5); }
 
-    void on_responce(traits_t::responce_message_t& msg) noexcept {
+    void on_responce(traits_t::responce_message_t &msg) noexcept {
         req_val = msg.payload.req->payload.value;
         res_val = msg.payload.res->value;
         ec = msg.payload.ec;
@@ -74,11 +72,11 @@ struct bad_actor_t : public r::actor_base_t {
         request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
     }
 
-    void on_request(traits_t::request_message_t&) noexcept {
+    void on_request(traits_t::request_message_t &) noexcept {
         // no-op
     }
 
-    void on_responce(traits_t::responce_message_t& msg) noexcept {
+    void on_responce(traits_t::responce_message_t &msg) noexcept {
         req_val = msg.payload.req->payload.value;
         ec = msg.payload.ec;
         if (msg.payload.res) {

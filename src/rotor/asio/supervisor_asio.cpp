@@ -28,13 +28,17 @@ void supervisor_asio_t::start_timer(const pt::time_duration &timeout, std::uint3
         auto &strand = self->get_strand();
         if (ec) {
             asio::defer(strand, [self = std::move(self), timer_id = timer_id, ec = ec]() {
-                self->timers_map.erase(timer_id);
-                self->on_timer_error(timer_id, ec);
+                auto &sup = *self;
+                sup.timers_map.erase(timer_id);
+                sup.on_timer_error(timer_id, ec);
+                sup.do_process();
             });
         } else {
             asio::defer(strand, [self = std::move(self), timer_id = timer_id]() {
-                self->on_timer_trigger(timer_id);
-                self->timers_map.erase(timer_id);
+                auto &sup = *self;
+                sup.on_timer_trigger(timer_id);
+                sup.timers_map.erase(timer_id);
+                sup.do_process();
             });
         }
     });
