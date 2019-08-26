@@ -9,3 +9,5 @@
 using namespace rotor;
 
 responce_base_t::~responce_base_t() {}
+
+request_base_t::~request_base_t() {}

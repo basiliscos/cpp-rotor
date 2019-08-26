@@ -218,5 +218,11 @@ void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     if (timer_id == shutdown_timer_id) {
         return on_shutdown_timer_trigger();
     }
-    std::abort();
+    auto it = request_map.find(timer_id);
+    if (it != request_map.end()) {
+        put(std::move(it->second));
+        request_map.erase(it);
+    } else {
+        context->on_error(make_error_code(error_code_t::unknown_request));
+    }
 }

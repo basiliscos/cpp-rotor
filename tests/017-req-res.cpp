@@ -65,8 +65,8 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
-        subscribe(&good_actor_t::on_request);
-        subscribe(&good_actor_t::on_responce);
+        subscribe(&bad_actor_t::on_request);
+        subscribe(&bad_actor_t::on_responce);
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -74,7 +74,7 @@ struct bad_actor_t : public r::actor_base_t {
         request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
     }
 
-    void on_request(traits_t::request_message_t& msg) noexcept {
+    void on_request(traits_t::request_message_t&) noexcept {
         // no-op
     }
 
@@ -106,10 +106,11 @@ TEST_CASE("request-responce successfull delivery", "[supervisor]") {
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-#if 0
 TEST_CASE("request-responce timeout", "[supervisor]") {
     r::system_context_t system_context;
 
@@ -119,17 +120,23 @@ TEST_CASE("request-responce timeout", "[supervisor]") {
 
     REQUIRE(actor->req_val == 0);
     REQUIRE(actor->res_val == 0);
-    REQUIRE(actor->ec == r::error_code_t::success);
     REQUIRE(sup->active_timers.size() == 1);
+    REQUIRE(actor->ec == r::error_code_t::success);
+    auto timer_id = *(sup->active_timers.begin());
 
-    /*
+    sup->on_timer_trigger(timer_id);
+    sup->do_process();
+    REQUIRE(actor->req_val == 4);
+    REQUIRE(actor->res_val == 0);
+    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+
+    sup->active_timers.clear();
     sup->do_shutdown();
     sup->do_process();
+
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
-    */
+    REQUIRE(sup->active_timers.size() == 0);
 }
-
-#endif

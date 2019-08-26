@@ -21,6 +21,7 @@ struct request_base_t : public arc_base_t<request_base_t> {
     std::uint32_t id;
     address_ptr_t reply_to;
     request_base_t(std::uint32_t id_, const address_ptr_t &reply_to_) : id{id_}, reply_to{reply_to_} {}
+    virtual ~request_base_t();
 };
 
 template <typename T> struct wrapped_request_t : request_base_t {
@@ -59,7 +60,8 @@ template <typename Request> struct wrapped_responce_t : public responce_base_t {
 template <typename R> struct request_traits_t {
     using request_t = R;
     using responce_t = typename R::responce_t;
-    using request_ptr_t = intrusive_ptr_t<wrapped_request_t<R>>;
+    using wrapped_req_t = wrapped_request_t<R>;
+    using request_ptr_t = intrusive_ptr_t<wrapped_req_t>;
     using wrapped_res_t = wrapped_responce_t<R>;
     using wrapped_res_ptr_t = std::unique_ptr<wrapped_res_t>;
     using responce_ptr_t = std::unique_ptr<responce_t>;
@@ -70,6 +72,7 @@ template <typename R> struct request_traits_t {
 template <typename T> struct [[nodiscard]] request_builder_t {
     using traits_t = request_traits_t<T>;
     using responce_t = typename traits_t::responce_t;
+    using wrapped_request_t = typename traits_t::wrapped_req_t;
     using request_ptr_t = typename traits_t::request_ptr_t;
 
     supervisor_t &sup;
@@ -85,4 +88,4 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     void timeout(pt::time_duration timeout);
 };
 
-}; // namespace rotor
+} // namespace rotor

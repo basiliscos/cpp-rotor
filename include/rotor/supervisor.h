@@ -411,13 +411,12 @@ template <typename... Args>
 request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t &destination_,
                                         const address_ptr_t &reply_to_, Args &&... args)
     : sup{sup_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
-      req{new wrapped_request_t<T>{request_id, address_ptr_t{sup.address}, std::forward<Args>(args)...}} {}
+      req{new wrapped_request_t(request_id, address_ptr_t{sup.address}, std::forward<Args>(args)...)} {}
 
 template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) {
     using traits_t = request_traits_t<T>;
     using request_message_t = typename traits_t::request_message_t;
     using wrap_res_t = typename traits_t::wrapped_res_t;
-    using wrap_res_ptr_t = typename traits_t::wrapped_res_ptr_t;
     using res_msg_t = typename traits_t::responce_message_t;
 
     auto msg_request = message_ptr_t{new request_message_t{destination, req}};
@@ -425,10 +424,10 @@ template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeo
     sup.subscribe(lambda<res_msg_t>([supervisor = &sup, request_id = request_id](res_msg_t &msg) {
         supervisor->cancel_timer(request_id);
         auto it = supervisor->request_map.find(request_id);
-        supervisor->request_map.erase(it);
         supervisor->template send<wrap_res_t>(it->second->address, std::move(msg.payload));
+        supervisor->request_map.erase(it);
     }));
-    sup.request_map.emplace(request_id, msg_timeout);
+    sup.request_map.emplace(request_id, std::move(msg_timeout));
     sup.put(std::move(msg_request));
     sup.start_timer(timeout, request_id);
 }
