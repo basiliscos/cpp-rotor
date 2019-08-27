@@ -12,7 +12,6 @@
 #include "messages.hpp"
 #include "subscription.h"
 #include "system_context.h"
-#include "request.h"
 
 #include <chrono>
 #include <deque>

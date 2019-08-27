@@ -9,6 +9,7 @@
 #include "address.hpp"
 #include "message.h"
 #include "state.h"
+#include "request.h"
 
 namespace rotor {
 

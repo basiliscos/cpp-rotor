@@ -18,8 +18,6 @@ struct supervisor_t;
 struct system_context_t;
 struct handler_base_t;
 
-template <typename T> struct [[nodiscard]] request_builder_t;
-
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 

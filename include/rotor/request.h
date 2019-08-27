@@ -8,7 +8,6 @@
 
 #include "address.hpp"
 #include "message.h"
-#include "messages.hpp"
 #include "error_code.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <memory>
@@ -30,7 +29,7 @@ template <typename T> struct wrapped_request_t : request_base_t {
 
     template <typename... Args>
     wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, Args &&... args)
-        : request_base_t{id_, reply_to_}, payload(std::forward<Args>(args)...) {}
+        : request_base_t{id_, reply_to_}, payload{std::forward<Args>(args)...} {}
 
     T payload;
 };
@@ -67,6 +66,8 @@ template <typename R> struct request_traits_t {
     using responce_ptr_t = std::unique_ptr<responce_t>;
     using request_message_t = message_t<request_ptr_t>;
     using responce_message_t = message_t<wrapped_res_t>;
+    using responce_message_ptr_t = intrusive_ptr_t<responce_message_t>;
+    using request_message_ptr_t = intrusive_ptr_t<request_message_t>;
 };
 
 template <typename T> struct [[nodiscard]] request_builder_t {
