@@ -60,6 +60,7 @@ struct bad_actor_t : public r::actor_base_t {
     int req_val = 0;
     int res_val = 0;
     r::error_code_t ec = r::error_code_t::success;
+    r::intrusive_ptr_t<traits_t::request_message_t> req_msg;
 
     void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
@@ -67,13 +68,18 @@ struct bad_actor_t : public r::actor_base_t {
         subscribe(&bad_actor_t::on_responce);
     }
 
+    void on_shutdown(r::message_t<r::payload::shutdown_request_t> &msg) noexcept override  {
+        r::actor_base_t::on_shutdown(msg);
+        req_msg.reset();
+    }
+
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
         request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
     }
 
-    void on_request(traits_t::request_message_t &) noexcept {
-        // no-op
+    void on_request(traits_t::request_message_t &msg) noexcept {
+        req_msg.reset(&msg);
     }
 
     void on_responce(traits_t::responce_message_t &msg) noexcept {
@@ -124,14 +130,22 @@ TEST_CASE("request-responce timeout", "[supervisor]") {
 
     sup->on_timer_trigger(timer_id);
     sup->do_process();
+    REQUIRE(actor->req_msg);
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 0);
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
 
     sup->active_timers.clear();
+
+    actor->reply_to(*actor->req_msg, 1);
+    sup->do_process();
+    // nothing should be changed, i.e. reply should just be dropped
+    REQUIRE(actor->req_val == 4);
+    REQUIRE(actor->res_val == 0);
+    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+
     sup->do_shutdown();
     sup->do_process();
-
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);

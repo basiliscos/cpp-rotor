@@ -72,8 +72,11 @@ template <typename R> struct request_traits_t {
 template <typename T> struct [[nodiscard]] request_builder_t {
     using traits_t = request_traits_t<T>;
     using responce_t = typename traits_t::responce_t;
-    using wrapped_request_t = typename traits_t::wrapped_req_t;
     using request_ptr_t = typename traits_t::request_ptr_t;
+    using wrapped_request_t = typename traits_t::wrapped_req_t;
+    using wrapped_res_t = typename traits_t::wrapped_res_t;
+    using request_message_t = typename traits_t::request_message_t;
+    using responce_message_t = typename traits_t::responce_message_t;
 
     supervisor_t &sup;
     std::uint32_t request_id;
@@ -85,7 +88,10 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     request_builder_t(supervisor_t & sup_, const address_ptr_t &destination_, const address_ptr_t &reply_to_,
                       Args &&... args);
 
-    void timeout(pt::time_duration timeout);
+    void timeout(pt::time_duration timeout) noexcept;
+
+  private:
+    void install_handler() noexcept;
 };
 
 } // namespace rotor

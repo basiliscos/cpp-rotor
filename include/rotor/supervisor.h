@@ -415,25 +415,31 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t 
     : sup{sup_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
       req{new wrapped_request_t(request_id, address_ptr_t{sup.address}, std::forward<Args>(args)...)} {}
 
-template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) {
-    using traits_t = request_traits_t<T>;
-    using request_message_t = typename traits_t::request_message_t;
-    using wrap_res_t = typename traits_t::wrapped_res_t;
-    using res_msg_t = typename traits_t::responce_message_t;
-
+template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) noexcept {
     auto msg_request = message_ptr_t{new request_message_t{destination, req}};
-    auto msg_timeout = message_ptr_t{new res_msg_t{reply_to, wrap_res_t{error_code_t::request_timeout, req}}};
+    auto msg_timeout =
+        message_ptr_t{new responce_message_t{reply_to, wrapped_res_t{error_code_t::request_timeout, req}}};
     if (sup.subscribed_responces.count(msg_timeout->type_index) == 0) {
-        sup.subscribe(lambda<res_msg_t>([supervisor = &sup, request_id = request_id](res_msg_t &msg) {
-            supervisor->cancel_timer(request_id);
-            auto it = supervisor->request_map.find(request_id);
-            supervisor->template send<wrap_res_t>(it->second->address, std::move(msg.payload));
-            supervisor->request_map.erase(it);
-        }));
+        install_handler();
     }
     sup.request_map.emplace(request_id, std::move(msg_timeout));
     sup.put(std::move(msg_request));
     sup.start_timer(timeout, request_id);
+}
+
+template <typename T> void request_builder_t<T>::install_handler() noexcept {
+    sup.subscribe(lambda<responce_message_t>([supervisor = &sup, request_id = request_id](responce_message_t &msg) {
+        auto it = supervisor->request_map.find(request_id);
+        if (it != supervisor->request_map.end()) {
+            supervisor->cancel_timer(request_id);
+            supervisor->template send<wrapped_res_t>(it->second->address, std::move(msg.payload));
+            supervisor->request_map.erase(it);
+        }
+        // if a responce to request has arrived and no timer can be found
+        // that means that either timeout timer already triggered
+        // and error-message already delivered or responce is not expected.
+        // just silently drop it anyway
+    }));
 }
 
 template <typename M, typename... Args>
