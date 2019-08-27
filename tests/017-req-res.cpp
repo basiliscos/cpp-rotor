@@ -49,8 +49,8 @@ struct good_actor_t : public r::actor_base_t {
     void on_request(traits_t::request_message_t &msg) noexcept { reply_to(msg, 5); }
 
     void on_responce(traits_t::responce_message_t &msg) noexcept {
-        req_val = msg.payload.req->payload.value;
-        res_val = msg.payload.res->value;
+        req_val += msg.payload.req->payload.value;
+        res_val += msg.payload.res->value;
         ec = msg.payload.ec;
     }
 };
@@ -83,7 +83,7 @@ struct bad_actor_t : public r::actor_base_t {
     }
 
     void on_responce(traits_t::responce_message_t &msg) noexcept {
-        req_val = msg.payload.req->payload.value;
+        req_val += msg.payload.req->payload.value;
         ec = msg.payload.ec;
         if (msg.payload.res) {
             res_val = 9;
@@ -91,7 +91,34 @@ struct bad_actor_t : public r::actor_base_t {
     }
 };
 
-TEST_CASE("request-responce successfull delivery", "[supervisor]") {
+struct good_supervisor_t : rt::supervisor_test_t {
+    int req_val = 0;
+    int res_val = 0;
+    r::error_code_t ec = r::error_code_t::supervisor_defined;
+
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        rt::supervisor_test_t::actor_base_t::on_initialize(msg);
+        subscribe(&good_supervisor_t::on_request);
+        subscribe(&good_supervisor_t::on_responce);
+    }
+
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        rt::supervisor_test_t::on_start(msg);
+        request<request_sample_t>(this->address, 4).timeout(r::pt::seconds(1));
+    }
+
+    void on_request(traits_t::request_message_t &msg) noexcept { reply_to(msg, 5); }
+
+    void on_responce(traits_t::responce_message_t &msg) noexcept {
+        req_val += msg.payload.req->payload.value;
+        res_val += msg.payload.res->value;
+        ec = msg.payload.ec;
+    }
+};
+
+TEST_CASE("request-responce successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
@@ -115,7 +142,7 @@ TEST_CASE("request-responce successfull delivery", "[supervisor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-responce timeout", "[supervisor]") {
+TEST_CASE("request-responce timeout", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
@@ -150,5 +177,28 @@ TEST_CASE("request-responce timeout", "[supervisor]") {
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->active_timers.size() == 0);
+}
+
+TEST_CASE("request-responce successfull delivery (supervisor)", "[supervisor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<good_supervisor_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    sup->do_process();
+
+    REQUIRE(sup->active_timers.size() == 0);
+    REQUIRE(sup->req_val == 4);
+    REQUIRE(sup->res_val == 5);
+    REQUIRE(sup->ec == r::error_code_t::success);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }

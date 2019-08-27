@@ -82,7 +82,9 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     std::uint32_t request_id;
     const address_ptr_t &destination;
     const address_ptr_t &reply_to;
+    bool do_install_handler;
     request_ptr_t req;
+    address_ptr_t imaginary_address;
 
     template <typename... Args>
     request_builder_t(supervisor_t & sup_, const address_ptr_t &destination_, const address_ptr_t &reply_to_,
