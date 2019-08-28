@@ -157,7 +157,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
     template <typename M, typename... Args> request_builder_t<M> request(const address_ptr_t &addr, Args &&... args);
-    template <typename Request, typename... Args> void reply_to(const Request &message, Args &&... args);
+    template <typename Request, typename... Args> void reply_to(Request &message, Args &&... args);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> void subscribe(Handler &&h, address_ptr_t &addr) noexcept;

@@ -427,18 +427,17 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t 
         subscriptions.emplace(message_type, imaginary_address);
         do_install_handler = true;
     }
-    req.reset(new wrapped_request_t(request_id, imaginary_address, std::forward<Args>(args)...));
+    req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});
 }
 
 template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) noexcept {
-    auto msg_request = message_ptr_t{new request_message_t{destination, req}};
-    auto raw_timeout_msg = new responce_message_t{reply_to, wrapped_res_t{error_code_t::request_timeout, req}};
+    auto raw_timeout_msg = new responce_message_t{reply_to, make_error_code(error_code_t::request_timeout), req};
     auto msg_timeout = message_ptr_t{raw_timeout_msg};
     if (do_install_handler) {
         install_handler();
     }
     sup.request_map.emplace(request_id, std::move(msg_timeout));
-    sup.put(std::move(msg_request));
+    sup.put(req);
     sup.start_timer(timeout, request_id);
 }
 
@@ -447,7 +446,7 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
                       auto it = supervisor->request_map.find(request_id);
                       if (it != supervisor->request_map.end()) {
                           supervisor->cancel_timer(request_id);
-                          supervisor->template send<wrapped_res_t>(it->second->address, std::move(msg.payload));
+                          supervisor->template send<wrapped_res_t>(it->second->address, msg.payload);
                           supervisor->request_map.erase(it);
                       }
                       // if a responce to request has arrived and no timer can be found
@@ -463,17 +462,12 @@ request_builder_t<M> actor_base_t::request(const address_ptr_t &addr, Args &&...
     return supervisor.do_request<M>(addr, address, std::forward<Args>(args)...);
 }
 
-template <typename Request, typename... Args> void actor_base_t::reply_to(const Request &message, Args &&... args) {
-    using payload_t = typename Request::payload_t;
-    using wrapped_request_t = typename payload_t::element_type;
-    using request_t = typename wrapped_request_t::request_t;
-    using traits_t = request_traits_t<request_t>;
-    using responce_t = typename traits_t::responce_t;
-    using wrapped_res_t = typename traits_t::wrapped_res_t;
-
-    auto res_payload = std::make_unique<responce_t>(std::forward<Args>(args)...);
-    auto &dest_addr = message.payload->reply_to;
-    send<wrapped_res_t>(dest_addr, message.payload, std::move(res_payload));
+template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
+    using payload_t = typename Request::payload_t::request_t;
+    using traits_t = request_traits_t<payload_t>;
+    using responce_t = typename traits_t::responce::wrapped_t;
+    using request_ptr_t = typename traits_t::request::message_ptr_t;
+    send<responce_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
 }
 
 } // namespace rotor

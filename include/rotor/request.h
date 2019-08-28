@@ -16,11 +16,9 @@ namespace rotor {
 
 namespace pt = boost::posix_time;
 
-struct request_base_t : public arc_base_t<request_base_t> {
+struct request_base_t {
     std::uint32_t id;
     address_ptr_t reply_to;
-    request_base_t(std::uint32_t id_, const address_ptr_t &reply_to_) : id{id_}, reply_to{reply_to_} {}
-    virtual ~request_base_t();
 };
 
 template <typename T> struct wrapped_request_t : request_base_t {
@@ -29,62 +27,75 @@ template <typename T> struct wrapped_request_t : request_base_t {
 
     template <typename... Args>
     wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, Args &&... args)
-        : request_base_t{id_, reply_to_}, payload{std::forward<Args>(args)...} {}
+        : request_base_t{id_, reply_to_}, request_payload{std::forward<Args>(args)...} {}
 
-    T payload;
+    T request_payload;
 };
 
-struct responce_base_t : public arc_base_t<request_base_t> {
-    virtual ~responce_base_t();
-    virtual const request_base_t &get_request() noexcept = 0;
+template <typename Responce> struct responce_helper_t {
+    template <typename... Args> static Responce construct(Args &&... args) {
+        return Responce{std::forward<Args>(args)...};
+    }
 };
 
-template <typename Request> struct wrapped_responce_t : public responce_base_t {
-    using request_ptr_t = intrusive_ptr_t<wrapped_request_t<Request>>;
+template <typename Responce> struct responce_helper_t<intrusive_ptr_t<Responce>> {
+    using res_ptr_t = intrusive_ptr_t<Responce>;
+    template <typename... Args> static res_ptr_t construct(Args &&... args) {
+        return res_ptr_t{new Responce{std::forward<Args>(args)...}};
+    }
+};
+
+template <typename Request> struct wrapped_responce_t {
+    using req_message_t = message_t<wrapped_request_t<Request>>;
+    using req_message_ptr_t = intrusive_ptr_t<req_message_t>;
+    using request_t = Request;
     using responce_t = typename Request::responce_t;
-    using responce_ptr_t = typename std::unique_ptr<responce_t>;
+    using res_helper_t = responce_helper_t<responce_t>;
+    static_assert(std::is_default_constructible_v<responce_t>, "responce type must be default-constructible");
 
-    error_code_t ec;
-    request_ptr_t req;
-    responce_ptr_t res;
+    std::error_code ec;
+    req_message_ptr_t req;
+    responce_t res;
 
-    wrapped_responce_t(error_code_t ec_, const request_ptr_t &req_) : ec{ec_}, req{req_} {}
+    wrapped_responce_t(std::error_code ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
 
-    wrapped_responce_t(const request_ptr_t &req_, responce_ptr_t &&res_)
-        : ec{error_code_t::success}, req{req_}, res{std::move(res_)} {}
+    template <typename... Args>
+    wrapped_responce_t(req_message_ptr_t message_, Args &&... args)
+        : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct(
+                                                                                    std::forward<Args>(args)...)} {}
 
-    virtual const request_base_t &get_request() noexcept override { return *req; }
+    inline std::int32_t request_id() const noexcept { return req->payload.id; }
 };
 
 template <typename R> struct request_traits_t {
-    using request_t = R;
-    using responce_t = typename R::responce_t;
-    using wrapped_req_t = wrapped_request_t<R>;
-    using request_ptr_t = intrusive_ptr_t<wrapped_req_t>;
-    using wrapped_res_t = wrapped_responce_t<R>;
-    using wrapped_res_ptr_t = std::unique_ptr<wrapped_res_t>;
-    using responce_ptr_t = std::unique_ptr<responce_t>;
-    using request_message_t = message_t<request_ptr_t>;
-    using responce_message_t = message_t<wrapped_res_t>;
-    using responce_message_ptr_t = intrusive_ptr_t<responce_message_t>;
-    using request_message_ptr_t = intrusive_ptr_t<request_message_t>;
+    struct request {
+        using type = R;
+        using wrapped_t = wrapped_request_t<R>;
+        using message_t = rotor::message_t<wrapped_t>;
+        using message_ptr_t = intrusive_ptr_t<message_t>;
+    };
+
+    struct responce {
+        using wrapped_t = wrapped_responce_t<R>;
+        using message_t = rotor::message_t<wrapped_t>;
+        using message_ptr_t = intrusive_ptr_t<message_t>;
+    };
 };
 
 template <typename T> struct [[nodiscard]] request_builder_t {
     using traits_t = request_traits_t<T>;
-    using responce_t = typename traits_t::responce_t;
-    using request_ptr_t = typename traits_t::request_ptr_t;
-    using wrapped_request_t = typename traits_t::wrapped_req_t;
-    using wrapped_res_t = typename traits_t::wrapped_res_t;
-    using request_message_t = typename traits_t::request_message_t;
-    using responce_message_t = typename traits_t::responce_message_t;
+    using request_message_t = typename traits_t::request::message_t;
+    using request_message_ptr_t = typename traits_t::request::message_ptr_t;
+    using responce_message_t = typename traits_t::responce::message_t;
+    using responce_message_ptr_t = typename traits_t::responce::message_ptr_t;
+    using wrapped_res_t = typename traits_t::responce::wrapped_t;
 
     supervisor_t &sup;
     std::uint32_t request_id;
     const address_ptr_t &destination;
     const address_ptr_t &reply_to;
     bool do_install_handler;
-    request_ptr_t req;
+    request_message_ptr_t req;
     address_ptr_t imaginary_address;
 
     template <typename... Args>

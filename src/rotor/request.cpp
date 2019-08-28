@@ -8,6 +8,8 @@
 
 using namespace rotor;
 
+#if 0
 responce_base_t::~responce_base_t() {}
 
 request_base_t::~request_base_t() {}
+#endif

@@ -26,7 +26,7 @@ using traits_t = r::request_traits_t<sample_req_t>;
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
-    r::error_code_t ec = r::error_code_t::success;
+    std::error_code ec;
 
     void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
@@ -35,10 +35,10 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<traits_t::request_t>(address).timeout(r::pt::milliseconds(1));
+        request<traits_t::request::type>(address).timeout(r::pt::milliseconds(1));
     }
 
-    void on_responce(traits_t::responce_message_t &msg) noexcept {
+    void on_responce(traits_t::responce::message_t &msg) noexcept {
         ec = msg.payload.ec;
         supervisor.do_shutdown();
     }
