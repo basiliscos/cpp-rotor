@@ -209,7 +209,10 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
 
 void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     auto it = request_map.find(timer_id);
-    put(std::move(it->second));
+    auto &request_curry = it->second;
+    message_ptr_t &request = request_curry.request_message;
+    auto timeout_message = request_curry.fn(request_curry.reply_to, *request);
+    put(std::move(timeout_message));
     request_map.erase(it);
 }
 

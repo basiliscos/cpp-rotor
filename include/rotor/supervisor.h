@@ -266,7 +266,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief (local) address-to-actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
-    using request_map_t = std::unordered_map<timer_id_t, message_ptr_t>;
+    using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
 
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
     virtual void remove_actor(actor_base_t &actor) noexcept;
@@ -313,11 +313,6 @@ struct supervisor_t : public actor_base_t {
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /* third-party classes implementations */
-
-/** \brief constucts message by constructing it's payload; intrusive pointer for the message is returned */
-template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&... args) -> message_ptr_t {
-    return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
-}
 
 template <typename Supervisor, typename... Args>
 auto system_context_t::create_supervisor(Args &&... args) -> intrusive_ptr_t<Supervisor> {
@@ -420,12 +415,11 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t 
 }
 
 template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) noexcept {
-    auto raw_timeout_msg = new responce_message_t{reply_to, make_error_code(error_code_t::request_timeout), req};
-    auto msg_timeout = message_ptr_t{raw_timeout_msg};
     if (do_install_handler) {
         install_handler();
     }
-    sup.request_map.emplace(request_id, std::move(msg_timeout));
+    auto fn = &request_traits_t<T>::make_timeout_responce;
+    sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req});
     sup.put(req);
     sup.start_timer(timeout, request_id);
 }
@@ -436,7 +430,8 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
                       auto it = supervisor->request_map.find(request_id);
                       if (it != supervisor->request_map.end()) {
                           supervisor->cancel_timer(request_id);
-                          supervisor->template send<wrapped_res_t>(it->second->address, msg.payload);
+                          auto &orig_addr = it->second.reply_to;
+                          supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
                           supervisor->request_map.erase(it);
                       }
                       // if a responce to request has arrived and no timer can be found

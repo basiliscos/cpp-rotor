@@ -66,4 +66,9 @@ using message_ptr_t = intrusive_ptr_t<message_base_t>;
 
 template <typename T> const void *message_t<T>::message_type = static_cast<const void *>(typeid(message_t<T>).name());
 
+/** \brief constucts message by constructing it's payload; intrusive pointer for the message is returned */
+template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&... args) -> message_ptr_t {
+    return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
+}
+
 } // namespace rotor
