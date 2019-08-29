@@ -153,8 +153,8 @@ struct holding_supervisor_t : public ra::supervisor_asio_t {
         : ra::supervisor_asio_t{sup, shutdown_timeout_, cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
     guard_t guard;
 
-    void confirm_shutdown() noexcept override {
-        ra::supervisor_asio_t::confirm_shutdown();
+    void shutdown_finalize() noexcept override {
+        ra::supervisor_asio_t::shutdown_finalize();
         guard.reset();
         std::cout << "holding_supervisor_t::confirm_shutdown\n";
     }
