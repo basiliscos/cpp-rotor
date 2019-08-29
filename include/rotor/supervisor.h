@@ -431,7 +431,8 @@ template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeo
 }
 
 template <typename T> void request_builder_t<T>::install_handler() noexcept {
-    sup.subscribe(lambda<responce_message_t>([supervisor = &sup, request_id = request_id](responce_message_t &msg) {
+    sup.subscribe(lambda<responce_message_t>([supervisor = &sup](responce_message_t &msg) {
+                      auto request_id = msg.payload.request_id();
                       auto it = supervisor->request_map.find(request_id);
                       if (it != supervisor->request_map.end()) {
                           supervisor->cancel_timer(request_id);

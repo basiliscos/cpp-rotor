@@ -60,7 +60,8 @@ TEST_CASE("actor litetimes", "[actor]") {
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::OPERATIONAL);
 
-    act->do_shutdown();
+    auto actor_addr = act->get_address();
+    act->send<r::payload::shutdown_trigger_t>(actor_addr, actor_addr);
     sup->do_process();
     REQUIRE(act->event_current == 4);
     REQUIRE(act->event_shutdown == 3);

@@ -151,6 +151,40 @@ struct good_actor2_t : public r::actor_base_t {
     }
 };
 
+struct good_actor3_t : public r::actor_base_t {
+    using traits2_t = r::request_traits_t<req2_t>;
+
+    using r::actor_base_t::actor_base_t;
+
+    int req_left = 1;
+    int req_val = 0;
+    int res_val = 0;
+    std::error_code ec;
+
+    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_initialize(msg);
+        subscribe(&good_actor3_t::on_request);
+        subscribe(&good_actor3_t::on_responce);
+    }
+
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        request<req2_t>(address, 4).timeout(r::pt::seconds(1));
+    }
+
+    void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
+
+    void on_responce(traits2_t::responce::message_t &msg) noexcept {
+        req_val += msg.payload.req->payload.request_payload.value;
+        res_val += msg.payload.res->value;
+        ec = msg.payload.ec;
+        if (req_left) {
+            --req_left;
+            request<req2_t>(address, 4).timeout(r::pt::seconds(1));
+        }
+    }
+};
+
 TEST_CASE("request-responce successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
@@ -288,3 +322,28 @@ TEST_CASE("request-responce successfull delivery, ref-counted responce", "[actor
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
+
+TEST_CASE("request-responce successfull delivery, twice", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    auto actor = sup->create_actor<good_actor3_t>();
+    sup->do_process();
+
+    REQUIRE(sup->active_timers.size() == 0);
+    REQUIRE(actor->req_val == 4 * 2);
+    REQUIRE(actor->res_val == 5 * 2);
+    REQUIRE(actor->ec == r::error_code_t::success);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_requests().size() == 0);
+    REQUIRE(sup->active_timers.size() == 0);
+}
+
