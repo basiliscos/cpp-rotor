@@ -43,7 +43,10 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_responce(traits_t::responce::message_t &msg) noexcept {
         ec = msg.payload.ec;
-        supervisor.do_shutdown();
+        // alternative for supervisor.do_shutdown() for better coverage
+        auto sup_addr = supervisor.get_address();
+        auto shutdown_trigger = r::make_message<r::payload::shutdown_trigger_t>(sup_addr, sup_addr);
+        supervisor.enqueue(shutdown_trigger);
         auto loop = wxEventLoopBase::GetActive();
         loop->ScheduleExit();
     }
