@@ -73,16 +73,7 @@ struct create_actor_t {
     bool is_supervisor;
 };
 
-/** \struct shutdown_request_t
- *  \brief Message with this payload is sent from a supervisor to an actor with
- *  shutdown request
- */
-struct shutdown_request_t {
-    /** \brief target actor address, which is asked for shutting down
-     *
-     * The `actor_address` might be useful for observing the actor shutting down
-     * in some other actor
-     */
+struct shutdown_trigger_t {
     address_ptr_t actor_address;
 };
 
@@ -90,7 +81,14 @@ struct shutdown_request_t {
  *  \brief Message with this payload is sent from an actor to its supervisor to
  * confirm successful initialization
  */
-struct shutdown_confirmation_t {
+struct shutdown_confirmation_t {};
+
+/** \struct shutdown_request_t
+ *  \brief Message with this payload is sent from a supervisor to an actor with
+ *  shutdown request
+ */
+struct shutdown_request_t {
+    using responce_t = shutdown_confirmation_t;
     /** \brief source actor address, which has been shutted down
      *
      * The `actor_address` might be useful for observing the actor shutting down
@@ -220,5 +218,13 @@ struct state_response_t {
 };
 
 } // namespace payload
+
+namespace message {
+
+using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
+using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;
+using shutdown_responce_t = request_traits_t<payload::shutdown_request_t>::responce::message_t;
+
+} // namespace message
 
 } // namespace rotor

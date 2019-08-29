@@ -21,9 +21,9 @@ struct request_sample_t {
     int value;
 };
 
-struct res2_t: r::arc_base_t<res2_t> {
+struct res2_t : r::arc_base_t<res2_t> {
     int value;
-    res2_t(int value_):value{value_}{}
+    res2_t(int value_) : value{value_} {}
     virtual ~res2_t() {}
 };
 
@@ -32,7 +32,6 @@ struct req2_t {
 
     int value;
 };
-
 
 using traits_t = r::request_traits_t<request_sample_t>;
 
@@ -75,7 +74,7 @@ struct bad_actor_t : public r::actor_base_t {
         subscribe(&bad_actor_t::on_responce);
     }
 
-    void on_shutdown(r::message_t<r::payload::shutdown_request_t> &msg) noexcept override  {
+    void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
         r::actor_base_t::on_shutdown(msg);
         req_msg.reset();
     }
@@ -85,9 +84,7 @@ struct bad_actor_t : public r::actor_base_t {
         request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
     }
 
-    void on_request(traits_t::request::message_t &msg) noexcept {
-        req_msg.reset(&msg);
-    }
+    void on_request(traits_t::request::message_t &msg) noexcept { req_msg.reset(&msg); }
 
     void on_responce(traits_t::responce::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
@@ -165,6 +162,34 @@ TEST_CASE("request-responce successfull delivery", "[actor]") {
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 5);
     REQUIRE(actor->ec == r::error_code_t::success);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_requests().size() == 0);
+    REQUIRE(sup->active_timers.size() == 0);
+}
+
+TEST_CASE("request-responce successfull delivery indentical message to 2 actors", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    auto actor1 = sup->create_actor<good_actor_t>();
+    auto actor2 = sup->create_actor<good_actor_t>();
+    sup->do_process();
+
+    REQUIRE(sup->active_timers.size() == 0);
+    REQUIRE(actor1->req_val == 4);
+    REQUIRE(actor1->res_val == 5);
+    REQUIRE(actor1->ec == r::error_code_t::success);
+    REQUIRE(actor2->req_val == 4);
+    REQUIRE(actor2->res_val == 5);
+    REQUIRE(actor2->ec == r::error_code_t::success);
 
     sup->do_shutdown();
     sup->do_process();
@@ -263,4 +288,3 @@ TEST_CASE("request-responce successfull delivery, ref-counted responce", "[actor
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
-

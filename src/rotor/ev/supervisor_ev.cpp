@@ -74,7 +74,7 @@ void supervisor_ev_t::start() noexcept {
 }
 
 void supervisor_ev_t::shutdown() noexcept {
-    supervisor.enqueue(make_message<payload::shutdown_request_t>(supervisor.get_address(), address));
+    supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
 }
 
 void supervisor_ev_t::start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept {
@@ -121,8 +121,8 @@ void supervisor_ev_t::on_async() noexcept {
     }
 }
 
-void supervisor_ev_t::confirm_shutdown() noexcept {
-    supervisor_t::confirm_shutdown();
+void supervisor_ev_t::shutdown_finalize() noexcept {
+    supervisor_t::shutdown_finalize();
     ev_async_stop(config.loop, &async_watcher);
 }
 

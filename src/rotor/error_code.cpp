@@ -15,10 +15,8 @@ std::string error_code_category::message(int c) const {
     switch (static_cast<error_code_t>(c)) {
     case error_code_t::success:
         return "success";
-    case error_code_t::shutdown_timeout:
-        return "shutdown timeout";
-    case error_code_t::missing_actor:
-        return "missing actor";
+    case error_code_t::request_timeout:
+        return "request timeout";
     case error_code_t::supervisor_defined:
         return "supervisor is already defined";
     default:

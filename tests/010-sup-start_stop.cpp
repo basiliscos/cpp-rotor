@@ -18,7 +18,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
     std::uint32_t initialized;
     std::uint32_t init_invoked;
     std::uint32_t start_invoked;
-    std::uint32_t shutdown_req_invoked;
+    std::uint32_t shutdown_finalize_invoked;
     std::uint32_t shutdown_conf_invoked;
     r::address_ptr_t init_addr;
     r::address_ptr_t shutdown_addr;
@@ -27,7 +27,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
         initialized = 0;
         init_invoked = 0;
         start_invoked = 0;
-        shutdown_req_invoked = 0;
+        shutdown_finalize_invoked = 0;
         shutdown_conf_invoked = 0;
     }
 
@@ -49,15 +49,15 @@ struct sample_sup_t : public rt::supervisor_test_t {
         sup_base_t::on_start(msg);
     }
 
-    virtual void on_shutdown(r::message_t<r::payload::shutdown_request_t> &msg) noexcept override {
-        ++shutdown_req_invoked;
-        sup_base_t::on_shutdown(msg);
+    virtual void on_shutdown_trigger(r::message::shutdown_trigger_t &msg) noexcept override {
+        ++shutdown_finalize_invoked;
+        shutdown_addr = msg.payload.actor_address;
+        sup_base_t::on_shutdown_trigger(msg);
     }
 
-    virtual void on_shutdown_confirm(r::message_t<r::payload::shutdown_confirmation_t> &msg) noexcept override {
+    virtual void shutdown_finalize() noexcept override {
         ++shutdown_conf_invoked;
-        shutdown_addr = msg.payload.actor_address;
-        sup_base_t::on_shutdown_confirm(msg);
+        sup_base_t::shutdown_finalize();
     }
 };
 
@@ -74,14 +74,14 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->init_addr == sup->get_address());
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->start_invoked == 1);
-    REQUIRE(sup->shutdown_req_invoked == 0);
+    REQUIRE(sup->shutdown_finalize_invoked == 0);
     REQUIRE(sup->shutdown_conf_invoked == 0);
+    REQUIRE(sup->active_timers.size() == 0);
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->shutdown_req_invoked == 1);
-    // REQUIRE(sup->shutdown_conf_invoked == 1);
-    // REQUIRE(dynamic_cast<sample_sup_t*>(sup->shutdown_actor.get()) == sup.get());
+    REQUIRE(sup->shutdown_finalize_invoked == 1);
+    REQUIRE(sup->active_timers.size() == 0);
 
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);

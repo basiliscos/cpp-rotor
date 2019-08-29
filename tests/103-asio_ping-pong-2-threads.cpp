@@ -132,8 +132,8 @@ struct holding_supervisor_t : public rt::supervisor_asio_test_t {
     }
     guard_t guard;
 
-    void confirm_shutdown() noexcept override {
-        ra::supervisor_asio_t::confirm_shutdown();
+    void shutdown_finalize() noexcept override {
+        ra::supervisor_asio_t::shutdown_finalize();
         guard.reset();
     }
 };

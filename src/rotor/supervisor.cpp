@@ -117,42 +117,46 @@ void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) no
     }
 }
 
-void supervisor_t::on_shutdown(message_t<payload::shutdown_request_t> &msg) noexcept {
+void supervisor_t::do_shutdown() noexcept {
+    auto upstream_sup = parent ? parent : this;
+    send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
+}
+
+void supervisor_t::shutdown_initiate() noexcept {
+    state = state_t::SHUTTING_DOWN;
+    for (auto pair : actors_map) {
+        auto &addr = pair.first;
+        request<payload::shutdown_request_t>(addr, addr).timeout(shutdown_timeout);
+    }
+    if (actors_map.empty()) {
+        shutdown_finalize();
+    }
+}
+
+void supervisor_t::shutdown_finalize() noexcept {
+    actor_base_t::shutdown_finalize();
+    actor_ptr_t self{this};
+    unsubscribe_actor(self);
+}
+
+void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcept {
     auto &source_addr = msg.payload.actor_address;
     if (source_addr == address) {
-        actor_ptr_t self{this};
-        state = state_t::SHUTTING_DOWN;
-        for (auto pair : actors_map) {
-            auto &addr = pair.first;
-            send<payload::shutdown_request_t>(addr, addr);
-        }
-        if (!actors_map.empty()) {
-            start_timer(shutdown_timeout, shutdown_timer_id);
-        } else {
-            actor_ptr_t self{this};
-            unsubscribe_actor(self);
-        }
+        shutdown_initiate();
     } else {
-        send<payload::shutdown_request_t>(source_addr, source_addr);
+        request<payload::shutdown_request_t>(source_addr, source_addr).timeout(shutdown_timeout);
     }
 }
 
-void supervisor_t::on_shutdown_timer_trigger() noexcept {
-    auto err = make_error_code(error_code_t::shutdown_timeout);
-    context->on_error(err);
-}
-
-void supervisor_t::on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept {
+void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexcept {
+    auto &source_addr = msg.payload.req->payload.request_payload.actor_address;
+    auto &ec = msg.payload.ec;
+    if (ec) {
+        on_fail_shutdown(source_addr, ec);
+    }
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
-    auto &source_addr = message.payload.actor_address;
-    if (source_addr != address) {
-        auto &actor = actors_map.at(source_addr);
-        remove_actor(*actor);
-    }
-    if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        actor_ptr_t self{this};
-        unsubscribe_actor(self);
-    }
+    auto &actor = actors_map.at(source_addr);
+    remove_actor(*actor);
 }
 
 void supervisor_t::on_external_subs(message_t<payload::external_subscription_t> &message) noexcept {
@@ -197,28 +201,18 @@ void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handle
 
 void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     auto it_actor = actors_map.find(actor.address);
-    if (it_actor == actors_map.end()) {
-        context->on_error(make_error_code(error_code_t::missing_actor));
-    }
     actors_map.erase(it_actor);
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        cancel_timer(shutdown_timer_id);
-        actor_ptr_t self{this};
-        unsubscribe_actor(self);
-    }
-}
-
-void supervisor_t::confirm_shutdown() noexcept {
-    if (parent) {
-        send<payload::shutdown_confirmation_t>(parent->get_address(), address);
+        actor_base_t::shutdown_initiate();
     }
 }
 
 void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
-    if (timer_id == shutdown_timer_id) {
-        return on_shutdown_timer_trigger();
-    }
     auto it = request_map.find(timer_id);
     put(std::move(it->second));
     request_map.erase(it);
+}
+
+void supervisor_t::on_fail_shutdown(const address_ptr_t &, const std::error_code &ec) noexcept {
+    context->on_error(ec);
 }

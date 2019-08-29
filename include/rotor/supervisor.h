@@ -113,11 +113,6 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
-    /** \brief sends {@link payload::shutdown_confirmation_t} to parent
-     * supervisor if it does present
-     */
-    virtual void confirm_shutdown() noexcept override;
-
     /** \brief records just created actor and starts its initialization
      *
      * If the created actor is supervisor, then it is assumed self-managed, and no additional
@@ -131,10 +126,10 @@ struct supervisor_t : public actor_base_t {
     /** \brief sends {@link payload::start_actor_t} to the initialized actor  */
     virtual void on_initialize_confirm(message_t<payload::initialize_confirmation_t> &msg) noexcept;
 
-    virtual void on_shutdown(message_t<payload::shutdown_request_t> &) noexcept override;
+    virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept override;
 
     /** \brief forgets just shutted down actor */
-    virtual void on_shutdown_confirm(message_t<payload::shutdown_confirmation_t> &message) noexcept;
+    virtual void on_shutdown_confirm(message::shutdown_responce_t &msg) noexcept;
 
     /** \brief subscribes external handler to local address */
     virtual void on_external_subs(message_t<payload::external_subscription_t> &message) noexcept;
@@ -172,6 +167,8 @@ struct supervisor_t : public actor_base_t {
     /** \brief thread-safe version of `do_shutdown`, i.e. send shutdown request
      * let it be processed by the supervisor */
     virtual void shutdown() noexcept = 0;
+
+    virtual void do_shutdown() noexcept override;
 
     /** \brief enqueues messages thread safe way and triggers processing
      *
@@ -253,15 +250,9 @@ struct supervisor_t : public actor_base_t {
     }
 
   protected:
-    static constexpr const timer_id_t shutdown_timer_id = 0;
-
-    /** \brief default reaction on shutdown timer trigger
-     *
-     * If shutdown timer triggers it is treated as fatal error, which is printed
-     * to `stdout` followed by `std::abort`
-     *
-     */
-    virtual void on_shutdown_timer_trigger() noexcept;
+    virtual void on_fail_shutdown(const address_ptr_t &address, const std::error_code &ec) noexcept;
+    virtual void shutdown_initiate() noexcept override;
+    virtual void shutdown_finalize() noexcept override;
 
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
@@ -276,7 +267,6 @@ struct supervisor_t : public actor_base_t {
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
     using request_map_t = std::unordered_map<timer_id_t, message_ptr_t>;
-    using request_subscriptions_t = std::unordered_map<const void *, address_ptr_t>;
 
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
     virtual void remove_actor(actor_base_t &actor) noexcept;
@@ -316,8 +306,7 @@ struct supervisor_t : public actor_base_t {
     request_map_t request_map;
     pt::time_duration shutdown_timeout;
 
-    request_subscriptions_t request_subscriptions;
-
+    request_subscription_t request_subscriptions;
     template <typename T> friend struct request_builder_t;
 };
 
@@ -416,15 +405,15 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t 
                                                                                                     false} {
     auto &subscriptions = sup.request_subscriptions;
     auto message_type = responce_message_t::message_type;
-    auto it = subscriptions.find(message_type);
-    if (it != subscriptions.end()) {
-        imaginary_address = it->second;
+    auto addr = subscriptions.get(message_type, destination);
+    if (addr) {
+        imaginary_address = addr;
     } else {
         // subscribe to imaginary address instead of real one because of
         // 1. faster dispatching
         // 2. need to distinguish between "timeout guarded responces" and "responces to own requests"
         imaginary_address = sup.make_address();
-        subscriptions.emplace(message_type, imaginary_address);
+        subscriptions.set(message_type, destination, imaginary_address);
         do_install_handler = true;
     }
     req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});

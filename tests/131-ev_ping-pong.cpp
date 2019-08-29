@@ -25,8 +25,8 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
 
-    void on_shutdown_timer_trigger() noexcept override {
-        re::supervisor_ev_t::on_shutdown_timer_trigger();
+    void on_fail_shutdown(const r::address_ptr_t &addr, const std::error_code &ec) noexcept override {
+        re::supervisor_ev_t::on_fail_shutdown(addr, ec);
         ev_break(get_loop());
     }
 };
@@ -93,7 +93,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { supervisor.do_shutdown(); }
 
-    virtual void confirm_shutdown() noexcept override {
+    void shutdown_finalize() noexcept override {
         // suppress sending shutdown confirmation to trigger shutdown timeout
         // r::actor_base_t::confirm_shutdown();
     }
@@ -162,7 +162,7 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     auto actor = sup->create_actor<bad_actor_t>();
     ev_run(loop);
 
-    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::shutdown_timeout));
+    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
 
     actor.reset();
     sup->get_inbound_queue().clear();

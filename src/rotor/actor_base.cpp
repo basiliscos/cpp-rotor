@@ -23,11 +23,12 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
     supervisor.subscribe_actor(*this, &actor_base_t::on_initialize);
     supervisor.subscribe_actor(*this, &actor_base_t::on_start);
     supervisor.subscribe_actor(*this, &actor_base_t::on_shutdown);
+    supervisor.subscribe_actor(*this, &actor_base_t::on_shutdown_trigger);
     supervisor.subscribe_actor(*this, &actor_base_t::on_subscription);
     state = state_t::INITIALIZING;
 }
 
-void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_request_t>(supervisor.get_address(), address); }
+void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor.get_address(), address); }
 
 address_ptr_t actor_base_t::create_address() noexcept { return supervisor.make_address(); }
 
@@ -39,10 +40,25 @@ void actor_base_t::on_initialize(message_t<payload::initialize_actor_t> &) noexc
 
 void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept { state = state_t::OPERATIONAL; }
 
-void actor_base_t::on_shutdown(message_t<payload::shutdown_request_t> &) noexcept {
+void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
+    shutdown_request.reset(&msg);
+    shutdown_initiate();
+}
+
+void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
+
+void actor_base_t::shutdown_initiate() noexcept {
     state = state_t::SHUTTING_DOWN;
     actor_ptr_t self{this};
     supervisor.unsubscribe_actor(self);
+}
+
+void actor_base_t::shutdown_finalize() noexcept {
+    state = state_t::SHUTTED_DOWN;
+    if (shutdown_request) {
+        reply_to(*shutdown_request);
+        shutdown_request.reset();
+    }
 }
 
 void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
@@ -55,8 +71,7 @@ void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmat
     remove_subscription(addr, handler);
     supervisor.commit_unsubscription(addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        state = state_t::SHUTTED_DOWN;
-        confirm_shutdown();
+        shutdown_finalize();
     }
 }
 
@@ -66,11 +81,9 @@ void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubs
     remove_subscription(addr, msg.payload.handler);
     auto &sup_addr = addr->supervisor.address;
     send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
-}
-
-void actor_base_t::confirm_shutdown() noexcept {
-    auto destination = supervisor.get_address();
-    send<payload::shutdown_confirmation_t>(destination, address);
+    if (points.empty() && state == state_t::SHUTTING_DOWN) {
+        shutdown_finalize();
+    }
 }
 
 void actor_base_t::remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {

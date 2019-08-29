@@ -8,8 +8,15 @@
 
 using namespace rotor;
 
-#if 0
-responce_base_t::~responce_base_t() {}
+void request_subscription_t::set(const void *message_type, const address_ptr_t &source_addr,
+                                 const address_ptr_t &dest_addr) noexcept {
+    map.emplace(key_t{message_type, source_addr}, dest_addr);
+}
 
-request_base_t::~request_base_t() {}
-#endif
+address_ptr_t request_subscription_t::get(const void *message_type, const address_ptr_t &source_addr) const noexcept {
+    auto it = map.find(key_t{message_type, source_addr});
+    if (it == map.end()) {
+        return address_ptr_t{};
+    }
+    return it->second;
+}

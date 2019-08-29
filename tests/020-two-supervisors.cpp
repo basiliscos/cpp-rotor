@@ -19,7 +19,7 @@ struct my_supervisor_t : public rt::supervisor_test_t {
         rt::supervisor_test_t::on_initialize(msg);
     }
 
-    virtual void on_shutdown_confirm(r::message_t<r::payload::shutdown_confirmation_t> &msg) noexcept override {
+    virtual void on_shutdown_confirm(r::message::shutdown_responce_t &msg) noexcept override {
         on_shutdown_count++;
         rt::supervisor_test_t::on_shutdown_confirm(msg);
     }
@@ -52,6 +52,8 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup1->on_shutdown_count == 0);
 
     sup2->do_shutdown();
+    sup2->do_process();
+    sup1->do_process();
     sup2->do_process();
 
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);

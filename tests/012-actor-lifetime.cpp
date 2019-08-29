@@ -41,7 +41,7 @@ struct sample_actor_t : public r::actor_base_t {
         r::actor_base_t::on_start(msg);
     }
 
-    void on_shutdown(r::message_t<r::payload::shutdown_request_t> &msg) noexcept override {
+    void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
         event_shutdown = event_current++;
         r::actor_base_t::on_shutdown(msg);
         if (state == r::state_t::SHUTTING_DOWN)

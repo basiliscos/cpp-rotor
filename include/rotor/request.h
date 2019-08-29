@@ -9,8 +9,8 @@
 #include "address.hpp"
 #include "message.h"
 #include "error_code.h"
+#include <unordered_map>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <memory>
 
 namespace rotor {
 
@@ -106,6 +106,30 @@ template <typename T> struct [[nodiscard]] request_builder_t {
 
   private:
     void install_handler() noexcept;
+};
+
+struct request_subscription_t {
+
+    struct key_t {
+        const void *message_type;
+        address_ptr_t source_addr;
+        inline bool operator==(const key_t &other) const noexcept {
+            return (source_addr.get() == other.source_addr.get()) && (message_type == other.message_type);
+        }
+    };
+
+    struct hasher_t {
+        inline size_t operator()(const key_t &k) const noexcept {
+            return reinterpret_cast<size_t>(k.message_type) ^ reinterpret_cast<size_t>(k.source_addr.get());
+        }
+    };
+
+    using map_t = std::unordered_map<key_t, address_ptr_t, hasher_t>;
+
+    address_ptr_t get(const void *message_type, const address_ptr_t &source_addr) const noexcept;
+    void set(const void *message_type, const address_ptr_t &source_addr, const address_ptr_t &dest_addr) noexcept;
+
+    map_t map;
 };
 
 } // namespace rotor

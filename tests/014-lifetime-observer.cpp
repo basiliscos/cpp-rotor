@@ -34,7 +34,7 @@ struct observer_t : public r::actor_base_t {
 
     void on_sample_start(r::message_t<r::payload::start_actor_t> &) noexcept { event += 2; }
 
-    void on_sample_shutdown(r::message_t<r::payload::shutdown_request_t> &) noexcept { event += 4; }
+    void on_sample_shutdown(r::message::shutdown_request_t &) noexcept { event += 4; }
 };
 
 TEST_CASE("lifetime observer", "[actor]") {
@@ -48,10 +48,12 @@ TEST_CASE("lifetime observer", "[actor]") {
     sup->do_process();
     REQUIRE(observer->event == 3);
 
-    sup->do_shutdown();
+    sample_actor->do_shutdown();
     sup->do_process();
     REQUIRE(observer->event == 7);
 
+    sup->do_shutdown();
+    sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);

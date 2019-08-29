@@ -63,7 +63,7 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
-    virtual void confirm_shutdown() noexcept override;
+    virtual void shutdown_finalize() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
     inline struct ev_loop *get_loop() noexcept { return config.loop; }
