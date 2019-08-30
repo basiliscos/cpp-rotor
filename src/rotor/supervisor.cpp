@@ -152,7 +152,7 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexce
     auto &source_addr = msg.payload.req->payload.request_payload.actor_address;
     auto &ec = msg.payload.ec;
     if (ec) {
-        on_fail_shutdown(source_addr, ec);
+        return on_fail_shutdown(source_addr, ec);
     }
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
     auto &actor = actors_map.at(source_addr);

@@ -52,7 +52,13 @@ struct sample_actor_t : public r::actor_base_t {
 struct fail_shutdown_actor : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void on_shutdown(r::message::shutdown_request_t &) noexcept override {}
+    bool allow_shutdown = false;
+
+    void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
+        if (allow_shutdown) {
+            r::actor_base_t::on_shutdown(msg);
+        }
+    }
 };
 
 struct fail_shutdown_sup : public rt::supervisor_test_t {
@@ -116,11 +122,15 @@ TEST_CASE("fail shutdown test", "[actor]") {
     sup->on_timer_trigger(*sup->active_timers.begin());
     sup->do_process();
 
+    REQUIRE(sup->get_children().size() == 1);
     REQUIRE(sup->fail_addr == act->get_address());
     REQUIRE(sup->fail_reason.value() == static_cast<int>(r::error_code_t::request_timeout));
 
-    act.reset();
-    sup->get_points().clear();
-    sup->get_queue().clear();
-    sup->get_subscription().clear();
+    act->allow_shutdown = true;
+    act->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_children().size() == 0);
+
+    sup->do_shutdown();
+    sup->do_process();
 }
