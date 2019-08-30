@@ -346,4 +346,3 @@ TEST_CASE("request-responce successfull delivery, twice", "[actor]") {
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
-

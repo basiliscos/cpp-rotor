@@ -49,6 +49,24 @@ struct sample_actor_t : public r::actor_base_t {
     }
 };
 
+struct fail_shutdown_actor : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    void on_shutdown(r::message::shutdown_request_t &) noexcept override {}
+};
+
+struct fail_shutdown_sup : public rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    r::address_ptr_t fail_addr;
+    std::error_code fail_reason;
+
+    virtual void on_fail_shutdown(const r::address_ptr_t &address, const std::error_code &ec) noexcept {
+        fail_addr = address;
+        fail_reason = ec;
+    }
+};
+
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
 
@@ -81,4 +99,28 @@ TEST_CASE("actor litetimes", "[actor]") {
     REQUIRE(sup->get_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
+}
+
+TEST_CASE("fail shutdown test", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, r::pt::milliseconds{500}, nullptr);
+    auto act = sup->create_actor<fail_shutdown_actor>();
+
+    sup->do_process();
+
+    act->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->active_timers.size() == 1);
+
+    sup->on_timer_trigger(*sup->active_timers.begin());
+    sup->do_process();
+
+    REQUIRE(sup->fail_addr == act->get_address());
+    REQUIRE(sup->fail_reason.value() == static_cast<int>(r::error_code_t::request_timeout));
+
+    act.reset();
+    sup->get_points().clear();
+    sup->get_queue().clear();
+    sup->get_subscription().clear();
 }
