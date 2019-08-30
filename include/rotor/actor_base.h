@@ -8,6 +8,7 @@
 
 #include "address.hpp"
 #include "messages.hpp"
+#include "behavior.h"
 #include <unordered_map>
 #include "state.h"
 #include <list>
@@ -75,20 +76,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief convenient method to send actor's shutdown request to it's supervisor */
     virtual void do_shutdown() noexcept;
-
-    /*    virtual void confirm_shutdown() noexcept;
-     *
-     *  \brief convenient method to send actor's shutdown confirmation to it's supervisor
-     *
-     * The method can be overriden in derived classes to finalize release
-     * of acquired resources,
-     *
-     * \brief sends {@link payload::shutdown_confirmation_t} to parent
-     * supervisor if it does present
-     *
-     *
-     *
-     */
 
     /** \brief creates actor's address (by delegating the call to supervisor */
     virtual address_ptr_t create_address() noexcept;
@@ -184,8 +171,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
     virtual void shutdown_initiate() noexcept;
-    virtual void shutdown_finalize() noexcept;
-
     friend struct supervisor_t;
 
     /** \brief actor's execution / infrastructure context */
@@ -201,6 +186,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     subscription_points_t points;
 
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
+
+    std::unique_ptr<behaviour_t> behaviour;
+
+    friend struct actor_shutdown_t;
 };
 
 /** \brief intrusive pointer for actor*/

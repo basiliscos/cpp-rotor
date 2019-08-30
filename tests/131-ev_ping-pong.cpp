@@ -90,12 +90,17 @@ struct ponger_t : public r::actor_base_t {
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
+    bool allow_shutdown = false;
 
     virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { supervisor.do_shutdown(); }
 
-    void shutdown_finalize() noexcept override {
+    void shutdown_initiate() noexcept override {
         // suppress sending shutdown confirmation to trigger shutdown timeout
         // r::actor_base_t::confirm_shutdown();
+        if (allow_shutdown) {
+            behaviour = std::make_unique<r::actor_shutdown_t>(*this);
+            behaviour->init();
+        }
     }
 };
 
@@ -164,11 +169,9 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
 
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
 
-    actor.reset();
-    sup->get_inbound_queue().clear();
-    sup->get_points().clear();
-    sup->get_queue().clear();
-    sup->get_subscription().clear();
+    actor->allow_shutdown = true;
+    sup->shutdown();
+    ev_run(loop);
 
     sup.reset();
     system_context.reset();

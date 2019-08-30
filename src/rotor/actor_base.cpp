@@ -48,17 +48,8 @@ void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
 void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
 
 void actor_base_t::shutdown_initiate() noexcept {
-    state = state_t::SHUTTING_DOWN;
-    actor_ptr_t self{this};
-    supervisor.unsubscribe_actor(self);
-}
-
-void actor_base_t::shutdown_finalize() noexcept {
-    state = state_t::SHUTTED_DOWN;
-    if (shutdown_request) {
-        reply_to(*shutdown_request);
-        shutdown_request.reset();
-    }
+    behaviour = std::make_unique<actor_shutdown_t>(*this);
+    behaviour->init();
 }
 
 void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
@@ -71,7 +62,7 @@ void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmat
     remove_subscription(addr, handler);
     supervisor.commit_unsubscription(addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        shutdown_finalize();
+        behaviour->next();
     }
 }
 
@@ -82,7 +73,7 @@ void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubs
     auto &sup_addr = addr->supervisor.address;
     send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        shutdown_finalize();
+        behaviour->next();
     }
 }
 

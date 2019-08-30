@@ -18,6 +18,11 @@
 namespace rotor {
 namespace ev {
 
+struct supervisor_ev_shutdown_t : public rotor::supervisor_shutdown_t {
+    using rotor::supervisor_shutdown_t::supervisor_shutdown_t;
+    virtual void cleanup() noexcept;
+};
+
 /** \struct supervisor_ev_t
  *  \brief delivers rotor-messages on top of libev event loop
  *
@@ -63,7 +68,7 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
-    virtual void shutdown_finalize() noexcept override;
+    virtual void shutdown_initiate() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
     inline struct ev_loop *get_loop() noexcept { return config.loop; }
@@ -111,6 +116,8 @@ struct supervisor_ev_t : public supervisor_t {
     queue_t inbound;
 
     timers_map_t timers_map;
+
+    friend struct supervisor_ev_shutdown_t;
 };
 
 } // namespace ev

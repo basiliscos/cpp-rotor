@@ -123,26 +123,18 @@ void supervisor_t::do_shutdown() noexcept {
 }
 
 void supervisor_t::shutdown_initiate() noexcept {
-    state = state_t::SHUTTING_DOWN;
-    for (auto pair : actors_map) {
-        auto &addr = pair.first;
-        request<payload::shutdown_request_t>(addr, addr).timeout(shutdown_timeout);
-    }
-    if (actors_map.empty()) {
-        shutdown_finalize();
-    }
-}
-
-void supervisor_t::shutdown_finalize() noexcept {
-    actor_base_t::shutdown_finalize();
-    actor_ptr_t self{this};
-    unsubscribe_actor(self);
+    behaviour = std::make_unique<supervisor_shutdown_t>(*this);
+    behaviour->init();
 }
 
 void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcept {
     auto &source_addr = msg.payload.actor_address;
     if (source_addr == address) {
-        shutdown_initiate();
+        if (parent) {
+            do_shutdown();
+        } else {
+            shutdown_initiate();
+        }
     } else {
         request<payload::shutdown_request_t>(source_addr, source_addr).timeout(shutdown_timeout);
     }
@@ -203,7 +195,7 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     auto it_actor = actors_map.find(actor.address);
     actors_map.erase(it_actor);
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        actor_base_t::shutdown_initiate();
+        behaviour->next();
     }
 }
 

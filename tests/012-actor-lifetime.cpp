@@ -13,6 +13,11 @@ namespace rt = r::test;
 
 static std::uint32_t destroyed = 0;
 
+struct spy_behaviour : public r::actor_shutdown_t {
+    using r::actor_shutdown_t::actor_shutdown_t;
+    virtual void cleanup() noexcept;
+};
+
 struct sample_actor_t : public r::actor_base_t {
     std::uint32_t event_current;
     std::uint32_t event_init;
@@ -44,19 +49,28 @@ struct sample_actor_t : public r::actor_base_t {
     void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
         event_shutdown = event_current++;
         r::actor_base_t::on_shutdown(msg);
-        if (state == r::state_t::SHUTTING_DOWN)
-            ++event_shutingdown;
+    }
+
+    virtual void shutdown_initiate() noexcept override {
+        behaviour = std::make_unique<spy_behaviour>(*this);
+        behaviour->init();
     }
 };
+
+void spy_behaviour::cleanup() noexcept {
+    auto &sup = static_cast<sample_actor_t &>(actor);
+    ++sup.event_shutingdown;
+}
 
 struct fail_shutdown_actor : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     bool allow_shutdown = false;
 
-    void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
+    virtual void shutdown_initiate() noexcept override {
         if (allow_shutdown) {
-            r::actor_base_t::on_shutdown(msg);
+            behaviour = std::make_unique<r::actor_shutdown_t>(*this);
+            behaviour->init();
         }
     }
 };
@@ -67,8 +81,8 @@ struct fail_shutdown_sup : public rt::supervisor_test_t {
     r::address_ptr_t fail_addr;
     std::error_code fail_reason;
 
-    virtual void on_fail_shutdown(const r::address_ptr_t &address, const std::error_code &ec) noexcept {
-        fail_addr = address;
+    virtual void on_fail_shutdown(const r::address_ptr_t &addr, const std::error_code &ec) noexcept {
+        fail_addr = addr;
         fail_reason = ec;
     }
 };

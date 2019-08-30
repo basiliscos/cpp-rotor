@@ -10,6 +10,11 @@
 
 using namespace rotor::ev;
 
+void supervisor_ev_shutdown_t::cleanup() noexcept {
+    auto &sup = static_cast<supervisor_ev_t &>(actor);
+    ev_async_stop(sup.config.loop, &sup.async_watcher);
+}
+
 void supervisor_ev_t::async_cb(struct ev_loop *, ev_async *w, int revents) noexcept {
     assert(revents & EV_ASYNC);
     (void)revents;
@@ -73,6 +78,11 @@ void supervisor_ev_t::start() noexcept {
     }
 }
 
+void supervisor_ev_t::shutdown_initiate() noexcept {
+    behaviour = std::make_unique<supervisor_ev_shutdown_t>(*this);
+    behaviour->init();
+}
+
 void supervisor_ev_t::shutdown() noexcept {
     supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
 }
@@ -119,11 +129,6 @@ void supervisor_ev_t::on_async() noexcept {
     if (ok) {
         do_process();
     }
-}
-
-void supervisor_ev_t::shutdown_finalize() noexcept {
-    supervisor_t::shutdown_finalize();
-    ev_async_stop(config.loop, &async_watcher);
 }
 
 supervisor_ev_t::~supervisor_ev_t() {

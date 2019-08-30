@@ -145,6 +145,11 @@ struct ponger_t : public r::actor_base_t {
     r::address_ptr_t pinger_addr;
 };
 
+struct shutdown_behaviour_t : public r::supervisor_shutdown_t {
+    using r::supervisor_shutdown_t::supervisor_shutdown_t;
+    virtual void cleanup() noexcept;
+};
+
 struct holding_supervisor_t : public ra::supervisor_asio_t {
     using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
 
@@ -153,12 +158,16 @@ struct holding_supervisor_t : public ra::supervisor_asio_t {
         : ra::supervisor_asio_t{sup, shutdown_timeout_, cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
     guard_t guard;
 
-    void shutdown_finalize() noexcept override {
-        ra::supervisor_asio_t::shutdown_finalize();
-        guard.reset();
-        std::cout << "holding_supervisor_t::confirm_shutdown\n";
+    void shutdown_initiate() noexcept override {
+        behaviour = std::make_unique<shutdown_behaviour_t>(*this);
+        behaviour->init();
     }
 };
+
+void shutdown_behaviour_t::cleanup() noexcept {
+    static_cast<holding_supervisor_t &>(actor).guard.reset();
+    std::cout << "holding_supervisor_t::confirm_shutdown\n";
+}
 
 int main(int argc, char **argv) {
 

@@ -13,6 +13,13 @@ namespace rt = rotor::test;
 
 static std::uint32_t destroyed = 0;
 
+struct sample_sup_t;
+
+struct shutdown_behaviour : public r::supervisor_shutdown_t {
+    using r::supervisor_shutdown_t::supervisor_shutdown_t;
+    void cleanup() noexcept override;
+};
+
 struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
     std::uint32_t initialized;
@@ -44,6 +51,11 @@ struct sample_sup_t : public rt::supervisor_test_t {
         init_addr = msg.payload.actor_address;
     }
 
+    virtual void shutdown_initiate() noexcept override {
+        behaviour = std::make_unique<shutdown_behaviour>(*this);
+        behaviour->init();
+    }
+
     virtual void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         ++start_invoked;
         sup_base_t::on_start(msg);
@@ -54,12 +66,13 @@ struct sample_sup_t : public rt::supervisor_test_t {
         shutdown_addr = msg.payload.actor_address;
         sup_base_t::on_shutdown_trigger(msg);
     }
-
-    virtual void shutdown_finalize() noexcept override {
-        ++shutdown_conf_invoked;
-        sup_base_t::shutdown_finalize();
-    }
 };
+
+void shutdown_behaviour::cleanup() noexcept {
+    auto &sup = static_cast<sample_sup_t &>(actor);
+    ++sup.shutdown_conf_invoked;
+    r::supervisor_shutdown_t::cleanup();
+}
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     r::system_context_t *system_context = new r::system_context_t{};

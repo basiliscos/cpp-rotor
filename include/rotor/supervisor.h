@@ -252,7 +252,6 @@ struct supervisor_t : public actor_base_t {
   protected:
     virtual void on_fail_shutdown(const address_ptr_t &address, const std::error_code &ec) noexcept;
     virtual void shutdown_initiate() noexcept override;
-    virtual void shutdown_finalize() noexcept override;
 
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
@@ -308,6 +307,7 @@ struct supervisor_t : public actor_base_t {
 
     request_subscription_t request_subscriptions;
     template <typename T> friend struct request_builder_t;
+    friend struct supervisor_shutdown_t;
 };
 
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
