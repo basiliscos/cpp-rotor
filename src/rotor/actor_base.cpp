@@ -10,14 +10,21 @@
 
 using namespace rotor;
 
-actor_base_t::actor_base_t(supervisor_t &supervisor_) : supervisor{supervisor_}, state{state_t::NEW} {}
+actor_base_t::actor_base_t(supervisor_t &supervisor_)
+    : supervisor{supervisor_}, state{state_t::NEW}, behaviour{nullptr} {}
 
-actor_base_t::~actor_base_t() {}
+actor_base_t::~actor_base_t() { delete behaviour; }
+
+actor_behavior_t *actor_base_t::create_behaviour() noexcept { return new actor_behavior_t(*this); }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
     if (!address) {
         address = create_address();
     }
+    if (!behaviour) {
+        behaviour = create_behaviour();
+    }
+
     supervisor.subscribe_actor(*this, &actor_base_t::on_unsubscription);
     supervisor.subscribe_actor(*this, &actor_base_t::on_external_unsubscription);
     supervisor.subscribe_actor(*this, &actor_base_t::on_initialize);
@@ -42,15 +49,14 @@ void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept { stat
 
 void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
     shutdown_request.reset(&msg);
-    shutdown_initiate();
+    shutdown_start();
 }
 
 void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
 
-void actor_base_t::shutdown_initiate() noexcept {
-    behaviour = std::make_unique<actor_shutdown_t>(*this);
-    behaviour->init();
-}
+void actor_base_t::shutdown_start() noexcept { behaviour->on_start_shutdown(); }
+
+void actor_base_t::shutdown_finish() noexcept {}
 
 void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
     points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
@@ -62,7 +68,7 @@ void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmat
     remove_subscription(addr, handler);
     supervisor.commit_unsubscription(addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        behaviour->next();
+        behaviour->on_unsubscription();
     }
 }
 
@@ -73,7 +79,7 @@ void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubs
     auto &sup_addr = addr->supervisor.address;
     send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        behaviour->next();
+        behaviour->on_unsubscription();
     }
 }
 

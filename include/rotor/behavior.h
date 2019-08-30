@@ -5,37 +5,45 @@
 // Distributed under the MIT Software License
 //
 
-#include <functional>
-
 namespace rotor {
 
 struct actor_base_t;
 struct supervisor_t;
 
-struct behaviour_t {
-    using fn_t = std::function<void()>;
-    inline void next() noexcept { fn(); }
-    virtual ~behaviour_t();
-    virtual void init() noexcept = 0;
-
-    fn_t fn;
+enum class behavior_state_t {
+    UNKNOWN,
+    SHUTDOWN_STARTED,
+    SHUTDOWN_CHILDREN_STARTED,
+    SHUTDOWN_CHILDREN_FINISHED,
+    UNSUBSCRIPTION_STARTED,
+    UNSUBSCRIPTION_FINISHED,
+    SHUTDOWN_CONFIRMED,
+    SHUTDOWN_COMMITED,
+    SHUTDOWN_ENDED,
 };
 
-struct actor_shutdown_t : public behaviour_t {
-    actor_shutdown_t(actor_base_t &actor);
+struct actor_behavior_t {
+    actor_behavior_t(actor_base_t &actor_) : actor{actor_}, substate{behavior_state_t::UNKNOWN} {}
+    virtual ~actor_behavior_t();
 
-    virtual void init() noexcept override;
-    virtual void unsubscribe_self() noexcept;
-    virtual void confirm_request() noexcept;
-    virtual void commit_state() noexcept;
-    virtual void cleanup() noexcept;
+    virtual void action_unsubscribe_self() noexcept;
+    virtual void action_confirm_request() noexcept;
+    virtual void action_commit_shutdown() noexcept;
+    virtual void action_shutdonw_finish() noexcept;
+
+    virtual void on_start_shutdown() noexcept;
+    virtual void on_unsubscription() noexcept;
+
     actor_base_t &actor;
+    behavior_state_t substate;
 };
 
-struct supervisor_shutdown_t : public actor_shutdown_t {
-    supervisor_shutdown_t(supervisor_t &supervisor);
-    virtual void init() noexcept override;
-    virtual void shutdown_children() noexcept;
+struct supervisor_behavior_t : public actor_behavior_t {
+    supervisor_behavior_t(supervisor_t &sup);
+
+    virtual void action_shutdown_children() noexcept;
+    virtual void on_start_shutdown() noexcept override;
+    virtual void on_childen_removed() noexcept;
 };
 
 } // namespace rotor

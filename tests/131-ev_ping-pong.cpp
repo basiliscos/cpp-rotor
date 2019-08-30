@@ -94,12 +94,9 @@ struct bad_actor_t : public r::actor_base_t {
 
     virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { supervisor.do_shutdown(); }
 
-    void shutdown_initiate() noexcept override {
-        // suppress sending shutdown confirmation to trigger shutdown timeout
-        // r::actor_base_t::confirm_shutdown();
+    void shutdown_start() noexcept override {
         if (allow_shutdown) {
-            behaviour = std::make_unique<r::actor_shutdown_t>(*this);
-            behaviour->init();
+            r::actor_base_t::shutdown_start();
         }
     }
 };

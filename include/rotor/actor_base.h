@@ -167,10 +167,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Handler> void unsubscribe(Handler &&h) noexcept;
 
   protected:
+    virtual actor_behavior_t *create_behaviour() noexcept;
+
     /** \brief removes the subscription point */
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
-    virtual void shutdown_initiate() noexcept;
+    virtual void shutdown_start() noexcept;
+    virtual void shutdown_finish() noexcept;
     friend struct supervisor_t;
 
     /** \brief actor's execution / infrastructure context */
@@ -178,6 +181,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief current actor state */
     state_t state;
+
+    actor_behavior_t *behaviour;
 
     /** \brief actor address */
     address_ptr_t address;
@@ -187,9 +192,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
 
-    std::unique_ptr<behaviour_t> behaviour;
-
-    friend struct actor_shutdown_t;
+    friend struct actor_behavior_t;
 };
 
 /** \brief intrusive pointer for actor*/

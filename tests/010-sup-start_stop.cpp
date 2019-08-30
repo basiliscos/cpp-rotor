@@ -15,17 +15,13 @@ static std::uint32_t destroyed = 0;
 
 struct sample_sup_t;
 
-struct shutdown_behaviour : public r::supervisor_shutdown_t {
-    using r::supervisor_shutdown_t::supervisor_shutdown_t;
-    void cleanup() noexcept override;
-};
-
 struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
     std::uint32_t initialized;
     std::uint32_t init_invoked;
     std::uint32_t start_invoked;
-    std::uint32_t shutdown_finalize_invoked;
+    std::uint32_t shutdown_started;
+    std::uint32_t shutdown_finished;
     std::uint32_t shutdown_conf_invoked;
     r::address_ptr_t init_addr;
     r::address_ptr_t shutdown_addr;
@@ -34,7 +30,8 @@ struct sample_sup_t : public rt::supervisor_test_t {
         initialized = 0;
         init_invoked = 0;
         start_invoked = 0;
-        shutdown_finalize_invoked = 0;
+        shutdown_started = 0;
+        shutdown_finished = 0;
         shutdown_conf_invoked = 0;
     }
 
@@ -51,28 +48,20 @@ struct sample_sup_t : public rt::supervisor_test_t {
         init_addr = msg.payload.actor_address;
     }
 
-    virtual void shutdown_initiate() noexcept override {
-        behaviour = std::make_unique<shutdown_behaviour>(*this);
-        behaviour->init();
+    virtual void shutdown_finish() noexcept override {
+        ++shutdown_finished;
+        rt::supervisor_test_t::shutdown_finish();
+    }
+    virtual void shutdown_start() noexcept override {
+        ++shutdown_started;
+        rt::supervisor_test_t::shutdown_start();
     }
 
     virtual void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         ++start_invoked;
         sup_base_t::on_start(msg);
     }
-
-    virtual void on_shutdown_trigger(r::message::shutdown_trigger_t &msg) noexcept override {
-        ++shutdown_finalize_invoked;
-        shutdown_addr = msg.payload.actor_address;
-        sup_base_t::on_shutdown_trigger(msg);
-    }
 };
-
-void shutdown_behaviour::cleanup() noexcept {
-    auto &sup = static_cast<sample_sup_t &>(actor);
-    ++sup.shutdown_conf_invoked;
-    r::supervisor_shutdown_t::cleanup();
-}
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     r::system_context_t *system_context = new r::system_context_t{};
@@ -87,13 +76,14 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->init_addr == sup->get_address());
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->start_invoked == 1);
-    REQUIRE(sup->shutdown_finalize_invoked == 0);
+    REQUIRE(sup->shutdown_started == 0);
     REQUIRE(sup->shutdown_conf_invoked == 0);
     REQUIRE(sup->active_timers.size() == 0);
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->shutdown_finalize_invoked == 1);
+    REQUIRE(sup->shutdown_started == 1);
+    REQUIRE(sup->shutdown_finished == 1);
     REQUIRE(sup->active_timers.size() == 0);
 
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);

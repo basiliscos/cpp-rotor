@@ -123,12 +123,6 @@ struct ponger_t : public rt::actor_test_t {
     r::address_ptr_t pinger_addr;
 };
 
-struct shutdown_behaviour_t : public r::supervisor_shutdown_t {
-    using r::supervisor_shutdown_t::supervisor_shutdown_t;
-
-    virtual void cleanup() noexcept;
-};
-
 struct holding_supervisor_t : public rt::supervisor_asio_test_t {
     using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
 
@@ -138,13 +132,11 @@ struct holding_supervisor_t : public rt::supervisor_asio_test_t {
     }
     guard_t guard;
 
-    void shutdown_initiate() noexcept override {
-        behaviour = std::make_unique<shutdown_behaviour_t>(*this);
-        behaviour->init();
+    void shutdown_finish() noexcept override {
+        rt::supervisor_asio_test_t::shutdown_finish();
+        guard.reset();
     }
 };
-
-void shutdown_behaviour_t::cleanup() noexcept { static_cast<holding_supervisor_t &>(actor).guard.reset(); }
 
 TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
 

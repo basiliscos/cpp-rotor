@@ -13,11 +13,6 @@ namespace rt = r::test;
 
 static std::uint32_t destroyed = 0;
 
-struct spy_behaviour : public r::actor_shutdown_t {
-    using r::actor_shutdown_t::actor_shutdown_t;
-    virtual void cleanup() noexcept;
-};
-
 struct sample_actor_t : public r::actor_base_t {
     std::uint32_t event_current;
     std::uint32_t event_init;
@@ -46,31 +41,29 @@ struct sample_actor_t : public r::actor_base_t {
         r::actor_base_t::on_start(msg);
     }
 
-    void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
-        event_shutdown = event_current++;
-        r::actor_base_t::on_shutdown(msg);
+    void shutdown_start() noexcept override {
+        r::actor_base_t::shutdown_start();
+        if (state == r::state_t::SHUTTING_DOWN) {
+            event_shutingdown = event_current++;
+        }
     }
 
-    virtual void shutdown_initiate() noexcept override {
-        behaviour = std::make_unique<spy_behaviour>(*this);
-        behaviour->init();
+    void shutdown_finish() noexcept override {
+        if (state == r::state_t::SHUTTED_DOWN) {
+            event_shutdown = event_current++;
+        }
+        r::actor_base_t::shutdown_finish();
     }
 };
-
-void spy_behaviour::cleanup() noexcept {
-    auto &sup = static_cast<sample_actor_t &>(actor);
-    ++sup.event_shutingdown;
-}
 
 struct fail_shutdown_actor : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     bool allow_shutdown = false;
 
-    virtual void shutdown_initiate() noexcept override {
+    void shutdown_start() noexcept override {
         if (allow_shutdown) {
-            behaviour = std::make_unique<r::actor_shutdown_t>(*this);
-            behaviour->init();
+            r::actor_base_t::shutdown_start();
         }
     }
 };
@@ -101,9 +94,9 @@ TEST_CASE("actor litetimes", "[actor]") {
     auto actor_addr = act->get_address();
     act->send<r::payload::shutdown_trigger_t>(actor_addr, actor_addr);
     sup->do_process();
-    REQUIRE(act->event_current == 4);
-    REQUIRE(act->event_shutdown == 3);
-    REQUIRE(act->event_shutingdown == 1);
+    REQUIRE(act->event_current == 5);
+    REQUIRE(act->event_shutdown == 4);
+    REQUIRE(act->event_shutingdown == 3);
     REQUIRE(act->event_start == 2);
     REQUIRE(act->event_init == 1);
 

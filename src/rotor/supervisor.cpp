@@ -26,10 +26,14 @@ address_ptr_t supervisor_t::instantiate_address(const void *locality) noexcept {
     return new address_t{*this, locality};
 }
 
+actor_behavior_t *supervisor_t::create_behaviour() noexcept { return new supervisor_behavior_t(*this); }
+
 void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
     // should be created very early
     address = create_address();
+    behaviour = create_behaviour();
+
     bool use_other = parent && parent->address->same_locality(*address);
     effective_queue = use_other ? parent->effective_queue : &queue;
 
@@ -122,18 +126,13 @@ void supervisor_t::do_shutdown() noexcept {
     send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
 }
 
-void supervisor_t::shutdown_initiate() noexcept {
-    behaviour = std::make_unique<supervisor_shutdown_t>(*this);
-    behaviour->init();
-}
-
 void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcept {
     auto &source_addr = msg.payload.actor_address;
     if (source_addr == address) {
-        if (parent) {
+        if (parent) { // will be routed via shutdown request
             do_shutdown();
         } else {
-            shutdown_initiate();
+            shutdown_start();
         }
     } else {
         request<payload::shutdown_request_t>(source_addr, source_addr).timeout(shutdown_timeout);
@@ -195,7 +194,7 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     auto it_actor = actors_map.find(actor.address);
     actors_map.erase(it_actor);
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        behaviour->next();
+        static_cast<supervisor_behavior_t *>(behaviour)->on_childen_removed();
     }
 }
 
