@@ -67,7 +67,7 @@ template <typename Request> struct wrapped_responce_t {
     inline std::int32_t request_id() const noexcept { return req->payload.id; }
 };
 
-typedef message_ptr_t(timeout_producer_t)(const address_ptr_t &reply_to, message_base_t &msg);
+typedef message_ptr_t(timeout_producer_t)(const address_ptr_t &reply_to, message_base_t &msg) noexcept;
 
 struct request_curry_t {
     timeout_producer_t *fn;
