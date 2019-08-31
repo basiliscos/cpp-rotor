@@ -28,7 +28,7 @@ struct statuses_observer_t : public r::actor_base_t {
         observable_status = dummy_status = supervisor_status = r::state_t::UNKNOWN;
     }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&statuses_observer_t::on_state);
     }
@@ -60,9 +60,10 @@ struct statuses_observer_t : public r::actor_base_t {
 TEST_CASE("statuses observer", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto observer = sup->create_actor<statuses_observer_t>();
-    auto sample_actor = sup->create_actor<sample_actor_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto observer = sup->create_actor<statuses_observer_t>(timeout);
+    auto sample_actor = sup->create_actor<sample_actor_t>(timeout);
     observer->observable_addr = sample_actor->get_address();
     observer->dummy_addr = sup->create_address();
 

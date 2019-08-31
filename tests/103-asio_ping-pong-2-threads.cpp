@@ -26,30 +26,24 @@ struct pinger_t : public rt::actor_test_t {
     std::uint32_t ping_sent;
     std::uint32_t pong_received;
     std::uint32_t request_attempts;
-    r::message_ptr_t init_message;
 
     pinger_t(r::supervisor_t &sup) : rt::actor_test_t{sup} { request_attempts = ping_sent = pong_received = 0; }
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-        init_message = &msg;
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         subscribe(&pinger_t::on_pong);
         subscribe(&pinger_t::on_ponger_start, ponger_addr);
         subscribe(&pinger_t::on_state);
-        request_ponger_status();
+        rt::actor_test_t::on_initialize(msg);
     }
+
+    void init_start() noexcept override { request_ponger_status(); }
 
     void inline request_ponger_status() noexcept {
         ++request_attempts;
-        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr).timeout(r::pt::seconds{1});
-    }
-
-    void inline finalize_init() noexcept {
-        using init_msg_t = r::message_t<r::payload::initialize_actor_t>;
-        auto &init_msg = static_cast<init_msg_t &>(*init_message);
-        r::actor_base_t::on_initialize(init_msg);
-        init_message.reset();
+        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
+            .timeout(r::pt::seconds{1});
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -66,18 +60,18 @@ struct pinger_t : public rt::actor_test_t {
     }
 
     void on_ponger_start(r::message_t<r::payload::start_actor_t> &) noexcept {
-        if (init_message) {
-            finalize_init();
+        if (state == r::state_t::INITIALIZING) {
+            rt::actor_test_t::init_start();
         }
     }
 
-    void on_state(r::message::state_response_t  &msg) noexcept {
-        auto& target_state = msg.payload.res.state;
-        if (!init_message) {
+    void on_state(r::message::state_response_t &msg) noexcept {
+        auto &target_state = msg.payload.res.state;
+        if (state == r::state_t::INITIALIZED) {
             return; // we are already  on_ponger_start
         }
         if (target_state == r::state_t::OPERATIONAL) {
-            finalize_init();
+            rt::actor_test_t::init_start();
         } else {
             if (request_attempts > 3) {
                 do_shutdown();
@@ -103,7 +97,7 @@ struct ponger_t : public rt::actor_test_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&ponger_t::on_ping);
     }
@@ -143,17 +137,18 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
     asio::io_context io_ctx1;
     asio::io_context io_ctx2;
 
+    auto timeout = r::pt::milliseconds{10};
     auto sys_ctx1 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx1)};
     auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
     auto stand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
     auto stand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
     ra::supervisor_config_t conf1{std::move(stand1)};
     ra::supervisor_config_t conf2{std::move(stand2)};
-    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(pt::milliseconds{500}, conf1);
-    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(pt::milliseconds{500}, conf2);
+    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(timeout, conf1);
+    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(timeout, conf2);
 
-    auto pinger = sup1->create_actor<pinger_t>();
-    auto ponger = sup2->create_actor<ponger_t>();
+    auto pinger = sup1->create_actor<pinger_t>(timeout);
+    auto ponger = sup2->create_actor<ponger_t>(timeout);
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

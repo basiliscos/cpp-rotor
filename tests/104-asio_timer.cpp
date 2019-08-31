@@ -28,7 +28,7 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     std::error_code ec;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&bad_actor_t::on_responce);
     }
@@ -46,12 +46,12 @@ struct bad_actor_t : public r::actor_base_t {
 
 TEST_CASE("timer", "[supervisor][asio]") {
     asio::io_context io_context{1};
+    auto timeout = r::pt::milliseconds{10};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto stand = std::make_shared<asio::io_context::strand>(io_context);
     ra::supervisor_config_t conf{std::move(stand)};
-    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(pt::milliseconds{500}, conf);
-
-    auto actor = sup->create_actor<bad_actor_t>();
+    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(timeout, conf);
+    auto actor = sup->create_actor<bad_actor_t>(timeout);
 
     sup->start();
     io_context.run();

@@ -32,7 +32,7 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(rotor::message::init_request_t &msg) noexcept override {
         rotor::actor_base_t::on_initialize(msg);
         std::cout << "pinger_t::on_initialize\n";
         subscribe(&pinger_t::on_pong);
@@ -78,7 +78,7 @@ struct ponger_t : public rotor::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(rotor::message::init_request_t &msg) noexcept override {
         rotor::actor_base_t::on_initialize(msg);
         std::cout << "ponger_t::on_initialize\n";
         subscribe(&ponger_t::on_ping);
@@ -102,11 +102,11 @@ int main(int argc, char **argv) {
         auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
         auto stand = std::make_shared<asio::io_context::strand>(io_context);
         ra::supervisor_config_t conf{std::move(stand)};
-        auto shutdown_timeout = boost::posix_time::milliseconds{500};
-        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(shutdown_timeout, conf);
+        auto timeout = boost::posix_time::milliseconds{10};
+        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(timeout, conf);
 
-        auto pinger = supervisor->create_actor<pinger_t>(count);
-        auto ponger = supervisor->create_actor<ponger_t>();
+        auto pinger = supervisor->create_actor<pinger_t>(timeout, count);
+        auto ponger = supervisor->create_actor<ponger_t>(timeout);
         pinger->set_ponger_addr(ponger->get_address());
         ponger->set_pinger_addr(pinger->get_address());
 

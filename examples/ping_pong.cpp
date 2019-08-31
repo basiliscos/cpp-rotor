@@ -15,7 +15,7 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(rotor::message::init_request_t &msg) noexcept override {
         rotor::actor_base_t::on_initialize(msg);
         subscribe(&pinger_t::on_pong);
     }
@@ -37,7 +37,7 @@ struct ponger_t : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(rotor::message::init_request_t &msg) noexcept override {
         rotor::actor_base_t::on_initialize(msg);
         subscribe(&ponger_t::on_ping);
     }
@@ -63,11 +63,11 @@ struct dummy_supervisor : public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto shutdown_timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, shutdown_timeout);
+    auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, timeout);
 
-    auto pinger = sup->create_actor<pinger_t>();
-    auto ponger = sup->create_actor<ponger_t>();
+    auto pinger = sup->create_actor<pinger_t>(timeout);
+    auto ponger = sup->create_actor<ponger_t>(timeout);
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 

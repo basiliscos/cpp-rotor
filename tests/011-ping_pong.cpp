@@ -25,7 +25,7 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&pinger_t::on_pong);
     }
@@ -50,7 +50,7 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&ponger_t::on_ping);
     }
@@ -68,9 +68,10 @@ struct ponger_t : public r::actor_base_t {
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
+    auto timeout = r::pt::milliseconds{1};
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto pinger = sup->create_actor<pinger_t>();
-    auto ponger = sup->create_actor<ponger_t>();
+    auto pinger = sup->create_actor<pinger_t>(timeout);
+    auto ponger = sup->create_actor<ponger_t>(timeout);
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

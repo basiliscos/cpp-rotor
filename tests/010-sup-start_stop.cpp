@@ -23,7 +23,6 @@ struct sample_sup_t : public rt::supervisor_test_t {
     std::uint32_t shutdown_started;
     std::uint32_t shutdown_finished;
     std::uint32_t shutdown_conf_invoked;
-    r::address_ptr_t init_addr;
     r::address_ptr_t shutdown_addr;
 
     sample_sup_t() : r::test::supervisor_test_t{nullptr, r::pt::milliseconds{500}, nullptr} {
@@ -42,10 +41,9 @@ struct sample_sup_t : public rt::supervisor_test_t {
         sup_base_t::do_initialize(ctx);
     }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-        sup_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         ++init_invoked;
-        init_addr = msg.payload.actor_address;
+        sup_base_t::init_start();
     }
 
     virtual void shutdown_finish() noexcept override {
@@ -72,8 +70,6 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
-    REQUIRE(sup->init_invoked == 1);
-    REQUIRE(sup->init_addr == sup->get_address());
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->start_invoked == 1);
     REQUIRE(sup->shutdown_started == 0);

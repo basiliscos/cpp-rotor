@@ -69,8 +69,9 @@ struct supervisor_wx_t : public supervisor_t {
      *
      * The newly created actor belogs to the wx supervisor / wx event loop
      */
-    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        return make_actor<Actor>(*this, std::forward<Args>(args)...);
+    template <typename Actor, typename... Args>
+    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
+        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
 
     virtual void start() noexcept override;

@@ -15,13 +15,13 @@ struct supervisor_t;
 
 enum class behavior_state_t {
     UNKNOWN,
+    INIT_STARTED,
+    INIT_ENDED,
     SHUTDOWN_STARTED,
     SHUTDOWN_CHILDREN_STARTED,
     SHUTDOWN_CHILDREN_FINISHED,
     UNSUBSCRIPTION_STARTED,
     UNSUBSCRIPTION_FINISHED,
-    SHUTDOWN_CONFIRMED,
-    SHUTDOWN_COMMITED,
     SHUTDOWN_ENDED,
 };
 
@@ -29,11 +29,15 @@ struct actor_behavior_t {
     actor_behavior_t(actor_base_t &actor_) : actor{actor_}, substate{behavior_state_t::UNKNOWN} {}
     virtual ~actor_behavior_t();
 
-    virtual void action_unsubscribe_self() noexcept;
-    virtual void action_confirm_request() noexcept;
-    virtual void action_commit_shutdown() noexcept;
-    virtual void action_shutdonw_finish() noexcept;
+    virtual void action_confirm_init() noexcept;
+    virtual void action_finish_init() noexcept;
 
+    virtual void action_unsubscribe_self() noexcept;
+    virtual void action_confirm_shutdown() noexcept;
+    virtual void action_commit_shutdown() noexcept;
+    virtual void action_finish_shutdonw() noexcept;
+
+    virtual void on_start_init() noexcept;
     virtual void on_start_shutdown() noexcept;
     virtual void on_unsubscription() noexcept;
 

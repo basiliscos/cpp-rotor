@@ -121,10 +121,10 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
 
-    virtual void on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept override;
+    // virtual void on_initialize(message::init_request_t &msg) noexcept override;
 
     /** \brief sends {@link payload::start_actor_t} to the initialized actor  */
-    virtual void on_initialize_confirm(message_t<payload::initialize_confirmation_t> &msg) noexcept;
+    virtual void on_initialize_confirm(message::init_response_t &msg) noexcept;
 
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept override;
 
@@ -236,8 +236,9 @@ struct supervisor_t : public actor_base_t {
     /** \brief creates actor, records it in internal structures and returns
      * intrusive pointer ot the actors
      */
-    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        return make_actor<Actor>(*this, std::forward<Args>(args)...);
+    template <typename Actor, typename... Args>
+    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
+        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
 
     /** \brief returns system context */
@@ -357,8 +358,6 @@ template <typename Actor, typename Supervisor, typename IsSupervisor = void> str
 template <typename Actor, typename Supervisor>
 struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
 
-    /** \brief supervisor flag */
-    static constexpr const bool is_supervisor = true;
     /** \brief constructs new actor (derived from supervisor) */
     template <typename... Args>
     static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
@@ -370,9 +369,6 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<superv
 template <typename Actor, typename Supervisor>
 struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
 
-    /** \brief non-supervisor flag */
-    static constexpr const bool is_supervisor = false;
-
     /** \brief constructs new actor (not derived from supervisor) */
     template <typename... Args>
     static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
@@ -382,12 +378,12 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
 } // namespace details
 
 template <typename Actor, typename Supervisor, typename... Args>
-intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
+intrusive_ptr_t<Actor> make_actor(Supervisor &sup, const pt::time_duration &timeout, Args... args) {
     using ctor_t = details::actor_ctor_t<Actor, Supervisor>;
     auto context = sup.get_context();
     auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);
     actor->do_initialize(context);
-    sup.template send<payload::create_actor_t>(sup.get_address(), actor, ctor_t::is_supervisor);
+    sup.template send<payload::create_actor_t>(sup.get_address(), actor, timeout);
     return actor;
 }
 

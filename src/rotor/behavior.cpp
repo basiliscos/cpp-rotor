@@ -12,6 +12,29 @@ using namespace rotor;
 
 actor_behavior_t::~actor_behavior_t() {}
 
+/* init related */
+void actor_behavior_t::on_start_init() noexcept {
+    assert(actor.state == state_t::INITIALIZING);
+    substate = behavior_state_t::INIT_STARTED;
+    action_confirm_init();
+}
+
+void actor_behavior_t::action_confirm_init() noexcept {
+    if (actor.init_request) {
+        actor.reply_to(*actor.init_request);
+        actor.init_request.reset();
+    }
+    actor.state = state_t::INITIALIZED;
+    return action_finish_init();
+}
+
+void actor_behavior_t::action_finish_init() noexcept {
+    actor.init_finish();
+    substate = behavior_state_t::INIT_ENDED;
+}
+
+/* shutdown related */
+
 void actor_behavior_t::on_start_shutdown() noexcept {
     substate = behavior_state_t::SHUTDOWN_STARTED;
     actor.state = state_t::SHUTTING_DOWN;
@@ -24,7 +47,7 @@ void actor_behavior_t::action_unsubscribe_self() noexcept {
     actor.get_supervisor().unsubscribe_actor(self);
 }
 
-void actor_behavior_t::action_confirm_request() noexcept {
+void actor_behavior_t::action_confirm_shutdown() noexcept {
     if (actor.shutdown_request) {
         actor.reply_to(*actor.shutdown_request);
         actor.shutdown_request.reset();
@@ -35,17 +58,17 @@ void actor_behavior_t::action_confirm_request() noexcept {
 void actor_behavior_t::action_commit_shutdown() noexcept {
     assert(actor.state == state_t::SHUTTING_DOWN);
     actor.state = state_t::SHUTTED_DOWN;
-    return action_shutdonw_finish();
+    return action_finish_shutdonw();
 }
 
-void actor_behavior_t::action_shutdonw_finish() noexcept {
+void actor_behavior_t::action_finish_shutdonw() noexcept {
     actor.shutdown_finish();
     substate = behavior_state_t::SHUTDOWN_ENDED;
 }
 
 void actor_behavior_t::on_unsubscription() noexcept {
     assert(substate == behavior_state_t::UNSUBSCRIPTION_STARTED);
-    action_confirm_request();
+    action_confirm_shutdown();
 }
 
 supervisor_behavior_t::supervisor_behavior_t(supervisor_t &sup) : actor_behavior_t{sup} {}

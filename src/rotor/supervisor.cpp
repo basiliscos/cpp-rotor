@@ -45,21 +45,27 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     subscribe(&supervisor_t::on_external_subs);
     subscribe(&supervisor_t::on_commit_unsubscription);
     subscribe(&supervisor_t::on_state_request);
+
+    // do self-bootstrap
+    if (!parent) {
+        request<payload::initialize_actor_t>(address, address).timeout(shutdown_timeout);
+    }
+    /*
     auto addr = supervisor.get_address();
     send<payload::initialize_actor_t>(addr, addr);
+    */
 }
 
 void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     auto actor = msg.payload.actor;
     auto actor_address = actor->get_address();
     actors_map.emplace(actor_address, std::move(actor));
-    if (!msg.payload.is_supervisor) {
-        send<payload::initialize_actor_t>(address, actor_address);
-    }
+    request<payload::initialize_actor_t>(actor_address, actor_address).timeout(msg.payload.timeout);
 }
 
-void supervisor_t::on_initialize_confirm(message_t<payload::initialize_confirmation_t> &msg) noexcept {
-    auto &addr = msg.payload.actor_address;
+void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept {
+    // TODO check init failure
+    auto &addr = msg.payload.req->payload.request_payload.actor_address;
     send<payload::start_actor_t>(addr, addr);
 }
 
@@ -112,7 +118,8 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
     }
 }
 
-void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) noexcept {
+/*
+void supervisor_t::on_initialize(message::init_request_t  &msg) noexcept {
     auto actor_addr = msg.payload.actor_address;
     if (actor_addr == address) {
         actor_base_t::on_initialize(msg);
@@ -120,6 +127,7 @@ void supervisor_t::on_initialize(message_t<payload::initialize_actor_t> &msg) no
         send<payload::initialize_actor_t>(actor_addr, actor_addr);
     }
 }
+*/
 
 void supervisor_t::do_shutdown() noexcept {
     auto upstream_sup = parent ? parent : this;

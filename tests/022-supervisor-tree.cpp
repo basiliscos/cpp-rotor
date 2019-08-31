@@ -21,7 +21,7 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&pinger_t::on_state);
     }
@@ -33,12 +33,13 @@ struct pinger_t : public r::actor_base_t {
 
     void request_status() noexcept {
         auto reply_addr = get_address();
-        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr).timeout(r::pt::seconds{1});
+        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
+            .timeout(r::pt::seconds{1});
         ++attempts;
     }
 
-    void on_state(r::message::state_response_t  &msg) noexcept {
-        auto& state = msg.payload.res.state;
+    void on_state(r::message::state_response_t &msg) noexcept {
+        auto &state = msg.payload.res.state;
         if (state == r::state_t::OPERATIONAL) {
             send<ping_t>(ponger_addr);
             ponger_addr.reset();
@@ -57,7 +58,7 @@ struct pinger_t : public r::actor_base_t {
 struct ponger_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&ponger_t::on_ping);
     }
@@ -95,16 +96,16 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     r::system_context_t system_context;
     const void *locality = &system_context;
 
-    auto sup_root =
-        system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, locality);
-    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
-    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
+    auto timeout = r::pt::milliseconds{1};
+    auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, locality);
+    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
+    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
 
-    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
-    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(r::pt::milliseconds{500}, locality);
+    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
+    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
 
-    auto pinger = sup_A2->create_actor<pinger_t>();
-    auto ponger = sup_B2->create_actor<ponger_t>();
+    auto pinger = sup_A2->create_actor<pinger_t>(timeout);
+    auto ponger = sup_B2->create_actor<ponger_t>(timeout);
 
     pinger->set_ponger_addr(ponger->get_address());
     sup_A2->do_process();

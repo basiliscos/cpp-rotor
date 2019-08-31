@@ -31,7 +31,7 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     std::error_code ec;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&bad_actor_t::on_responce);
     }
@@ -56,16 +56,17 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     using app_t = rotor::test::RotorApp;
     auto app = new app_t();
 
+    auto timeout = r::pt::milliseconds{10};
     app->CallOnInit();
     wxEventLoopBase *loop = app->GetTraits()->CreateEventLoop();
     wxEventLoopBase::SetActive(loop);
     rx::system_context_ptr_t system_context{new rx::system_context_wx_t(app)};
     wxEvtHandler handler;
     rx::supervisor_config_t conf{&handler};
-    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(r::pt::milliseconds{1000}, conf);
+    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(timeout, conf);
     sup->start();
 
-    auto actor = sup->create_actor<bad_actor_t>();
+    auto actor = sup->create_actor<bad_actor_t>(timeout);
 
     sup->start();
     loop->Run();

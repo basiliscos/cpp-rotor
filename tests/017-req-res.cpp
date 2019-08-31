@@ -41,7 +41,7 @@ struct good_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&good_actor_t::on_request);
         subscribe(&good_actor_t::on_responce);
@@ -68,7 +68,7 @@ struct bad_actor_t : public r::actor_base_t {
     std::error_code ec;
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&bad_actor_t::on_request);
         subscribe(&bad_actor_t::on_responce);
@@ -102,7 +102,7 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         rt::supervisor_test_t::actor_base_t::on_initialize(msg);
         subscribe(&good_supervisor_t::on_request);
         subscribe(&good_supervisor_t::on_responce);
@@ -131,7 +131,7 @@ struct good_actor2_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&good_actor2_t::on_request);
         subscribe(&good_actor2_t::on_responce);
@@ -161,7 +161,7 @@ struct good_actor3_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&good_actor3_t::on_request);
         subscribe(&good_actor3_t::on_responce);
@@ -188,8 +188,9 @@ struct good_actor3_t : public r::actor_base_t {
 TEST_CASE("request-responce successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto actor = sup->create_actor<good_actor_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto actor = sup->create_actor<good_actor_t>(timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -212,9 +213,10 @@ TEST_CASE("request-responce successfull delivery", "[actor]") {
 TEST_CASE("request-responce successfull delivery indentical message to 2 actors", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto actor1 = sup->create_actor<good_actor_t>();
-    auto actor2 = sup->create_actor<good_actor_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto actor1 = sup->create_actor<good_actor_t>(timeout);
+    auto actor2 = sup->create_actor<good_actor_t>(timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -240,8 +242,9 @@ TEST_CASE("request-responce successfull delivery indentical message to 2 actors"
 TEST_CASE("request-responce timeout", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto actor = sup->create_actor<bad_actor_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto actor = sup->create_actor<bad_actor_t>(timeout);
     sup->do_process();
 
     REQUIRE(actor->req_val == 0);
@@ -279,7 +282,8 @@ TEST_CASE("request-responce timeout", "[actor]") {
 TEST_CASE("request-responce successfull delivery (supervisor)", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<good_supervisor_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<good_supervisor_t>(nullptr, timeout, nullptr);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -302,8 +306,9 @@ TEST_CASE("request-responce successfull delivery (supervisor)", "[supervisor]") 
 TEST_CASE("request-responce successfull delivery, ref-counted responce", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto actor = sup->create_actor<good_actor2_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto actor = sup->create_actor<good_actor2_t>(timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -326,8 +331,9 @@ TEST_CASE("request-responce successfull delivery, ref-counted responce", "[actor
 TEST_CASE("request-responce successfull delivery, twice", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto actor = sup->create_actor<good_actor3_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto actor = sup->create_actor<good_actor3_t>(timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);

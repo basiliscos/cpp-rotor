@@ -33,7 +33,7 @@ struct sub_t : public r::actor_base_t {
 
     void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         r::actor_base_t::on_initialize(msg);
         subscribe(&sub_t::on_payload, pub_addr);
     }
@@ -46,11 +46,12 @@ struct sub_t : public r::actor_base_t {
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
     auto pub_addr = sup->create_address();
-    auto pub = sup->create_actor<pub_t>();
-    auto sub1 = sup->create_actor<sub_t>();
-    auto sub2 = sup->create_actor<sub_t>();
+    auto pub = sup->create_actor<pub_t>(timeout);
+    auto sub1 = sup->create_actor<sub_t>(timeout);
+    auto sub2 = sup->create_actor<sub_t>(timeout);
 
     pub->set_pub_addr(pub_addr);
     sub1->set_pub_addr(pub_addr);

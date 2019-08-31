@@ -51,10 +51,11 @@ struct supervisor_ev_t : public supervisor_t {
 
     /** \brief creates an actor by forwaring `args` to it
      *
-     * The newly created actor belogs to the wx supervisor / wx event loop
+     * The newly created actor belogs to the ev supervisor / ev event loop
      */
-    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        return make_actor<Actor>(*this, std::forward<Args>(args)...);
+    template <typename Actor, typename... Args>
+    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
+        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
 
     virtual void start() noexcept override;

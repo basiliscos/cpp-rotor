@@ -39,10 +39,9 @@ void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(su
 
 address_ptr_t actor_base_t::create_address() noexcept { return supervisor.make_address(); }
 
-void actor_base_t::on_initialize(message_t<payload::initialize_actor_t> &) noexcept {
-    auto destination = supervisor.get_address();
-    state = state_t::INITIALIZED;
-    send<payload::initialize_confirmation_t>(destination, address);
+void actor_base_t::on_initialize(message::init_request_t &msg) noexcept {
+    init_request.reset(&msg);
+    init_start();
 }
 
 void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept { state = state_t::OPERATIONAL; }
@@ -53,6 +52,10 @@ void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
 }
 
 void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
+
+void actor_base_t::init_start() noexcept { behaviour->on_start_init(); }
+
+void actor_base_t::init_finish() noexcept {}
 
 void actor_base_t::shutdown_start() noexcept { behaviour->on_start_shutdown(); }
 

@@ -27,9 +27,9 @@ struct dummy_supervisor : public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto shutdown_timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, shutdown_timeout);
-    sup->create_actor<hello_actor>();
+    auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, timeout);
+    sup->create_actor<hello_actor>(timeout);
     sup->do_process();
     return 0;
 }

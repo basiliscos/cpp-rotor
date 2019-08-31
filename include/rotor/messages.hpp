@@ -19,25 +19,20 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 namespace payload {
 
+/** \struct initialize_confirmation_t
+ *  \brief Message with this payload is sent from an actor to its supervisor to
+ * confirm successful initialization
+ */
+struct initialize_confirmation_t {};
+
 /** \struct initialize_actor_t
  *  \brief Message with this payload is sent from a supervisor to an actor with
  *  initialization request
  */
 struct initialize_actor_t {
-    /** \brief target actor address, which is asked for initialization
-     *
-     * The `actor_address` might be useful for observing the actor initialization
-     * in some other actor
-     */
-    address_ptr_t actor_address;
-};
+    using responce_t = initialize_confirmation_t;
 
-/** \struct initialize_confirmation_t
- *  \brief Message with this payload is sent from an actor to its supervisor to
- * confirm successful initialization
- */
-struct initialize_confirmation_t {
-    /** \brief source actor address, which has been initialized
+    /** \brief target actor address, which is asked for initialization
      *
      * The `actor_address` might be useful for observing the actor initialization
      * in some other actor
@@ -69,8 +64,7 @@ struct create_actor_t {
     /** \brief the intrusive pointer to created actor */
     actor_ptr_t actor;
 
-    /** \brief whether the created actor is supervisor or not */
-    bool is_supervisor;
+    pt::time_duration timeout;
 };
 
 struct shutdown_trigger_t {
@@ -217,6 +211,9 @@ struct state_request_t {
 } // namespace payload
 
 namespace message {
+
+using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
+using init_response_t = request_traits_t<payload::initialize_actor_t>::responce::message_t;
 
 using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
 using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;

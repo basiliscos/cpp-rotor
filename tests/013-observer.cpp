@@ -16,7 +16,7 @@ struct foo_t {};
 struct simpleton_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         subscribe(&simpleton_actor_t::on_foo);
         r::actor_base_t::on_initialize(msg);
     }
@@ -40,7 +40,7 @@ struct foo_observer_t : public r::actor_base_t {
 
     void set_simpleton(r::address_ptr_t addr) { simpleton_addr = std::move(addr); }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         INFO("foo_observer_t::initialize()")
         r::actor_base_t::on_initialize(msg);
         subscribe(&foo_observer_t::on_foo, simpleton_addr);
@@ -58,9 +58,10 @@ struct foo_observer_t : public r::actor_base_t {
 TEST_CASE("obsrever", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto simpleton = sup->create_actor<simpleton_actor_t>();
-    auto observer = sup->create_actor<foo_observer_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto simpleton = sup->create_actor<simpleton_actor_t>(timeout);
+    auto observer = sup->create_actor<foo_observer_t>(timeout);
     observer->set_simpleton(simpleton->get_address());
 
     sup->do_process();

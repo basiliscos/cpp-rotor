@@ -17,7 +17,7 @@ struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     bool received = false;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void on_initialize(r::message::init_request_t &msg) noexcept override {
         using message_t = r::message_t<payload>;
         r::actor_base_t::on_initialize(msg);
         subscribe(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
@@ -32,8 +32,9 @@ struct sample_actor_t : public r::actor_base_t {
 TEST_CASE("lambda handler", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
-    auto actor = sup->create_actor<sample_actor_t>();
+    auto timeout = r::pt::milliseconds{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto actor = sup->create_actor<sample_actor_t>(timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);

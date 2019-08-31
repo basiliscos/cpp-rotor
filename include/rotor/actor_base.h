@@ -103,7 +103,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * `on_initialize` only when an actor will be ready.
      *
      */
-    virtual void on_initialize(message_t<payload::initialize_actor_t> &) noexcept;
+    virtual void on_initialize(message::init_request_t &) noexcept;
 
     /** \brief start confirmation from supervisor
      *
@@ -172,6 +172,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief removes the subscription point */
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
+    virtual void init_start() noexcept;
+    virtual void init_finish() noexcept;
     virtual void shutdown_start() noexcept;
     virtual void shutdown_finish() noexcept;
     friend struct supervisor_t;
@@ -190,6 +192,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
 
+    intrusive_ptr_t<message::init_request_t> init_request;
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
 
     friend struct actor_behavior_t;
