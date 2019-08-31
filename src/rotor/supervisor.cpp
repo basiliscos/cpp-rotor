@@ -167,9 +167,8 @@ void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept
     handler->call(orig_message);
 }
 
-void supervisor_t::on_state_request(message_t<payload::state_request_t> &message) noexcept {
-    auto &addr = message.payload.subject_addr;
-    auto &reply_to = message.payload.reply_addr;
+void supervisor_t::on_state_request(message::state_request_t &message) noexcept {
+    auto &addr = message.payload.request_payload.subject_addr;
     state_t target_state = state_t::UNKNOWN;
     if (addr == address) {
         target_state = state;
@@ -179,7 +178,7 @@ void supervisor_t::on_state_request(message_t<payload::state_request_t> &message
             target_state = it->second->state;
         }
     }
-    send<payload::state_response_t>(reply_to, addr, target_state);
+    reply_to(message, target_state);
 }
 
 void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {

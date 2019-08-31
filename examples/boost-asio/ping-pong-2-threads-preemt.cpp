@@ -52,7 +52,8 @@ struct pinger_t : public r::actor_base_t {
     }
 
     void inline request_ponger_status() noexcept {
-        send<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), address, ponger_addr);
+        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
+            .timeout(r::pt::millisec{1});
     }
 
     void inline finalize_init() noexcept {
@@ -91,8 +92,9 @@ struct pinger_t : public r::actor_base_t {
         // we already get the right
     }
 
-    void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        auto target_state = msg.payload.state;
+    void on_state(r::message::state_response_t &msg) noexcept {
+        // IRL we should check for errors in msg.payload.ec and react appropriately
+        auto &target_state = msg.payload.res.state;
         std::cout << "pinger::on_state " << static_cast<int>(target_state) << "\n";
         if (!init_message) {
             return; // we are already  on_ponger_start

@@ -154,7 +154,7 @@ struct supervisor_t : public actor_base_t {
      * the message {@link payload::state_request_t}.
      *
      */
-    virtual void on_state_request(message_t<payload::state_request_t> &message) noexcept;
+    virtual void on_state_request(message::state_request_t &message) noexcept;
 
     virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept = 0;
     virtual void cancel_timer(timer_id_t timer_id) noexcept = 0;

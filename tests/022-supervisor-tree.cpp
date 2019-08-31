@@ -33,12 +33,13 @@ struct pinger_t : public r::actor_base_t {
 
     void request_status() noexcept {
         auto reply_addr = get_address();
-        send<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), reply_addr, ponger_addr);
+        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr).timeout(r::pt::seconds{1});
         ++attempts;
     }
 
-    void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        if (msg.payload.state == r::state_t::OPERATIONAL) {
+    void on_state(r::message::state_response_t  &msg) noexcept {
+        auto& state = msg.payload.res.state;
+        if (state == r::state_t::OPERATIONAL) {
             send<ping_t>(ponger_addr);
             ponger_addr.reset();
             ping_sent++;

@@ -42,7 +42,7 @@ struct pinger_t : public rt::actor_test_t {
 
     void inline request_ponger_status() noexcept {
         ++request_attempts;
-        send<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), address, ponger_addr);
+        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr).timeout(r::pt::seconds{1});
     }
 
     void inline finalize_init() noexcept {
@@ -71,8 +71,8 @@ struct pinger_t : public rt::actor_test_t {
         // we already get the right
     }
 
-    void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        auto target_state = msg.payload.state;
+    void on_state(r::message::state_response_t &msg) noexcept {
+        auto& target_state = msg.payload.res.state;
         if (!init_message) {
             return; // we are already  on_ponger_start
         }

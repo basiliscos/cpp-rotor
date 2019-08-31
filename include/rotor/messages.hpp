@@ -193,28 +193,25 @@ struct unsubscription_confirmation_t {
     handler_ptr_t handler;
 };
 
-/** \struct state_request_t
- *  \brief Message with this payload is sent to supervisor to query
- * actor (defined by it's address - `subject_addr`).
- */
-struct state_request_t {
-    /** \brief The reply address with {@link state_response_t} */
-    address_ptr_t reply_addr;
-
-    /** \brief The actor address in question */
-    address_ptr_t subject_addr;
-};
-
 /** \struct state_response_t
  *  \brief Message with this payload is sent to an actor, which
  * asked the state of the subject actor (represented by it's address)
  *
  */
 struct state_response_t {
-    /** \brief The actor address in question */
-    address_ptr_t subject_addr;
     /** \brief The state of the asked actor */
     state_t state;
+};
+
+/** \struct state_request_t
+ *  \brief Message with this payload is sent to supervisor to query
+ * actor (defined by it's address - `subject_addr`).
+ */
+struct state_request_t {
+    using responce_t = state_response_t;
+
+    /** \brief The actor address in question */
+    address_ptr_t subject_addr;
 };
 
 } // namespace payload
@@ -224,6 +221,9 @@ namespace message {
 using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
 using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;
 using shutdown_responce_t = request_traits_t<payload::shutdown_request_t>::responce::message_t;
+
+using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
+using state_response_t = request_traits_t<payload::state_request_t>::responce::message_t;
 
 } // namespace message
 

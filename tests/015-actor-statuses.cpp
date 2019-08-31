@@ -36,16 +36,15 @@ struct statuses_observer_t : public r::actor_base_t {
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
         auto sup_addr = supervisor.get_address();
-        auto reply_addr = get_address();
-        send<r::payload::state_request_t>(sup_addr, reply_addr, sup_addr);
-        send<r::payload::state_request_t>(sup_addr, reply_addr, dummy_addr);
-        send<r::payload::state_request_t>(sup_addr, reply_addr, observable_addr);
-        send<r::payload::state_request_t>(sup_addr, reply_addr, reply_addr);
+        request<r::payload::state_request_t>(sup_addr, sup_addr).timeout(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, dummy_addr).timeout(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, observable_addr).timeout(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, address).timeout(r::pt::seconds{1});
     }
 
-    void on_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        auto &addr = msg.payload.subject_addr;
-        auto &state = msg.payload.state;
+    void on_state(r::message::state_response_t &msg) noexcept {
+        auto &addr = msg.payload.req->payload.request_payload.subject_addr;
+        auto &state = msg.payload.res.state;
         if (addr == supervisor.get_address()) {
             supervisor_status = state;
         } else if (addr == get_address()) {
