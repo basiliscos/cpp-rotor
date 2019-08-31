@@ -2,6 +2,8 @@
 
 [reactive]: https://www.reactivemanifesto.org/ "The Reactive Manifesto"
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
+[blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
+
 
 `rotor` is event loop friendly C++ actor micro framework.
 
@@ -32,7 +34,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ### 0.03 (25-Aug-2019)
 
  - [improvement] locality notion was introduced, which led to possibilty
-to build superving trees, see [superving-trees]]
+to build superving trees, see [blog-cpp-supervisors]
  - [breaking] the `outbound` field in `rotor::supervisor_t` was renamed just to `queue`
  - [breaking] `rotor::address_t` now contains `const void*` locality
  - [breaking] `rotor::asio::supervisor_config_t` now contains
