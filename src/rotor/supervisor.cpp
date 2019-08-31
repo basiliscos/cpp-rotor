@@ -143,7 +143,7 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexce
     auto &source_addr = msg.payload.req->payload.request_payload.actor_address;
     auto &ec = msg.payload.ec;
     if (ec) {
-        return on_fail_shutdown(source_addr, ec);
+        return static_cast<supervisor_behavior_t *>(behaviour)->on_shutdown_fail(source_addr, ec);
     }
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
     auto &actor = actors_map.at(source_addr);
@@ -205,8 +205,4 @@ void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     auto timeout_message = request_curry.fn(request_curry.reply_to, *request);
     put(std::move(timeout_message));
     request_map.erase(it);
-}
-
-void supervisor_t::on_fail_shutdown(const address_ptr_t &, const std::error_code &ec) noexcept {
-    context->on_error(ec);
 }

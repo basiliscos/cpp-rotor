@@ -68,17 +68,26 @@ struct fail_shutdown_actor : public r::actor_base_t {
     }
 };
 
+struct fail_test_behavior_t : public r::supervisor_behavior_t {
+    using r::supervisor_behavior_t::supervisor_behavior_t;
+
+    void on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept override;
+};
+
 struct fail_shutdown_sup : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
     r::address_ptr_t fail_addr;
     std::error_code fail_reason;
 
-    virtual void on_fail_shutdown(const r::address_ptr_t &addr, const std::error_code &ec) noexcept {
-        fail_addr = addr;
-        fail_reason = ec;
-    }
+    virtual r::actor_behavior_t *create_behaviour() noexcept override { return new fail_test_behavior_t(*this); }
 };
+
+void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept {
+    auto &sup = static_cast<fail_shutdown_sup &>(actor);
+    sup.fail_addr = address;
+    sup.fail_reason = ec;
+}
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;

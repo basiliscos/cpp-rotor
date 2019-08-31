@@ -75,3 +75,8 @@ void supervisor_behavior_t::on_childen_removed() noexcept {
     assert(substate == behavior_state_t::SHUTDOWN_CHILDREN_STARTED);
     action_unsubscribe_self();
 }
+
+void supervisor_behavior_t::on_shutdown_fail(const address_ptr_t &, const std::error_code &ec) noexcept {
+    auto &sup = static_cast<supervisor_t &>(actor);
+    sup.context->on_error(ec);
+}

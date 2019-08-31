@@ -251,7 +251,6 @@ struct supervisor_t : public actor_base_t {
 
   protected:
     virtual actor_behavior_t *create_behaviour() noexcept override;
-    virtual void on_fail_shutdown(const address_ptr_t &address, const std::error_code &ec) noexcept;
 
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;

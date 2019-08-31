@@ -5,6 +5,9 @@
 // Distributed under the MIT Software License
 //
 
+#include "address.hpp"
+#include <system_error>
+
 namespace rotor {
 
 struct actor_base_t;
@@ -44,6 +47,7 @@ struct supervisor_behavior_t : public actor_behavior_t {
     virtual void action_shutdown_children() noexcept;
     virtual void on_start_shutdown() noexcept override;
     virtual void on_childen_removed() noexcept;
+    virtual void on_shutdown_fail(const address_ptr_t &address, const std::error_code &ec) noexcept;
 };
 
 } // namespace rotor

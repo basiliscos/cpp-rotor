@@ -14,22 +14,31 @@ namespace re = rotor::ev;
 
 static std::uint32_t destroyed = 0;
 
+struct supervisor_test_behavior_t : public r::supervisor_behavior_t {
+    using r::supervisor_behavior_t::supervisor_behavior_t;
+
+    void on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept override;
+};
+
 struct supervisor_ev_test_t : public re::supervisor_ev_t {
     using re::supervisor_ev_t::supervisor_ev_t;
 
     ~supervisor_ev_test_t() { destroyed += 4; }
+
+    virtual r::actor_behavior_t *create_behaviour() noexcept override { return new supervisor_test_behavior_t(*this); }
 
     r::state_t &get_state() noexcept { return state; }
     queue_t &get_queue() noexcept { return *effective_queue; }
     queue_t &get_inbound_queue() noexcept { return inbound; }
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
-
-    void on_fail_shutdown(const r::address_ptr_t &addr, const std::error_code &ec) noexcept override {
-        re::supervisor_ev_t::on_fail_shutdown(addr, ec);
-        ev_break(get_loop());
-    }
 };
+
+void supervisor_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept {
+    r::supervisor_behavior_t::on_shutdown_fail(address, ec);
+    auto loop = static_cast<supervisor_ev_test_t &>(actor).get_loop();
+    ev_break(loop);
+}
 
 struct system_context_ev_test_t : public re::system_context_ev_t {
     std::error_code code;
