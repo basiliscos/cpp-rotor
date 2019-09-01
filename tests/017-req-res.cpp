@@ -129,17 +129,19 @@ struct good_actor2_t : public r::actor_base_t {
 
     int req_val = 0;
     int res_val = 0;
+    r::address_ptr_t reply_addr;
     std::error_code ec;
 
     void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+        reply_addr = supervisor.create_address();
         subscribe(&good_actor2_t::on_request);
-        subscribe(&good_actor2_t::on_responce);
+        subscribe(&good_actor2_t::on_responce, reply_addr);
+        r::actor_base_t::on_initialize(msg);
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<req2_t>(address, 4).timeout(r::pt::seconds(1));
+        request_via<req2_t>(address, reply_addr, 4).timeout(r::pt::seconds(1));
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }

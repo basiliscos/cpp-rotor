@@ -122,8 +122,6 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
 
-    // virtual void on_initialize(message::init_request_t &msg) noexcept override;
-
     /** \brief sends {@link payload::start_actor_t} to the initialized actor  */
     virtual void on_initialize_confirm(message::init_response_t &msg) noexcept;
 
@@ -246,9 +244,9 @@ struct supervisor_t : public actor_base_t {
     inline system_context_t *get_context() noexcept { return context; }
 
     template <typename T, typename... Args>
-    request_builder_t<T> do_request(const address_ptr_t &destination, const address_ptr_t &reply_to,
+    request_builder_t<T> do_request(const address_ptr_t &dest_addr, const address_ptr_t &reply_to,
                                     Args &&... args) noexcept {
-        return request_builder_t<T>(*this, destination, reply_to, std::forward<Args>(args)...);
+        return request_builder_t<T>(*this, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
   protected:
@@ -439,8 +437,14 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
 }
 
 template <typename M, typename... Args>
-request_builder_t<M> actor_base_t::request(const address_ptr_t &addr, Args &&... args) {
-    return supervisor.do_request<M>(addr, address, std::forward<Args>(args)...);
+request_builder_t<M> actor_base_t::request(const address_ptr_t &dest_addr, Args &&... args) {
+    return supervisor.do_request<M>(dest_addr, address, std::forward<Args>(args)...);
+}
+
+template <typename M, typename... Args>
+request_builder_t<M> actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr,
+                                               Args &&... args) {
+    return supervisor.do_request<M>(dest_addr, reply_addr, std::forward<Args>(args)...);
 }
 
 template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
