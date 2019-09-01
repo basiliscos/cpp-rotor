@@ -215,6 +215,8 @@ namespace message {
 using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
 using init_response_t = request_traits_t<payload::initialize_actor_t>::responce::message_t;
 
+using start_trigger_t = message_t<payload::start_actor_t>;
+
 using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
 using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;
 using shutdown_responce_t = request_traits_t<payload::shutdown_request_t>::responce::message_t;

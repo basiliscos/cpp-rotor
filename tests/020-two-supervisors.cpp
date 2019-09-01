@@ -118,3 +118,39 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);
 }
+
+TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]") {
+    r::system_context_t system_context;
+
+    const char locality[] = "locality";
+    auto timeout = r::pt::milliseconds{1};
+    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, timeout, locality);
+    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, timeout, locality);
+
+    REQUIRE(&sup2->get_supervisor() == sup2.get());
+    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
+
+    sup1->do_process();
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->on_initialize_count == 1);
+
+    // for better coverage
+    sup2->template send<r::payload::shutdown_trigger_t>(sup2->get_address(), sup2->get_address());
+    sup1->do_process();
+
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+
+    sup1->do_shutdown();
+    sup1->do_process();
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+
+    REQUIRE(sup1->get_queue().size() == 0);
+    REQUIRE(sup1->get_points().size() == 0);
+    REQUIRE(sup1->get_subscription().size() == 0);
+
+    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_points().size() == 0);
+    REQUIRE(sup2->get_subscription().size() == 0);
+}

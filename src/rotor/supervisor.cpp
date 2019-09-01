@@ -118,17 +118,6 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
     }
 }
 
-/*
-void supervisor_t::on_initialize(message::init_request_t  &msg) noexcept {
-    auto actor_addr = msg.payload.actor_address;
-    if (actor_addr == address) {
-        actor_base_t::on_initialize(msg);
-    } else {
-        send<payload::initialize_actor_t>(actor_addr, actor_addr);
-    }
-}
-*/
-
 void supervisor_t::do_shutdown() noexcept {
     auto upstream_sup = parent ? parent : this;
     send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
