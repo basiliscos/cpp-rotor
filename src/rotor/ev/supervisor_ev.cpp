@@ -78,7 +78,7 @@ void supervisor_ev_t::shutdown() noexcept {
     supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
 }
 
-void supervisor_ev_t::start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept {
+void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {
     auto timer = std::make_unique<timer_t>();
     auto timer_ptr = timer.get();
     ev_tstamp ev_timeout = static_cast<ev_tstamp>(timeout.total_nanoseconds()) / 1000000000;

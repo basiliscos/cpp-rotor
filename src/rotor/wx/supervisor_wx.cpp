@@ -44,7 +44,7 @@ void supervisor_wx_t::enqueue(message_ptr_t message) noexcept {
     });
 }
 
-void supervisor_wx_t::start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept {
+void supervisor_wx_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {
     auto self = timer_t::supervisor_ptr_t(this);
     auto timer = std::make_unique<timer_t>(timer_id, std::move(self));
     auto timeout_ms = static_cast<int>(timeout.total_milliseconds());
