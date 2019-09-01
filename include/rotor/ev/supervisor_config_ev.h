@@ -23,7 +23,8 @@ struct supervisor_config_ev_t : public supervisor_config_t {
     /** \brief whether loop should be destroyed by supervisor */
     bool loop_ownership;
 
-    supervisor_config_ev_t(const pt::time_duration &shutdown_duration_, struct ev_loop *loop_, bool loop_ownership_)
+    supervisor_config_ev_t(const rotor::pt::time_duration &shutdown_duration_, struct ev_loop *loop_,
+                           bool loop_ownership_)
         : supervisor_config_t{shutdown_duration_}, loop{loop_}, loop_ownership{loop_ownership_} {}
 };
 

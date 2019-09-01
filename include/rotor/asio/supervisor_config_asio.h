@@ -25,7 +25,7 @@ struct supervisor_config_asio_t : public supervisor_config_t {
     /** \brief boost::asio execution strand (shared pointer) */
     strand_ptr_t strand;
 
-    supervisor_config_asio_t(const pt::time_duration &shutdown_duration, strand_ptr_t strand_)
+    supervisor_config_asio_t(const rotor::pt::time_duration &shutdown_duration, strand_ptr_t strand_)
         : supervisor_config_t{shutdown_duration}, strand{std::move(strand_)} {}
 };
 

@@ -31,7 +31,7 @@ struct supervisor_config_wx_t : public supervisor_config_t {
      */
     wxEvtHandler *handler;
 
-    supervisor_config_wx_t(const pt::time_duration &shutdown_config_, wxEvtHandler *handler_)
+    supervisor_config_wx_t(const rotor::pt::time_duration &shutdown_config_, wxEvtHandler *handler_)
         : supervisor_config_t{shutdown_config_}, handler{handler_} {}
 };
 
