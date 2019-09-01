@@ -5,7 +5,7 @@
 ## 0.03 (25-Aug-2019)
 
  - [improvement] locality notion was introduced, which led to possibilty
-to build superving trees, see [superving-trees]]
+to build superving trees, see [superving-trees]
  - [breaking] the `outbound` field in `rotor::supervisor_t` was renamed just to `queue`
  - [breaking] `rotor::address_t` now contains `const void*` locality
  - [breaking] `rotor::asio::supervisor_config_t` now contains

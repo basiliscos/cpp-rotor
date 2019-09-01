@@ -103,3 +103,8 @@ void supervisor_behavior_t::on_shutdown_fail(const address_ptr_t &, const std::e
     auto &sup = static_cast<supervisor_t &>(actor);
     sup.context->on_error(ec);
 }
+
+void supervisor_behavior_t::on_init_fail(const address_ptr_t &addr, const std::error_code &) noexcept {
+    auto &sup = static_cast<supervisor_t &>(actor);
+    sup.template request<payload::shutdown_request_t>(addr, addr).timeout(sup.shutdown_timeout);
+}

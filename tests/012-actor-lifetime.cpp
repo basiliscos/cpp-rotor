@@ -68,6 +68,12 @@ struct fail_shutdown_actor : public r::actor_base_t {
     }
 };
 
+struct fail_initialize_actor : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    void init_start() noexcept override {}
+};
+
 struct fail_test_behavior_t : public r::supervisor_behavior_t {
     using r::supervisor_behavior_t::supervisor_behavior_t;
 
@@ -144,6 +150,26 @@ TEST_CASE("fail shutdown test", "[actor]") {
 
     act->allow_shutdown = true;
     act->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_children().size() == 0);
+
+    sup->do_shutdown();
+    sup->do_process();
+}
+
+TEST_CASE("fail initialize test", "[actor]") {
+    r::system_context_t system_context;
+
+    auto timeout = r::pt::millisec{1};
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    auto act = sup->create_actor<fail_initialize_actor>(timeout);
+
+    sup->do_process();
+    REQUIRE(sup->get_children().size() == 1);
+    REQUIRE(act->get_state() == r::state_t::INITIALIZING);
+    REQUIRE(sup->active_timers.size() == 1);
+
+    sup->on_timer_trigger(*sup->active_timers.begin());
     sup->do_process();
     REQUIRE(sup->get_children().size() == 0);
 

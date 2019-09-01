@@ -50,10 +50,6 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     if (!parent) {
         request<payload::initialize_actor_t>(address, address).timeout(shutdown_timeout);
     }
-    /*
-    auto addr = supervisor.get_address();
-    send<payload::initialize_actor_t>(addr, addr);
-    */
 }
 
 void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
@@ -64,9 +60,13 @@ void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
 }
 
 void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept {
-    // TODO check init failure
     auto &addr = msg.payload.req->payload.request_payload.actor_address;
-    send<payload::start_actor_t>(addr, addr);
+    auto &ec = msg.payload.ec;
+    if (ec) {
+        static_cast<supervisor_behavior_t *>(behaviour)->on_init_fail(addr, ec);
+    } else {
+        send<payload::start_actor_t>(addr, addr);
+    }
 }
 
 void supervisor_t::do_process() noexcept {
