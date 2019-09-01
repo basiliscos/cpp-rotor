@@ -162,10 +162,10 @@ int main(int argc, char **argv) {
 
         auto sys_ctx = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx)};
         auto stand = std::make_shared<asio::io_context::strand>(io_ctx);
-        ra::supervisor_config_t conf{std::move(stand)};
         auto timeout = boost::posix_time::milliseconds{500};
-        auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>(timeout, conf);
-        auto sup2 = sup1->create_actor<ra::supervisor_asio_t>(timeout, timeout, conf);
+        ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
+        auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>(conf);
+        auto sup2 = sup1->create_actor<ra::supervisor_asio_t>(timeout, conf);
 
         auto pinger = sup1->create_actor<pinger_t>(timeout, count);
         auto ponger = sup2->create_actor<ponger_t>(timeout);

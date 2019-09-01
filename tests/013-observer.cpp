@@ -59,7 +59,8 @@ TEST_CASE("obsrever", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto simpleton = sup->create_actor<simpleton_actor_t>(timeout);
     auto observer = sup->create_actor<foo_observer_t>(timeout);
     observer->set_simpleton(simpleton->get_address());

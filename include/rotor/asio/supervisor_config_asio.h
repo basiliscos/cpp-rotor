@@ -6,18 +6,16 @@
 // Distributed under the MIT Software License
 //
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "rotor/supervisor_config.h"
 #include <boost/asio.hpp>
 #include <memory>
 
 namespace rotor {
 namespace asio {
 
-namespace pt = boost::posix_time;
-
-/** \struct supervisor_config_t
+/** \struct supervisor_config_asio_t
  *  \brief boost::asio supervisor config, which holds shutdowm timeout value */
-struct supervisor_config_t {
+struct supervisor_config_asio_t : public supervisor_config_t {
     /** \brief alias for boost::asio strand type */
     using strand_t = boost::asio::io_context::strand;
 
@@ -26,6 +24,9 @@ struct supervisor_config_t {
 
     /** \brief boost::asio execution strand (shared pointer) */
     strand_ptr_t strand;
+
+    supervisor_config_asio_t(const pt::time_duration &shutdown_duration, strand_ptr_t strand_)
+        : supervisor_config_t{shutdown_duration}, strand{std::move(strand_)} {}
 };
 
 } // namespace asio

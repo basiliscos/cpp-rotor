@@ -12,6 +12,7 @@
 #include "messages.hpp"
 #include "subscription.h"
 #include "system_context.h"
+#include "supervisor_config.h"
 
 #include <chrono>
 #include <deque>
@@ -63,7 +64,7 @@ struct supervisor_t : public actor_base_t {
     using timer_id_t = std::uint32_t;
 
     /** \brief constructs new supervisor with optional parent supervisor */
-    supervisor_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout);
+    supervisor_t(supervisor_t *sup, const supervisor_config_t &config);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 

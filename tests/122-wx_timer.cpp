@@ -62,8 +62,8 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     wxEventLoopBase::SetActive(loop);
     rx::system_context_ptr_t system_context{new rx::system_context_wx_t(app)};
     wxEvtHandler handler;
-    rx::supervisor_config_t conf{&handler};
-    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(timeout, conf);
+    rx::supervisor_config_wx_t conf{timeout, &handler};
+    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(conf);
     sup->start();
 
     auto actor = sup->create_actor<bad_actor_t>(timeout);

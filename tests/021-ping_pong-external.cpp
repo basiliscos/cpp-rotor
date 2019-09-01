@@ -82,8 +82,10 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
     const char locality1[] = "l1";
     const char locality2[] = "l2";
     auto timeout = r::pt::milliseconds{1};
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, locality1);
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality2);
+    rt::supervisor_config_test_t config1(timeout, locality1);
+    rt::supervisor_config_test_t config2(timeout, locality2);
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config1);
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, config2);
 
     auto pinger = sup1->create_actor<pinger_t>(timeout);
     auto ponger = sup2->create_actor<ponger_t>(timeout);
@@ -139,8 +141,10 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
     const char locality1[] = "l1";
     const char locality2[] = "l2";
     auto timeout = r::pt::milliseconds{1};
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, locality1);
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality2);
+    rt::supervisor_config_test_t config1(timeout, locality1);
+    rt::supervisor_config_test_t config2(timeout, locality2);
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config1);
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, config2);
 
     auto pinger = sup1->create_actor<pinger_autostart_t>(timeout);
     auto ponger = sup2->create_actor<ponger_t>(timeout);

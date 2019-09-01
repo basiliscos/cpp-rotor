@@ -34,8 +34,10 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     const char locality1[] = "abc";
     const char locality2[] = "def";
     auto timeout = r::pt::milliseconds{1};
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, timeout, locality1);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, timeout, locality2);
+    rt::supervisor_config_test_t config1(timeout, locality1);
+    rt::supervisor_config_test_t config2(timeout, locality2);
+    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, config1);
+    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, config2);
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());
@@ -92,8 +94,9 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
 
     const char locality[] = "locality";
     auto timeout = r::pt::milliseconds{1};
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, timeout, locality);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, timeout, locality);
+    rt::supervisor_config_test_t config(timeout, locality);
+    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, config);
+    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, config);
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());
@@ -124,8 +127,9 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
 
     const char locality[] = "locality";
     auto timeout = r::pt::milliseconds{1};
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, timeout, locality);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, timeout, locality);
+    rt::supervisor_config_test_t config(timeout, locality);
+    auto sup1 = system_context.create_supervisor<my_supervisor_t>(nullptr, config);
+    auto sup2 = sup1->create_actor<my_supervisor_t>(timeout, config);
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());

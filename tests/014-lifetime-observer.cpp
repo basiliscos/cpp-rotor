@@ -41,7 +41,8 @@ TEST_CASE("lifetime observer, same locality", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto observer = sup->create_actor<observer_t>(timeout);
     auto sample_actor = sup->create_actor<sample_actor_t>(timeout);
     observer->set_observable(sample_actor->get_address());
@@ -67,8 +68,10 @@ TEST_CASE("lifetime observer, different localities", "[actor]") {
     auto timeout = r::pt::milliseconds{1};
     const char locality1[] = "l1";
     const char locality2[] = "l2";
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, locality1);
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality2);
+    rt::supervisor_config_test_t config1(timeout, locality1);
+    rt::supervisor_config_test_t config2(timeout, locality2);
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config1);
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, config2);
     auto observer = sup1->create_actor<observer_t>(timeout);
     auto sample_actor = sup2->create_actor<sample_actor_t>(timeout);
     observer->set_observable(sample_actor->get_address());

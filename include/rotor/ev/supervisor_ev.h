@@ -7,7 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
-#include "rotor/ev/supervisor_config.h"
+#include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/ev/system_context_ev.h"
 #include "rotor/system_context.h"
 #include <ev.h>
@@ -45,8 +45,7 @@ struct supervisor_ev_t : public supervisor_t {
      * the `parent` supervisor can be `null`
      *
      */
-    supervisor_ev_t(supervisor_ev_t *parent, const pt::time_duration &shutdown_timeout,
-                    const supervisor_config_t &config);
+    supervisor_ev_t(supervisor_ev_t *parent, const supervisor_config_ev_t &config);
     ~supervisor_ev_t();
 
     /** \brief creates an actor by forwaring `args` to it
@@ -67,7 +66,7 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void shutdown_finish() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
-    inline struct ev_loop *get_loop() noexcept { return config.loop; }
+    inline struct ev_loop *get_loop() noexcept { return loop; }
 
     /** \brief returns pointer to the wx system context */
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
@@ -87,8 +86,8 @@ struct supervisor_ev_t : public supervisor_t {
      */
     virtual void on_async() noexcept;
 
-    /** \brief timeout value, EV event loop pointer and loop ownership flag */
-    supervisor_config_t config;
+    struct ev_loop *loop;
+    bool loop_ownership;
 
     /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
     ev_async async_watcher;

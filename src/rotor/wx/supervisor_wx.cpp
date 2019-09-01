@@ -15,13 +15,12 @@ supervisor_wx_t::timer_t::timer_t(timer_id_t timer_id_, supervisor_ptr_t &&sup_)
 
 void supervisor_wx_t::timer_t::Notify() noexcept { sup->on_timer_trigger(timer_id); }
 
-supervisor_wx_t::supervisor_wx_t(supervisor_wx_t *sup, const pt::time_duration &shutdown_timeout_,
-                                 const supervisor_config_t &config_)
-    : supervisor_t{sup, shutdown_timeout_}, config{config_} {}
+supervisor_wx_t::supervisor_wx_t(supervisor_wx_t *sup, const supervisor_config_wx_t &config_)
+    : supervisor_t{sup, config_}, handler{config_.handler} {}
 
 void supervisor_wx_t::start() noexcept {
     supervisor_ptr_t self{this};
-    config.handler->CallAfter([self = std::move(self)]() {
+    handler->CallAfter([self = std::move(self)]() {
         auto &sup = *self;
         sup.do_process();
     });
@@ -29,7 +28,7 @@ void supervisor_wx_t::start() noexcept {
 
 void supervisor_wx_t::shutdown() noexcept {
     supervisor_ptr_t self{this};
-    config.handler->CallAfter([self = std::move(self)]() {
+    handler->CallAfter([self = std::move(self)]() {
         auto &sup = *self;
         sup.do_shutdown();
         sup.do_process();
@@ -38,7 +37,7 @@ void supervisor_wx_t::shutdown() noexcept {
 
 void supervisor_wx_t::enqueue(message_ptr_t message) noexcept {
     supervisor_ptr_t self{this};
-    config.handler->CallAfter([self = std::move(self), message = std::move(message)]() {
+    handler->CallAfter([self = std::move(self), message = std::move(message)]() {
         auto &sup = *self;
         sup.put(std::move(message));
         sup.do_process();

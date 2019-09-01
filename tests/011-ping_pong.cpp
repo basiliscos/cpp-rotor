@@ -69,7 +69,8 @@ TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto pinger = sup->create_actor<pinger_t>(timeout);
     auto ponger = sup->create_actor<ponger_t>(timeout);
 

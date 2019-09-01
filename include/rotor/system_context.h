@@ -9,11 +9,8 @@
 #include "address.hpp"
 #include "error_code.h"
 #include <system_error>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace rotor {
-
-namespace pt = boost::posix_time;
 
 struct supervisor_t;
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;

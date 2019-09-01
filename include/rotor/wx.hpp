@@ -10,7 +10,7 @@
  * A convenience header to include rotor support for wxWidgets
  */
 
-#include "rotor/wx/supervisor_config.h"
+#include "rotor/wx/supervisor_config_wx.h"
 #include "rotor/wx/supervisor_wx.h"
 #include "rotor/wx/system_context_wx.h"
 

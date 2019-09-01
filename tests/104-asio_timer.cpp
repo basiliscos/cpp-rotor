@@ -49,8 +49,8 @@ TEST_CASE("timer", "[supervisor][asio]") {
     auto timeout = r::pt::milliseconds{10};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto stand = std::make_shared<asio::io_context::strand>(io_context);
-    ra::supervisor_config_t conf{std::move(stand)};
-    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(timeout, conf);
+    ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
+    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
     auto actor = sup->create_actor<bad_actor_t>(timeout);
 
     sup->start();

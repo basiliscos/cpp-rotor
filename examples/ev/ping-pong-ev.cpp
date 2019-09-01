@@ -88,11 +88,11 @@ int main(int argc, char **argv) {
 
         auto *loop = ev_loop_new(0);
         auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
-        auto conf = rotor::ev::supervisor_config_t{
-            loop, true, /* let supervisor takes ownership on the loop */
-        };
         auto timeout = boost::posix_time::milliseconds{10};
-        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(timeout, conf);
+        auto conf = rotor::ev::supervisor_config_ev_t{
+            timeout, loop, true, /* let supervisor takes ownership on the loop */
+        };
+        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(conf);
 
         auto pinger = sup->create_actor<pinger_t>(timeout, count);
         auto ponger = sup->create_actor<ponger_t>(timeout);

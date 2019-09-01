@@ -113,9 +113,9 @@ struct bad_actor_t : public r::actor_base_t {
 TEST_CASE("ping/pong", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = re::system_context_ev_t::ptr_t{new re::system_context_ev_t()};
-    auto conf = re::supervisor_config_t{loop, true};
     auto timeout = r::pt::milliseconds{10};
-    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(timeout, conf);
+    auto conf = re::supervisor_config_ev_t{timeout, loop, true};
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
 
     auto pinger = sup->create_actor<pinger_t>(timeout);
     auto ponger = sup->create_actor<ponger_t>(timeout);
@@ -147,12 +147,12 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
 TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
-    auto conf = re::supervisor_config_t{loop, true};
     auto timeout = r::pt::milliseconds{10};
-    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>(timeout, conf);
+    auto conf = re::supervisor_config_ev_t{timeout, loop, true};
+    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
     REQUIRE(system_context->code.value() == 0);
 
-    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>(timeout, conf);
+    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
     REQUIRE(!sup2);
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::supervisor_defined));
 
@@ -165,10 +165,10 @@ TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
 
 TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
-    auto timeout = r::pt::milliseconds{10};
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
-    auto conf = re::supervisor_config_t{loop, true};
-    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(timeout, conf);
+    auto timeout = r::pt::milliseconds{10};
+    auto conf = re::supervisor_config_ev_t{timeout, loop, true};
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
 
     sup->start();
     auto actor = sup->create_actor<bad_actor_t>(timeout);

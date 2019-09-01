@@ -97,12 +97,13 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     const void *locality = &system_context;
 
     auto timeout = r::pt::milliseconds{1};
-    auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, locality);
-    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
-    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
+    rt::supervisor_config_test_t config(timeout, locality);
+    auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, config);
+    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(timeout, config);
 
-    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
-    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(timeout, timeout, locality);
+    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, config);
+    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(timeout, config);
 
     auto pinger = sup_A2->create_actor<pinger_t>(timeout);
     auto ponger = sup_B2->create_actor<ponger_t>(timeout);

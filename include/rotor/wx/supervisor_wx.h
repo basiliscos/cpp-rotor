@@ -7,7 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
-#include "rotor/wx/supervisor_config.h"
+#include "rotor/wx/supervisor_config_wx.h"
 #include "rotor/wx/system_context_wx.h"
 #include <wx/event.h>
 #include <wx/timer.h>
@@ -62,8 +62,7 @@ struct supervisor_wx_t : public supervisor_t {
      * the `parent` supervisor can be `null`
      *
      */
-    supervisor_wx_t(supervisor_wx_t *parent, const pt::time_duration &shutdown_timeout,
-                    const supervisor_config_t &config);
+    supervisor_wx_t(supervisor_wx_t *parent, const supervisor_config_wx_t &config);
 
     /** \brief creates an actor by forwaring `args` to it
      *
@@ -88,9 +87,7 @@ struct supervisor_wx_t : public supervisor_t {
     using timer_ptr_t = std::unique_ptr<timer_t>;
     using timers_map_t = std::unordered_map<timer_id_t, timer_ptr_t>;
 
-    /** \brief timeout value and wx events transport */
-    supervisor_config_t config;
-
+    wxEvtHandler *handler;
     timers_map_t timers_map;
 };
 

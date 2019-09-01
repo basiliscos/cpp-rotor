@@ -61,7 +61,8 @@ TEST_CASE("statuses observer", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto observer = sup->create_actor<statuses_observer_t>(timeout);
     auto sample_actor = sup->create_actor<sample_actor_t>(timeout);
     observer->observable_addr = sample_actor->get_address();

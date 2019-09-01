@@ -97,8 +97,8 @@ void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, con
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
-
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, r::pt::milliseconds{500}, nullptr);
+    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto act = sup->create_actor<sample_actor_t>(r::pt::milliseconds{1});
 
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
@@ -132,7 +132,8 @@ TEST_CASE("actor litetimes", "[actor]") {
 TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, r::pt::milliseconds{500}, nullptr);
+    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, config);
     auto act = sup->create_actor<fail_shutdown_actor>(r::pt::milliseconds{1});
 
     sup->do_process();
@@ -161,7 +162,8 @@ TEST_CASE("fail initialize test", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::millisec{1};
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto act = sup->create_actor<fail_initialize_actor>(timeout);
 
     sup->do_process();

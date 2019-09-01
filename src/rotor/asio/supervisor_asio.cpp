@@ -9,11 +9,10 @@
 
 using namespace rotor::asio;
 
-supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout_,
-                                     const supervisor_config_t &config_)
-    : supervisor_t{sup, shutdown_timeout_}, config{config_} {}
+supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, const supervisor_config_asio_t &config_)
+    : supervisor_t{sup, config_}, strand{config_.strand} {}
 
-rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(config.strand.get()); }
+rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(strand.get()); }
 
 void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_process)(); }
 

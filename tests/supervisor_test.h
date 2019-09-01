@@ -12,9 +12,17 @@
 namespace rotor {
 namespace test {
 
+struct supervisor_config_test_t: public supervisor_config_t  {
+    const void *locality;
+
+    supervisor_config_test_t(const pt::time_duration& shutdown_timeout_, const void *locality_): supervisor_config_t {shutdown_timeout_}, locality{locality_} {
+
+    }
+};
+
 struct supervisor_test_t : public supervisor_t {
     using set_t = std::unordered_set<timer_id_t>;
-    supervisor_test_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout, const void *locality);
+    supervisor_test_t(supervisor_t *sup, const supervisor_config_test_t& config_);
 
     virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;

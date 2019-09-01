@@ -10,7 +10,7 @@
  * A convenience header to include rotor support for libev
  */
 
-#include "rotor/ev/supervisor_config.h"
+#include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/ev/supervisor_ev.h"
 #include "rotor/ev/system_context_ev.h"
 

@@ -142,9 +142,8 @@ struct ponger_t : public r::actor_base_t {
 struct holding_supervisor_t : public ra::supervisor_asio_t {
     using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
 
-    holding_supervisor_t(ra::supervisor_asio_t *sup, pt::time_duration shutdown_timeout_,
-                         const ra::supervisor_config_t &cfg)
-        : ra::supervisor_asio_t{sup, shutdown_timeout_, cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
+    holding_supervisor_t(ra::supervisor_asio_t *sup, const ra::supervisor_config_asio_t &cfg)
+        : ra::supervisor_asio_t{sup, cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
     guard_t guard;
 
     void shutdown_finish() noexcept override {
@@ -168,11 +167,11 @@ int main(int argc, char **argv) {
         auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
         auto stand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
         auto stand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
-        ra::supervisor_config_t conf1{std::move(stand1)};
-        ra::supervisor_config_t conf2{std::move(stand2)};
         auto timeout = boost::posix_time::milliseconds{10};
-        auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(timeout, conf1);
-        auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(timeout, conf2);
+        ra::supervisor_config_asio_t conf1{timeout, std::move(stand1)};
+        ra::supervisor_config_asio_t conf2{timeout, std::move(stand2)};
+        auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(conf1);
+        auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(conf2);
 
         auto pinger = sup1->create_actor<pinger_t>(timeout, count);
         auto ponger = sup2->create_actor<ponger_t>(timeout);

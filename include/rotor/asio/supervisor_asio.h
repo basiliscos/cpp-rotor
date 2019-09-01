@@ -7,7 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
-#include "supervisor_config.h"
+#include "supervisor_config_asio.h"
 #include "system_context_asio.h"
 #include "forwarder.hpp"
 #include <boost/asio.hpp>
@@ -66,7 +66,7 @@ struct supervisor_asio_t : public supervisor_t {
      * the `parent` supervisor can be null
      *
      */
-    supervisor_asio_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout, const supervisor_config_t &config);
+    supervisor_asio_t(supervisor_t *sup, const supervisor_config_asio_t &config);
 
     virtual address_ptr_t make_address() noexcept override;
 
@@ -107,12 +107,12 @@ struct supervisor_asio_t : public supervisor_t {
     inline system_context_asio_t &get_asio_context() noexcept { return static_cast<system_context_asio_t &>(*context); }
 
     /** \brief returns exeuction strand */
-    inline asio::io_context::strand &get_strand() noexcept { return *config.strand; }
+    inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
     timers_map_t timers_map;
 
     /** \brief config for the supervisor */
-    supervisor_config_t config;
+    supervisor_config_asio_t::strand_ptr_t strand;
 };
 
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor) {

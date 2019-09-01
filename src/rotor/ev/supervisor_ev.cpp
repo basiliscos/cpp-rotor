@@ -26,14 +26,13 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     sup->do_process();
 }
 
-supervisor_ev_t::supervisor_ev_t(supervisor_ev_t *parent_, const pt::time_duration &shutdown_timeout_,
-                                 const supervisor_config_t &config_)
-    : supervisor_t{parent_, shutdown_timeout_}, config{config_.loop, config_.loop_ownership}, pending{false} {
+supervisor_ev_t::supervisor_ev_t(supervisor_ev_t *parent_, const supervisor_config_ev_t &config_)
+    : supervisor_t{parent_, config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
     ev_async_init(&async_watcher, async_cb);
 
     async_watcher.data = this;
 
-    ev_async_start(config.loop, &async_watcher);
+    ev_async_start(loop, &async_watcher);
 }
 
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
@@ -51,7 +50,7 @@ void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
     }
 
     if (ok) {
-        ev_async_send(config.loop, &async_watcher);
+        ev_async_send(loop, &async_watcher);
     }
 }
 
@@ -69,11 +68,11 @@ void supervisor_ev_t::start() noexcept {
     }
 
     if (ok) {
-        ev_async_send(config.loop, &async_watcher);
+        ev_async_send(loop, &async_watcher);
     }
 }
 
-void supervisor_ev_t::shutdown_finish() noexcept { ev_async_stop(config.loop, &async_watcher); }
+void supervisor_ev_t::shutdown_finish() noexcept { ev_async_stop(loop, &async_watcher); }
 
 void supervisor_ev_t::shutdown() noexcept {
     supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
@@ -87,14 +86,14 @@ void supervisor_ev_t::start_timer(const pt::time_duration &timeout, timer_id_t t
     timer_ptr->timer_id = timer_id;
     timer_ptr->data = this;
 
-    ev_timer_start(config.loop, timer_ptr);
+    ev_timer_start(loop, timer_ptr);
     intrusive_ptr_add_ref(this);
     timers_map.emplace(timer_id, std::move(timer));
 }
 
 void supervisor_ev_t::cancel_timer(timer_id_t timer_id) noexcept {
     auto &timer = timers_map.at(timer_id);
-    ev_timer_stop(config.loop, timer.get());
+    ev_timer_stop(loop, timer.get());
     timers_map.erase(timer_id);
     intrusive_ptr_release(this);
 }
@@ -124,7 +123,7 @@ void supervisor_ev_t::on_async() noexcept {
 }
 
 supervisor_ev_t::~supervisor_ev_t() {
-    if (config.loop_ownership) {
-        ev_loop_destroy(config.loop);
+    if (loop_ownership) {
+        ev_loop_destroy(loop);
     }
 }

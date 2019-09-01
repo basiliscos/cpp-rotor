@@ -10,9 +10,8 @@
 using namespace rotor::test;
 using namespace rotor;
 
-supervisor_test_t::supervisor_test_t(supervisor_t *sup, const pt::time_duration &shutdown_timeout_,
-                                     const void *locality_)
-    : supervisor_t{sup, shutdown_timeout_}, locality{locality_} {}
+supervisor_test_t::supervisor_test_t(supervisor_t *sup, const supervisor_config_test_t& config_)
+    : supervisor_t{sup, config_}, locality{config_.locality} {}
 
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 

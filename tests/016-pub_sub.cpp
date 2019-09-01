@@ -47,7 +47,8 @@ TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, timeout, nullptr);
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
     auto pub_addr = sup->create_address();
     auto pub = sup->create_actor<pub_t>(timeout);
     auto sub1 = sup->create_actor<sub_t>(timeout);
