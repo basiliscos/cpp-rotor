@@ -95,6 +95,36 @@ struct bad_actor_t : public r::actor_base_t {
     }
 };
 
+struct bad_actor2_t : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+    int req_val = 0;
+    int res_val = 0;
+    std::error_code ec;
+
+    void init_start() noexcept override {
+        subscribe(&bad_actor2_t::on_request);
+        subscribe(&bad_actor2_t::on_responce);
+        r::actor_base_t::init_start();
+    }
+
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
+    }
+
+    void on_request(traits_t::request::message_t &msg) noexcept {
+        reply_with_error(msg, r::make_error_code(r::error_code_t::request_timeout));
+    }
+
+    void on_responce(traits_t::responce::message_t &msg) noexcept {
+        req_val += msg.payload.req->payload.request_payload.value;
+        ec = msg.payload.ec;
+        if (!ec) {
+            res_val += 9;
+        }
+    }
+};
+
 struct good_supervisor_t : rt::supervisor_test_t {
     int req_val = 0;
     int res_val = 0;
@@ -282,6 +312,29 @@ TEST_CASE("request-responce timeout", "[actor]") {
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
+}
+
+TEST_CASE("responce with custom error", "[actor]") {
+    r::system_context_t system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto actor = sup->create_actor<bad_actor2_t>(timeout);
+    sup->do_process();
+
+    REQUIRE(actor->req_val == 4);
+    REQUIRE(actor->res_val == 0);
+    REQUIRE(actor->ec);
+    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(sup->active_timers.size() == 0);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
 }
 
 TEST_CASE("request-responce successfull delivery (supervisor)", "[supervisor]") {

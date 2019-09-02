@@ -67,10 +67,11 @@ template <typename Request> struct wrapped_responce_t {
     inline std::int32_t request_id() const noexcept { return req->payload.id; }
 };
 
-typedef message_ptr_t(timeout_producer_t)(const address_ptr_t &reply_to, message_base_t &msg) noexcept;
+typedef message_ptr_t(error_producer_t)(const address_ptr_t &reply_to, message_base_t &msg,
+                                        const std::error_code &ec) noexcept;
 
 struct request_curry_t {
-    timeout_producer_t *fn;
+    error_producer_t *fn;
     address_ptr_t reply_to;
     message_ptr_t request_message;
 };
@@ -89,12 +90,13 @@ template <typename R> struct request_traits_t {
         using message_ptr_t = intrusive_ptr_t<message_t>;
     };
 
-    static message_ptr_t make_timeout_responce(const address_ptr_t &reply_to, message_base_t &message) noexcept {
+    static message_ptr_t make_error_responce(const address_ptr_t &reply_to, message_base_t &message,
+                                             const std::error_code &ec) noexcept {
         using reply_message_t = typename responce::message_t;
         using request_message_ptr = typename request::message_ptr_t;
         auto &request = static_cast<typename request::message_t &>(message);
         auto req_ptr = request_message_ptr(&request);
-        auto raw_reply = new reply_message_t{reply_to, make_error_code(error_code_t::request_timeout), req_ptr};
+        auto raw_reply = new reply_message_t{reply_to, ec, req_ptr};
         return message_ptr_t{raw_reply};
     }
 };

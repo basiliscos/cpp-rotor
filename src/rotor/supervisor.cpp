@@ -198,7 +198,8 @@ void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     auto it = request_map.find(timer_id);
     auto &request_curry = it->second;
     message_ptr_t &request = request_curry.request_message;
-    auto timeout_message = request_curry.fn(request_curry.reply_to, *request);
+    auto timeout_message =
+        request_curry.fn(request_curry.reply_to, *request, make_error_code(error_code_t::request_timeout));
     put(std::move(timeout_message));
     request_map.erase(it);
 }

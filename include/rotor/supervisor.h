@@ -412,7 +412,7 @@ template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeo
     if (do_install_handler) {
         install_handler();
     }
-    auto fn = &request_traits_t<T>::make_timeout_responce;
+    auto fn = &request_traits_t<T>::make_error_responce;
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req});
     sup.put(req);
     sup.start_timer(timeout, request_id);
@@ -453,6 +453,14 @@ template <typename Request, typename... Args> void actor_base_t::reply_to(Reques
     using responce_t = typename traits_t::responce::wrapped_t;
     using request_ptr_t = typename traits_t::request::message_ptr_t;
     send<responce_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
+}
+
+template <typename Request, typename... Args>
+void actor_base_t::reply_with_error(Request &message, const std::error_code &ec) {
+    using payload_t = typename Request::payload_t::request_t;
+    using traits_t = request_traits_t<payload_t>;
+    auto responce = traits_t::make_error_responce(message.payload.reply_to, message, ec);
+    supervisor.put(std::move(responce));
 }
 
 } // namespace rotor
