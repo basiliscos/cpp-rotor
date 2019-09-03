@@ -408,7 +408,7 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t 
     req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});
 }
 
-template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeout) noexcept {
+template <typename T> std::uint32_t request_builder_t<T>::timeout(pt::time_duration timeout) noexcept {
     if (do_install_handler) {
         install_handler();
     }
@@ -416,6 +416,7 @@ template <typename T> void request_builder_t<T>::timeout(pt::time_duration timeo
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req});
     sup.put(req);
     sup.start_timer(timeout, request_id);
+    return request_id;
 }
 
 template <typename T> void request_builder_t<T>::install_handler() noexcept {

@@ -121,7 +121,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     request_builder_t(supervisor_t & sup_, const address_ptr_t &destination_, const address_ptr_t &reply_to_,
                       Args &&... args);
 
-    void timeout(pt::time_duration timeout) noexcept;
+    std::uint32_t timeout(pt::time_duration timeout) noexcept;
 
   private:
     void install_handler() noexcept;
