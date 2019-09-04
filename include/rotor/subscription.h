@@ -44,7 +44,7 @@ struct subscription_t {
     /** \brief records the subscription for the handler */
     void subscribe(handler_ptr_t handler);
 
-    /** \brief removes the records the subscription and returns amount of left subscriptions */
+    /** \brief removes the recorded subscriptios and returns amount of left subscriptions */
     std::size_t unsubscribe(handler_ptr_t handler);
 
     /** \brief optioally returns classified list of subscribers to the message type */

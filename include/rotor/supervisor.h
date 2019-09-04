@@ -420,21 +420,21 @@ template <typename T> std::uint32_t request_builder_t<T>::timeout(pt::time_durat
 }
 
 template <typename T> void request_builder_t<T>::install_handler() noexcept {
-    sup.subscribe(lambda<responce_message_t>([supervisor = &sup](responce_message_t &msg) {
-                      auto request_id = msg.payload.request_id();
-                      auto it = supervisor->request_map.find(request_id);
-                      if (it != supervisor->request_map.end()) {
-                          supervisor->cancel_timer(request_id);
-                          auto &orig_addr = it->second.reply_to;
-                          supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
-                          supervisor->request_map.erase(it);
-                      }
-                      // if a responce to request has arrived and no timer can be found
-                      // that means that either timeout timer already triggered
-                      // and error-message already delivered or responce is not expected.
-                      // just silently drop it anyway
-                  }),
-                  imaginary_address);
+    auto handler = lambda<responce_message_t>([supervisor = &sup](responce_message_t &msg) {
+        auto request_id = msg.payload.request_id();
+        auto it = supervisor->request_map.find(request_id);
+        if (it != supervisor->request_map.end()) {
+            supervisor->cancel_timer(request_id);
+            auto &orig_addr = it->second.reply_to;
+            supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
+            supervisor->request_map.erase(it);
+        }
+        // if a responce to request has arrived and no timer can be found
+        // that means that either timeout timer already triggered
+        // and error-message already delivered or responce is not expected.
+        // just silently drop it anyway
+    });
+    sup.subscribe(handler, imaginary_address);
 }
 
 template <typename M, typename... Args>
