@@ -13,6 +13,7 @@
 #include "subscription.h"
 #include "system_context.h"
 #include "supervisor_config.h"
+#include "address_mapping.h"
 
 #include <chrono>
 #include <deque>
@@ -169,6 +170,8 @@ struct supervisor_t : public actor_base_t {
 
     virtual void do_shutdown() noexcept override;
 
+    virtual void shutdown_finish() noexcept override;
+
     /** \brief enqueues messages thread safe way and triggers processing
      *
      * This is the only method for deliver message outside of `rotor` context.
@@ -216,6 +219,11 @@ struct supervisor_t : public actor_base_t {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
+    using unsubscribe_callback_t = payload::unsubscription_confirmation_t::fn_ptr_t;
+
+    void unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
+                           unsubscribe_callback_t = unsubscribe_callback_t{}) noexcept;
+
     /** \brief unsubscribes local handler from the address
      *
      * If the address is local, then unsubscription confirmation is sent immediately,
@@ -224,12 +232,8 @@ struct supervisor_t : public actor_base_t {
      *
      */
     template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
-        auto &dest = handler->actor_ptr->address;
-        if (&addr->supervisor == &supervisor) {
-            send<payload::unsubscription_confirmation_t>(dest, addr, std::forward<Handler>(handler));
-        } else {
-            send<payload::external_unsubscription_t>(dest, addr, std::forward<Handler>(handler));
-        }
+        handler_ptr_t wrapped_handler(std::forward<Handler>(handler));
+        unsubscribe_actor(wrapped_handler, addr);
     }
 
     /** \brief creates actor, records it in internal structures and returns
@@ -244,9 +248,9 @@ struct supervisor_t : public actor_base_t {
     inline system_context_t *get_context() noexcept { return context; }
 
     template <typename T, typename... Args>
-    request_builder_t<T> do_request(const address_ptr_t &dest_addr, const address_ptr_t &reply_to,
+    request_builder_t<T> do_request(actor_base_t &actor, const address_ptr_t &dest_addr, const address_ptr_t &reply_to,
                                     Args &&... args) noexcept {
-        return request_builder_t<T>(*this, dest_addr, reply_to, std::forward<Args>(args)...);
+        return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
   protected:
@@ -303,8 +307,8 @@ struct supervisor_t : public actor_base_t {
     timer_id_t last_req_id;
     request_map_t request_map;
     pt::time_duration shutdown_timeout;
+    address_mapping_t address_mapping;
 
-    request_subscription_t request_subscriptions;
     template <typename T> friend struct request_builder_t;
     friend struct supervisor_behavior_t;
 };
@@ -333,12 +337,16 @@ template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Hand
     return handler_ptr_t{handler_raw};
 }
 
-template <typename Handler> void actor_base_t::subscribe(Handler &&h) noexcept {
-    supervisor.subscribe_actor(address, wrap_handler(*this, std::move(h)));
+template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h) noexcept {
+    auto wrapped_handler = wrap_handler(*this, std::move(h));
+    supervisor.subscribe_actor(address, wrapped_handler);
+    return wrapped_handler;
 }
 
-template <typename Handler> void actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) noexcept {
-    supervisor.subscribe_actor(addr, wrap_handler(*this, std::move(h)));
+template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) noexcept {
+    auto wrapped_handler = wrap_handler(*this, std::move(h));
+    supervisor.subscribe_actor(addr, wrapped_handler);
+    return wrapped_handler;
 }
 
 template <typename Handler> void actor_base_t::unsubscribe(Handler &&h) noexcept {
@@ -388,13 +396,11 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, const pt::time_duration &time
 
 template <typename T>
 template <typename... Args>
-request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t &destination_,
+request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_, const address_ptr_t &destination_,
                                         const address_ptr_t &reply_to_, Args &&... args)
-    : sup{sup_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_}, do_install_handler{
-                                                                                                    false} {
-    auto &subscriptions = sup.request_subscriptions;
-    auto message_type = responce_message_t::message_type;
-    auto addr = subscriptions.get(message_type, destination);
+    : sup{sup_}, actor{actor_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
+      do_install_handler{false} {
+    auto addr = sup.address_mapping.get_addr(actor_, responce_message_t::message_type);
     if (addr) {
         imaginary_address = addr;
     } else {
@@ -402,7 +408,6 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, const address_ptr_t 
         // 1. faster dispatching
         // 2. need to distinguish between "timeout guarded responces" and "responces to own requests"
         imaginary_address = sup.make_address();
-        subscriptions.set(message_type, destination, imaginary_address);
         do_install_handler = true;
     }
     req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});
@@ -434,18 +439,19 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
         // and error-message already delivered or responce is not expected.
         // just silently drop it anyway
     });
-    sup.subscribe(handler, imaginary_address);
+    auto handler_ptr = sup.subscribe(handler, imaginary_address);
+    sup.address_mapping.set(actor, responce_message_t::message_type, handler_ptr, imaginary_address);
 }
 
 template <typename M, typename... Args>
 request_builder_t<M> actor_base_t::request(const address_ptr_t &dest_addr, Args &&... args) {
-    return supervisor.do_request<M>(dest_addr, address, std::forward<Args>(args)...);
+    return supervisor.do_request<M>(*this, dest_addr, address, std::forward<Args>(args)...);
 }
 
 template <typename M, typename... Args>
 request_builder_t<M> actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr,
                                                Args &&... args) {
-    return supervisor.do_request<M>(dest_addr, reply_addr, std::forward<Args>(args)...);
+    return supervisor.do_request<M>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
 }
 
 template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {

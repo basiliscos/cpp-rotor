@@ -186,8 +186,8 @@ template <typename T> struct [[nodiscard]] request_builder_t {
 
     /** \brief constructs request message but still does not dispath it */
     template <typename... Args>
-    request_builder_t(supervisor_t & sup_, const address_ptr_t &destination_, const address_ptr_t &reply_to_,
-                      Args &&... args);
+    request_builder_t(supervisor_t & sup_, actor_base_t & actor_, const address_ptr_t &destination_,
+                      const address_ptr_t &reply_to_, Args &&... args);
 
     /** \brief actually dispatches requests and spawns timeout timer
      *
@@ -205,6 +205,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     using wrapped_res_t = typename traits_t::responce::wrapped_t;
 
     supervisor_t &sup;
+    actor_base_t &actor;
     std::uint32_t request_id;
     const address_ptr_t &destination;
     const address_ptr_t &reply_to;
@@ -213,42 +214,6 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     address_ptr_t imaginary_address;
 
     void install_handler() noexcept;
-};
-
-/** \struct request_subscription_t
- * \brief Structure to map original request to original address (of the requester)
- */
-struct request_subscription_t {
-    /** \brief returns destination address for message type / source address pair, if any
-     *
-     * Empty intrusive pointer is returned if the pair cannot be found
-     *
-     */
-    address_ptr_t get(const void *message_type, const address_ptr_t &source_addr) const noexcept;
-
-    /** \brief records destination address for message type / source address pair */
-    void set(const void *message_type, const address_ptr_t &source_addr, const address_ptr_t &dest_addr) noexcept;
-
-  private:
-    struct key_t {
-        /** \brief message type */
-        const void *message_type;
-
-        /** \brief the final destination of responce */
-        address_ptr_t source_addr;
-        inline bool operator==(const key_t &other) const noexcept {
-            return (source_addr.get() == other.source_addr.get()) && (message_type == other.message_type);
-        }
-    };
-
-    struct hasher_t {
-        inline size_t operator()(const key_t &k) const noexcept {
-            return reinterpret_cast<size_t>(k.message_type) ^ reinterpret_cast<size_t>(k.source_addr.get());
-        }
-    };
-
-    using map_t = std::unordered_map<key_t, address_ptr_t, hasher_t>;
-    map_t map;
 };
 
 } // namespace rotor

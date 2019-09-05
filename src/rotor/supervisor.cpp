@@ -6,8 +6,8 @@
 
 #include "rotor/supervisor.h"
 #include <assert.h>
-#include <iostream>
-//#include <boost/core/demangle.hpp>
+// #include <iostream>
+// #include <boost/core/demangle.hpp>
 
 using namespace rotor;
 
@@ -76,8 +76,10 @@ void supervisor_t::do_process() noexcept {
         effective_queue->pop_front();
         auto &dest_sup = dest->supervisor;
         auto internal = &dest_sup == this;
-        // std::cout << "msg [" << (internal ? "i" : "e") << "] :" << boost::core::demangle((const char*)
-        // message->get_type_index()) << "\n";
+        /*
+         std::cout << "msg [" << (internal ? "i" : "e") << "] :" << boost::core::demangle((const char*)
+             message->type_index) << "\n";
+        */
         if (internal) { /* subscriptions are handled by me */
             deliver_local(std::move(message));
         } else if (dest_sup.address->same_locality(*address)) {
@@ -118,6 +120,17 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
     }
 }
 
+void supervisor_t::unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
+                                     unsubscribe_callback_t cb) noexcept {
+    auto &dest = handler->actor_ptr->address;
+    if (&addr->supervisor == this) {
+        send<payload::unsubscription_confirmation_t>(dest, addr, handler, cb);
+    } else {
+        assert(!cb);
+        send<payload::external_unsubscription_t>(dest, addr, handler);
+    }
+}
+
 void supervisor_t::do_shutdown() noexcept {
     auto upstream_sup = parent ? parent : this;
     send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
@@ -144,7 +157,21 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexce
     }
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
     auto &actor = actors_map.at(source_addr);
-    remove_actor(*actor);
+    auto points = address_mapping.destructive_get(*actor);
+    if (!points.empty()) {
+        auto cb = [this, actor = actor, count = points.size()]() mutable {
+            --count;
+            if (count == 0) {
+                this->remove_actor(*actor);
+            }
+        };
+        auto cb_ptr = std::make_shared<typename unsubscribe_callback_t::element_type>(std::move(cb));
+        for (auto &point : points) {
+            unsubscribe_actor(point.handler, point.address, cb_ptr);
+        }
+    } else {
+        remove_actor(*actor);
+    }
 }
 
 void supervisor_t::on_external_subs(message_t<payload::external_subscription_t> &message) noexcept {
@@ -193,6 +220,8 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
         static_cast<supervisor_behavior_t *>(behaviour)->on_childen_removed();
     }
 }
+
+void supervisor_t::shutdown_finish() noexcept { address_mapping.destructive_get(*this); }
 
 void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     auto it = request_map.find(timer_id);

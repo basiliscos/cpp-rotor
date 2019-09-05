@@ -159,16 +159,18 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
-    template <typename Handler> void subscribe(Handler &&h, address_ptr_t &addr) noexcept;
+    template <typename Handler> handler_ptr_t subscribe(Handler &&h, address_ptr_t &addr) noexcept;
 
     /** \brief subscribes actor's handler to process messages on the actor's address */
-    template <typename Handler> void subscribe(Handler &&h) noexcept;
+    template <typename Handler> handler_ptr_t subscribe(Handler &&h) noexcept;
 
     /** \brief unsubscribes actor's handler from process messages on the specified address */
     template <typename Handler> void unsubscribe(Handler &&h, address_ptr_t &addr) noexcept;
 
     /** \brief unsubscribes actor's handler from process messages on the actor's address */
     template <typename Handler> void unsubscribe(Handler &&h) noexcept;
+
+    void unsubscribe(const handler_ptr_t &handler) noexcept;
 
   protected:
     virtual actor_behavior_t *create_behaviour() noexcept;
@@ -200,6 +202,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
 
     friend struct actor_behavior_t;
+    friend struct supervisor_t;
+    template <typename T> friend struct request_builder_t;
 };
 
 /** \brief intrusive pointer for actor*/

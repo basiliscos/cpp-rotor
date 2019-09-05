@@ -223,6 +223,11 @@ TEST_CASE("request-responce successfull delivery", "[actor]") {
     auto timeout = r::pt::milliseconds{1};
     rt::supervisor_config_test_t config(timeout, nullptr);
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    sup->do_process();
+
+    auto init_subs_count = sup->get_subscription().size();
+    auto init_pts_count = sup->get_points().size();
+
     auto actor = sup->create_actor<good_actor_t>(timeout);
     sup->do_process();
 
@@ -230,6 +235,13 @@ TEST_CASE("request-responce successfull delivery", "[actor]") {
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 5);
     REQUIRE(actor->ec == r::error_code_t::success);
+
+    actor->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->active_timers.size() == 0);
+    std::size_t delta = 1; /* + shutdown confirmation triggered on self */
+    REQUIRE(sup->get_points().size() == init_pts_count + delta);
+    REQUIRE(sup->get_subscription().size() == init_subs_count + delta);
 
     sup->do_shutdown();
     sup->do_process();

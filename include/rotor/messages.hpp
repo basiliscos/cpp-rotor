@@ -9,7 +9,7 @@
 #include "address.hpp"
 #include "message.h"
 #include "state.h"
-#include "request.h"
+#include "request.hpp"
 
 namespace rotor {
 
@@ -180,11 +180,16 @@ struct commit_unsubscription_t {
  *  confirmation that `handler` is no longer subscribed to `target_address`
  */
 struct unsubscription_confirmation_t {
+    using fn_t = std::function<void()>;
+    using fn_ptr_t = std::shared_ptr<fn_t>;
+
     /** \brief The target address for unsubscription */
     address_ptr_t target_address;
 
     /** \brief The handler (intrusive pointer) for processing message */
     handler_ptr_t handler;
+
+    fn_ptr_t fn;
 };
 
 /** \struct state_response_t

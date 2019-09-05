@@ -72,7 +72,10 @@ void supervisor_ev_t::start() noexcept {
     }
 }
 
-void supervisor_ev_t::shutdown_finish() noexcept { ev_async_stop(loop, &async_watcher); }
+void supervisor_ev_t::shutdown_finish() noexcept {
+    supervisor_t::shutdown_finish();
+    ev_async_stop(loop, &async_watcher);
+}
 
 void supervisor_ev_t::shutdown() noexcept {
     supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
