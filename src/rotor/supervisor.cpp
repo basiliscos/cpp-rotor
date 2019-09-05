@@ -121,7 +121,7 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
 }
 
 void supervisor_t::unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
-                                     unsubscribe_callback_t cb) noexcept {
+                                     const payload::callback_ptr_t &cb) noexcept {
     auto &dest = handler->actor_ptr->address;
     if (&addr->supervisor == this) {
         send<payload::unsubscription_confirmation_t>(dest, addr, handler, cb);
@@ -165,7 +165,7 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexce
                 this->remove_actor(*actor);
             }
         };
-        auto cb_ptr = std::make_shared<typename unsubscribe_callback_t::element_type>(std::move(cb));
+        auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
         for (auto &point : points) {
             unsubscribe_actor(point.handler, point.address, cb_ptr);
         }

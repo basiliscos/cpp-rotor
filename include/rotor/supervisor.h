@@ -219,10 +219,8 @@ struct supervisor_t : public actor_base_t {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
-    using unsubscribe_callback_t = payload::unsubscription_confirmation_t::fn_ptr_t;
-
     void unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
-                           unsubscribe_callback_t = unsubscribe_callback_t{}) noexcept;
+                           const payload::callback_ptr_t & = {}) noexcept;
 
     /** \brief unsubscribes local handler from the address
      *

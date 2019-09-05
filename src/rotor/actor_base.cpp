@@ -70,9 +70,6 @@ void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmat
     auto &handler = msg.payload.handler;
     remove_subscription(addr, handler);
     supervisor.commit_unsubscription(addr, handler);
-    if (msg.payload.fn) {
-        (*msg.payload.fn)();
-    }
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
         behaviour->on_unsubscription();
     }

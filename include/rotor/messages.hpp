@@ -19,6 +19,9 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 namespace payload {
 
+using callback_t = std::function<void()>;
+using callback_ptr_t = std::shared_ptr<callback_t>;
+
 /** \struct initialize_confirmation_t
  *  \brief Message with this payload is sent from an actor to its supervisor to
  * confirm successful initialization
@@ -180,8 +183,6 @@ struct commit_unsubscription_t {
  *  confirmation that `handler` is no longer subscribed to `target_address`
  */
 struct unsubscription_confirmation_t {
-    using fn_t = std::function<void()>;
-    using fn_ptr_t = std::shared_ptr<fn_t>;
 
     /** \brief The target address for unsubscription */
     address_ptr_t target_address;
@@ -189,7 +190,13 @@ struct unsubscription_confirmation_t {
     /** \brief The handler (intrusive pointer) for processing message */
     handler_ptr_t handler;
 
-    fn_ptr_t fn;
+    callback_ptr_t callback;
+
+    ~unsubscription_confirmation_t() {
+        if (callback) {
+            (*callback)();
+        }
+    }
 };
 
 /** \struct state_response_t
