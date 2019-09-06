@@ -35,7 +35,7 @@ struct system_context_wx_t : public system_context_t {
      */
     system_context_wx_t(wxAppConsole *app = nullptr);
 
-    /* \brief creates root supervior. `args` and config are forwared for supervisor constructor */
+    /** \brief creates root supervior. `args` and config are forwarded for supervisor constructor */
     template <typename Supervisor = supervisor_t, typename... Args>
     auto create_supervisor(const supervisor_config_wx_t &config, Args &&... args) -> intrusive_ptr_t<Supervisor> {
         if (supervisor) {

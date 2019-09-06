@@ -13,8 +13,8 @@ namespace rotor {
 namespace ev {
 
 /** \struct supervisor_config_ev_t
- *  \brief libev supervisor config, which holds shutdowm timeout value,
- * a pointer to the ev event loop and a loop ownership flag
+ *  \brief libev supervisor config, which holds  a pointer to the ev
+ * event loop and a loop ownership flag
  */
 struct supervisor_config_ev_t : public supervisor_config_t {
     /** \brief a pointer to EV event loop */
@@ -23,6 +23,7 @@ struct supervisor_config_ev_t : public supervisor_config_t {
     /** \brief whether loop should be destroyed by supervisor */
     bool loop_ownership;
 
+    /** \brief construct from shutdown timeout, ev loop pointer and loop ownership flag */
     supervisor_config_ev_t(const rotor::pt::time_duration &shutdown_duration_, struct ev_loop *loop_,
                            bool loop_ownership_)
         : supervisor_config_t{shutdown_duration_}, loop{loop_}, loop_ownership{loop_ownership_} {}

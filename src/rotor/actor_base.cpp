@@ -11,9 +11,9 @@
 using namespace rotor;
 
 actor_base_t::actor_base_t(supervisor_t &supervisor_)
-    : supervisor{supervisor_}, state{state_t::NEW}, behaviour{nullptr} {}
+    : supervisor{supervisor_}, state{state_t::NEW}, behavior{nullptr} {}
 
-actor_base_t::~actor_base_t() { delete behaviour; }
+actor_base_t::~actor_base_t() { delete behavior; }
 
 actor_behavior_t *actor_base_t::create_behaviour() noexcept { return new actor_behavior_t(*this); }
 
@@ -21,8 +21,8 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
     if (!address) {
         address = create_address();
     }
-    if (!behaviour) {
-        behaviour = create_behaviour();
+    if (!behavior) {
+        behavior = create_behaviour();
     }
 
     supervisor.subscribe_actor(*this, &actor_base_t::on_unsubscription);
@@ -53,11 +53,11 @@ void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
 
 void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
 
-void actor_base_t::init_start() noexcept { behaviour->on_start_init(); }
+void actor_base_t::init_start() noexcept { behavior->on_start_init(); }
 
 void actor_base_t::init_finish() noexcept {}
 
-void actor_base_t::shutdown_start() noexcept { behaviour->on_start_shutdown(); }
+void actor_base_t::shutdown_start() noexcept { behavior->on_start_shutdown(); }
 
 void actor_base_t::shutdown_finish() noexcept {}
 
@@ -71,7 +71,7 @@ void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmat
     remove_subscription(addr, handler);
     supervisor.commit_unsubscription(addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        behaviour->on_unsubscription();
+        behavior->on_unsubscription();
     }
 }
 
@@ -82,7 +82,7 @@ void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubs
     auto &sup_addr = addr->supervisor.address;
     send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
     if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        behaviour->on_unsubscription();
+        behavior->on_unsubscription();
     }
 }
 

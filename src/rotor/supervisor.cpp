@@ -32,7 +32,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
     // should be created very early
     address = create_address();
-    behaviour = create_behaviour();
+    behavior = create_behaviour();
 
     bool use_other = parent && parent->address->same_locality(*address);
     effective_queue = use_other ? parent->effective_queue : &queue;
@@ -63,7 +63,7 @@ void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept
     auto &addr = msg.payload.req->payload.request_payload.actor_address;
     auto &ec = msg.payload.ec;
     if (ec) {
-        static_cast<supervisor_behavior_t *>(behaviour)->on_init_fail(addr, ec);
+        static_cast<supervisor_behavior_t *>(behavior)->on_init_fail(addr, ec);
     } else {
         send<payload::start_actor_t>(addr, addr);
     }
@@ -153,7 +153,7 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexce
     auto &source_addr = msg.payload.req->payload.request_payload.actor_address;
     auto &ec = msg.payload.ec;
     if (ec) {
-        return static_cast<supervisor_behavior_t *>(behaviour)->on_shutdown_fail(source_addr, ec);
+        return static_cast<supervisor_behavior_t *>(behavior)->on_shutdown_fail(source_addr, ec);
     }
     // std::cout << "supervisor_t::on_shutdown_confirm\n";
     auto &actor = actors_map.at(source_addr);
@@ -217,7 +217,7 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     auto it_actor = actors_map.find(actor.address);
     actors_map.erase(it_actor);
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        static_cast<supervisor_behavior_t *>(behaviour)->on_childen_removed();
+        static_cast<supervisor_behavior_t *>(behavior)->on_childen_removed();
     }
 }
 

@@ -112,17 +112,20 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void on_start(message_t<payload::start_actor_t> &) noexcept;
 
-    /** \brief initiates actor's shutdown
+    /** \brief triggers actor's shutdown behavior
      *
-     * Sets internal actor state to `SHUTTING_DOWN`.
-     *
-     * The method can be overriden in derived classes to initiate the
-     * release of resources, i.e. (asynchronously) close all opened
-     * sockets before confirm shutdown to supervisor.
+     * If actor will not reply with shutdown confirmation, it's
+     * supervisor will trigger appropriate behavior event.
      *
      */
     virtual void on_shutdown(message::shutdown_request_t &) noexcept;
 
+    /** \brief initiates actor's shutdown
+     *
+     * If there is a supervisor, the message is forwarded to it to
+     * send shutdown request
+     *
+     */
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept;
 
     /** \brief records subsciption point */
@@ -151,11 +154,38 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
+
+    /** \brief returns request builder for destination address using the default actor address
+     *
+     * The `args` are forwarded for construction of the request. The request is not actually sent,
+     * until `timeout` method of `request_builder` will be invoked.
+     *
+     * Supervisor will spawn timeout timer upon `timeout` method.
+     */
     template <typename M, typename... Args>
     request_builder_t<M> request(const address_ptr_t &dest_addr, Args &&... args);
+
+    /** \brief returns request builder for destination address using the specified address for reply
+     *
+     * It is assumed, that the specified address belongs to the actor.
+     *
+     * The method is useful, when a different behaviour is needed for the same
+     * message responce types. It serves at some extend as virtual dispatching within
+     * the actor.
+     *
+     * See the description of `request` method.
+     *
+     */
     template <typename M, typename... Args>
     request_builder_t<M> request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args);
+
+    /** \brief convenient method for constructing and sending responce to a request
+     *
+     * `args` are forwarded to responce payload constuction
+     */
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&... args);
+
+    /** \brief convenient method for constructing and sending error responce to a request */
     template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
@@ -170,18 +200,46 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief unsubscribes actor's handler from process messages on the actor's address */
     template <typename Handler> void unsubscribe(Handler &&h) noexcept;
 
-    void unsubscribe(const handler_ptr_t &handler) noexcept;
-
   protected:
+    /** \brief constructs actor's behaviour on early stage */
     virtual actor_behavior_t *create_behaviour() noexcept;
 
     /** \brief removes the subscription point */
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
+    /** \brief starts initialization
+     *
+     * Some resources might be acquired synchronously, if needed. If resources need
+     * to be acquired asynchronously this method should be overriden, and
+     * invoked only after resources acquisition.
+     *
+     * In internals it forwards initialization sequence to the behaviour.
+     *
+     */
     virtual void init_start() noexcept;
+
+    /** \brief finializes initialization  */
     virtual void init_finish() noexcept;
+
+    /** \brief strart releasing acquired resources
+     *
+     * The method can be overriden in derived classes to initiate the
+     * release of resources, i.e. (asynchronously) close all opened
+     * sockets before confirm shutdown to supervisor.
+     *
+     * It actually forwards shutdown for the behavior
+     *
+     */
     virtual void shutdown_start() noexcept;
+
+    /** \brief finalize shutdown, release aquired resources
+     *
+     * This is the last action in the shutdown sequence.
+     * No further methods will be invoked.
+     *
+     */
     virtual void shutdown_finish() noexcept;
+
     friend struct supervisor_t;
 
     /** \brief actor's execution / infrastructure context */
@@ -190,7 +248,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief current actor state */
     state_t state;
 
-    actor_behavior_t *behaviour;
+    /** \brief actor's behavior, used for runtime customization of actors's
+     * behavioural aspects
+     */
+    actor_behavior_t *behavior;
 
     /** \brief actor address */
     address_ptr_t address;
@@ -198,7 +259,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
 
+    /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
+
+    /** \brief suspended shutdown request message */
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
 
     friend struct actor_behavior_t;

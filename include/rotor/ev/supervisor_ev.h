@@ -34,10 +34,15 @@ namespace ev {
  */
 struct supervisor_ev_t : public supervisor_t {
 
+    /** \struct timer_t
+     * \brief inheritance of ev_timer, which holds rotor `timer_id`
+     */
     struct timer_t : public ev_timer {
+        /** \brief local timer identifier within the scrope of the supervisor */
         timer_id_t timer_id;
     };
 
+    /** \brief an alias for unique pointer, holding `timer_t` */
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
     /** \brief constructs new supervisor from parent supervisor and supervisor config
@@ -72,6 +77,7 @@ struct supervisor_ev_t : public supervisor_t {
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
   protected:
+    /** \brief a type for mapping `timer_id` to timer */
     using timers_map_t = std::unordered_map<timer_id_t, timer_ptr_t>;
 
     /** \brief EV-specific trampoline function for `on_async` method */
@@ -86,7 +92,10 @@ struct supervisor_ev_t : public supervisor_t {
      */
     virtual void on_async() noexcept;
 
+    /** \brief a pointer to EV event loop, copied from config */
     struct ev_loop *loop;
+
+    /** \brief whether loop should be destroyed by supervisor, copied from config */
     bool loop_ownership;
 
     /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
@@ -110,6 +119,7 @@ struct supervisor_ev_t : public supervisor_t {
      */
     queue_t inbound;
 
+    /** \brief timer_id to timer map */
     timers_map_t timers_map;
 
     friend struct supervisor_ev_shutdown_t;

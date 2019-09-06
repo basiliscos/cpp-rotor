@@ -32,7 +32,7 @@ struct system_context_asio_t : public system_context_t {
     /** \brief construct the context from `boost::asio::io_context` reference */
     system_context_asio_t(asio::io_context &io_context_) : io_context{io_context_} {}
 
-    /* \brief creates root supervior. `args` and config are forwared for supervisor constructor */
+    /** \brief creates root supervior. `args` and config are forwared for supervisor constructor */
     template <typename Supervisor = supervisor_t, typename... Args>
     auto create_supervisor(const supervisor_config_asio_t &config, Args &&... args) -> intrusive_ptr_t<Supervisor> {
         if (supervisor) {

@@ -58,10 +58,10 @@ void actor_behavior_t::action_confirm_shutdown() noexcept {
 void actor_behavior_t::action_commit_shutdown() noexcept {
     assert(actor.state == state_t::SHUTTING_DOWN);
     actor.state = state_t::SHUTTED_DOWN;
-    return action_finish_shutdonw();
+    return action_finish_shutdown();
 }
 
-void actor_behavior_t::action_finish_shutdonw() noexcept {
+void actor_behavior_t::action_finish_shutdown() noexcept {
     actor.shutdown_finish();
     substate = behavior_state_t::SHUTDOWN_ENDED;
 }

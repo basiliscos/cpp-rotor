@@ -33,6 +33,7 @@ struct initialize_confirmation_t {};
  *  initialization request
  */
 struct initialize_actor_t {
+    /** \brief link to responce payload type */
     using responce_t = initialize_confirmation_t;
 
     /** \brief target actor address, which is asked for initialization
@@ -67,16 +68,28 @@ struct create_actor_t {
     /** \brief the intrusive pointer to created actor */
     actor_ptr_t actor;
 
+    /** \brief maximum time for actor initialization
+     *
+     * If an actor isn't able to confirm initialization in time, it
+     * will be asked to shutdown (default behaviour)
+     *
+     */
     pt::time_duration timeout;
 };
 
+/** \struct shutdown_trigger_t
+ *  \brief Message with this payload is sent to ask an actor's supervisor
+ * to initate shutdown procedure.
+ *
+ */
 struct shutdown_trigger_t {
+    /** \brief the actor to be shutted down */
     address_ptr_t actor_address;
 };
 
 /** \struct shutdown_confirmation_t
  *  \brief Message with this payload is sent from an actor to its supervisor to
- * confirm successful initialization
+ * confirm successful shutdown.
  */
 struct shutdown_confirmation_t {};
 
@@ -85,7 +98,9 @@ struct shutdown_confirmation_t {};
  *  shutdown request
  */
 struct shutdown_request_t {
+    /** \brief link to responce payload type */
     using responce_t = shutdown_confirmation_t;
+
     /** \brief source actor address, which has been shutted down
      *
      * The `actor_address` might be useful for observing the actor shutting down
@@ -190,6 +205,9 @@ struct unsubscription_confirmation_t {
     /** \brief The handler (intrusive pointer) for processing message */
     handler_ptr_t handler;
 
+    /** \brief the optional callback to be invoked once message is locally
+     *  delivered, i.e. when it is destroyed.
+     */
     callback_ptr_t callback;
 
     ~unsubscription_confirmation_t() {
@@ -214,6 +232,7 @@ struct state_response_t {
  * actor (defined by it's address - `subject_addr`).
  */
 struct state_request_t {
+    /** \brief link to responce payload type */
     using responce_t = state_response_t;
 
     /** \brief The actor address in question */
