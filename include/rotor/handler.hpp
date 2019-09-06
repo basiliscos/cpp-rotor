@@ -20,16 +20,29 @@ namespace rotor {
 struct actor_base_t;
 struct supervisor_t;
 
+/** \struct lambda_holder_t
+ *
+ * \brief Helper struct which holds lambda function for processing particular message types
+ *
+ * The whole popose of the structure is to allow to deduce the lambda argument, i.e.
+ * message type
+ *
+ */
 template <typename M, typename F> struct lambda_holder_t {
+    /** \brief lambda function itself */
     F fn;
 
+    /** \brief constructs lambda by forwarding arguments */
     lambda_holder_t(F &&fn_) : fn(std::forward<F>(fn_)) {}
 
-    static constexpr const bool message_supported = true;
+    /** \brief alias type for message type for lambda */
     using message_t = M;
+
+    /** \brief alias type for message payload */
     using payload_t = typename M::payload_t;
 };
 
+/** \brief helper function for lambda holder constructing */
 template <typename M, typename F> constexpr lambda_holder_t<M, F> lambda(F &&fn) {
     return lambda_holder_t<M, F>(std::forward<F>(fn));
 }
@@ -52,6 +65,7 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
     /** \brief message type, processed by the handler */
     using message_t = M;
 
+    /** \brief alias for message type payload */
     using payload_t = typename M::payload_t;
 };
 
@@ -116,7 +130,8 @@ template <typename Handler>
 struct handler_t<Handler,
                  std::enable_if_t<std::is_base_of_v<message_base_t, typename handler_traits<Handler>::message_t>>>
     : public handler_base_t {
-    /** \brief static pointer to unique pointer-to-member function ( `typeid(Handler).name()` ) */
+
+    /** \brief static pointer to unique pointer-to-member function name ( `typeid(Handler).name()` ) */
     static const void *handler_type;
 
     /** \brief pointer-to-member function instance */
@@ -147,11 +162,16 @@ const void *handler_t<
     static_cast<const void *>(typeid(Handler).name());
 
 template <typename Handler, typename M> struct handler_t<lambda_holder_t<Handler, M>> : public handler_base_t {
+    /** \brief alias type for lambda, which will actually process messages */
     using handler_backend_t = lambda_holder_t<Handler, M>;
+
+    /** \brief actuall lambda function for message processing */
     handler_backend_t handler;
 
+    /** \brief static pointer to unique pointer-to-member function name ( `typeid(Handler).name()` ) */
     static const void *handler_type;
 
+    /** \brief constructs handler from actor & lambda wrapper */
     handler_t(actor_base_t &actor, handler_backend_t &&handler_)
         : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{std::forward<handler_backend_t>(
                                                                                   handler_)} {}

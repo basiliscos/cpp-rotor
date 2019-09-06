@@ -65,7 +65,7 @@ template <typename Responce> struct responce_helper_t {
     }
 };
 
-/** \struct responce_helper_t< intrusive_ptr_t< Responce > >
+/** \struct responce_helper_t<intrusive_ptr_t<Responce>>
  * \brief specific helper, which helps to construct intrusive pointer to user-defined
  *  responce payload
  */
@@ -87,11 +87,21 @@ template <typename Responce> struct responce_helper_t<intrusive_ptr_t<Responce>>
  *
  */
 template <typename Request> struct wrapped_responce_t {
+    /** \brief alias type of message with wrapped request */
     using req_message_t = message_t<wrapped_request_t<Request>>;
+
+    /** \brief alias for intrusive pointer to message with wrapped request */
     using req_message_ptr_t = intrusive_ptr_t<req_message_t>;
+
+    /** \brief alias for original user-supplied request type */
     using request_t = Request;
+
+    /** \brief alias for original user-supplied responce type */
     using responce_t = typename Request::responce_t;
+
+    /** \brief helper type for responce construction */
     using res_helper_t = responce_helper_t<responce_t>;
+
     static_assert(std::is_default_constructible_v<responce_t>, "responce type must be default-constructible");
 
     /** \brief error code of processing request, i.e. `error_code_t::request_timeout` */
