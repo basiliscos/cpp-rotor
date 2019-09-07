@@ -28,7 +28,8 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
     virtual r::actor_behavior_t *create_behaviour() noexcept override { return new supervisor_test_behavior_t(*this); }
 
     r::state_t &get_state() noexcept { return state; }
-    queue_t &get_queue() noexcept { return *effective_queue; }
+    queue_t& get_leader_queue() { return get_leader().queue; }
+    supervisor_ev_test_t& get_leader() { return *static_cast<supervisor_ev_test_t*>(locality_leader); }
     queue_t &get_inbound_queue() noexcept { return inbound; }
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
@@ -134,7 +135,7 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     ponger.reset();
 
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup->get_queue().size() == 0);
+    REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().size() == 0);
 

@@ -38,8 +38,10 @@ supervisor_ev_t::supervisor_ev_t(supervisor_ev_t *parent_, const supervisor_conf
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
     bool ok{false};
     try {
-        std::lock_guard<std::mutex> lock(inbound_mutex);
-        if (!pending) {
+        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+        auto &inbound = leader->inbound;
+        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
+        if (!leader->pending) {
             // async events are "compressed" by EV. Need to do only once
             intrusive_ptr_add_ref(this);
         }
@@ -57,10 +59,11 @@ void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
 void supervisor_ev_t::start() noexcept {
     bool ok{false};
     try {
-        std::lock_guard<std::mutex> lock(inbound_mutex);
-        if (!pending) {
-            pending = true;
-            intrusive_ptr_add_ref(this);
+        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
+        if (!leader->pending) {
+            leader->pending = true;
+            intrusive_ptr_add_ref(leader);
         }
         ok = true;
     } catch (const std::system_error &err) {
@@ -110,11 +113,14 @@ void supervisor_ev_t::on_timer_trigger(timer_id_t timer_id) noexcept {
 void supervisor_ev_t::on_async() noexcept {
     bool ok{false};
     try {
-        std::lock_guard<std::mutex> lock(inbound_mutex);
-        std::move(inbound.begin(), inbound.end(), std::back_inserter(*effective_queue));
+        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+        auto &inbound = leader->inbound;
+        auto &queue = leader->queue;
+        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
+        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
         inbound.clear();
-        pending = false;
-        intrusive_ptr_release(this);
+        leader->pending = false;
+        intrusive_ptr_release(leader);
         ok = true;
     } catch (const std::system_error &err) {
         context->on_error(err.code());

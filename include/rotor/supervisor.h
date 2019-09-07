@@ -80,9 +80,9 @@ struct supervisor_t : public actor_base_t {
 
     virtual void do_initialize(system_context_t *ctx) noexcept override;
 
-    /** \brief process effective_queue of messages.
+    /** \brief process queue of messages of locality leader
      *
-     * The `effective_queue` of messages is processed.
+     * The locality leaders queue `queue` of messages is processed.
      *
      * -# It takes message from the queue
      * -# If the message destination address belongs to the foreing the supervisor,
@@ -226,7 +226,7 @@ struct supervisor_t : public actor_base_t {
      * a new message from external context in thread-safe way.
      *
      */
-    inline void put(message_ptr_t message) { effective_queue->emplace_back(std::move(message)); }
+    inline void put(message_ptr_t message) { locality_leader->queue.emplace_back(std::move(message)); }
 
     /**
      * \brief subscribes an handler to an address.
@@ -319,17 +319,8 @@ struct supervisor_t : public actor_base_t {
     /** \brief non-owning pointer to system context. */
     system_context_t *context;
 
-    /** \brief the pointer to the queue of unprocessed messages
-     *
-     * It points to the internal `queue` member for root supervisors.
-     *
-     * For non-root supervisors with shared locality it points to the
-     * queue of locality owner queue.
-     *
-     * In other words it is pointer to the locality queue.
-     *
-     */
-    queue_t *effective_queue;
+    /** \brief root supervisor for the locality */
+    supervisor_t *locality_leader;
 
     /** \brief queue of unprocessed messages */
     queue_t queue;

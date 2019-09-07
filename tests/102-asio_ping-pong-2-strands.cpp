@@ -142,12 +142,12 @@ TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
     REQUIRE(ponger->pong_sent == 1);
 
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup1->get_queue().size() == 0);
+    REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
     REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);
 

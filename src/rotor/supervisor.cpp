@@ -35,7 +35,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     behavior = create_behaviour();
 
     bool use_other = parent && parent->address->same_locality(*address);
-    effective_queue = use_other ? parent->effective_queue : &queue;
+    locality_leader = use_other ? parent->locality_leader : this;
 
     actor_base_t::do_initialize(ctx);
     subscribe(&supervisor_t::on_call);
@@ -70,6 +70,7 @@ void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept
 }
 
 void supervisor_t::do_process() noexcept {
+    auto effective_queue = &locality_leader->queue;
     while (effective_queue->size()) {
         auto message = effective_queue->front();
         auto &dest = message->address;

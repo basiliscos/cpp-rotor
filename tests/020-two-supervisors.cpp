@@ -80,11 +80,11 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->on_shutdown_count == 1);
 
-    REQUIRE(sup1->get_queue().size() == 0);
+    REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
-    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);
 }
@@ -113,11 +113,11 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
     REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->on_shutdown_count == 1);
 
-    REQUIRE(sup1->get_queue().size() == 0);
+    REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
-    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);
 }
@@ -150,11 +150,11 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
 
-    REQUIRE(sup1->get_queue().size() == 0);
+    REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().size() == 0);
 
-    REQUIRE(sup2->get_queue().size() == 0);
+    REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().size() == 0);
 }

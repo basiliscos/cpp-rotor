@@ -32,7 +32,8 @@ struct supervisor_test_t : public supervisor_t {
     virtual address_ptr_t make_address() noexcept override;
 
     state_t &get_state() noexcept { return state; }
-    queue_t &get_queue() noexcept { return *effective_queue; }
+    queue_t& get_leader_queue() { return get_leader().queue; }
+    supervisor_test_t& get_leader() { return *static_cast<supervisor_test_t*>(locality_leader); }
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
     actors_map_t &get_children() noexcept { return actors_map; }

@@ -27,4 +27,6 @@ void supervisor_test_t::start() noexcept { INFO("supervisor_test_t::start()") }
 
 void supervisor_test_t::shutdown() noexcept { INFO("supervisor_test_t::shutdown()") }
 
-void supervisor_test_t::enqueue(message_ptr_t message) noexcept { effective_queue->emplace_back(std::move(message)); }
+void supervisor_test_t::enqueue(message_ptr_t message) noexcept {
+    get_leader().queue.emplace_back(std::move(message));
+}
