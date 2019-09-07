@@ -48,6 +48,13 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
  * Supervisor is responsible for managing it's local actors lifetime, i.e.
  * sending initialization, start, shutdown requests etc.
  *
+ * Supervisor is locality-aware: i.e. if two supervisors have the same
+ * locality (i.e. executed in the same thread/event loop), it takes advantage
+ * of this and immediately delivers message to the target supervisor
+ * without involving any synchronization mechanisms. In other words,
+ * a message is delivered to any actor of the locality, even if the
+ * actor is not child of the current supervisor.
+ *
  * As supervisor is special kind of actor, it should be possible to spawn
  * other supervisors constructing tree-like organization of responsibilities.
  *
@@ -88,7 +95,8 @@ struct supervisor_t : public actor_base_t {
      * of other supervsior. In the both cases `deliver_local` method is used.
      *
      * It is expected, that derived classes should invoke `do_process` message,
-     * whenever it is known that there are messages for processing.
+     * whenever it is known that there are messages for processing. The invocation
+     * should be performed in safe thread/loop context.
      *
      * The method should be invoked in event-loop context only.
      *
@@ -100,7 +108,7 @@ struct supervisor_t : public actor_base_t {
      * Supervisor iterates on subscriptions (handlers) on the message destination adddress:
      *
      * -# If the handler is local (i.e. it's actor belongs to the same supervisor),
-     * -# Otherwise the message is forwareded for delivery for the foreign supervisor,
+     * -# Otherwise the message is forwarded for delivery for the foreign supervisor,
      * which owns the handler.
      *
      */
@@ -119,9 +127,9 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief records just created actor and starts its initialization
      *
-     * If the created actor is supervisor, then it is assumed self-managed, and no additional
-     * initialization message is sent (it should be send by child-supervisor itself).
-     *
+     * The initialization rquest is sent to the just created actor. If the
+     * actor will not confirm initialization within timeout (specified in the message payload),
+     * the actor will be asked for shut down.
      */
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
 
@@ -130,7 +138,11 @@ struct supervisor_t : public actor_base_t {
 
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept override;
 
-    /** \brief forgets just shutted down actor */
+    /** \brief forgets just shutted down actor
+     *
+     * Internal structures related to the actor are released.
+     *
+     */
     virtual void on_shutdown_confirm(message::shutdown_responce_t &msg) noexcept;
 
     /** \brief subscribes external handler to local address */
@@ -177,8 +189,11 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_timer_trigger(timer_id_t timer_id);
 
-    /** \brief thread-safe version of `do_start`, i.e. send start actor request
-     * let it be processed by the supervisor */
+    /** \brief thread-safe version of `do_process`
+     *
+     * Starts supervisor to processing messages queue in safe thread/loop
+     * context. Once it becomes empty, the method returns
+     */
     virtual void start() noexcept = 0;
 
     /** \brief thread-safe version of `do_shutdown`, i.e. send shutdown request
@@ -196,10 +211,13 @@ struct supervisor_t : public actor_base_t {
      *
      * The thread-safety should be guaranteed by derived class and/or used event-loop.
      *
+     * This method is used for messaging between supervisors with different
+     * localities, or actors which use different loops/threads.
+     *
      */
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
-    /** \brief returns pointer to parent supervisor */
+    /** \brief returns pointer to parent supervisor, may be NULL */
     inline supervisor_t *get_parent_supervisor() noexcept { return parent; }
 
     /** \brief puts a message into internal supevisor queue for further processing
@@ -253,7 +271,7 @@ struct supervisor_t : public actor_base_t {
     }
 
     /** \brief creates actor, records it in internal structures and returns
-     * intrusive pointer ot the actors
+     * intrusive pointer to it
      */
     template <typename Actor, typename... Args>
     intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
@@ -286,7 +304,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief address-to-subscription map type */
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
 
-    /** \brief (local) address-to-actor map type */
+    /** \brief (local) address-to-child_actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
     /** \brief timer to responce with timeout procuder type */
@@ -326,7 +344,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
 
-    /** \brief counter for timer ids */
+    /** \brief counter for request/timer ids */
     timer_id_t last_req_id;
 
     /** \brief timer to responce with timeout procuder */
