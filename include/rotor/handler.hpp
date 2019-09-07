@@ -24,8 +24,8 @@ struct supervisor_t;
  *
  * \brief Helper struct which holds lambda function for processing particular message types
  *
- * The whole popose of the structure is to allow to deduce the lambda argument, i.e.
- * message type
+ * The whole purpose of the structure is to allow to deduce the lambda argument, i.e.
+ * message type.
  *
  */
 template <typename M, typename F> struct lambda_holder_t {
@@ -86,7 +86,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief non-owning raw poiter to actor */
     const void *raw_actor_ptr;
 
-    /** \brief non-owning raw poiter to acto r*/
+    /** \brief non-owning raw poiter to supervisor */
     supervisor_t *raw_supervisor_ptr;
 
     /** \brief precalculated hash for the handler */

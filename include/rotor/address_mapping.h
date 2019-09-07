@@ -38,6 +38,9 @@ struct address_mapping_t {
      * the temporal subscription point (hander and temporal address) will
      * be associated with the actor/message type pair.
      *
+     * In the routing the temporal destination address is usually some
+     * supervisor's address.
+     *
      */
     void set(actor_base_t &actor, const void *message, const handler_ptr_t &handler,
              const address_ptr_t &dest_addr) noexcept;

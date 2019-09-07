@@ -56,10 +56,22 @@ struct actor_behavior_t {
     /** \brief invokes `shutdown_finish` actor's method */
     virtual void action_finish_shutdown() noexcept;
 
-    /** \brief event, which triggers initialization actions sequence */
+    /** \brief event, which triggers initialization actions sequence
+     *
+     *  - action_confirm_init()
+     *  - action_finish_init()
+     *
+     */
     virtual void on_start_init() noexcept;
 
-    /** \brief event, which triggers shutdown actions sequence */
+    /** \brief event, which triggers shutdown actions sequence
+     *
+     *  - action_unsubscribe_self()
+     *  - (waits unsubscription confirmation)
+     *  - action_confirm_shutdown()
+     *  - action_commit_shutdown()
+     *  - action_finish_shutdown()
+     */
     virtual void on_start_shutdown() noexcept;
 
     /** \brief event, which continues shutdown */
@@ -83,6 +95,15 @@ struct supervisor_behavior_t : public actor_behavior_t {
     /** \brief triggers shutdown requests on all supervisor's children actors */
     virtual void action_shutdown_children() noexcept;
 
+    /** \brief event, which triggers shutdown actions sequence
+     *  - action_shutdown_children()
+     *  - (waits children shutdown confirmation)
+     *  - action_unsubscribe_self()
+     *  - (waits unsubscription confirmation)
+     *  - action_confirm_shutdown()
+     *  - action_commit_shutdown()
+     *  - action_finish_shutdown()
+     */
     virtual void on_start_shutdown() noexcept override;
 
     /** \brief event which occurs, when all children actors are removed, continue shuddown sequence */

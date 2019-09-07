@@ -29,7 +29,7 @@ using callback_ptr_t = std::shared_ptr<callback_t>;
 struct initialize_confirmation_t {};
 
 /** \struct initialize_actor_t
- *  \brief Message with this payload is sent from a supervisor to an actor with
+ *  \brief Message with this payload is sent from a supervisor to an actor as
  *  initialization request
  */
 struct initialize_actor_t {
@@ -45,7 +45,7 @@ struct initialize_actor_t {
 };
 
 /** \struct start_actor_t
- *  \brief Message with this payload is sent from a supervisor to an actor with
+ *  \brief Message with this payload is sent from a supervisor to an actor as
  *  start confirmation
  */
 struct start_actor_t {
@@ -94,7 +94,7 @@ struct shutdown_trigger_t {
 struct shutdown_confirmation_t {};
 
 /** \struct shutdown_request_t
- *  \brief Message with this payload is sent from a supervisor to an actor with
+ *  \brief Message with this payload is sent from a supervisor to an actor as
  *  shutdown request
  */
 struct shutdown_request_t {
@@ -219,7 +219,7 @@ struct unsubscription_confirmation_t {
 
 /** \struct state_response_t
  *  \brief Message with this payload is sent to an actor, which
- * asked the state of the subject actor (represented by it's address)
+ * asked for the state of the subject actor (represented by it's address)
  *
  */
 struct state_response_t {

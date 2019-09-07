@@ -23,7 +23,7 @@ struct handler_base_t;
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 /** \struct actor_base_t
- *  \brief universal primitives of concurrent computation
+ *  \brief universal primitive of concurrent computation
  *
  *  The class is base class for user-defined actors. It is expected that
  * actors will react on incoming messages (e.g. by changing internal
@@ -38,6 +38,9 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
  *
  * All actor methods are thread-unsafe, i.e. should not be called with except of
  * it's own supervisor. Communication with actor should be performed via messages.
+ *
+ * Actor is addressed by it's "main" address; however it is possible for an actor
+ * to have multiple identities aka "virtual" addresses.
  *
  */
 struct actor_base_t : public arc_base_t<actor_base_t> {
@@ -66,7 +69,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief early actor initialization (pre-initialization)
      *
-     * Actor address is created.
+     * Actor's "main" address is created, actor's behaviour is created.
      *
      * Actor performs subsscription on all major methods, defined by
      * `rotor` framework; sets internal actor state to `INITIALIZING`.
@@ -74,13 +77,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /** \brief convenient method to send actor's shutdown request to it's supervisor */
+    /** \brief convenient method to send actor's supervisor shutdown trigger message */
     virtual void do_shutdown() noexcept;
 
-    /** \brief creates actor's address (by delegating the call to supervisor */
+    /** \brief creates actor's address by delegating the call to supervisor */
     virtual address_ptr_t create_address() noexcept;
 
-    /** \brief returns actor's address (intrusive pointer) */
+    /** \brief returns actor's "main" address (intrusive pointer) */
     inline address_ptr_t get_address() const noexcept { return address; }
 
     /** \brief returns actor's supervisor */
@@ -92,15 +95,11 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief returns actor's subscription points */
     inline subscription_points_t &get_subscription_points() noexcept { return points; }
 
-    /** \brief finishes actor's initialization.
+    /** \brief records init request and may be triggers actor initialization
      *
-     * Sets internal actor state to `INITIALIZED` and sends initialization
-     * confirmatin to it's actor.
-     *
-     * The method can be overriden in derived classes to release acquire
-     * resources, i.e. (asynchronously) resolve host names. In that case
-     * it is possible to suspend the initialization message and call
-     * `on_initialize` only when an actor will be ready.
+     * After recoding the init request message, it invokes `init_start` method,
+     * which triggers initialization sequece (configured by
+     * {@link actor_behavior_t} ).
      *
      */
     virtual void on_initialize(message::init_request_t &) noexcept;
@@ -112,18 +111,18 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void on_start(message_t<payload::start_actor_t> &) noexcept;
 
-    /** \brief triggers actor's shutdown behavior
+    /** \brief records shutdown request and may be triggers actor shutdown
      *
-     * If actor will not reply with shutdown confirmation, it's
-     * supervisor will trigger appropriate behavior event.
-     *
+     * After recording the shutdown request it invokes the `shutdown_start`
+     * method, which triggers shutdown actions sequence (configured by
+     * {@link actor_behavior_t} ).
      */
     virtual void on_shutdown(message::shutdown_request_t &) noexcept;
 
     /** \brief initiates actor's shutdown
      *
      * If there is a supervisor, the message is forwarded to it to
-     * send shutdown request
+     * send shutdown request.
      *
      */
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept;
@@ -133,9 +132,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief forgets the subscription point
      *
-     * If there is no more subscription points and actor is `SHUTTING_DOWN`,
-     * then internal state is changed to `SHUTTED_DOWN` and `confirm_shutdown`
-     * method is invoked to notify supervisor.
+     * If there is no more subscription points, the on_unsubscription event is
+     * triggerred on {@link actor_behavior_t}.
      *
      */
     virtual void on_unsubscription(message_t<payload::unsubscription_confirmation_t> &) noexcept;
@@ -144,6 +142,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      * The {@link payload::commit_unsubscription_t} is sent to the external {@link supervisor_t}
      *  after removing the subscription .
+     *
+     * If there is no more subscription points, the on_unsubscription event is
+     * triggerred on {@link actor_behavior_t}.
      *
      */
     virtual void on_external_unsubscription(message_t<payload::external_unsubscription_t> &) noexcept;
@@ -155,10 +156,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
 
-    /** \brief returns request builder for destination address using the default actor address
+    /** \brief returns request builder for destination address using the "main" actor address
      *
      * The `args` are forwarded for construction of the request. The request is not actually sent,
-     * until `timeout` method of `request_builder` will be invoked.
+     * until `send` method of {@link request_builder_t} will be invoked.
      *
      * Supervisor will spawn timeout timer upon `timeout` method.
      */
@@ -191,13 +192,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> handler_ptr_t subscribe(Handler &&h, address_ptr_t &addr) noexcept;
 
-    /** \brief subscribes actor's handler to process messages on the actor's address */
+    /** \brief subscribes actor's handler to process messages on the actor's "main" address */
     template <typename Handler> handler_ptr_t subscribe(Handler &&h) noexcept;
 
     /** \brief unsubscribes actor's handler from process messages on the specified address */
     template <typename Handler> void unsubscribe(Handler &&h, address_ptr_t &addr) noexcept;
 
-    /** \brief unsubscribes actor's handler from process messages on the actor's address */
+    /** \brief unsubscribes actor's handler from processing messages on the actor's "main" address */
     template <typename Handler> void unsubscribe(Handler &&h) noexcept;
 
   protected:
@@ -239,8 +240,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     virtual void shutdown_finish() noexcept;
-
-    friend struct supervisor_t;
 
     /** \brief actor's execution / infrastructure context */
     supervisor_t &supervisor;
