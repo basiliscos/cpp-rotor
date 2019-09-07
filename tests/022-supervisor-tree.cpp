@@ -34,7 +34,7 @@ struct pinger_t : public r::actor_base_t {
     void request_status() noexcept {
         auto reply_addr = get_address();
         request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
-            .timeout(r::pt::seconds{1});
+            .send(r::pt::seconds{1});
         ++attempts;
     }
 

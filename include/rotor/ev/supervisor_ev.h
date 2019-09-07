@@ -65,7 +65,7 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
     virtual void shutdown_finish() noexcept override;

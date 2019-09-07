@@ -49,7 +49,7 @@ struct good_actor_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
+        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -81,7 +81,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
+        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { req_msg.reset(&msg); }
@@ -109,7 +109,7 @@ struct bad_actor2_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).timeout(r::pt::seconds(1));
+        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept {
@@ -140,7 +140,7 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         rt::supervisor_test_t::on_start(msg);
-        request<request_sample_t>(this->address, 4).timeout(r::pt::seconds(1));
+        request<request_sample_t>(this->address, 4).send(r::pt::seconds(1));
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -171,7 +171,7 @@ struct good_actor2_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request_via<req2_t>(address, reply_addr, 4).timeout(r::pt::seconds(1));
+        request_via<req2_t>(address, reply_addr, 4).send(r::pt::seconds(1));
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -201,7 +201,7 @@ struct good_actor3_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<req2_t>(address, 4).timeout(r::pt::seconds(1));
+        request<req2_t>(address, 4).send(r::pt::seconds(1));
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -212,7 +212,7 @@ struct good_actor3_t : public r::actor_base_t {
         ec = msg.payload.ec;
         if (req_left) {
             --req_left;
-            request<req2_t>(address, 4).timeout(r::pt::seconds(1));
+            request<req2_t>(address, 4).send(r::pt::seconds(1));
         }
     }
 };

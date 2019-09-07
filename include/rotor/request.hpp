@@ -204,7 +204,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
      * The request id of the dispatched request is returned
      *
      */
-    std::uint32_t timeout(pt::time_duration timeout) noexcept;
+    std::uint32_t send(pt::time_duration send) noexcept;
 
   private:
     using traits_t = request_traits_t<T>;

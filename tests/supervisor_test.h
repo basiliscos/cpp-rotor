@@ -24,7 +24,7 @@ struct supervisor_test_t : public supervisor_t {
     using set_t = std::unordered_set<timer_id_t>;
     supervisor_test_t(supervisor_t *sup, const supervisor_config_test_t& config_);
 
-    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;

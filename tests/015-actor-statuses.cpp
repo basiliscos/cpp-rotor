@@ -36,10 +36,10 @@ struct statuses_observer_t : public r::actor_base_t {
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
         auto sup_addr = supervisor.get_address();
-        request<r::payload::state_request_t>(sup_addr, sup_addr).timeout(r::pt::seconds{1});
-        request<r::payload::state_request_t>(sup_addr, dummy_addr).timeout(r::pt::seconds{1});
-        request<r::payload::state_request_t>(sup_addr, observable_addr).timeout(r::pt::seconds{1});
-        request<r::payload::state_request_t>(sup_addr, address).timeout(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, sup_addr).send(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, dummy_addr).send(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, observable_addr).send(r::pt::seconds{1});
+        request<r::payload::state_request_t>(sup_addr, address).send(r::pt::seconds{1});
     }
 
     void on_state(r::message::state_response_t &msg) noexcept {

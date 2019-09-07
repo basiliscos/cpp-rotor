@@ -47,6 +47,8 @@ inline message_base_t::~message_base_t() {}
  *  \tparam T payload type
  */
 template <typename T> struct message_t : public message_base_t {
+
+    /** \brief alias for payload type */
     using payload_t = T;
 
     /** \brief forwards `args` for payload construction */

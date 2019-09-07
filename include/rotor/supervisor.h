@@ -62,6 +62,8 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
  *
  */
 struct supervisor_t : public actor_base_t {
+
+    /** \brief timer identifier type in the scope of the supervisor */
     using timer_id_t = std::uint32_t;
 
     /** \brief constructs new supervisor with optional parent supervisor */
@@ -156,8 +158,23 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_state_request(message::state_request_t &message) noexcept;
 
-    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept = 0;
+    /** \brief starts non-recurring timer, identified by `timer_id`
+     *
+     * Once timer triggers, it will invoke `on_timer_trigger(timer_id)` method;
+     * othewise, if it is no longer needed, it should be cancelled via
+     * `cancel_timer` method
+     *
+     */
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept = 0;
+
+    /** \brief cancels previously started timer */
     virtual void cancel_timer(timer_id_t timer_id) noexcept = 0;
+
+    /** \brief triggers an action associated with the timer
+     *
+     * Currently it just delivers responce timeout, if any.
+     *
+     */
     virtual void on_timer_trigger(timer_id_t timer_id);
 
     /** \brief thread-safe version of `do_start`, i.e. send start actor request
@@ -219,9 +236,6 @@ struct supervisor_t : public actor_base_t {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
-    void unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
-                           const payload::callback_ptr_t & = {}) noexcept;
-
     /** \brief unsubscribes local handler from the address
      *
      * If the address is local, then unsubscription confirmation is sent immediately,
@@ -229,6 +243,10 @@ struct supervisor_t : public actor_base_t {
      * supervisor, which owns the address.
      *
      */
+    void unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
+                           const payload::callback_ptr_t & = {}) noexcept;
+
+    /** \brief convenient templated version of `unsubscribe_actor */
     template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
         handler_ptr_t wrapped_handler(std::forward<Handler>(handler));
         unsubscribe_actor(wrapped_handler, addr);
@@ -245,6 +263,11 @@ struct supervisor_t : public actor_base_t {
     /** \brief returns system context */
     inline system_context_t *get_context() noexcept { return context; }
 
+    /** \brief convenient method for request building
+     *
+     * The built request isn't sent immediately, but only after invoking `send(timeout)`
+     *
+     */
     template <typename T, typename... Args>
     request_builder_t<T> do_request(actor_base_t &actor, const address_ptr_t &dest_addr, const address_ptr_t &reply_to,
                                     Args &&... args) noexcept {
@@ -266,6 +289,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief (local) address-to-actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
+    /** \brief timer to responce with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
 
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
@@ -302,9 +326,16 @@ struct supervisor_t : public actor_base_t {
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
 
+    /** \brief counter for timer ids */
     timer_id_t last_req_id;
+
+    /** \brief timer to responce with timeout procuder */
     request_map_t request_map;
+
+    /** \brief shutdown timeout value (copied from config) */
     pt::time_duration shutdown_timeout;
+
+    /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
 
     template <typename T> friend struct request_builder_t;
@@ -382,6 +413,12 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
 };
 } // namespace details
 
+/** \brief convenience method for creating an actor in the scope of supervisor
+ *
+ * Actor performs early initialization, and further init will be request-based
+ * and initiated  * by the supervisor.
+ *
+ */
 template <typename Actor, typename Supervisor, typename... Args>
 intrusive_ptr_t<Actor> make_actor(Supervisor &sup, const pt::time_duration &timeout, Args... args) {
     using ctor_t = details::actor_ctor_t<Actor, Supervisor>;
@@ -411,7 +448,7 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
     req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});
 }
 
-template <typename T> std::uint32_t request_builder_t<T>::timeout(pt::time_duration timeout) noexcept {
+template <typename T> std::uint32_t request_builder_t<T>::send(pt::time_duration timeout) noexcept {
     if (do_install_handler) {
         install_handler();
     }

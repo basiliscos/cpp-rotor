@@ -48,7 +48,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
 
     // do self-bootstrap
     if (!parent) {
-        request<payload::initialize_actor_t>(address, address).timeout(shutdown_timeout);
+        request<payload::initialize_actor_t>(address, address).send(shutdown_timeout);
     }
 }
 
@@ -56,7 +56,7 @@ void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     auto actor = msg.payload.actor;
     auto actor_address = actor->get_address();
     actors_map.emplace(actor_address, std::move(actor));
-    request<payload::initialize_actor_t>(actor_address, actor_address).timeout(msg.payload.timeout);
+    request<payload::initialize_actor_t>(actor_address, actor_address).send(msg.payload.timeout);
 }
 
 void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept {
@@ -145,7 +145,7 @@ void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcep
             shutdown_start();
         }
     } else {
-        request<payload::shutdown_request_t>(source_addr, source_addr).timeout(shutdown_timeout);
+        request<payload::shutdown_request_t>(source_addr, source_addr).send(shutdown_timeout);
     }
 }
 
@@ -225,10 +225,12 @@ void supervisor_t::shutdown_finish() noexcept { address_mapping.destructive_get(
 
 void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     auto it = request_map.find(timer_id);
-    auto &request_curry = it->second;
-    message_ptr_t &request = request_curry.request_message;
-    auto timeout_message =
-        request_curry.fn(request_curry.reply_to, *request, make_error_code(error_code_t::request_timeout));
-    put(std::move(timeout_message));
-    request_map.erase(it);
+    if (it != request_map.end()) {
+        auto &request_curry = it->second;
+        message_ptr_t &request = request_curry.request_message;
+        auto timeout_message =
+            request_curry.fn(request_curry.reply_to, *request, make_error_code(error_code_t::request_timeout));
+        put(std::move(timeout_message));
+        request_map.erase(it);
+    }
 }

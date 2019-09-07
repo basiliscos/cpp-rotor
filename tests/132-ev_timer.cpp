@@ -31,7 +31,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         r::actor_base_t::on_start(msg);
-        request<traits_t::request::type>(address).timeout(r::pt::milliseconds(1));
+        request<traits_t::request::type>(address).send(r::pt::milliseconds(1));
     }
 
     void on_responce(traits_t::responce::message_t &msg) noexcept {

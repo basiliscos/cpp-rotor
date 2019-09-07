@@ -86,7 +86,7 @@ void supervisor_behavior_t::action_shutdown_children() noexcept {
     if (!actors_map.empty()) {
         for (auto pair : actors_map) {
             auto &addr = pair.first;
-            sup.request<payload::shutdown_request_t>(addr, addr).timeout(sup.shutdown_timeout);
+            sup.request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
         }
         substate = behavior_state_t::SHUTDOWN_CHILDREN_STARTED;
     } else {
@@ -106,5 +106,5 @@ void supervisor_behavior_t::on_shutdown_fail(const address_ptr_t &, const std::e
 
 void supervisor_behavior_t::on_init_fail(const address_ptr_t &addr, const std::error_code &) noexcept {
     auto &sup = static_cast<supervisor_t &>(actor);
-    sup.template request<payload::shutdown_request_t>(addr, addr).timeout(sup.shutdown_timeout);
+    sup.template request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
 }

@@ -48,16 +48,23 @@ template <typename Actor, typename Handler, typename ErrHandler> struct forwarde
  *
  */
 struct supervisor_asio_t : public supervisor_t {
-    /** \brief an alias for boos::asio::deadline_timer */
 
+    /** \struct timer_t
+     * \brief boos::asio::deadline_timer with timer identity  */
     struct timer_t : public asio::deadline_timer {
+
+        /** \brief timer identity */
         timer_id_t timer_id;
 
+        /** \brief constructs timer using timer_id and boos asio io_context */
         timer_t(timer_id_t timer_id_, asio::io_context &io_context)
             : asio::deadline_timer(io_context), timer_id{timer_id_} {}
     };
 
+    /** \brief unique pointer to timer */
     using timer_ptr_t = std::unique_ptr<timer_t>;
+
+    /** \brief timer id to timer pointer mapping type */
     using timers_map_t = std::unordered_map<std::uint32_t, timer_ptr_t>;
 
     /** \brief constructs new supervisor from parent supervisor, intrusive
@@ -73,9 +80,10 @@ struct supervisor_asio_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
 
+    /** \brief callback when an error happen on the timer, identified by timer_id */
     virtual void on_timer_error(timer_id_t timer_id, const sys::error_code &ec) noexcept;
 
     /** \brief creates an actor by forwaring `args` to it
@@ -109,6 +117,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
+    /** \brief timer id to timer pointer mapping */
     timers_map_t timers_map;
 
     /** \brief config for the supervisor */

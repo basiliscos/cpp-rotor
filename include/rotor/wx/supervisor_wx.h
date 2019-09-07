@@ -45,9 +45,13 @@ struct supervisor_wx_t : public supervisor_t {
      *
      */
     struct timer_t : public wxTimer {
+        /** \brief alias for intrusive pointer for the supervisor */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_wx_t>;
 
+        /** \brief timer identity */
         timer_id_t timer_id;
+
+        /** \brief intrusive pointer to the supervisor */
         supervisor_ptr_t sup;
 
         /** \brief constructs timer from wx supervisor */
@@ -76,7 +80,7 @@ struct supervisor_wx_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &timeout, timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
 
@@ -84,10 +88,16 @@ struct supervisor_wx_t : public supervisor_t {
     inline system_context_wx_t *get_context() noexcept { return static_cast<system_context_wx_t *>(context); }
 
   protected:
+    /** \brief unique pointer to timer */
     using timer_ptr_t = std::unique_ptr<timer_t>;
+
+    /** \brief timer id to timer pointer mapping type */
     using timers_map_t = std::unordered_map<timer_id_t, timer_ptr_t>;
 
+    /** \brief non-owning pointer to the wx application (copied from config) */
     wxEvtHandler *handler;
+
+    /** \brief timer id to timer pointer mapping */
     timers_map_t timers_map;
 };
 

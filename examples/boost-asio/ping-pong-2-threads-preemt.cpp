@@ -53,7 +53,7 @@ struct pinger_t : public r::actor_base_t {
 
     void inline request_ponger_status() noexcept {
         request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
-            .timeout(r::pt::millisec{1});
+            .send(r::pt::millisec{1});
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
