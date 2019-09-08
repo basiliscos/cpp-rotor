@@ -41,11 +41,11 @@ struct observer_t: public r::actor_base_t {
     r::address_ptr_t observable;
     void set_observable(r::address_ptr_t addr) { observable = std::move(addr); }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&observer_t::on_target_initialize, observable);
         subscribe(&observer_t::on_target_start, observable);
         subscribe(&observer_t::on_target_shutdown, observable);
+        r::actor_base_t::init_start();
     }
 
     void on_target_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept {
@@ -97,6 +97,53 @@ at the `rotor` core, i.e.
 ~~~
 
 Of course, actors can dynamically subscribe/unsubscribe from address at runtime
+
+## Multiple actor identities
+
+Every actor has it's "main" address; however it is possible for it to have multiple.
+This makes it available to have "inside actor" routing, or polymorphism. This
+is useful when the **same type** of messages arrive in responce to different queries.
+
+For example, let's assume that there is an "http-actor", which is able to "execute"
+http requests in generic way and return back the replies. If there is a SOAP/WSDL
+-webservice, the first query will be "get list of serices", and the second query
+will be "execute an action X". The both responces will be HTTP-replies.
+
+Something like the following can be done:
+
+~~~{.cpp}
+
+struct client_t: public r::actor_base_t {
+    r::address_ptr_t http_client;
+    r::address_ptr_t wsdl_addr;
+    r::address_ptr_t action_addr;
+
+    void init_start() noexcept override {
+        ...
+        wsdl_addr = create_address();
+        action_addr = create_address();
+        subscribe(&client_t::on_wsdl, wsdl_addr);
+        subscribe(&client_t::on_action, action_addr);
+
+    }
+
+    void on_wsdl(http_message_t& msg) noexcept {
+        ...
+        auto timeout = r::pt::seconds(1);
+        request_via<htt::request_t>(http_client, action_addr, /* request params */ ).send(timeout);
+    }
+
+    void on_action(http_message_t& msg) noexcept {
+        ...
+    }
+
+    void on_a_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        ...
+        auto timeout = r::pt::seconds(1);
+        request_via<htt::request_t>(http_client, wsdl_addr, /* request params */ ).send(timeout);
+    }
+}
+~~~
 
 ## check actor ready state (syncrhonizing stream)
 

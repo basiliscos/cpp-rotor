@@ -9,7 +9,7 @@
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 
-struct hello_actor : public rotor::actor_base_t {
+struct server_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
         std::cout << "hello world\n";
@@ -25,7 +25,7 @@ int main() {
     rotor::asio::supervisor_config_asio_t conf{timeout, std::move(stand)};
     auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
 
-    auto hello = sup->create_actor<hello_actor>(timeout);
+    auto hello = sup->create_actor<server_actor>(timeout);
 
     sup->start();
     io_context.run();
