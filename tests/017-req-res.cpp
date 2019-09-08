@@ -23,7 +23,7 @@ struct request_sample_t {
 
 struct res2_t : r::arc_base_t<res2_t> {
     int value;
-    res2_t(int value_) : value{value_} {}
+    explicit res2_t(int value_) : value{value_} {}
     virtual ~res2_t() {}
 };
 

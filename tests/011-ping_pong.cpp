@@ -20,7 +20,7 @@ struct pinger_t : public r::actor_base_t {
     std::uint32_t ping_sent;
     std::uint32_t pong_received;
 
-    pinger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_sent = pong_received = 0; }
+    explicit pinger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_sent = pong_received = 0; }
     ~pinger_t() override { destroyed += 1; }
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
@@ -45,7 +45,7 @@ struct ponger_t : public r::actor_base_t {
     std::uint32_t ping_received;
     std::uint32_t pong_sent;
 
-    ponger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_received = pong_sent = 0; }
+    explicit ponger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_received = pong_sent = 0; }
     ~ponger_t() override { destroyed += 3; }
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }

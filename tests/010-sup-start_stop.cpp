@@ -25,7 +25,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
     std::uint32_t shutdown_conf_invoked;
     r::address_ptr_t shutdown_addr;
 
-    sample_sup_t(const rt::supervisor_config_test_t &config) : r::test::supervisor_test_t{nullptr, config} {
+    explicit sample_sup_t(const rt::supervisor_config_test_t &config) : r::test::supervisor_test_t{nullptr, config} {
         initialized = 0;
         init_invoked = 0;
         start_invoked = 0;

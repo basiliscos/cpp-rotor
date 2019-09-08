@@ -33,7 +33,7 @@ template <typename M, typename F> struct lambda_holder_t {
     F fn;
 
     /** \brief constructs lambda by forwarding arguments */
-    lambda_holder_t(F &&fn_) : fn(std::forward<F>(fn_)) {}
+    explicit lambda_holder_t(F &&fn_) : fn(std::forward<F>(fn_)) {}
 
     /** \brief alias type for message type for lambda */
     using message_t = M;
@@ -95,7 +95,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief constructs `handler_base_t` from raw pointer to actor, raw
      * pointer to message type and raw pointer to handler type
      */
-    handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_)
+    explicit handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_)
         : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor}, raw_actor_ptr{&actor},
           raw_supervisor_ptr{&actor.get_supervisor()} {
         auto h1 = reinterpret_cast<std::size_t>(handler_type);
@@ -138,7 +138,7 @@ struct handler_t<Handler,
     Handler handler;
 
     /** \brief constructs handler from actor & pointer-to-member function  */
-    handler_t(actor_base_t &actor, Handler &&handler_)
+    explicit handler_t(actor_base_t &actor, Handler &&handler_)
         : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
@@ -172,7 +172,7 @@ template <typename Handler, typename M> struct handler_t<lambda_holder_t<Handler
     static const void *handler_type;
 
     /** \brief constructs handler from actor & lambda wrapper */
-    handler_t(actor_base_t &actor, handler_backend_t &&handler_)
+    explicit handler_t(actor_base_t &actor, handler_backend_t &&handler_)
         : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{std::forward<handler_backend_t>(
                                                                                   handler_)} {}
 
