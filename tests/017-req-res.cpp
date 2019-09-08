@@ -41,10 +41,10 @@ struct good_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&good_actor_t::on_request);
         subscribe(&good_actor_t::on_responce);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -68,15 +68,15 @@ struct bad_actor_t : public r::actor_base_t {
     std::error_code ec;
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&bad_actor_t::on_request);
         subscribe(&bad_actor_t::on_responce);
+        r::actor_base_t::init_start();
     }
 
-    void on_shutdown(r::message::shutdown_request_t &msg) noexcept override {
-        r::actor_base_t::on_shutdown(msg);
+    void shutdown_start() noexcept override {
         req_msg.reset();
+        r::actor_base_t::shutdown_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -132,10 +132,10 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        rt::supervisor_test_t::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&good_supervisor_t::on_request);
         subscribe(&good_supervisor_t::on_responce);
+        rt::supervisor_test_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -162,11 +162,11 @@ struct good_actor2_t : public r::actor_base_t {
     r::address_ptr_t reply_addr;
     std::error_code ec;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
+    void init_start() noexcept override {
         reply_addr = supervisor.create_address();
         subscribe(&good_actor2_t::on_request);
         subscribe(&good_actor2_t::on_responce, reply_addr);
-        r::actor_base_t::on_initialize(msg);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -193,10 +193,10 @@ struct good_actor3_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&good_actor3_t::on_request);
         subscribe(&good_actor3_t::on_responce);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {

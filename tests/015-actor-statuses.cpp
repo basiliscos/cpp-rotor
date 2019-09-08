@@ -28,9 +28,9 @@ struct statuses_observer_t : public r::actor_base_t {
         observable_status = dummy_status = supervisor_status = r::state_t::UNKNOWN;
     }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&statuses_observer_t::on_state);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {

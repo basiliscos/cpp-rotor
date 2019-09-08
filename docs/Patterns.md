@@ -77,7 +77,7 @@ messages has already been delivered to original recipient and the observer "miss
 message. See the pattern below how to synronize actors.
 
 The distinguish of *foreign and non-foreign* actors or MPMC pattern is completely
-**architectural** and application specific, i.e. whether is is known apriori that
+**architectural** and application specific, i.e. whether it is known apriori that
 there are multiple subscribers (MPMC) or single subsciber and other subscribes
 are are hidden from the original message flow. There is no difference between them
 at the `rotor` core, i.e.

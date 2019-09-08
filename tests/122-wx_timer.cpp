@@ -31,9 +31,9 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     std::error_code ec;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&bad_actor_t::on_responce);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {

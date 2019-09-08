@@ -40,15 +40,13 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
+    void init_start() noexcept override {
         subscribe(&pinger_t::on_pong);
         subscribe(&pinger_t::on_ponger_start, ponger_addr);
         subscribe(&pinger_t::on_state);
-        r::actor_base_t::on_initialize(msg);
-        std::cout << "pinger::on_initialize\n";
+        request_ponger_status();
+        std::cout << "pinger::init_start()\n";
     }
-
-    void init_start() noexcept override { request_ponger_status(); }
 
     void inline request_ponger_status() noexcept {
         request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
@@ -119,10 +117,10 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
+    void init_start() noexcept override {
+        std::cout << "ponger::init_start\n";
         subscribe(&ponger_t::on_ping);
-        r::actor_base_t::on_initialize(msg);
-        std::cout << "ponger::on_initialize\n";
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
@@ -149,7 +147,7 @@ struct holding_supervisor_t : public ra::supervisor_asio_t {
     void shutdown_finish() noexcept override {
         ra::supervisor_asio_t::shutdown_finish();
         guard.reset();
-        std::cout << "holding_supervisor_t::confirm_shutdown\n";
+        std::cout << "holding_supervisor_t::shutdown_finish\n";
     }
 };
 

@@ -14,14 +14,14 @@ namespace rt = r::test;
 struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
+    void init_start() noexcept override {
         on_initialize_count++;
-        rt::supervisor_test_t::on_initialize(msg);
+        rt::supervisor_test_t::init_start();
     }
 
-    virtual void on_shutdown_confirm(r::message::shutdown_responce_t &msg) noexcept override {
+    void shutdown_finish() noexcept override {
         on_shutdown_count++;
-        rt::supervisor_test_t::on_shutdown_confirm(msg);
+        rt::supervisor_test_t::shutdown_finish();
     }
 
     std::uint32_t on_initialize_count = 0;
@@ -59,6 +59,7 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(sup1->on_initialize_count == 1);
     REQUIRE(sup2->on_initialize_count == 1);
+    REQUIRE(sup2->on_shutdown_count == 0);
     REQUIRE(sup1->on_shutdown_count == 0);
 
     sup2->do_shutdown();
@@ -69,11 +70,13 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->on_shutdown_count == 0);
+    REQUIRE(sup2->on_shutdown_count == 1);
 
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup1->on_shutdown_count == 1);
+    REQUIRE(sup1->on_shutdown_count == 0);
+    REQUIRE(sup2->on_shutdown_count == 1);
 
     sup1->do_shutdown();
     sup1->do_process();

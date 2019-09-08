@@ -23,9 +23,9 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&pinger_t::on_pong);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override { r::actor_base_t::on_start(msg); }
@@ -43,9 +43,9 @@ struct pinger_t : public r::actor_base_t {
 struct pinger_autostart_t : public pinger_t {
     using pinger_t::pinger_t;
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        pinger_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&pinger_autostart_t::on_ponger_start, ponger_addr);
+        pinger_t::init_start();
     }
 
     void on_ponger_start(r::message_t<r::payload::start_actor_t> &) noexcept { do_send_ping(); }
@@ -59,9 +59,9 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&ponger_t::on_ping);
+        r::actor_base_t::init_start();
     }
 
     void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { std::cout << "on_start\n"; }

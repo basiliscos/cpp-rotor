@@ -28,8 +28,8 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
     virtual r::actor_behavior_t *create_behaviour() noexcept override { return new supervisor_test_behavior_t(*this); }
 
     r::state_t &get_state() noexcept { return state; }
-    queue_t& get_leader_queue() { return get_leader().queue; }
-    supervisor_ev_test_t& get_leader() { return *static_cast<supervisor_ev_test_t*>(locality_leader); }
+    queue_t &get_leader_queue() { return get_leader().queue; }
+    supervisor_ev_test_t &get_leader() { return *static_cast<supervisor_ev_test_t *>(locality_leader); }
     queue_t &get_inbound_queue() noexcept { return inbound; }
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
@@ -59,9 +59,9 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&pinger_t::on_pong);
+        r::actor_base_t::init_start();
     }
 
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
@@ -86,9 +86,9 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        rotor::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&ponger_t::on_ping);
+        r::actor_base_t::init_start();
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {

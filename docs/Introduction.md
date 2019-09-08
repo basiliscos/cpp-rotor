@@ -47,9 +47,11 @@ struct hello_actor: public rotor::actor_base_t {
     }
 };
 
-struct dummy_supervisor: public rotor::supervisor_t {
-    void start_shutdown_timer() noexcept override {}
-    void cancel_shutdown_timer() noexcept override {}
+struct dummy_supervisor : public rotor::supervisor_t {
+    using rotor::supervisor_t::supervisor_t;
+
+    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
+    void cancel_timer(timer_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -58,8 +60,10 @@ struct dummy_supervisor: public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto sup = ctx.create_supervisor<dummy_supervisor>();
-    sup->create_actor<hello_actor>();
+    auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    rotor::supervisor_config_t cfg{timeout};
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
+    sup->create_actor<hello_actor>(timeout);
     sup->do_process();
     return 0;
 }
@@ -84,10 +88,12 @@ struct hello_actor : public rotor::actor_base_t {
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
-    rotor::asio::supervisor_config_t conf{pt::milliseconds{500}};
+    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    auto timeout = boost::posix_time::milliseconds{500};
+    rotor::asio::supervisor_config_asio_t conf{timeout, std::move(stand)};
     auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
 
-    auto hello = sup->create_actor<hello_actor>();
+    auto hello = sup->create_actor<hello_actor>(timeout);
 
     sup->start();
     io_context.run();
@@ -103,7 +109,11 @@ integrated with loops.
 
 The `supervisor.do_shutdown()` just sends message to supervisor to perform shutdown procedure.
 Then, in the code `io_context.run()` loop terminates, as long as *there are no any pending
-event*. `rotor` does not makes run loop endlessly.
+event*. `rotor` does not make run loop endlessly.
+
+The `timeout` variable is used to spawn timers for actor initialization and shutdown requests.
+As the actor does not do any I/O the operations will be executed immediately, and timeout
+values do not matter.
 
 ## Ping-pong example
 
@@ -121,9 +131,9 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
-        rotor::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&pinger_t::on_pong);
+        rotor::actor_base_t::init_start();
     }
 
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
@@ -143,9 +153,9 @@ struct ponger_t : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void on_initialize(rotor::message_t<rotor::payload::initialize_actor_t> &msg) noexcept override {
-        rotor::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&ponger_t::on_ping);
+        rotor::actor_base_t::init_start();
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {
@@ -158,8 +168,10 @@ struct ponger_t : public rotor::actor_base_t {
 };
 
 struct dummy_supervisor : public rotor::supervisor_t {
-    void start_shutdown_timer() noexcept override {}
-    void cancel_shutdown_timer() noexcept override {}
+    using rotor::supervisor_t::supervisor_t;
+
+    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
+    void cancel_timer(timer_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -167,10 +179,12 @@ struct dummy_supervisor : public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto sup = ctx.create_supervisor<dummy_supervisor>();
+    auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    rotor::supervisor_config_t cfg{timeout};
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
 
-    auto pinger = sup->create_actor<pinger_t>();
-    auto ponger = sup->create_actor<ponger_t>();
+    auto pinger = sup->create_actor<pinger_t>(timeout);
+    auto ponger = sup->create_actor<ponger_t>(timeout);
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
@@ -201,6 +215,7 @@ different supervisors and loops, can subscribe to any kind of message on any add
 namespace r = rotor;
 
 struct payload_t {};
+using sample_message_t = r::message_t<payload_t>;
 
 struct pub_t : public r::actor_base_t {
 
@@ -221,21 +236,20 @@ struct sub_t : public r::actor_base_t {
 
     void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&sub_t::on_payload, pub_addr);
+        rotor::actor_base_t::init_start();
     }
 
-    void on_payload(r::message_t<payload_t> &) noexcept {
-        std::cout << "received on " << static_cast<void *>(this) << "\n";
-    }
+    void on_payload(sample_message_t &) noexcept { std::cout << "received on " << static_cast<void *>(this) << "\n"; }
 
     r::address_ptr_t pub_addr;
 };
 
 struct dummy_supervisor : public rotor::supervisor_t {
-    void start_shutdown_timer() noexcept override {}
-    void cancel_shutdown_timer() noexcept override {}
+    using rotor::supervisor_t::supervisor_t;
+    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
+    void cancel_timer(timer_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -243,18 +257,24 @@ struct dummy_supervisor : public rotor::supervisor_t {
 
 int main() {
     rotor::system_context_t ctx{};
-    auto sup = ctx.create_supervisor<dummy_supervisor>();
+    auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
+    rotor::supervisor_config_t cfg{timeout};
+    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
 
     auto pub_addr = sup->create_address(); // (1)
-    auto pub = sup->create_actor<pub_t>();
-    auto sub1 = sup->create_actor<sub_t>();
-    auto sub2 = sup->create_actor<sub_t>();
+    auto pub = sup->create_actor<pub_t>(timeout);
+    auto sub1 = sup->create_actor<sub_t>(timeout);
+    auto sub2 = sup->create_actor<sub_t>(timeout);
 
     pub->set_pub_addr(pub_addr);
     sub1->set_pub_addr(pub_addr);
     sub2->set_pub_addr(pub_addr);
 
     sup->do_process();
+
+    sup->do_shutdown();
+    sup->do_process();
+
     return 0;
 }
 ~~~

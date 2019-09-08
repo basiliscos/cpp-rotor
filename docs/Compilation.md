@@ -31,8 +31,6 @@ git clone https://github.com/basiliscos/cpp-rotor rotor
 cd rotor
 mkdir build
 cd build
-cmake --build . --config Release
-cmake -DCMAKE_INSTALL_PREFIX=target -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 15 2017" ../dev
-cmake --build . --config Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on
+cmake --build .. --config Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on
 ~~~
 

@@ -10,6 +10,7 @@
 namespace r = rotor;
 
 struct payload_t {};
+using sample_message_t = r::message_t<payload_t>;
 
 struct pub_t : public r::actor_base_t {
 
@@ -30,14 +31,12 @@ struct sub_t : public r::actor_base_t {
 
     void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&sub_t::on_payload, pub_addr);
+        rotor::actor_base_t::init_start();
     }
 
-    void on_payload(r::message_t<payload_t> &) noexcept {
-        std::cout << "received on " << static_cast<void *>(this) << "\n";
-    }
+    void on_payload(sample_message_t &) noexcept { std::cout << "received on " << static_cast<void *>(this) << "\n"; }
 
     r::address_ptr_t pub_addr;
 };
