@@ -1,11 +1,24 @@
 # Patterns
 
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
+[request-responce]  https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
 the same host), and actors as an opened ports (or as endpoints, i.e. as
 IP-address:port).
+
+## Request/Responce
+
+While [request-responce] approach is widely know, it has it's own specific
+on the actor-model:
+
+ - the responce (message) arrives asynchronously and there is need to match
+the original request (message)
+ - the responce might not arrive at all (e.g. an actor is down)
+
+
+
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
