@@ -42,8 +42,8 @@ template <typename T> struct wrapped_request_t : request_base_t {
     /** \brief alias for original (unwrapped) request payload type */
     using request_t = T;
 
-    /** \brief alias for original (unwrapped) responce payload type */
-    using responce_t = typename T::responce_t;
+    /** \brief alias for original (unwrapped) response payload type */
+    using response_t = typename T::response_t;
 
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
@@ -55,38 +55,38 @@ template <typename T> struct wrapped_request_t : request_base_t {
     T request_payload;
 };
 
-/** \struct responce_helper_t
- * \brief generic helper, which helps to construct user-defined responce payload
+/** \struct response_helper_t
+ * \brief generic helper, which helps to construct user-defined response payload
  */
-template <typename Responce> struct responce_helper_t {
-    /** \brief constructs user defined responce payload */
+template <typename Responce> struct response_helper_t {
+    /** \brief constructs user defined response payload */
     template <typename... Args> static Responce construct(Args &&... args) {
         return Responce{std::forward<Args>(args)...};
     }
 };
 
-/** \struct responce_helper_t<intrusive_ptr_t<Responce>>
+/** \struct response_helper_t<intrusive_ptr_t<Responce>>
  * \brief specific helper, which helps to construct intrusive pointer to user-defined
- *  responce payload
+ *  response payload
  */
-template <typename Responce> struct responce_helper_t<intrusive_ptr_t<Responce>> {
-    /** \brief type for intrusive pointer user defined responce payload  */
+template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>> {
+    /** \brief type for intrusive pointer user defined response payload  */
     using res_ptr_t = intrusive_ptr_t<Responce>;
 
-    /** \brief constructs intrusive pointer to user defined responce payload */
+    /** \brief constructs intrusive pointer to user defined response payload */
     template <typename... Args> static res_ptr_t construct(Args &&... args) {
         return res_ptr_t{new Responce{std::forward<Args>(args)...}};
     }
 };
 
-/** \struct wrapped_responce_t
- * \brief trackable templated responce which holds user-supplied responce payload.
+/** \struct wrapped_response_t
+ * \brief trackable templated response which holds user-supplied response payload.
  *
- * In addition to user-supplied responce payload, the class contains `error_code`
+ * In addition to user-supplied response payload, the class contains `error_code`
  * and intrusive pointer to the original request message.
  *
  */
-template <typename Request> struct wrapped_responce_t {
+template <typename Request> struct wrapped_response_t {
     /** \brief alias type of message with wrapped request */
     using req_message_t = message_t<wrapped_request_t<Request>>;
 
@@ -96,46 +96,46 @@ template <typename Request> struct wrapped_responce_t {
     /** \brief alias for original user-supplied request type */
     using request_t = Request;
 
-    /** \brief alias for original user-supplied responce type */
-    using responce_t = typename Request::responce_t;
+    /** \brief alias for original user-supplied response type */
+    using response_t = typename Request::response_t;
 
-    /** \brief helper type for responce construction */
-    using res_helper_t = responce_helper_t<responce_t>;
+    /** \brief helper type for response construction */
+    using res_helper_t = response_helper_t<response_t>;
 
-    static_assert(std::is_default_constructible_v<responce_t>, "responce type must be default-constructible");
+    static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
 
     /** \brief error code of processing request, i.e. `error_code_t::request_timeout` */
     std::error_code ec;
 
-    /** \brief original request message, which contains request_id for request/responce matching */
+    /** \brief original request message, which contains request_id for request/response matching */
     req_message_ptr_t req;
 
-    /** \brief user-supplied responce payload */
-    responce_t res;
+    /** \brief user-supplied response payload */
+    response_t res;
 
-    /** \brief error-responce constructor (responce payload is empty) */
-    wrapped_responce_t(std::error_code ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
+    /** \brief error-response constructor (response payload is empty) */
+    wrapped_response_t(std::error_code ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
 
-    /** \brief success-responce constructor */
+    /** \brief success-response constructor */
     template <typename... Args>
-    wrapped_responce_t(req_message_ptr_t message_, Args &&... args)
+    wrapped_response_t(req_message_ptr_t message_, Args &&... args)
         : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct(
                                                                                     std::forward<Args>(args)...)} {}
     /** \brief returns request id of the original request */
     inline std::int32_t request_id() const noexcept { return req->payload.id; }
 };
 
-/** \brief free function type, which produces error responce to the original request */
+/** \brief free function type, which produces error response to the original request */
 typedef message_ptr_t(error_producer_t)(const address_ptr_t &reply_to, message_base_t &msg,
                                         const std::error_code &ec) noexcept;
 
 /** \struct request_curry_t
- * \brief the recorded context, which is needed to produce error responce to the original request */
+ * \brief the recorded context, which is needed to produce error response to the original request */
 struct request_curry_t {
-    /** \brief the free function, which produces error responce */
+    /** \brief the free function, which produces error response */
     error_producer_t *fn;
 
-    /** \brief destination address for the error responce */
+    /** \brief destination address for the error response */
     address_ptr_t reply_to;
 
     /** \brief the original request message */
@@ -163,24 +163,24 @@ template <typename R> struct request_traits_t {
         using message_ptr_t = intrusive_ptr_t<message_t>;
     };
 
-    /** \struct responce
-     * \brief responce related types */
-    struct responce {
+    /** \struct response
+     * \brief response related types */
+    struct response {
 
-        /** \brief wrapped responce payload (contains original request message) */
-        using wrapped_t = wrapped_responce_t<R>;
+        /** \brief wrapped response payload (contains original request message) */
+        using wrapped_t = wrapped_response_t<R>;
 
-        /** \brief message type for wrapped responce */
+        /** \brief message type for wrapped response */
         using message_t = rotor::message_t<wrapped_t>;
 
-        /** \brief intrusive pointer type for responce message */
+        /** \brief intrusive pointer type for response message */
         using message_ptr_t = intrusive_ptr_t<message_t>;
     };
 
     /** \brief helper free function to produce error reply to the original request */
-    static message_ptr_t make_error_responce(const address_ptr_t &reply_to, message_base_t &message,
+    static message_ptr_t make_error_response(const address_ptr_t &reply_to, message_base_t &message,
                                              const std::error_code &ec) noexcept {
-        using reply_message_t = typename responce::message_t;
+        using reply_message_t = typename response::message_t;
         using request_message_ptr = typename request::message_ptr_t;
         auto &request = static_cast<typename request::message_t &>(message);
         auto req_ptr = request_message_ptr(&request);
@@ -210,9 +210,9 @@ template <typename T> struct [[nodiscard]] request_builder_t {
     using traits_t = request_traits_t<T>;
     using request_message_t = typename traits_t::request::message_t;
     using request_message_ptr_t = typename traits_t::request::message_ptr_t;
-    using responce_message_t = typename traits_t::responce::message_t;
-    using responce_message_ptr_t = typename traits_t::responce::message_ptr_t;
-    using wrapped_res_t = typename traits_t::responce::wrapped_t;
+    using response_message_t = typename traits_t::response::message_t;
+    using response_message_ptr_t = typename traits_t::response::message_ptr_t;
+    using wrapped_res_t = typename traits_t::response::wrapped_t;
 
     supervisor_t &sup;
     actor_base_t &actor;

@@ -150,7 +150,7 @@ void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcep
     }
 }
 
-void supervisor_t::on_shutdown_confirm(message::shutdown_responce_t &msg) noexcept {
+void supervisor_t::on_shutdown_confirm(message::shutdown_response_t &msg) noexcept {
     auto &source_addr = msg.payload.req->payload.request_payload.actor_address;
     auto &ec = msg.payload.ec;
     if (ec) {

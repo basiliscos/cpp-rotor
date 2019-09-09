@@ -143,7 +143,7 @@ struct supervisor_t : public actor_base_t {
      * Internal structures related to the actor are released.
      *
      */
-    virtual void on_shutdown_confirm(message::shutdown_responce_t &msg) noexcept;
+    virtual void on_shutdown_confirm(message::shutdown_response_t &msg) noexcept;
 
     /** \brief subscribes external handler to local address */
     virtual void on_external_subs(message_t<payload::external_subscription_t> &message) noexcept;
@@ -184,7 +184,7 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief triggers an action associated with the timer
      *
-     * Currently it just delivers responce timeout, if any.
+     * Currently it just delivers response timeout, if any.
      *
      */
     virtual void on_timer_trigger(timer_id_t timer_id);
@@ -307,7 +307,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief (local) address-to-child_actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
 
-    /** \brief timer to responce with timeout procuder type */
+    /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
 
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
@@ -338,7 +338,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief counter for request/timer ids */
     timer_id_t last_req_id;
 
-    /** \brief timer to responce with timeout procuder */
+    /** \brief timer to response with timeout procuder */
     request_map_t request_map;
 
     /** \brief shutdown timeout value (copied from config) */
@@ -444,13 +444,13 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
                                         const address_ptr_t &reply_to_, Args &&... args)
     : sup{sup_}, actor{actor_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
       do_install_handler{false} {
-    auto addr = sup.address_mapping.get_addr(actor_, responce_message_t::message_type);
+    auto addr = sup.address_mapping.get_addr(actor_, response_message_t::message_type);
     if (addr) {
         imaginary_address = addr;
     } else {
         // subscribe to imaginary address instead of real one because of
         // 1. faster dispatching
-        // 2. need to distinguish between "timeout guarded responces" and "responces to own requests"
+        // 2. need to distinguish between "timeout guarded responses" and "responses to own requests"
         imaginary_address = sup.make_address();
         do_install_handler = true;
     }
@@ -461,7 +461,7 @@ template <typename T> std::uint32_t request_builder_t<T>::send(pt::time_duration
     if (do_install_handler) {
         install_handler();
     }
-    auto fn = &request_traits_t<T>::make_error_responce;
+    auto fn = &request_traits_t<T>::make_error_response;
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req});
     sup.put(req);
     sup.start_timer(timeout, request_id);
@@ -469,7 +469,7 @@ template <typename T> std::uint32_t request_builder_t<T>::send(pt::time_duration
 }
 
 template <typename T> void request_builder_t<T>::install_handler() noexcept {
-    auto handler = lambda<responce_message_t>([supervisor = &sup](responce_message_t &msg) {
+    auto handler = lambda<response_message_t>([supervisor = &sup](response_message_t &msg) {
         auto request_id = msg.payload.request_id();
         auto it = supervisor->request_map.find(request_id);
         if (it != supervisor->request_map.end()) {
@@ -478,13 +478,13 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
             supervisor->request_map.erase(it);
         }
-        // if a responce to request has arrived and no timer can be found
+        // if a response to request has arrived and no timer can be found
         // that means that either timeout timer already triggered
-        // and error-message already delivered or responce is not expected.
+        // and error-message already delivered or response is not expected.
         // just silently drop it anyway
     });
     auto handler_ptr = sup.subscribe(handler, imaginary_address);
-    sup.address_mapping.set(actor, responce_message_t::message_type, handler_ptr, imaginary_address);
+    sup.address_mapping.set(actor, response_message_t::message_type, handler_ptr, imaginary_address);
 }
 
 template <typename M, typename... Args>
@@ -501,17 +501,17 @@ request_builder_t<M> actor_base_t::request_via(const address_ptr_t &dest_addr, c
 template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
     using payload_t = typename Request::payload_t::request_t;
     using traits_t = request_traits_t<payload_t>;
-    using responce_t = typename traits_t::responce::wrapped_t;
+    using response_t = typename traits_t::response::wrapped_t;
     using request_ptr_t = typename traits_t::request::message_ptr_t;
-    send<responce_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
+    send<response_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
 }
 
 template <typename Request, typename... Args>
 void actor_base_t::reply_with_error(Request &message, const std::error_code &ec) {
     using payload_t = typename Request::payload_t::request_t;
     using traits_t = request_traits_t<payload_t>;
-    auto responce = traits_t::make_error_responce(message.payload.reply_to, message, ec);
-    supervisor.put(std::move(responce));
+    auto response = traits_t::make_error_response(message.payload.reply_to, message, ec);
+    supervisor.put(std::move(response));
 }
 
 } // namespace rotor

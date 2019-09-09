@@ -171,7 +171,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * It is assumed, that the specified address belongs to the actor.
      *
      * The method is useful, when a different behaviour is needed for the same
-     * message responce types. It serves at some extend as virtual dispatching within
+     * message response types. It serves at some extend as virtual dispatching within
      * the actor.
      *
      * See the description of `request` method.
@@ -180,13 +180,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename M, typename... Args>
     request_builder_t<M> request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args);
 
-    /** \brief convenient method for constructing and sending responce to a request
+    /** \brief convenient method for constructing and sending response to a request
      *
-     * `args` are forwarded to responce payload constuction
+     * `args` are forwarded to response payload constuction
      */
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&... args);
 
-    /** \brief convenient method for constructing and sending error responce to a request */
+    /** \brief convenient method for constructing and sending error response to a request */
     template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */

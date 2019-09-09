@@ -11,12 +11,12 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-struct responce_sample_t {
+struct response_sample_t {
     int value;
 };
 
 struct request_sample_t {
-    using responce_t = responce_sample_t;
+    using response_t = response_sample_t;
 
     int value;
 };
@@ -28,7 +28,7 @@ struct res2_t : r::arc_base_t<res2_t> {
 };
 
 struct req2_t {
-    using responce_t = r::intrusive_ptr_t<res2_t>;
+    using response_t = r::intrusive_ptr_t<res2_t>;
 
     int value;
 };
@@ -43,7 +43,7 @@ struct good_actor_t : public r::actor_base_t {
 
     void init_start() noexcept override {
         subscribe(&good_actor_t::on_request);
-        subscribe(&good_actor_t::on_responce);
+        subscribe(&good_actor_t::on_response);
         r::actor_base_t::init_start();
     }
 
@@ -54,7 +54,7 @@ struct good_actor_t : public r::actor_base_t {
 
     void on_request(traits_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
 
-    void on_responce(traits_t::responce::message_t &msg) noexcept {
+    void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
         ec = msg.payload.ec;
@@ -70,7 +70,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void init_start() noexcept override {
         subscribe(&bad_actor_t::on_request);
-        subscribe(&bad_actor_t::on_responce);
+        subscribe(&bad_actor_t::on_response);
         r::actor_base_t::init_start();
     }
 
@@ -86,7 +86,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_request(traits_t::request::message_t &msg) noexcept { req_msg.reset(&msg); }
 
-    void on_responce(traits_t::responce::message_t &msg) noexcept {
+    void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         ec = msg.payload.ec;
         if (!ec) {
@@ -103,7 +103,7 @@ struct bad_actor2_t : public r::actor_base_t {
 
     void init_start() noexcept override {
         subscribe(&bad_actor2_t::on_request);
-        subscribe(&bad_actor2_t::on_responce);
+        subscribe(&bad_actor2_t::on_response);
         r::actor_base_t::init_start();
     }
 
@@ -116,7 +116,7 @@ struct bad_actor2_t : public r::actor_base_t {
         reply_with_error(msg, r::make_error_code(r::error_code_t::request_timeout));
     }
 
-    void on_responce(traits_t::responce::message_t &msg) noexcept {
+    void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         ec = msg.payload.ec;
         if (!ec) {
@@ -134,7 +134,7 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     void init_start() noexcept override {
         subscribe(&good_supervisor_t::on_request);
-        subscribe(&good_supervisor_t::on_responce);
+        subscribe(&good_supervisor_t::on_response);
         rt::supervisor_test_t::init_start();
     }
 
@@ -145,7 +145,7 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     void on_request(traits_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
 
-    void on_responce(traits_t::responce::message_t &msg) noexcept {
+    void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
         ec = msg.payload.ec;
@@ -165,7 +165,7 @@ struct good_actor2_t : public r::actor_base_t {
     void init_start() noexcept override {
         reply_addr = supervisor.create_address();
         subscribe(&good_actor2_t::on_request);
-        subscribe(&good_actor2_t::on_responce, reply_addr);
+        subscribe(&good_actor2_t::on_response, reply_addr);
         r::actor_base_t::init_start();
     }
 
@@ -176,7 +176,7 @@ struct good_actor2_t : public r::actor_base_t {
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
 
-    void on_responce(traits2_t::responce::message_t &msg) noexcept {
+    void on_response(traits2_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res->value;
         ec = msg.payload.ec;
@@ -195,7 +195,7 @@ struct good_actor3_t : public r::actor_base_t {
 
     void init_start() noexcept override {
         subscribe(&good_actor3_t::on_request);
-        subscribe(&good_actor3_t::on_responce);
+        subscribe(&good_actor3_t::on_response);
         r::actor_base_t::init_start();
     }
 
@@ -206,7 +206,7 @@ struct good_actor3_t : public r::actor_base_t {
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
 
-    void on_responce(traits2_t::responce::message_t &msg) noexcept {
+    void on_response(traits2_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res->value;
         ec = msg.payload.ec;
@@ -217,7 +217,7 @@ struct good_actor3_t : public r::actor_base_t {
     }
 };
 
-TEST_CASE("request-responce successfull delivery", "[actor]") {
+TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
@@ -255,7 +255,7 @@ TEST_CASE("request-responce successfull delivery", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-responce successfull delivery indentical message to 2 actors", "[actor]") {
+TEST_CASE("request-response successfull delivery indentical message to 2 actors", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
@@ -285,7 +285,7 @@ TEST_CASE("request-responce successfull delivery indentical message to 2 actors"
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-responce timeout", "[actor]") {
+TEST_CASE("request-response timeout", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
@@ -326,7 +326,7 @@ TEST_CASE("request-responce timeout", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("responce with custom error", "[actor]") {
+TEST_CASE("response with custom error", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
@@ -349,7 +349,7 @@ TEST_CASE("responce with custom error", "[actor]") {
     REQUIRE(sup->get_subscription().size() == 0);
 }
 
-TEST_CASE("request-responce successfull delivery (supervisor)", "[supervisor]") {
+TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
@@ -374,7 +374,7 @@ TEST_CASE("request-responce successfull delivery (supervisor)", "[supervisor]") 
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-responce successfull delivery, ref-counted responce", "[actor]") {
+TEST_CASE("request-response successfull delivery, ref-counted response", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};
@@ -400,7 +400,7 @@ TEST_CASE("request-responce successfull delivery, ref-counted responce", "[actor
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-responce successfull delivery, twice", "[actor]") {
+TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     r::system_context_t system_context;
 
     auto timeout = r::pt::milliseconds{1};

@@ -290,16 +290,16 @@ as well as the address of the supervisor can be used... even address of differen
 supervisor can be used.
 
 
-## request-responce example (boost::asio)
+## request-response example (boost::asio)
 
-In the example the usage of request-responce pattern is demonstrated
+In the example the usage of request-response pattern is demonstrated
 the "server" actor takes the number from request and replies to  "client" actor
 with square root if the value is >= 0, otherwise it replies with error.
 
-Contrary to the regular messages, request-responce is a little bit more
-complex pattern: the responce should include full request (message) to be able
-to match to the request, as well as the possibility of responce not arrival
-in time; in the last case the responce message should arrive with error.
+Contrary to the regular messages, request-response is a little bit more
+complex pattern: the response should include full request (message) to be able
+to match to the request, as well as the possibility of response not arrival
+in time; in the last case the response message should arrive with error.
 
 That's why below not pure user-defined payloads are used, but a little
 bit modified to support request/reply machinery.
@@ -320,14 +320,14 @@ struct sample_res_t {
     double value;
 };
 struct sample_req_t {
-    using responce_t = sample_res_t;
+    using response_t = sample_res_t;
     double value;
 };
 } // namespace payload
 
 namespace message {
 using request_t = rotor::request_traits_t<payload::sample_req_t>::request::message_t;
-using responce_t = rotor::request_traits_t<payload::sample_req_t>::responce::message_t;
+using response_t = rotor::request_traits_t<payload::sample_req_t>::response::message_t;
 } // namespace message
 
 struct server_actor : public rotor::actor_base_t {
@@ -359,11 +359,11 @@ struct client_actor : public rotor::actor_base_t {
     void set_server(const rotor::address_ptr_t addr) { server_addr = addr; }
 
     void init_start() noexcept override {
-        subscribe(&client_actor::on_responce);
+        subscribe(&client_actor::on_response);
         rotor::actor_base_t::init_start();
     }
 
-    void on_responce(message::responce_t &res) noexcept {
+    void on_response(message::response_t &res) noexcept {
         if (!res.payload.ec) { // check for possible error
             auto &in = res.payload.req->payload.request_payload.value;
             auto &out = res.payload.res.value;

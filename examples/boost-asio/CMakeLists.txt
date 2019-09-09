@@ -2,9 +2,9 @@ add_executable(hello_asio hello_asio.cpp)
 target_link_libraries(hello_asio rotor_asio)
 add_test(hello_asio "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hello_asio")
 
-add_executable(request-responce request-responce.cpp)
-target_link_libraries(request-responce rotor_asio)
-add_test(request-responce "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/request-responce")
+add_executable(request-response request-response.cpp)
+target_link_libraries(request-response rotor_asio)
+add_test(request-response "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/request-response")
 
 add_executable(ping_pong-single-simple ping_pong-single-simple.cpp)
 target_link_libraries(ping_pong-single-simple rotor_asio)

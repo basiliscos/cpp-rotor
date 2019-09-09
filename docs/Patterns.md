@@ -1,7 +1,7 @@
 # Patterns
 
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
-[request-responce]: https://en.wikipedia.org/wiki/Request%E2%80%93response
+[request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
@@ -10,54 +10,54 @@ IP-address:port).
 
 ## Request/Responce
 
-While [request-responce] approach is widely know, it has it's own specific
+While [request-response] approach is widely know, it has it's own specific
 on the actor-model:
 
--# the responce (message) arrives asynchronously and there is need to match
+-# the response (message) arrives asynchronously and there is need to match
 the original request (message)
--# the responce might not arrive at all (e.g. an actor is down)
+-# the response might not arrive at all (e.g. an actor is down)
 
 The first issue is solved in rotor via including full original message
-(intrusive pointer) into responce (message). This also means, that the receiver
+(intrusive pointer) into response (message). This also means, that the receiver
 (the "server") replies not to the message with the original user-defined payload, but
-slightly enreached one; the same relates to the responce (the "client" side).
+slightly enreached one; the same relates to the response (the "client" side).
 
 The second issues is solved via spawning a *timer*. Obviously, that the timer
 should be spawned on the client-side. In the case of timeout, the client-side
-should receive the responce message with the timeout error (and if the responce
+should receive the response message with the timeout error (and if the response
 arrives in a moment later it should be discarded). All the underhood meachanics
-is performed by supervisor, and there is a need of generic request/responce
+is performed by supervisor, and there is a need of generic request/response
 matching, which can be done by introducing some synthetic message id per request.
 Hence, the request can't be just original user-defined payload, it's needed
 to be enriched a little bit to.
 
-`rotor` provides support for the [request-responce] pattern.
+`rotor` provides support for the [request-response] pattern.
 
-First, you need to define your payloads in the request and responce messages,
+First, you need to define your payloads in the request and response messages,
 linking the both types
 
 ~~~{.cpp}
 namespace payload {
 
-struct my_responce_t {
+struct my_response_t {
     // my data fields
 };
 
 struct my_request_t {
-    using responce_t = my_responce_t;
+    using response_t = my_response_t;
     // my data fields
 }
 
 };
 ~~~
 
-Second, you need to wrap them to let `rotor` knows that this is request/responce pair:
+Second, you need to wrap them to let `rotor` knows that this is request/response pair:
 
 ~~~{.cpp}
 namespace message {
 
 using request_t = rotor::request_traits_t<payload::my_request_t>::request::message_t;
-using response_t = rotor::request_traits_t<payload::my_request_tt>::responce::message_t;
+using response_t = rotor::request_traits_t<payload::my_request_tt>::response::message_t;
 
 }
 ~~~
@@ -87,7 +87,7 @@ struct client_actor_t : public r::actor_base_t {
             return;
         }
         auto& req = msg.payload.req->payload; // original request payload
-        auto& res = msg.payload.res;          // original responce payload
+        auto& res = msg.payload.res;          // original response payload
     }
 }
 ~~~
@@ -107,7 +107,7 @@ struct server_actor_t : public r::actor_base_t {
     void on_request(message::request_t& msg) noexcept override {
         auto& req = msg.payload.request_payload; // original request payload
         if (some_condition) {
-            reply_to(msg, /*, fields-forwaded-for-responce-payload */);
+            reply_to(msg, /*, fields-forwaded-for-response-payload */);
             return;
         }
         std::eror_code ec = /* .. make somehow app-specific error code */;
@@ -116,32 +116,32 @@ struct server_actor_t : public r::actor_base_t {
 }
 ~~~
 
-However, the story does not end here. As you might already guess, the responce
+However, the story does not end here. As you might already guess, the response
 message arrives to the client supervisor first, where it might be discarded
 (if timeout timer already triggered), or it migth be delivered further to the client.
 As the `rotor` library should not modify the user-defined message at will,
-the new responce message is created *via copying* the original one. As this
+the new response message is created *via copying* the original one. As this
 might be not desirable, rotor is able to handle that: instead of copying
 the content, the intrusive pointer to it can be created, i.e.
 
 ~~~{.cpp}
 namespace payload {
 
-struct my_responce_t:  r::arc_base_t<my_responce_t>  {  // intrusive pointer support
+struct my_response_t:  r::arc_base_t<my_response_t>  {  // intrusive pointer support
     // my data fields
-    explicit my_responce_t(int value_) { ... } // the constructor must be provided
-    virtual ~my_responce_t() {}                // the virtual destructor must be provided
+    explicit my_response_t(int value_) { ... } // the constructor must be provided
+    virtual ~my_response_t() {}                // the virtual destructor must be provided
 };
 
 struct my_request_t {
-    using responce_t = r::intrusive_ptr_t<my_responce_t>;   // that's also changed
+    using response_t = r::intrusive_ptr_t<my_response_t>;   // that's also changed
     // my data fields
 }
 
 };
 ~~~
 
-That's way responces, with heavy to- copy payload might be created.
+That's way responses, with heavy to- copy payload might be created.
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
@@ -238,12 +238,12 @@ Of course, actors can dynamically subscribe/unsubscribe from address at runtime
 
 Every actor has it's "main" address; however it is possible for it to have multiple.
 This makes it available to have "inside actor" routing, or polymorphism. This
-is useful when the **same type** of messages arrive in responce to different queries.
+is useful when the **same type** of messages arrive in response to different queries.
 
 For example, let's assume that there is an "http-actor", which is able to "execute"
 http requests in generic way and return back the replies. If there is a SOAP/WSDL
 -webservice, the first query will be "get list of serices", and the second query
-will be "execute an action X". The both responces will be HTTP-replies.
+will be "execute an action X". The both responses will be HTTP-replies.
 
 Something like the following can be done:
 

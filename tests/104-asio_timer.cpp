@@ -19,7 +19,7 @@ namespace pt = boost::posix_time;
 
 struct sample_res_t {};
 struct sample_req_t {
-    using responce_t = sample_res_t;
+    using response_t = sample_res_t;
 };
 
 using traits_t = r::request_traits_t<sample_req_t>;
@@ -29,7 +29,7 @@ struct bad_actor_t : public r::actor_base_t {
     std::error_code ec;
 
     void init_start() noexcept override {
-        subscribe(&bad_actor_t::on_responce);
+        subscribe(&bad_actor_t::on_response);
         r::actor_base_t::init_start();
     }
 
@@ -38,7 +38,7 @@ struct bad_actor_t : public r::actor_base_t {
         request<traits_t::request::type>(address).send(r::pt::milliseconds(1));
     }
 
-    void on_responce(traits_t::responce::message_t &msg) noexcept {
+    void on_response(traits_t::response::message_t &msg) noexcept {
         ec = msg.payload.ec;
         supervisor.do_shutdown();
     }
