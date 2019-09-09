@@ -1,7 +1,7 @@
 # Patterns
 
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
-[request-responce]  https://en.wikipedia.org/wiki/Request%E2%80%93response
+[request-responce]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
@@ -13,12 +13,135 @@ IP-address:port).
 While [request-responce] approach is widely know, it has it's own specific
 on the actor-model:
 
- - the responce (message) arrives asynchronously and there is need to match
+-# the responce (message) arrives asynchronously and there is need to match
 the original request (message)
- - the responce might not arrive at all (e.g. an actor is down)
+-# the responce might not arrive at all (e.g. an actor is down)
+
+The first issue is solved in rotor via including full original message
+(intrusive pointer) into responce (message). This also means, that the receiver
+(the "server") replies not to the message with the original user-defined payload, but
+slightly enreached one; the same relates to the responce (the "client" side).
+
+The second issues is solved via spawning a *timer*. Obviously, that the timer
+should be spawned on the client-side. In the case of timeout, the client-side
+should receive the responce message with the timeout error (and if the responce
+arrives in a moment later it should be discarded). All the underhood meachanics
+is performed by supervisor, and there is a need of generic request/responce
+matching, which can be done by introducing some synthetic message id per request.
+Hence, the request can't be just original user-defined payload, it's needed
+to be enriched a little bit to.
+
+`rotor` provides support for the [request-responce] pattern.
+
+First, you need to define your payloads in the request and responce messages,
+linking the both types
+
+~~~{.cpp}
+namespace payload {
+
+struct my_responce_t {
+    // my data fields
+};
+
+struct my_request_t {
+    using responce_t = my_responce_t;
+    // my data fields
+}
+
+};
+~~~
+
+Second, you need to wrap them to let `rotor` knows that this is request/responce pair:
+
+~~~{.cpp}
+namespace message {
+
+using request_t = rotor::request_traits_t<payload::my_request_t>::request::message_t;
+using response_t = rotor::request_traits_t<payload::my_request_tt>::responce::message_t;
+
+}
+~~~
+
+Third, on the client side, the `request` method should be used (or `request_via` if
+the answer is expected on the non-default address) and a bit specific access to
+the user defined payload should be used, i.e.
+
+~~~{.cpp}
+struct client_actor_t : public r::actor_base_t {
+    r::address_ptr_t server_addr;
+
+    void init_start() noexcept override {
+        subscribe(&client_actor_t::on_reply);
+        r::actor_base_t::init_start();
+    }
+
+    void on_start(r::message::start_trigger_t &msg) noexcept override {
+        auto timeout = r::pt::milliseconds{10};
+        request<payload::my_request_t>(server_addr /*, fields-forwaded-for-request-payload */)
+            .send(timeout);
+    }
+
+    void on_reply(message::response_t& msg) noexcept override {
+        if (msg.payload.ec) {
+            // react somehow to the error, i.e. timeout
+            return;
+        }
+        auto& req = msg.payload.req->payload; // original request payload
+        auto& res = msg.payload.res;          // original responce payload
+    }
+}
+~~~
+
+Forth, on the server side the `reply_to` or `reply_with_error` methods should be used, i.e.:
+
+~~~{.cpp}
+struct server_actor_t : public r::actor_base_t {
+    r::address_ptr_t server_addr;
+
+    void init_start() noexcept override {
+        subscribe(&server_actor_t::on_request);
+        r::actor_base_t::init_start();
+    }
 
 
+    void on_request(message::request_t& msg) noexcept override {
+        auto& req = msg.payload.request_payload; // original request payload
+        if (some_condition) {
+            reply_to(msg, /*, fields-forwaded-for-responce-payload */);
+            return;
+        }
+        std::eror_code ec = /* .. make somehow app-specific error code */;
+        reply_with_error(msg, ec);
+    }
+}
+~~~
 
+However, the story does not end here. As you might already guess, the responce
+message arrives to the client supervisor first, where it might be discarded
+(if timeout timer already triggered), or it migth be delivered further to the client.
+As the `rotor` library should not modify the user-defined message at will,
+the new responce message is created *via copying* the original one. As this
+might be not desirable, rotor is able to handle that: instead of copying
+the content, the intrusive pointer to it can be created, i.e.
+
+~~~{.cpp}
+namespace payload {
+
+struct my_responce_t:  r::arc_base_t<my_responce_t>  {  // intrusive pointer support
+    // my data fields
+    explicit my_responce_t(int value_) { ... } // the constructor must be provided
+    virtual ~my_responce_t() {}                // the virtual destructor must be provided
+};
+
+struct my_request_t {
+    using responce_t = r::intrusive_ptr_t<my_responce_t>;   // that's also changed
+    // my data fields
+}
+
+};
+~~~
+
+That's way responces, with heavy to- copy payload might be created.
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
