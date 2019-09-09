@@ -199,9 +199,9 @@ The following trick is possible:
 ~~~{.cpp}
 struct actor_A_t: public r::actor_base_t {
     // instead of on_start
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_initialize(msg);
-      subscribe(&actor_A_t::on_message);
+    void init_start() noexcept override {
+        subscribe(&actor_A_t::on_message);
+        r::actor_base_t::init_start()
     }
 }
 ~~~
@@ -226,32 +226,31 @@ is involved in the scheme (i.e. it needed to establish connection before
 subscription). This is not networking mindset neither.
 
 The more robust approach is to start `actor_b` as usual, observe `on_start` event
-from `on_initialize` and poll the `actor_a` status. Then, `actor_b` will either
+from `on_initialize` and poll (request) the `actor_a` status. Then, `actor_b` will either
 first receive the `on_start` event from `actor_a`, which means that `actor_a` is ready,
-or it will receive `r::message_t<r::payload::state_response_t>` and further analysis
+or it will receive `r::message::state_response_t` and further analysis
 should be checked (i.e. if status is `initialized` or `started` etc.).
 
 Further, if it is desirable to scale this pattern, then `actor_b` should not even start
-unless `actor_a` is started, then `actor_b` should suspend it's `on_initialize`
+unless `actor_a` is started, then `actor_b` should suspend it's `init_start`
 message. The following code demonstrates this approach:
 
 ~~~{.cpp}
 
 struct actor_A_t: public r::actor_base_t {
     // we need to be ready to accept messages, when on_start message arrives
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_initialize(msg);
-      subscribe(&actor_A_t::on_message);
+    void init_start() noexcept override {
+        subscribe(&actor_A_t::on_message);
+        r::actor_base_t::init_start()
     }
 }
 
 struct actor_B_t : public r::actor_base_t {
     r::message_t<r::payload::initialize_actor_t> init_message;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void init_start() noexcept override {
         // we are not finished initialization:
-        // r::actor_base_t::on_initialize(msg);
-        init_message = msg;
+        // r::actor_base_t::init_start();
         subscribe(&actor_B_t::on_a_state);
         subscribe(&actor_B_t::on_a_start, target_addr);
         poll_a_state();
@@ -261,25 +260,28 @@ struct actor_B_t : public r::actor_base_t {
         auto& sup_addr   = target_addr->supervisor.get_address();
         auto reply_addr  = get_address();
         // ask actor_a supervisor about actor_a state, and deliver reply back to me
-        send<r::payload::state_request_t>(sup_addr, reply_addr, target_addr);
+        auto timeout = r::pt::seconds{1};
+        request<r::payload::state_request_t>(sup_addr, target_addr).send(timeout);
     }
 
     void finish_init() noexcept {
-        r::actor_base_t::on_initialize(init_message);
-        init_message.reset();
+        r::actor_base_t::init_start()
         unsubscribe(&actor_B_t::on_a_state);                // optional
         unsubscribe(&actor_B_t::on_a_start, target_addr);   // optional
     }
 
-    void on_a_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        // initialization is not finished
-        if (init_message) {
-            auto& state = msg.payload.state;
-            if (state == r::state_t::OPERATIONAL) {
-                finish_init();
-            } else {
-                poll_a_state();
-            }
+    void on_a_state(r::message::state_response_t &msg) noexcept {
+        if (state == r::state_t::INITIALIZED) {
+            return; // we are already initialized
+        }
+        if (msg.payload.ec) {
+            return do_shutdown(); // something bad happen
+        }
+        auto target_state = msg.payload.res.state;
+        if (state == r::state_t::OPERATIONAL) {
+            finish_init();
+        } else {
+            poll_a_state();
         }
     }
 
@@ -291,15 +293,17 @@ struct actor_B_t : public r::actor_base_t {
 }
 ~~~
 
-In real life, the things are a little bit more complex, however: `actor_a` might
-*never* start, or it might not start withing the certain timeframe, or actor_a's
-supervisor might not even reply. If nothing will be done, then `actor_b` will stuck
-in inifinte polling, consuming CPU resources. Do handle the cases, in `poll_a_state` method
-the timeout timer should be started and in `finish_init` it should be stopped; the
-re-poll should be performed not immediately, but again after some timeout. Plus,
-the `actor_b` should shutdown itself after certain number of attemps (or after some
-timeout). Within `rotor` all timers are event loop specific, and timeouts are
-application-specific, so, there is no generaral example, just an sketch of the idea.
+We covered some cases, i.e. when there is no any actor is listening on the address, or
+when the supervisor does not replies with the certain timeframe - in that cases
+the `response_t` will contain error code with timeout. Howevere, a few things
+still need to be done: it should be prevented to from infinite polling. To do that
+it should use some finite couter; if all attemps failed, then initiate `actor_B`
+shutdown.
+
+The sample does not cover the case, when `actor_A` decided to shutdown,
+the `actor_B` should be notified and take appropriate actions. As it seems
+generic pattern (i.e. `actor_B` uses `actor_A` as a client), this pattern,
+probably, will be supported in the future version of `rotor` core.
 
 ## Actor overload protection (workload balancing)
 
