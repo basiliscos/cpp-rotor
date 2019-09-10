@@ -218,6 +218,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * otherwise {@link payload::external_subscription_t} request is sent to the external
      * supervisor, which owns the address.
      *
+     * The optional call can be providded to be called upon message destruction.
+     *
      */
     void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t & = {}) noexcept;
 

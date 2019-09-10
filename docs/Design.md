@@ -3,6 +3,8 @@
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
 [Erlang]: https://en.wikipedia.org/wiki/Erlang_(programming_language)
+[reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
+[request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 [let-it-crash]: http://wiki.c2.com/?LetItCrash
 [blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
 
@@ -29,6 +31,11 @@ The messaging in `rotor` resembles IP protocol: it is quite simple (compared to 
 without delivery/strict delivery order guarantees, no streams, no timers etc., however
 solid foundation of distributed actors can be build on top of `rotor`, adding only
 *required guarantees*.
+
+`rotor` supports [reliable] messaging via adopting [request-response] pattern: whever
+`request` message is sent timeout timer is spawn, if the `reply` isn't delivered in
+time, the sender is notified about the occured error. If the reply is sent twice
+by mistake, the second reply message will be silently discarded.
 
 `actor` is runtime entity, with user-defined reaction on incoming messages. An `actor`
 can send messages to other actors, as well as do interaction with with outer world (i.e.

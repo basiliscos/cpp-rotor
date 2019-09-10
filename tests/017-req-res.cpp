@@ -217,6 +217,37 @@ struct good_actor3_t : public r::actor_base_t {
     }
 };
 
+struct duplicating_actor_t : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+    int req_val = 0;
+    int res_val = 0;
+    std::error_code ec;
+
+    void init_start() noexcept override {
+        subscribe(&duplicating_actor_t::on_request);
+        subscribe(&duplicating_actor_t::on_response);
+        r::actor_base_t::init_start();
+    }
+
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    }
+
+    void on_request(traits_t::request::message_t &msg) noexcept {
+        reply_to(msg, 5);
+        reply_to(msg, 5);
+    }
+
+    void on_response(traits_t::response::message_t &msg) noexcept {
+        req_val += msg.payload.req->payload.request_payload.value;
+        res_val += msg.payload.res.value;
+        ec = msg.payload.ec;
+    }
+};
+
+
+
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
@@ -412,6 +443,33 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(actor->req_val == 4 * 2);
     REQUIRE(actor->res_val == 5 * 2);
+    REQUIRE(actor->ec == r::error_code_t::success);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_leader_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_requests().size() == 0);
+    REQUIRE(sup->active_timers.size() == 0);
+}
+
+
+TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
+    r::system_context_t system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto actor = sup->create_actor<duplicating_actor_t>(timeout);
+
+    sup->do_process();
+    REQUIRE(sup->active_timers.size() == 0);
+    REQUIRE(actor->req_val == 4);
+    REQUIRE(actor->res_val == 5);
     REQUIRE(actor->ec == r::error_code_t::success);
 
     sup->do_shutdown();
