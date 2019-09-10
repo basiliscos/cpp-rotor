@@ -65,6 +65,18 @@ void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_
     points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
 }
 
+void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr,
+                               const payload::callback_ptr_t &callback) noexcept {
+
+    auto &dest = h->actor_ptr->address;
+    if (&addr->supervisor == this) {
+        send<payload::unsubscription_confirmation_t>(dest, addr, h, callback);
+    } else {
+        assert(!callback);
+        send<payload::external_unsubscription_t>(dest, addr, h);
+    }
+}
+
 void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmation_t> &msg) noexcept {
     auto &addr = msg.payload.target_address;
     auto &handler = msg.payload.handler;

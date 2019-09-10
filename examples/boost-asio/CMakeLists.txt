@@ -10,6 +10,10 @@ add_executable(ping_pong-single-simple ping_pong-single-simple.cpp)
 target_link_libraries(ping_pong-single-simple rotor_asio)
 add_test(ping_pong-single-simple "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong-single-simple")
 
+add_executable(one-shot-lambda-subscriber one-shot-lambda-subscriber.cpp)
+target_link_libraries(one-shot-lambda-subscriber rotor_asio)
+add_test(one-shot-lambda-subscriber "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/one-shot-lambda-subscriber")
+
 add_executable(ping_pong-2-theads ping_pong-2-theads.cpp)
 target_link_libraries(ping_pong-2-theads rotor_asio)
 add_test(ping_pong-2-theads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong-2-theads")

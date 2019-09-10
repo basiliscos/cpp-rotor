@@ -101,9 +101,9 @@ void supervisor_t::deliver_local(message_ptr_t &&message) noexcept {
                 if (it.mine) {
                     it.handler->call(message);
                 } else {
-                    auto sup = it.handler->raw_supervisor_ptr;
-                    auto wrapped_message = make_message<payload::handler_call_t>(sup->address, message, it.handler);
-                    sup->enqueue(std::move(wrapped_message));
+                    auto &sup = it.handler->actor_ptr->get_supervisor();
+                    auto wrapped_message = make_message<payload::handler_call_t>(sup.address, message, it.handler);
+                    sup.enqueue(std::move(wrapped_message));
                 }
             }
         }
@@ -116,19 +116,8 @@ void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
     while (it != points.rend()) {
         auto &addr = it->address;
         auto &handler = it->handler;
-        unsubscribe_actor(addr, handler);
+        unsubscribe(handler, addr);
         ++it;
-    }
-}
-
-void supervisor_t::unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
-                                     const payload::callback_ptr_t &cb) noexcept {
-    auto &dest = handler->actor_ptr->address;
-    if (&addr->supervisor == this) {
-        send<payload::unsubscription_confirmation_t>(dest, addr, handler, cb);
-    } else {
-        assert(!cb);
-        send<payload::external_unsubscription_t>(dest, addr, handler);
     }
 }
 
@@ -168,7 +157,7 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_response_t &msg) noexce
         };
         auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
         for (auto &point : points) {
-            unsubscribe_actor(point.handler, point.address, cb_ptr);
+            unsubscribe(point.handler, point.address, cb_ptr);
         }
     } else {
         remove_actor(*actor);

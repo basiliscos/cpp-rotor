@@ -9,8 +9,9 @@
 #include "address.hpp"
 #include "messages.hpp"
 #include "behavior.h"
-#include <unordered_map>
 #include "state.h"
+#include "handler.hpp"
+#include <unordered_map>
 #include <list>
 
 namespace rotor {
@@ -21,6 +22,10 @@ struct handler_base_t;
 
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
+
+template <typename Handler>
+using is_handler =
+    std::enable_if_t<std::is_member_function_pointer_v<Handler> || std::is_base_of_v<handler_base_t, Handler>>;
 
 /** \struct actor_base_t
  *  \brief universal primitive of concurrent computation
@@ -196,10 +201,22 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Handler> handler_ptr_t subscribe(Handler &&h) noexcept;
 
     /** \brief unsubscribes actor's handler from process messages on the specified address */
-    template <typename Handler> void unsubscribe(Handler &&h, address_ptr_t &addr) noexcept;
+    template <typename Handler, typename = is_handler<Handler>>
+    void unsubscribe(Handler &&h, address_ptr_t &addr) noexcept;
 
     /** \brief unsubscribes actor's handler from processing messages on the actor's "main" address */
-    template <typename Handler> void unsubscribe(Handler &&h) noexcept;
+    template <typename Handler, typename = is_handler<Handler>> void unsubscribe(Handler &&h) noexcept;
+
+    /** \brief initiates handler unsubscription from the address
+     *
+     * If the address is local, then unsubscription confirmation is sent immediately,
+     * otherwise {@link payload::external_subscription_t} request is sent to the external
+     * supervisor, which owns the address.
+     *
+     */
+    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t & = {}) noexcept;
+
+    inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
 
   protected:
     /** \brief constructs actor's behaviour on early stage */

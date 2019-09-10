@@ -112,7 +112,7 @@ struct supervisor_t : public actor_base_t {
      * which owns the handler.
      *
      */
-    virtual void deliver_local(message_ptr_t &&msg) noexcept;
+    void deliver_local(message_ptr_t &&msg) noexcept;
 
     /** \brief unsubcribes all actor's handlers */
     virtual void unsubscribe_actor(const actor_ptr_t &actor) noexcept;
@@ -254,20 +254,10 @@ struct supervisor_t : public actor_base_t {
         supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
-    /** \brief unsubscribes local handler from the address
-     *
-     * If the address is local, then unsubscription confirmation is sent immediately,
-     * otherwise {@link payload::external_subscription_t} request is sent to the external
-     * supervisor, which owns the address.
-     *
-     */
-    void unsubscribe_actor(const handler_ptr_t &handler, const address_ptr_t &addr,
-                           const payload::callback_ptr_t & = {}) noexcept;
-
     /** \brief convenient templated version of `unsubscribe_actor */
     template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
         handler_ptr_t wrapped_handler(std::forward<Handler>(handler));
-        unsubscribe_actor(wrapped_handler, addr);
+        unsubscribe(wrapped_handler, addr);
     }
 
     /** \brief creates actor, records it in internal structures and returns
@@ -387,11 +377,12 @@ template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h, a
     return wrapped_handler;
 }
 
-template <typename Handler> void actor_base_t::unsubscribe(Handler &&h) noexcept {
+template <typename Handler, typename Enabled> void actor_base_t::unsubscribe(Handler &&h) noexcept {
     supervisor.unsubscribe_actor(address, wrap_handler(*this, std::move(h)));
 }
 
-template <typename Handler> void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
+template <typename Handler, typename Enabled>
+void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
     supervisor.unsubscribe_actor(addr, wrap_handler(*this, std::move(h)));
 }
 

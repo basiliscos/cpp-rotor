@@ -86,9 +86,6 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief non-owning raw poiter to actor */
     const void *raw_actor_ptr;
 
-    /** \brief non-owning raw poiter to supervisor */
-    supervisor_t *raw_supervisor_ptr;
-
     /** \brief precalculated hash for the handler */
     size_t precalc_hash;
 
@@ -96,8 +93,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
      * pointer to message type and raw pointer to handler type
      */
     explicit handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_)
-        : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor}, raw_actor_ptr{&actor},
-          raw_supervisor_ptr{&actor.get_supervisor()} {
+        : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor}, raw_actor_ptr{&actor} {
         auto h1 = reinterpret_cast<std::size_t>(handler_type);
         auto h2 = reinterpret_cast<std::size_t>(&actor);
         precalc_hash = h1 ^ (h2 << 1);
@@ -189,8 +185,6 @@ template <typename Handler, typename M> struct handler_t<lambda_holder_t<Handler
 
 template <typename Handler, typename M>
 const void *handler_t<lambda_holder_t<Handler, M>>::handler_type = static_cast<const void *>(typeid(Handler).name());
-
-/* third-party classes implementations */
 
 } // namespace rotor
 

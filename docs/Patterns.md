@@ -142,6 +142,7 @@ struct my_request_t {
 ~~~
 
 That's way responses, with heavy to- copy payload might be created.
+See `examples/boost-asio/request-response.cpp` as the example.
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
