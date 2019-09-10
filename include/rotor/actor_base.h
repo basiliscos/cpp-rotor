@@ -23,6 +23,11 @@ struct handler_base_t;
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
+/** \brief SFINAE handler detector
+ *
+ * Either handler can be constructed from  memeber-to-function-pointer or
+ * it is already constructed and have a base `handler_base_t`
+ */
 template <typename Handler>
 using is_handler =
     std::enable_if_t<std::is_member_function_pointer_v<Handler> || std::is_base_of_v<handler_base_t, Handler>>;
@@ -216,6 +221,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t & = {}) noexcept;
 
+    /** \brief initiates handler unsubscription from the default actor address */
     inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
 
   protected:

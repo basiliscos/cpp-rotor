@@ -30,6 +30,7 @@ struct supervisor_config_wx_t : public supervisor_config_t {
      */
     wxEvtHandler *handler;
 
+    /** \brief construct from shutdown timeout and non-owning wx event handler */
     supervisor_config_wx_t(const rotor::pt::time_duration &shutdown_config_, wxEvtHandler *handler_)
         : supervisor_config_t{shutdown_config_}, handler{handler_} {}
 };

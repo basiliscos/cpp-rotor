@@ -69,10 +69,9 @@ struct pinger_t : public rotor::actor_base_t {
 };
 
 struct ponger_t : public rotor::actor_base_t {
-
     rotor::handler_ptr_t pong_handler;
 
-    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {}
+    using rotor::actor_base_t::actor_base_t;
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
@@ -80,7 +79,7 @@ struct ponger_t : public rotor::actor_base_t {
         auto lambda = rotor::lambda<message::ping_t>([this](auto &msg) {
             std::cout << "pong\n";
             unsubscribe(pong_handler);
-            pong_handler.reset();   // otherwise it will be memory leak
+            pong_handler.reset(); // otherwise it will be memory leak
             reply_to(msg);
         });
         pong_handler = subscribe(std::move(lambda));
