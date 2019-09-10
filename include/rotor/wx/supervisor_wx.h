@@ -40,9 +40,8 @@ namespace wx {
  */
 struct supervisor_wx_t : public supervisor_t {
 
-    /** \struct shutdown_timer_t
+    /** \struct timer_t
      *  \brief timer structure, adoped for wx-supervisor needs.
-     *
      */
     struct timer_t : public wxTimer {
         /** \brief alias for intrusive pointer for the supervisor */

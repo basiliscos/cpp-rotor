@@ -65,7 +65,7 @@ template <typename Responce> struct response_helper_t {
     }
 };
 
-/** \struct response_helper_t<intrusive_ptr_t<Responce>>
+/** \struct response_helper_t
  * \brief specific helper, which helps to construct intrusive pointer to user-defined
  *  response payload
  */
