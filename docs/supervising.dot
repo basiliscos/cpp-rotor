@@ -1,0 +1,10 @@
+digraph G {
+"system_context" [ shape = box];
+
+"system_context" -> "supervisor_root";
+"supervisor_root" -> "supervisor_child"
+"supervisor_child" -> "A1";
+"supervisor_child" -> "A2";
+"supervisor_child" -> "A3";
+
+}
