@@ -14,8 +14,7 @@ namespace rotor {
 /** \brief fatal error codes in rotor */
 enum class error_code_t {
     success = 0,
-    shutdown_timeout,
-    missing_actor,
+    request_timeout,
     supervisor_defined,
 };
 

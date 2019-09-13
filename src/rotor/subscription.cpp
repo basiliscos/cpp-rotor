@@ -4,6 +4,7 @@
 // Distributed under the MIT Software License
 //
 
+#include "rotor/actor_base.h"
 #include "rotor/subscription.h"
 #include "rotor/supervisor.h"
 
@@ -12,7 +13,7 @@ using namespace rotor;
 subscription_t::subscription_t(supervisor_t &sup) : supervisor{sup} {}
 
 void subscription_t::subscribe(handler_ptr_t handler) {
-    bool mine = handler->raw_supervisor_ptr == &supervisor;
+    bool mine = &handler->actor_ptr->get_supervisor() == &supervisor;
     map[handler->message_type].emplace_back(classified_handlers_t{std::move(handler), mine});
 }
 

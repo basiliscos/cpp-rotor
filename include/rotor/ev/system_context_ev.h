@@ -7,7 +7,7 @@
 //
 
 #include "rotor/arc.hpp"
-#include "rotor/ev/supervisor_config.h"
+#include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/system_context.h"
 #include <ev.h>
 
@@ -31,7 +31,7 @@ struct system_context_ev_t : public system_context_t {
 
     /** \brief creates root supervior. `args` and config are forwared for supervisor constructor */
     template <typename Supervisor = supervisor_t, typename... Args>
-    auto create_supervisor(const supervisor_config_t &config, Args... args) -> intrusive_ptr_t<Supervisor> {
+    auto create_supervisor(const supervisor_config_ev_t &config, Args &&... args) -> intrusive_ptr_t<Supervisor> {
         if (supervisor) {
             on_error(make_error_code(error_code_t::supervisor_defined));
             return intrusive_ptr_t<Supervisor>{};

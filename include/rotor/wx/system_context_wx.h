@@ -7,7 +7,7 @@
 //
 
 #include "rotor/arc.hpp"
-#include "rotor/wx/supervisor_config.h"
+#include "rotor/wx/supervisor_config_wx.h"
 #include "rotor/system_context.h"
 #include <wx/app.h>
 
@@ -35,9 +35,9 @@ struct system_context_wx_t : public system_context_t {
      */
     system_context_wx_t(wxAppConsole *app = nullptr);
 
-    /** \brief creates root supervior. `args` and config are forwared for supervisor constructor */
+    /** \brief creates root supervior. `args` and config are forwarded for supervisor constructor */
     template <typename Supervisor = supervisor_t, typename... Args>
-    auto create_supervisor(const supervisor_config_t &config, Args... args) -> intrusive_ptr_t<Supervisor> {
+    auto create_supervisor(const supervisor_config_wx_t &config, Args &&... args) -> intrusive_ptr_t<Supervisor> {
         if (supervisor) {
             on_error(make_error_code(error_code_t::supervisor_defined));
             return intrusive_ptr_t<Supervisor>{};

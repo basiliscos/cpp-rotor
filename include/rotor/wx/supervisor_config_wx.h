@@ -6,23 +6,16 @@
 // Distributed under the MIT Software License
 //
 
-#include <chrono>
+#include "rotor/supervisor_config.h"
 #include <wx/event.h>
 
 namespace rotor {
 namespace wx {
 
-/** \struct supervisor_config_t
- *  \brief wx supervisor config, which holds shutdowm timeout value and
- * a pointer to the "context window".
+/** \struct supervisor_config_wx_t
+ *  \brief wx supervisor config, which holds a pointer to the "context window".
  */
-struct supervisor_config_t {
-    /** \brief alias for milliseconds */
-    using duration_t = std::chrono::milliseconds;
-
-    /** \brief shutdown timeout value in milliseconds */
-    duration_t shutdown_timeout;
-
+struct supervisor_config_wx_t : public supervisor_config_t {
     /** \brief the wx context, responsible for messages delivery
      *
      * Actuall rotor-message delivery for actors runnion on the
@@ -36,6 +29,10 @@ struct supervisor_config_t {
      *
      */
     wxEvtHandler *handler;
+
+    /** \brief construct from shutdown timeout and non-owning wx event handler */
+    supervisor_config_wx_t(const rotor::pt::time_duration &shutdown_config_, wxEvtHandler *handler_)
+        : supervisor_config_t{shutdown_config_}, handler{handler_} {}
 };
 
 } // namespace wx

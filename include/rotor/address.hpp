@@ -20,6 +20,9 @@ struct supervisor_t;
  * an message to an address, and any actor can subscribe on any address to
  * handle certain kind of messages.
  *
+ * An actor has "main" address, and in addition it may have "virtual" private
+ * addresses to perform routing messages for the specific methods.
+ *
  * Addresses are produced by {@link supervisor_t}, which also is responsible
  * for initial delivery of messages on the address. Address lifetime *should*
  * be no longer then corresponding supervisor lifetime.

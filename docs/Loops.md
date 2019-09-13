@@ -21,7 +21,7 @@
 [gtk]         | planned
 [qt]          | planned
 
-If you need some other event loop, please file an [issue][issues].
+If you need some other event loop or speedup inclusion of a planned one, please file an [issue][issues].
 
 ## platforms
 
@@ -38,9 +38,11 @@ should be derived from `supervisor_t`, and the following methods should be
 defined
 
 ~~~{.cpp}
-void enqueue(message_ptr_t message) noexcept;
-void start_shutdown_timer() noexcept;
-void cancel_shutdown_timer() noexcept;
+void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
+void cancel_timer(timer_id_t) noexcept override {}
+void start() noexcept override {}
+void shutdown() noexcept override {}
+void enqueue(rotor::message_ptr_t) noexcept override {}
 ~~~
 
 The `enqueue` method is responsible for puting an `message` into `supervisor`
@@ -51,7 +53,11 @@ thread-unsafe). The second requirement is to let the supervisor process
 all it's inbound messages *in a loop context*, may be with supervisor-specific
 context.
 
-Here is an skeleton example:
+The `start` and `shutdown` are just convenient methods to start processing
+messages in event loop context (for `start`) and send a shutdown messages
+and process event loop in event loop context .
+
+Here is an skeleton example for `enqueue`:
 
 ~~~{.cpp}
 void some_supervisor_t::enqueue(message_ptr_t message) noexcept {
@@ -72,4 +78,4 @@ method how to invoke something on in a thread-safe way. Please note, that `super
 instance is caputred via intrusive pointer to make sure it is alive in the loop context
 invocations.
 
-The shutdown timer as well as some timeout value are loop- or application-specific.
+The timer-related methods are loop- or application-specific.

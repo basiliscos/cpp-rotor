@@ -10,16 +10,17 @@
 using namespace rotor::wx;
 using namespace rotor;
 
-shutdown_timer_t::shutdown_timer_t(supervisor_wx_t &sup_) : sup{sup_} {}
+supervisor_wx_t::timer_t::timer_t(timer_id_t timer_id_, supervisor_ptr_t &&sup_)
+    : timer_id{timer_id_}, sup{std::move(sup_)} {}
 
-void shutdown_timer_t::Notify() noexcept { sup.on_shutdown_timer_trigger(); }
+void supervisor_wx_t::timer_t::Notify() noexcept { sup->on_timer_trigger(timer_id); }
 
-supervisor_wx_t::supervisor_wx_t(supervisor_wx_t *sup, const supervisor_config_t &config_)
-    : supervisor_t{sup}, config{config_}, shutdown_timer(*this) {}
+supervisor_wx_t::supervisor_wx_t(supervisor_wx_t *sup, const supervisor_config_wx_t &config_)
+    : supervisor_t{sup, config_}, handler{config_.handler} {}
 
 void supervisor_wx_t::start() noexcept {
     supervisor_ptr_t self{this};
-    config.handler->CallAfter([self = std::move(self)]() {
+    handler->CallAfter([self = std::move(self)]() {
         auto &sup = *self;
         sup.do_process();
     });
@@ -27,7 +28,7 @@ void supervisor_wx_t::start() noexcept {
 
 void supervisor_wx_t::shutdown() noexcept {
     supervisor_ptr_t self{this};
-    config.handler->CallAfter([self = std::move(self)]() {
+    handler->CallAfter([self = std::move(self)]() {
         auto &sup = *self;
         sup.do_shutdown();
         sup.do_process();
@@ -36,16 +37,29 @@ void supervisor_wx_t::shutdown() noexcept {
 
 void supervisor_wx_t::enqueue(message_ptr_t message) noexcept {
     supervisor_ptr_t self{this};
-    config.handler->CallAfter([self = std::move(self), message = std::move(message)]() {
+    handler->CallAfter([self = std::move(self), message = std::move(message)]() {
         auto &sup = *self;
         sup.put(std::move(message));
         sup.do_process();
     });
 }
 
-void supervisor_wx_t::start_shutdown_timer() noexcept {
-    auto timeout = static_cast<int>(config.shutdown_timeout.count());
-    shutdown_timer.StartOnce(timeout);
+void supervisor_wx_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {
+    auto self = timer_t::supervisor_ptr_t(this);
+    auto timer = std::make_unique<timer_t>(timer_id, std::move(self));
+    auto timeout_ms = static_cast<int>(timeout.total_milliseconds());
+    timer->StartOnce(timeout_ms);
+    timers_map.emplace(timer_id, std::move(timer));
 }
 
-void supervisor_wx_t::cancel_shutdown_timer() noexcept { shutdown_timer.Stop(); }
+void supervisor_wx_t::cancel_timer(timer_id_t timer_id) noexcept {
+    auto &timer = timers_map.at(timer_id);
+    timer->Stop();
+    timers_map.erase(timer_id);
+}
+
+void supervisor_wx_t::on_timer_trigger(timer_id_t timer_id) noexcept {
+    timers_map.erase(timer_id);
+    supervisor_t::on_timer_trigger(timer_id);
+    do_process();
+}

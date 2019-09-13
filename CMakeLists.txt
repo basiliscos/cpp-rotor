@@ -25,6 +25,8 @@ find_package(Boost COMPONENTS ${ROTOR_BOOST_COMPONENTS} REQUIRED)
 
 add_library(rotor
     src/rotor/actor_base.cpp
+    src/rotor/address_mapping.cpp
+    src/rotor/behavior.cpp
     src/rotor/error_code.cpp
     src/rotor/message.cpp
     src/rotor/subscription.cpp

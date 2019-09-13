@@ -1,11 +1,148 @@
 # Patterns
 
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
+[request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
 the same host), and actors as an opened ports (or as endpoints, i.e. as
 IP-address:port).
+
+## Request/Responce
+
+While [request-response] approach is widely know, it has it's own specific
+on the actor-model:
+
+-# the response (message) arrives asynchronously and there is need to match
+the original request (message)
+-# the response might not arrive at all (e.g. an actor is down)
+
+The first issue is solved in rotor via including full original message
+(intrusive pointer) into response (message). This also means, that the receiver
+(the "server") replies not to the message with the original user-defined payload, but
+slightly enreached one; the same relates to the response (the "client" side).
+
+The second issues is solved via spawning a *timer*. Obviously, that the timer
+should be spawned on the client-side. In the case of timeout, the client-side
+should receive the response message with the timeout error (and if the response
+arrives in a moment later it should be discarded). All the underhood meachanics
+is performed by supervisor, and there is a need of generic request/response
+matching, which can be done by introducing some synthetic message id per request.
+Hence, the request can't be just original user-defined payload, it's needed
+to be enriched a little bit to.
+
+`rotor` provides support for the [request-response] pattern.
+
+First, you need to define your payloads in the request and response messages,
+linking the both types
+
+~~~{.cpp}
+namespace payload {
+
+struct my_response_t {
+    // my data fields
+};
+
+struct my_request_t {
+    using response_t = my_response_t;
+    // my data fields
+}
+
+};
+~~~
+
+Second, you need to wrap them to let `rotor` knows that this is request/response pair:
+
+~~~{.cpp}
+namespace message {
+
+using request_t = rotor::request_traits_t<payload::my_request_t>::request::message_t;
+using response_t = rotor::request_traits_t<payload::my_request_tt>::response::message_t;
+
+}
+~~~
+
+Third, on the client side, the `request` method should be used (or `request_via` if
+the answer is expected on the non-default address) and a bit specific access to
+the user defined payload should be used, i.e.
+
+~~~{.cpp}
+struct client_actor_t : public r::actor_base_t {
+    r::address_ptr_t server_addr;
+
+    void init_start() noexcept override {
+        subscribe(&client_actor_t::on_reply);
+        r::actor_base_t::init_start();
+    }
+
+    void on_start(r::message::start_trigger_t &msg) noexcept override {
+        auto timeout = r::pt::milliseconds{10};
+        request<payload::my_request_t>(server_addr /*, fields-forwaded-for-request-payload */)
+            .send(timeout);
+    }
+
+    void on_reply(message::response_t& msg) noexcept override {
+        if (msg.payload.ec) {
+            // react somehow to the error, i.e. timeout
+            return;
+        }
+        auto& req = msg.payload.req->payload; // original request payload
+        auto& res = msg.payload.res;          // original response payload
+    }
+}
+~~~
+
+Forth, on the server side the `reply_to` or `reply_with_error` methods should be used, i.e.:
+
+~~~{.cpp}
+struct server_actor_t : public r::actor_base_t {
+    r::address_ptr_t server_addr;
+
+    void init_start() noexcept override {
+        subscribe(&server_actor_t::on_request);
+        r::actor_base_t::init_start();
+    }
+
+
+    void on_request(message::request_t& msg) noexcept override {
+        auto& req = msg.payload.request_payload; // original request payload
+        if (some_condition) {
+            reply_to(msg, /*, fields-forwaded-for-response-payload */);
+            return;
+        }
+        std::eror_code ec = /* .. make somehow app-specific error code */;
+        reply_with_error(msg, ec);
+    }
+}
+~~~
+
+However, the story does not end here. As you might already guess, the response
+message arrives to the client supervisor first, where it might be discarded
+(if timeout timer already triggered), or it migth be delivered further to the client.
+As the `rotor` library should not modify the user-defined message at will,
+the new response message is created *via copying* the original one. As this
+might be not desirable, rotor is able to handle that: instead of copying
+the content, the intrusive pointer to it can be created, i.e.
+
+~~~{.cpp}
+namespace payload {
+
+struct my_response_t:  r::arc_base_t<my_response_t>  {  // intrusive pointer support
+    // my data fields
+    explicit my_response_t(int value_) { ... } // the constructor must be provided
+    virtual ~my_response_t() {}                // the virtual destructor must be provided
+};
+
+struct my_request_t {
+    using response_t = r::intrusive_ptr_t<my_response_t>;   // that's also changed
+    // my data fields
+}
+
+};
+~~~
+
+That's way responses, with heavy to- copy payload might be created.
+See `examples/boost-asio/request-response.cpp` as the example.
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
@@ -41,11 +178,11 @@ struct observer_t: public r::actor_base_t {
     r::address_ptr_t observable;
     void set_observable(r::address_ptr_t addr) { observable = std::move(addr); }
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
         subscribe(&observer_t::on_target_initialize, observable);
         subscribe(&observer_t::on_target_start, observable);
         subscribe(&observer_t::on_target_shutdown, observable);
+        r::actor_base_t::init_start();
     }
 
     void on_target_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept {
@@ -77,7 +214,7 @@ messages has already been delivered to original recipient and the observer "miss
 message. See the pattern below how to synronize actors.
 
 The distinguish of *foreign and non-foreign* actors or MPMC pattern is completely
-**architectural** and application specific, i.e. whether is is known apriori that
+**architectural** and application specific, i.e. whether it is known apriori that
 there are multiple subscribers (MPMC) or single subsciber and other subscribes
 are are hidden from the original message flow. There is no difference between them
 at the `rotor` core, i.e.
@@ -97,6 +234,53 @@ at the `rotor` core, i.e.
 ~~~
 
 Of course, actors can dynamically subscribe/unsubscribe from address at runtime
+
+## Multiple actor identities
+
+Every actor has it's "main" address; however it is possible for it to have multiple.
+This makes it available to have "inside actor" routing, or polymorphism. This
+is useful when the **same type** of messages arrive in response to different queries.
+
+For example, let's assume that there is an "http-actor", which is able to "execute"
+http requests in generic way and return back the replies. If there is a SOAP/WSDL
+-webservice, the first query will be "get list of serices", and the second query
+will be "execute an action X". The both responses will be HTTP-replies.
+
+Something like the following can be done:
+
+~~~{.cpp}
+
+struct client_t: public r::actor_base_t {
+    r::address_ptr_t http_client;
+    r::address_ptr_t wsdl_addr;
+    r::address_ptr_t action_addr;
+
+    void init_start() noexcept override {
+        ...
+        wsdl_addr = create_address();
+        action_addr = create_address();
+        subscribe(&client_t::on_wsdl, wsdl_addr);
+        subscribe(&client_t::on_action, action_addr);
+
+    }
+
+    void on_wsdl(http_message_t& msg) noexcept {
+        ...
+        auto timeout = r::pt::seconds(1);
+        request_via<htt::request_t>(http_client, action_addr, /* request params */ ).send(timeout);
+    }
+
+    void on_action(http_message_t& msg) noexcept {
+        ...
+    }
+
+    void on_a_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        ...
+        auto timeout = r::pt::seconds(1);
+        request_via<htt::request_t>(http_client, wsdl_addr, /* request params */ ).send(timeout);
+    }
+}
+~~~
 
 ## check actor ready state (syncrhonizing stream)
 
@@ -152,9 +336,9 @@ The following trick is possible:
 ~~~{.cpp}
 struct actor_A_t: public r::actor_base_t {
     // instead of on_start
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_initialize(msg);
-      subscribe(&actor_A_t::on_message);
+    void init_start() noexcept override {
+        subscribe(&actor_A_t::on_message);
+        r::actor_base_t::init_start()
     }
 }
 ~~~
@@ -179,32 +363,31 @@ is involved in the scheme (i.e. it needed to establish connection before
 subscription). This is not networking mindset neither.
 
 The more robust approach is to start `actor_b` as usual, observe `on_start` event
-from `on_initialize` and poll the `actor_a` status. Then, `actor_b` will either
+from `on_initialize` and poll (request) the `actor_a` status. Then, `actor_b` will either
 first receive the `on_start` event from `actor_a`, which means that `actor_a` is ready,
-or it will receive `r::message_t<r::payload::state_response_t>` and further analysis
+or it will receive `r::message::state_response_t` and further analysis
 should be checked (i.e. if status is `initialized` or `started` etc.).
 
 Further, if it is desirable to scale this pattern, then `actor_b` should not even start
-unless `actor_a` is started, then `actor_b` should suspend it's `on_initialize`
+unless `actor_a` is started, then `actor_b` should suspend it's `init_start`
 message. The following code demonstrates this approach:
 
 ~~~{.cpp}
 
 struct actor_A_t: public r::actor_base_t {
     // we need to be ready to accept messages, when on_start message arrives
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_initialize(msg);
-      subscribe(&actor_A_t::on_message);
+    void init_start() noexcept override {
+        subscribe(&actor_A_t::on_message);
+        r::actor_base_t::init_start()
     }
 }
 
 struct actor_B_t : public r::actor_base_t {
     r::message_t<r::payload::initialize_actor_t> init_message;
 
-    void on_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept override {
+    void init_start() noexcept override {
         // we are not finished initialization:
-        // r::actor_base_t::on_initialize(msg);
-        init_message = msg;
+        // r::actor_base_t::init_start();
         subscribe(&actor_B_t::on_a_state);
         subscribe(&actor_B_t::on_a_start, target_addr);
         poll_a_state();
@@ -214,25 +397,28 @@ struct actor_B_t : public r::actor_base_t {
         auto& sup_addr   = target_addr->supervisor.get_address();
         auto reply_addr  = get_address();
         // ask actor_a supervisor about actor_a state, and deliver reply back to me
-        send<r::payload::state_request_t>(sup_addr, reply_addr, target_addr);
+        auto timeout = r::pt::seconds{1};
+        request<r::payload::state_request_t>(sup_addr, target_addr).send(timeout);
     }
 
     void finish_init() noexcept {
-        r::actor_base_t::on_initialize(init_message);
-        init_message.reset();
+        r::actor_base_t::init_start()
         unsubscribe(&actor_B_t::on_a_state);                // optional
         unsubscribe(&actor_B_t::on_a_start, target_addr);   // optional
     }
 
-    void on_a_state(r::message_t<r::payload::state_response_t> &msg) noexcept {
-        // initialization is not finished
-        if (init_message) {
-            auto& state = msg.payload.state;
-            if (state == r::state_t::OPERATIONAL) {
-                finish_init();
-            } else {
-                poll_a_state();
-            }
+    void on_a_state(r::message::state_response_t &msg) noexcept {
+        if (state == r::state_t::INITIALIZED) {
+            return; // we are already initialized
+        }
+        if (msg.payload.ec) {
+            return do_shutdown(); // something bad happen
+        }
+        auto target_state = msg.payload.res.state;
+        if (state == r::state_t::OPERATIONAL) {
+            finish_init();
+        } else {
+            poll_a_state();
         }
     }
 
@@ -244,15 +430,17 @@ struct actor_B_t : public r::actor_base_t {
 }
 ~~~
 
-In real life, the things are a little bit more complex, however: `actor_a` might
-*never* start, or it might not start withing the certain timeframe, or actor_a's
-supervisor might not even reply. If nothing will be done, then `actor_b` will stuck
-in inifinte polling, consuming CPU resources. Do handle the cases, in `poll_a_state` method
-the timeout timer should be started and in `finish_init` it should be stopped; the
-re-poll should be performed not immediately, but again after some timeout. Plus,
-the `actor_b` should shutdown itself after certain number of attemps (or after some
-timeout). Within `rotor` all timers are event loop specific, and timeouts are
-application-specific, so, there is no generaral example, just an sketch of the idea.
+We covered some cases, i.e. when there is no any actor is listening on the address, or
+when the supervisor does not replies with the certain timeframe - in that cases
+the `response_t` will contain error code with timeout. Howevere, a few things
+still need to be done: it should be prevented to from infinite polling. To do that
+it should use some finite couter; if all attemps failed, then initiate `actor_B`
+shutdown.
+
+The sample does not cover the case, when `actor_A` decided to shutdown,
+the `actor_B` should be notified and take appropriate actions. As it seems
+generic pattern (i.e. `actor_B` uses `actor_A` as a client), this pattern,
+probably, will be supported in the future version of `rotor` core.
 
 ## Actor overload protection (workload balancing)
 

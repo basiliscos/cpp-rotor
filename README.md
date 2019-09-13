@@ -31,6 +31,32 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.04 (14-Sep-2019)
+
+- [improvement] the [request-response] approach is integrated to support basic
+[reliable] messaging: response notification failure will be delivered,
+if the expected response will not arrive in-time
+- [improvement] lambda subscribiers are supported
+- [improvement] actor behavior has been introduced to offload actor's
+interface
+- [breaking] supervisor is constructed with help of `supervisor_config_t`,
+which contains shutdown timeout value
+- [breaking] supervisor does not spawns timeout timer for overall shutdown
+procedure, instead per-child timers are spawned. The root supervisor
+the same way monitors child-supervisor shut down
+- [breaking] supervisor `create_actor` method now takes child max
+init time value. If it does not confirm, the child actor will be asked
+for shut down.
+- [breaking] shutdown request sent to an child actor now timeout-tracked
+by supervisor. The message type has changed to `message::shutdown_request_t`
+- [breaking] init request sent to an child actor now timeout-tracked
+by supervisor. The message type has changed to `message::init_request_t`
+- [breaking] actor's state request message type now `message::state_request_t`,
+which follows the generic request/response pattern. The response type
+is now `message::state_response_t`.
+- [breaking] {asio, ev, ws} supervisor configs are renamed to have
+corresponding suffix.
+
 ### 0.03 (25-Aug-2019)
 
  - [improvement] locality notion was introduced, which led to possibilty

@@ -7,11 +7,13 @@
 //
 
 #include "rotor/supervisor.h"
-#include "rotor/ev/supervisor_config.h"
+#include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/ev/system_context_ev.h"
 #include "rotor/system_context.h"
 #include <ev.h>
 #include <mutex>
+#include <memory>
+#include <unordered_map>
 
 namespace rotor {
 namespace ev {
@@ -32,36 +34,52 @@ namespace ev {
  */
 struct supervisor_ev_t : public supervisor_t {
 
+    /** \struct timer_t
+     * \brief inheritance of ev_timer, which holds rotor `timer_id`
+     */
+    struct timer_t : public ev_timer {
+        /** \brief local timer identifier within the scrope of the supervisor */
+        timer_id_t timer_id;
+    };
+
+    /** \brief an alias for unique pointer, holding `timer_t` */
+    using timer_ptr_t = std::unique_ptr<timer_t>;
+
     /** \brief constructs new supervisor from parent supervisor and supervisor config
      *
      * the `parent` supervisor can be `null`
      *
      */
-    supervisor_ev_t(supervisor_ev_t *parent, const supervisor_config_t &config);
+    supervisor_ev_t(supervisor_ev_t *parent, const supervisor_config_ev_t &config);
     ~supervisor_ev_t();
 
     /** \brief creates an actor by forwaring `args` to it
      *
-     * The newly created actor belogs to the wx supervisor / wx event loop
+     * The newly created actor belogs to the ev supervisor / ev event loop
      */
-    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        return make_actor<Actor>(*this, std::forward<Args>(args)...);
+    template <typename Actor, typename... Args>
+    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
+        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_shutdown_timer() noexcept override;
-    virtual void cancel_shutdown_timer() noexcept override;
-    virtual void confirm_shutdown() noexcept override;
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
+    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
+    virtual void shutdown_finish() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
-    inline struct ev_loop *get_loop() noexcept { return config.loop; }
+    inline struct ev_loop *get_loop() noexcept { return loop; }
 
     /** \brief returns pointer to the wx system context */
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
   protected:
+    /** \brief a type for mapping `timer_id` to timer */
+    using timers_map_t = std::unordered_map<timer_id_t, timer_ptr_t>;
+
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
 
@@ -74,14 +92,14 @@ struct supervisor_ev_t : public supervisor_t {
      */
     virtual void on_async() noexcept;
 
-    /** \brief timeout value, EV event loop pointer and loop ownership flag */
-    supervisor_config_t config;
+    /** \brief a pointer to EV event loop, copied from config */
+    struct ev_loop *loop;
+
+    /** \brief whether loop should be destroyed by supervisor, copied from config */
+    bool loop_ownership;
 
     /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
     ev_async async_watcher;
-
-    /** \brief timer used in shutdown procedure */
-    ev_timer shutdown_watcher;
 
     /** \brief mutex for protecting inbound queue and pending flag */
     std::mutex inbound_mutex;
@@ -100,6 +118,11 @@ struct supervisor_ev_t : public supervisor_t {
      * received from other supervisors / threads
      */
     queue_t inbound;
+
+    /** \brief timer_id to timer map */
+    timers_map_t timers_map;
+
+    friend struct supervisor_ev_shutdown_t;
 };
 
 } // namespace ev
