@@ -283,7 +283,7 @@ struct supervisor_t : public actor_base_t {
     }
 
   protected:
-    virtual actor_behavior_t *create_behaviour() noexcept override;
+    virtual actor_behavior_t *create_behavior() noexcept override;
 
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;

@@ -79,7 +79,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief early actor initialization (pre-initialization)
      *
-     * Actor's "main" address is created, actor's behaviour is created.
+     * Actor's "main" address is created, actor's behavior is created.
      *
      * Actor performs subsscription on all major methods, defined by
      * `rotor` framework; sets internal actor state to `INITIALIZING`.
@@ -180,7 +180,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      * It is assumed, that the specified address belongs to the actor.
      *
-     * The method is useful, when a different behaviour is needed for the same
+     * The method is useful, when a different behavior is needed for the same
      * message response types. It serves at some extend as virtual dispatching within
      * the actor.
      *
@@ -227,8 +227,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
 
   protected:
-    /** \brief constructs actor's behaviour on early stage */
-    virtual actor_behavior_t *create_behaviour() noexcept;
+    /** \brief constructs actor's behavior on early stage */
+    virtual actor_behavior_t *create_behavior() noexcept;
 
     /** \brief removes the subscription point */
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
@@ -239,7 +239,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * to be acquired asynchronously this method should be overriden, and
      * invoked only after resources acquisition.
      *
-     * In internals it forwards initialization sequence to the behaviour.
+     * In internals it forwards initialization sequence to the behavior.
      *
      */
     virtual void init_start() noexcept;
@@ -273,7 +273,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     state_t state;
 
     /** \brief actor's behavior, used for runtime customization of actors's
-     * behavioural aspects
+     * behavioral aspects
      */
     actor_behavior_t *behavior;
 

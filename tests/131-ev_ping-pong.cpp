@@ -25,7 +25,7 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
 
     ~supervisor_ev_test_t() { destroyed += 4; }
 
-    virtual r::actor_behavior_t *create_behaviour() noexcept override { return new supervisor_test_behavior_t(*this); }
+    virtual r::actor_behavior_t *create_behavior() noexcept override { return new supervisor_test_behavior_t(*this); }
 
     r::state_t &get_state() noexcept { return state; }
     queue_t &get_leader_queue() { return get_leader().queue; }

@@ -26,13 +26,13 @@ address_ptr_t supervisor_t::instantiate_address(const void *locality) noexcept {
     return new address_t{*this, locality};
 }
 
-actor_behavior_t *supervisor_t::create_behaviour() noexcept { return new supervisor_behavior_t(*this); }
+actor_behavior_t *supervisor_t::create_behavior() noexcept { return new supervisor_behavior_t(*this); }
 
 void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
     // should be created very early
     address = create_address();
-    behavior = create_behaviour();
+    behavior = create_behavior();
 
     bool use_other = parent && parent->address->same_locality(*address);
     locality_leader = use_other ? parent->locality_leader : this;

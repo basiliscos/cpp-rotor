@@ -15,14 +15,14 @@ actor_base_t::actor_base_t(supervisor_t &supervisor_)
 
 actor_base_t::~actor_base_t() { delete behavior; }
 
-actor_behavior_t *actor_base_t::create_behaviour() noexcept { return new actor_behavior_t(*this); }
+actor_behavior_t *actor_base_t::create_behavior() noexcept { return new actor_behavior_t(*this); }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
     if (!address) {
         address = create_address();
     }
     if (!behavior) {
-        behavior = create_behaviour();
+        behavior = create_behavior();
     }
 
     supervisor.subscribe_actor(*this, &actor_base_t::on_unsubscription);

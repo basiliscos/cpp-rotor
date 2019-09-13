@@ -86,7 +86,7 @@ struct fail_shutdown_sup : public rt::supervisor_test_t {
     r::address_ptr_t fail_addr;
     std::error_code fail_reason;
 
-    virtual r::actor_behavior_t *create_behaviour() noexcept override { return new fail_test_behavior_t(*this); }
+    virtual r::actor_behavior_t *create_behavior() noexcept override { return new fail_test_behavior_t(*this); }
 };
 
 void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept {

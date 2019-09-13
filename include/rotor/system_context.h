@@ -37,7 +37,7 @@ struct system_context_t : arc_base_t<system_context_t> {
 
     /** \brief fatal error handler
      *
-     * The error is fatal, is further `rotor` behaviour is undefined. The method should
+     * The error is fatal, is further `rotor` behavior is undefined. The method should
      * be overriden in derived classes for error propagation/notification. The default
      * implementation is to output the error to `std::err` and invoke `std::abort()`.
      *

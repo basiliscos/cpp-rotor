@@ -71,7 +71,7 @@ struct create_actor_t {
     /** \brief maximum time for actor initialization
      *
      * If an actor isn't able to confirm initialization in time, it
-     * will be asked to shutdown (default behaviour)
+     * will be asked to shutdown (default behavior)
      *
      */
     pt::time_duration timeout;
