@@ -3,6 +3,8 @@
 [reactive]: https://www.reactivemanifesto.org/ "The Reactive Manifesto"
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
 [blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
+[reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
+[request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 
 `rotor` is event loop friendly C++ actor micro framework.
