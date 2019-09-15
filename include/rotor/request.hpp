@@ -16,12 +16,14 @@ namespace rotor {
 
 namespace pt = boost::posix_time;
 
+using request_id_t = std::uint32_t;
+
 /** \struct request_base_t
  *  \brief base class for request payload
  */
 struct request_base_t {
     /** \brief unique (per supervisor) request id */
-    std::uint32_t id;
+    request_id_t id;
 
     /** \brief destination addrress for reply
      *
@@ -77,7 +79,23 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
     template <typename... Args> static res_ptr_t construct(Args &&... args) {
         return res_ptr_t{new Responce{std::forward<Args>(args)...}};
     }
+
+    template <typename T, typename std::enable_if_t<std::is_same_v<T, res_ptr_t>>> static res_ptr_t construct(T &&ptr) {
+        return res_ptr_t{std::forward<T>(ptr)};
+    }
 };
+
+namespace details {
+
+template <typename... Args> struct first_arg_type { using type = void; };
+
+template <typename T> struct first_arg_type<T> { using type = T; };
+
+template <typename T, typename... Args> struct first_arg_type<T, Args...> { using type = T; };
+
+template <typename... Args> using first_arg_t = typename first_arg_type<Args...>::type;
+
+} // namespace details
 
 /** \struct wrapped_response_t
  * \brief trackable templated response which holds user-supplied response payload.
@@ -114,15 +132,23 @@ template <typename Request> struct wrapped_response_t {
     response_t res;
 
     /** \brief error-response constructor (response payload is empty) */
-    wrapped_response_t(std::error_code ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
+    wrapped_response_t(const std::error_code &ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
 
-    /** \brief success-response constructor */
-    template <typename... Args>
+    wrapped_response_t(req_message_ptr_t message_)
+        : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct()} {}
+
+    template <typename Responce, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Responce>>>>
+    wrapped_response_t(req_message_ptr_t message_, const std::error_code &ec_, Responce &&res_)
+        : ec{ec_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
+
+    template <typename... Args, typename First = std::remove_cv_t<details::first_arg_t<Args...>>,
+              typename E = std::enable_if_t<!std::is_same_v<std::error_code, First>>>
     wrapped_response_t(req_message_ptr_t message_, Args &&... args)
         : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct(
                                                                                     std::forward<Args>(args)...)} {}
+
     /** \brief returns request id of the original request */
-    inline std::int32_t request_id() const noexcept { return req->payload.id; }
+    inline request_id_t request_id() const noexcept { return req->payload.id; }
 };
 
 /** \brief free function type, which produces error response to the original request */

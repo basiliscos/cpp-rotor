@@ -217,6 +217,60 @@ struct good_actor3_t : public r::actor_base_t {
     }
 };
 
+struct request_forwarder_t : public r::actor_base_t {
+    using traits2_t = r::request_traits_t<req2_t>;
+    using req_ptr_t = traits2_t::request::message_ptr_t;
+
+    using r::actor_base_t::actor_base_t;
+
+    int req_val = 0;
+    int res_val = 0;
+    r::address_ptr_t back_addr;
+    r::request_id_t back_req1_id = 0;
+    r::request_id_t back_req2_id = 0;
+    req_ptr_t req_ptr;
+
+    void init_start() noexcept override {
+        back_addr = supervisor.create_address();
+        subscribe(&request_forwarder_t::on_request_front);
+        subscribe(&request_forwarder_t::on_response_front);
+        subscribe(&request_forwarder_t::on_request_back, back_addr);
+        subscribe(&request_forwarder_t::on_response_back, back_addr);
+        r::actor_base_t::init_start();
+    }
+
+    void shutdown_start() noexcept override {
+        req_ptr.reset();
+        r::actor_base_t::shutdown_start();
+    }
+
+    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
+        r::actor_base_t::on_start(msg);
+        request<req2_t>(address, 4).send(r::pt::seconds(1));
+    }
+
+    void on_request_front(traits2_t::request::message_t &msg) noexcept {
+        auto &payload = msg.payload.request_payload;
+        back_req1_id = request_via<req2_t>(back_addr, back_addr, payload).send(r::pt::seconds(1));
+        req_ptr = &msg;
+    }
+
+    void on_response_front(traits2_t::response::message_t &msg) noexcept {
+        req_val += msg.payload.req->payload.request_payload.value;
+        res_val += msg.payload.res->value;
+    }
+
+    void on_request_back(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
+
+    void on_response_back(traits2_t::response::message_t &msg) noexcept {
+        req_val += msg.payload.req->payload.request_payload.value * 2;
+        res_val += msg.payload.res->value * 2;
+        back_req2_id = msg.payload.request_id();
+        reply_to(*req_ptr, msg.payload.ec, std::move(msg.payload.res));
+    }
+
+};
+
 struct duplicating_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
@@ -245,8 +299,6 @@ struct duplicating_actor_t : public r::actor_base_t {
         ec = msg.payload.ec;
     }
 };
-
-
 
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
@@ -471,6 +523,32 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 5);
     REQUIRE(actor->ec == r::error_code_t::success);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_leader_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_requests().size() == 0);
+    REQUIRE(sup->active_timers.size() == 0);
+}
+
+TEST_CASE("ref-counted response forwarding", "[actor]") {
+    r::system_context_t system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto actor = sup->create_actor<request_forwarder_t>(timeout);
+    sup->do_process();
+
+    REQUIRE(sup->active_timers.size() == 0);
+    REQUIRE(actor->req_val == 4 + 4*2);
+    REQUIRE(actor->res_val == 5 + 5*2);
+    REQUIRE(actor->back_req1_id == actor->back_req2_id);
 
     sup->do_shutdown();
     sup->do_process();
