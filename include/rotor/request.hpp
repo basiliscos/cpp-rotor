@@ -134,7 +134,7 @@ template <typename Request> struct wrapped_response_t {
     /** \brief error-response constructor (response payload is empty) */
     wrapped_response_t(const std::error_code &ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
 
-    wrapped_response_t(req_message_ptr_t message_)
+    explicit wrapped_response_t(req_message_ptr_t message_)
         : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct()} {}
 
     template <typename Responce, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Responce>>>>
