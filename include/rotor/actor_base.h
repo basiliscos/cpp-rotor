@@ -173,8 +173,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      * Supervisor will spawn timeout timer upon `timeout` method.
      */
-    template <typename M, typename... Args>
-    request_builder_t<M> request(const address_ptr_t &dest_addr, Args &&... args);
+    template <typename R, typename... Args>
+    request_builder_t<typename request_wrapper_t<R>::request_t> request(const address_ptr_t &dest_addr,
+                                                                        Args &&... args);
 
     /** \brief returns request builder for destination address using the specified address for reply
      *
@@ -187,8 +188,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * See the description of `request` method.
      *
      */
-    template <typename M, typename... Args>
-    request_builder_t<M> request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args);
+    template <typename R, typename... Args>
+    request_builder_t<typename request_wrapper_t<R>::request_t>
+    request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args);
 
     /** \brief convenient method for constructing and sending response to a request
      *

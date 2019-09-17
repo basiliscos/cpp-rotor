@@ -33,6 +33,16 @@ struct request_base_t {
     address_ptr_t reply_to;
 };
 
+template <typename T, typename = void> struct request_wrapper_t { using request_t = T; };
+
+template <typename T> struct request_wrapper_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> {
+    using request_t = intrusive_ptr_t<T>;
+};
+
+template <typename T, typename = void> struct request_unwrapper_t { using request_t = T; };
+
+template <typename T> struct request_unwrapper_t<intrusive_ptr_t<T>> { using request_t = T; };
+
 /** \struct wrapped_request_t
  * \brief templated request, which is able to hold user-supplied payload
  *
@@ -40,7 +50,7 @@ struct request_base_t {
  * information for request tracking (request_id, reply address).
  *
  */
-template <typename T> struct wrapped_request_t : request_base_t {
+template <typename T, typename = void> struct wrapped_request_t : request_base_t {
     /** \brief alias for original (unwrapped) request payload type */
     using request_t = T;
 
@@ -55,6 +65,22 @@ template <typename T> struct wrapped_request_t : request_base_t {
 
     /** \brief original, user-supplied payload */
     T request_payload;
+};
+
+template <typename T>
+struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> : request_base_t {
+    using raw_request_t = T;
+    using request_t = intrusive_ptr_t<T>;
+    using response_t = typename T::response_t;
+
+    wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, const request_t &request_)
+        : request_base_t{id_, reply_to_}, request_payload{request_} {}
+
+    template <typename... Args, typename E = std::enable_if_t<std::is_constructible_v<raw_request_t, Args...>>>
+    wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, Args &&... args)
+        : request_base_t{id_, reply_to_}, request_payload{new raw_request_t{std::forward<Args>(args)...}} {}
+
+    request_t request_payload;
 };
 
 /** \struct response_helper_t
@@ -105,17 +131,17 @@ template <typename... Args> using first_arg_t = typename first_arg_type<Args...>
  *
  */
 template <typename Request> struct wrapped_response_t {
-    /** \brief alias type of message with wrapped request */
-    using req_message_t = message_t<wrapped_request_t<Request>>;
+    /* \brief alias for original user-supplied request type */
+    using request_t = typename request_unwrapper_t<Request>::request_t;
 
-    /** \brief alias for intrusive pointer to message with wrapped request */
+    /* \brief alias type of message with wrapped request */
+    using req_message_t = message_t<wrapped_request_t<request_t>>;
+
+    /* \brief alias for intrusive pointer to message with wrapped request */
     using req_message_ptr_t = intrusive_ptr_t<req_message_t>;
 
-    /** \brief alias for original user-supplied request type */
-    using request_t = Request;
-
     /** \brief alias for original user-supplied response type */
-    using response_t = typename Request::response_t;
+    using response_t = typename request_t::response_t;
 
     /** \brief helper type for response construction */
     using res_helper_t = response_helper_t<response_t>;
@@ -172,15 +198,16 @@ struct request_curry_t {
  * \brief type helper to deduce request/reqsponce messages from original (user-supplied) request type
  */
 template <typename R> struct request_traits_t {
+    using request_t = typename request_unwrapper_t<R>::request_t;
 
     /** \struct request
      * \brief request related types */
     struct request {
         /** \brief alias for original request payload type */
-        using type = R;
+        using type = request_t;
 
         /** \brief wrapped (trackeable) request payload */
-        using wrapped_t = wrapped_request_t<R>;
+        using wrapped_t = wrapped_request_t<type>;
 
         /** \brief message type with with wrapped request payload */
         using message_t = rotor::message_t<wrapped_t>;
@@ -194,7 +221,7 @@ template <typename R> struct request_traits_t {
     struct response {
 
         /** \brief wrapped response payload (contains original request message) */
-        using wrapped_t = wrapped_response_t<R>;
+        using wrapped_t = wrapped_response_t<request_t>;
 
         /** \brief message type for wrapped response */
         using message_t = rotor::message_t<wrapped_t>;
