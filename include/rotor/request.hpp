@@ -150,7 +150,7 @@ template <typename T, typename... Args> struct is_constructible<T, void, Args...
 
 template <typename T, typename... Args> inline constexpr bool is_constructible_v = is_constructible<T, Args...>::value;
 
-}; // namespace details
+} // namespace details
 
 /** \struct wrapped_response_t
  * \brief trackable templated response which holds user-supplied response payload.
