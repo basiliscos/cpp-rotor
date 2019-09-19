@@ -87,6 +87,8 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
  * \brief generic helper, which helps to construct user-defined response payload
  */
 template <typename Responce> struct response_helper_t {
+    using responce_t = Responce;
+
     /** \brief constructs user defined response payload */
     template <typename... Args> static Responce construct(Args &&... args) {
         return Responce{std::forward<Args>(args)...};
@@ -101,6 +103,8 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
     /** \brief type for intrusive pointer user defined response payload  */
     using res_ptr_t = intrusive_ptr_t<Responce>;
 
+    using responce_t = Responce;
+
     /** \brief constructs intrusive pointer to user defined response payload */
     template <typename... Args> static res_ptr_t construct(Args &&... args) {
         return res_ptr_t{new Responce{std::forward<Args>(args)...}};
@@ -113,15 +117,40 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
 
 namespace details {
 
-template <typename... Args> struct first_arg_type { using type = void; };
+template <class T, typename... Args> decltype(void(T{std::declval<Args>()...}), std::true_type()) test(int);
 
-template <typename T> struct first_arg_type<T> { using type = T; };
+template <class T, typename... Args> std::false_type test(...);
 
-template <typename T, typename... Args> struct first_arg_type<T, Args...> { using type = T; };
+template <class T, typename... Args> struct is_braces_constructible : decltype(test<T, Args...>(0)) {};
 
-template <typename... Args> using first_arg_t = typename first_arg_type<Args...>::type;
+template <class T, class... Args> constexpr auto is_braces_constructible_v = is_braces_constructible<T, Args...>::value;
 
-} // namespace details
+template <typename... Ts> struct size_of_t;
+template <typename T> struct size_of_t<T> : std::is_default_constructible<T> {};
+template <typename T, typename... Ts> struct size_of_t<T, Ts...> : public std::is_constructible<T, Ts...> {};
+
+template <typename T, typename... Args>
+inline constexpr bool is_somehow_constructible_v =
+    std::is_constructible_v<T, Args...> || is_braces_constructible_v<T, Args...>;
+
+template <typename T, typename E = void, typename... Args>
+struct is_constructible : is_constructible<T, void, E, Args...> {};
+template <typename T> struct is_constructible<T, void> {
+    static constexpr auto value = std::is_default_constructible_v<T>;
+};
+template <typename T, typename Arg> struct is_constructible<T, Arg> {
+    static constexpr auto value = is_somehow_constructible_v<T, Arg>;
+};
+template <typename T, typename Arg> struct is_constructible<T, void, Arg> {
+    static constexpr auto value = is_somehow_constructible_v<T, Arg>;
+};
+template <typename T, typename... Args> struct is_constructible<T, void, Args...> {
+    static constexpr auto value = is_somehow_constructible_v<T, Args...>;
+};
+
+template <typename T, typename... Args> inline constexpr bool is_constructible_v = is_constructible<T, Args...>::value;
+
+}; // namespace details
 
 /** \struct wrapped_response_t
  * \brief trackable templated response which holds user-supplied response payload.
@@ -146,6 +175,8 @@ template <typename Request> struct wrapped_response_t {
     /** \brief helper type for response construction */
     using res_helper_t = response_helper_t<response_t>;
 
+    using unwrapped_response_t = typename res_helper_t::responce_t;
+
     static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
 
     /** \brief error code of processing request, i.e. `error_code_t::request_timeout` */
@@ -167,11 +198,12 @@ template <typename Request> struct wrapped_response_t {
     wrapped_response_t(req_message_ptr_t message_, const std::error_code &ec_, Responce &&res_)
         : ec{ec_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
 
-    template <typename... Args, typename First = std::remove_cv_t<details::first_arg_t<Args...>>,
-              typename E = std::enable_if_t<!std::is_same_v<std::error_code, First>>>
-    wrapped_response_t(req_message_ptr_t message_, Args &&... args)
-        : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct(
-                                                                                    std::forward<Args>(args)...)} {}
+    template <typename Req, typename... Args,
+              typename E1 = std::enable_if_t<std::is_same_v<req_message_ptr_t, std::remove_cv_t<Req>>>,
+              typename E2 = std::enable_if_t<details::is_constructible_v<unwrapped_response_t, Args...>>>
+    wrapped_response_t(Req &&message_, Args &&... args)
+        : ec{make_error_code(error_code_t::success)}, req{std::forward<Req>(message_)},
+          res{res_helper_t::construct(std::forward<Args>(args)...)} {}
 
     /** \brief returns request id of the original request */
     inline request_id_t request_id() const noexcept { return req->payload.id; }
