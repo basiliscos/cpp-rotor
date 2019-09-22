@@ -48,12 +48,14 @@ struct http_response_t : public r::arc_base_t<http_response_t> {
         : response(std::move(response_)), bytes{bytes_} {}
 };
 
-struct http_request_t {
+struct http_request_t : public r::arc_base_t<http_response_t> {
     using rx_buff_t = boost::beast::flat_buffer;
     using rx_buff_ptr_t = std::shared_ptr<rx_buff_t>;
     using duration_t = r::pt::time_duration;
     using response_t = r::intrusive_ptr_t<http_response_t>;
 
+    http_request_t(URL url_, rx_buff_ptr_t rx_buff_, std::size_t rx_buff_size_, duration_t timeout_)
+        : url{url_}, rx_buff{rx_buff_}, rx_buff_size{rx_buff_size_}, timeout{timeout_} {}
     URL url;
     rx_buff_ptr_t rx_buff;
     std::size_t rx_buff_size;
@@ -438,8 +440,6 @@ int main(int argc, char **argv) {
     http_manager_config_t http_conf{workers_count, man_timeout, man_timeout, strand};
     auto man = sup->create_actor<http_manager_t>(man_timeout, http_conf);
 
-    // auto url = URL{"www.example.com", "80", "/index.html"};
-    // auto urlz = URL{"127.0.0.1", "80", "/"};
     auto client = sup->create_actor<client_t>(man_timeout);
     client->manager_addr = man->get_address();
     client->timeout = req_timeout;
