@@ -155,6 +155,7 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
         return res_ptr_t{new Responce{std::forward<Args>(args)...}};
     }
 
+    /** \brief constructs user defined response payload and wraps it into intrusive pointer */
     template <typename T, typename std::enable_if_t<std::is_same_v<T, res_ptr_t>>> static res_ptr_t construct(T &&ptr) {
         return res_ptr_t{std::forward<T>(ptr)};
     }
@@ -181,15 +182,19 @@ inline constexpr bool is_somehow_constructible_v =
 template <typename T, typename E = void, typename... Args>
 struct is_constructible : is_constructible<T, void, E, Args...> {};
 template <typename T> struct is_constructible<T, void> {
+    /** \brief returns true fi type T is default-constructible */
     static constexpr auto value = std::is_default_constructible_v<T>;
 };
 template <typename T, typename Arg> struct is_constructible<T, Arg> {
+    /** \brief returns true fi type T is constructible or braces-constructible from `Arg` */
     static constexpr auto value = is_somehow_constructible_v<T, Arg>;
 };
 template <typename T, typename Arg> struct is_constructible<T, void, Arg> {
+    /** \brief returns true fi type T is constructible or braces-constructible from `Arg` */
     static constexpr auto value = is_somehow_constructible_v<T, Arg>;
 };
 template <typename T, typename... Args> struct is_constructible<T, void, Args...> {
+    /** \brief returns true fi type T is constructible or braces-constructible from `Args...` */
     static constexpr auto value = is_somehow_constructible_v<T, Args...>;
 };
 
