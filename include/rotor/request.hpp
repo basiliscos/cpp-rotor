@@ -16,6 +16,7 @@ namespace rotor {
 
 namespace pt = boost::posix_time;
 
+/** \brief unique (per supervisor) request id type */
 using request_id_t = std::uint32_t;
 
 /** \struct request_base_t
@@ -33,15 +34,41 @@ struct request_base_t {
     address_ptr_t reply_to;
 };
 
-template <typename T, typename = void> struct request_wrapper_t { using request_t = T; };
+/** \brief optionally wraps request type into intrusive pointer
+ *
+ * The transformation (`T -> iptr<T>`) occures only if the type
+ * `T` is descendant of  `arc_base_t<T>`.
+ *
+ * Otherwise, the user supplied request type `T` remains the same.
+ *
+ */
+template <typename T, typename = void> struct request_wrapper_t {
+    /** \brief an alias for the original request type */
+    using request_t = T;
+};
 
 template <typename T> struct request_wrapper_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> {
+    /** \brief an alias for the original request type, wrapped into intrusive poitner */
     using request_t = intrusive_ptr_t<T>;
 };
 
-template <typename T, typename = void> struct request_unwrapper_t { using request_t = T; };
+/** \brief optionally unwwraps request type from intrusive pointer
+ *
+ * The transformation (`iptr<T> -> T`) occures only if the type
+ * `T` already wraps T into intrusive pointer
+ *
+ * Otherwise, the user supplied request type `T` remains the same.
+ *
+ */
+template <typename T, typename = void> struct request_unwrapper_t {
+    /** \brief an alias for the original request type */
+    using request_t = T;
+};
 
-template <typename T> struct request_unwrapper_t<intrusive_ptr_t<T>> { using request_t = T; };
+template <typename T> struct request_unwrapper_t<intrusive_ptr_t<T>> {
+    /** \brief an alias for the original request type, if it was wrapped into intrusive poitner */
+    using request_t = T;
+};
 
 /** \struct wrapped_request_t
  * \brief templated request, which is able to hold user-supplied payload
@@ -67,19 +94,35 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     T request_payload;
 };
 
+/** \struct wrapped_request_t
+ * \brief wrapped request specialization, when the request should be wrapped into intrusive pointer
+*/
 template <typename T>
 struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> : request_base_t {
+    /** \brief alias for original (unwrapped) request payload type */
     using raw_request_t = T;
+
+    /** \brief alias for original request payload type wrapped into intrusive pointer */
     using request_t = intrusive_ptr_t<T>;
+
+    /** \brief alias for original (unwrapped) response payload type */
     using response_t = typename T::response_t;
 
+    /** \brief makes an intrusive pointer for already constructed user-supplied payload
+     *
+     * The differnt `request-id` and `reply_to` address argruments are supplied
+     * to make it possible cheaply forward requests.
+     */
     wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, const request_t &request_)
         : request_base_t{id_, reply_to_}, request_payload{request_} {}
 
+    /** \brief constructs wrapper for user-supplied payload from request-id and
+     * and destination reply address */
     template <typename... Args, typename E = std::enable_if_t<std::is_constructible_v<raw_request_t, Args...>>>
     wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, Args &&... args)
         : request_base_t{id_, reply_to_}, request_payload{new raw_request_t{std::forward<Args>(args)...}} {}
 
+    /** \brief intrusive pointer to user-supplied payload */
     request_t request_payload;
 };
 
@@ -87,6 +130,7 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
  * \brief generic helper, which helps to construct user-defined response payload
  */
 template <typename Responce> struct response_helper_t {
+    /** original user-supplied responce type */
     using responce_t = Responce;
 
     /** \brief constructs user defined response payload */
@@ -103,6 +147,7 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
     /** \brief type for intrusive pointer user defined response payload  */
     using res_ptr_t = intrusive_ptr_t<Responce>;
 
+    /** original user-supplied responce type */
     using responce_t = Responce;
 
     /** \brief constructs intrusive pointer to user defined response payload */
@@ -160,21 +205,22 @@ template <typename T, typename... Args> inline constexpr bool is_constructible_v
  *
  */
 template <typename Request> struct wrapped_response_t {
-    /* \brief alias for original user-supplied request type */
+    /** \brief alias for original user-supplied request type */
     using request_t = typename request_unwrapper_t<Request>::request_t;
 
-    /* \brief alias type of message with wrapped request */
+    /** \brief alias type of message with wrapped request, which is possibly wrapped into intrusive pointer */
     using req_message_t = message_t<wrapped_request_t<request_t>>;
 
-    /* \brief alias for intrusive pointer to message with wrapped request */
+    /** \brief alias for intrusive pointer to message with wrapped request */
     using req_message_ptr_t = intrusive_ptr_t<req_message_t>;
 
-    /** \brief alias for original user-supplied response type */
+    /** \brief alias for possibly wrapped user-supplied response type */
     using response_t = typename request_t::response_t;
 
     /** \brief helper type for response construction */
     using res_helper_t = response_helper_t<response_t>;
 
+    /** \brief alias user-supplied response type */
     using unwrapped_response_t = typename res_helper_t::responce_t;
 
     static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
@@ -191,13 +237,23 @@ template <typename Request> struct wrapped_response_t {
     /** \brief error-response constructor (response payload is empty) */
     wrapped_response_t(const std::error_code &ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
 
-    explicit wrapped_response_t(req_message_ptr_t message_)
-        : ec{make_error_code(error_code_t::success)}, req{std::move(message_)}, res{res_helper_t::construct()} {}
-
+    /** \brief "forward-constructor"
+     *
+     * The request message, error code are copied, while the responce (possible intrusive
+     * poitner to the original request) is forwarded.
+     *
+     */
     template <typename Responce, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Responce>>>>
     wrapped_response_t(req_message_ptr_t message_, const std::error_code &ec_, Responce &&res_)
         : ec{ec_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
 
+    /** \brief successful-responce constructor.
+     *
+     * The request message is copied, the error code is set to success,
+     * the responce (possible intrusive poitner to the original request) constructed from
+     * the arguments.
+     *
+     */
     template <typename Req, typename... Args,
               typename E1 = std::enable_if_t<std::is_same_v<req_message_ptr_t, std::remove_cv_t<Req>>>,
               typename E2 = std::enable_if_t<details::is_constructible_v<unwrapped_response_t, Args...>>>
@@ -230,12 +286,13 @@ struct request_curry_t {
  * \brief type helper to deduce request/reqsponce messages from original (user-supplied) request type
  */
 template <typename R> struct request_traits_t {
+    /** \brief alias for original request payload type */
     using request_t = typename request_unwrapper_t<R>::request_t;
 
     /** \struct request
      * \brief request related types */
     struct request {
-        /** \brief alias for original request payload type */
+        /** \brief alias for possibly wrapped (to intrusive pointer) request payload type */
         using type = request_t;
 
         /** \brief wrapped (trackeable) request payload */

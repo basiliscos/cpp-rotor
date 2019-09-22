@@ -60,6 +60,8 @@ bugs etc.), then there should be 2 timers. On the later stage of the development
 it might be switched to one timer per request if reliability has been proven
 and it is desirable to get rid of additional timer from performance point of view.
 
+6. There should be no crashes, no memory leaks
+
 The output sample for the localhost is:
 
 ./beast-scrapper --workers_count=50 --timeout=5000 --max_requests=50000 --url=http://127.0.0.1:80/index.html
@@ -123,7 +125,7 @@ struct http_request_t : public r::arc_base_t<http_response_t> {
     using duration_t = r::pt::time_duration;
     using response_t = r::intrusive_ptr_t<http_response_t>;
 
-    http_request_t(URL url_, rx_buff_ptr_t rx_buff_, std::size_t rx_buff_size_, duration_t timeout_)
+    http_request_t(const URL& url_, rx_buff_ptr_t rx_buff_, std::size_t rx_buff_size_, duration_t timeout_)
         : url{url_}, rx_buff{rx_buff_}, rx_buff_size{rx_buff_size_}, timeout{timeout_} {}
     URL url;
     rx_buff_ptr_t rx_buff;
