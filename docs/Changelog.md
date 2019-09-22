@@ -7,9 +7,9 @@
 ## 0.05 (22-Sep-2019)
 
 - [improvement] response can be inherited from `rotor::arc_base`, to allow
-forwaring requests without copying it (i.e. just intrusive pointer is created)
+forwarding requests without copying it (i.e. just intrusive pointer is created)
 - [example] `examples/boost-asio/beast-scrapper.cpp` has been added; it
-demonstrates an app with pool of actor workers with request-responce forwarding
+demonstrates an app with pool of actor workers with request-response forwarding
 
 ## 0.04 (14-Sep-2019)
 
