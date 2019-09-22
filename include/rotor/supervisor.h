@@ -478,15 +478,30 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
     sup.address_mapping.set(actor, response_message_t::message_type, handler_ptr, imaginary_address);
 }
 
-template <typename M, typename... Args>
-request_builder_t<M> actor_base_t::request(const address_ptr_t &dest_addr, Args &&... args) {
-    return supervisor.do_request<M>(*this, dest_addr, address, std::forward<Args>(args)...);
+
+/** \brief makes an reqest to the destination address with the message constructed from `args`
+ *
+ * The `reply_to` address is defaulted to actor's main address.1
+ *
+ */
+template <typename Request, typename... Args>
+request_builder_t<typename request_wrapper_t<Request>::request_t> actor_base_t::request(const address_ptr_t &dest_addr,
+                                                                                        Args &&... args) {
+    using request_t = typename request_wrapper_t<Request>::request_t;
+    return supervisor.do_request<request_t>(*this, dest_addr, address, std::forward<Args>(args)...);
 }
 
-template <typename M, typename... Args>
-request_builder_t<M> actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr,
-                                               Args &&... args) {
-    return supervisor.do_request<M>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
+/** \brief makes an reqest to the destination address with the message constructed from `args`
+ *
+ * The `reply_addr` is used to specify the exact destinatiion address, where reply should be
+ * delivered.
+ *
+ */
+template <typename Request, typename... Args>
+request_builder_t<typename request_wrapper_t<Request>::request_t>
+actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args) {
+    using request_t = typename request_wrapper_t<Request>::request_t;
+    return supervisor.do_request<request_t>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
 }
 
 template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
