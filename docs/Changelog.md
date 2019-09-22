@@ -4,6 +4,13 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.05 (22-Sep-2019)
+
+- [improvement] response can be inherited from `rotor::arc_base`, to allow
+forwaring requests without copying it (i.e. just intrusive pointer is created)
+- [example] `examples/boost-asio/beast-scrapper.cpp` has been added; it
+demonstrates an app with pool of actor workers with request-responce forwarding
+
 ## 0.04 (14-Sep-2019)
 
 - [improvement] the [request-response] approach is integrated to support basic
