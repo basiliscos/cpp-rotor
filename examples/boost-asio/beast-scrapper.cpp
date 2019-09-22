@@ -80,7 +80,7 @@ struct http_worker_t : public r::actor_base_t {
     using resolve_results_t = tcp::resolver::results_type;
     using resolve_it_t = resolve_results_t::iterator;
 
-    http_worker_t(r::supervisor_t &sup)
+    explicit http_worker_t(r::supervisor_t &sup)
         : r::actor_base_t{sup}, strand{static_cast<ra::supervisor_asio_t &>(sup).get_strand()}, resolver{
                                                                                                     strand.context()} {}
 
