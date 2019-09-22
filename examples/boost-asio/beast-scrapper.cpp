@@ -36,7 +36,6 @@ struct URL {
 using raw_http_response_t = http::response<http::string_body>;
 
 constexpr const std::uint32_t RX_BUFF_SZ = 10 * 1024;
-constexpr const std::uint32_t MAX_DISCOVERY_FAILURES = 3;
 constexpr const std::uint32_t MAX_HTTP_FAILURES = 1;
 
 namespace payload {
