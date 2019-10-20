@@ -96,7 +96,7 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
 
 /** \struct wrapped_request_t
  * \brief wrapped request specialization, when the request should be wrapped into intrusive pointer
-*/
+ */
 template <typename T>
 struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> : request_base_t {
     /** \brief alias for original (unwrapped) request payload type */

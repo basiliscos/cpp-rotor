@@ -478,7 +478,6 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
     sup.address_mapping.set(actor, response_message_t::message_type, handler_ptr, imaginary_address);
 }
 
-
 /** \brief makes an reqest to the destination address with the message constructed from `args`
  *
  * The `reply_to` address is defaulted to actor's main address.1
