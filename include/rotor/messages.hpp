@@ -19,9 +19,6 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 namespace payload {
 
-using callback_t = std::function<void()>;
-using callback_ptr_t = std::shared_ptr<callback_t>;
-
 /** \struct initialize_confirmation_t
  *  \brief Message with this payload is sent from an actor to its supervisor to
  * confirm successful initialization
@@ -204,17 +201,6 @@ struct unsubscription_confirmation_t {
 
     /** \brief The handler (intrusive pointer) for processing message */
     handler_ptr_t handler;
-
-    /** \brief the optional callback to be invoked once message is locally
-     *  delivered, i.e. when it is destroyed.
-     */
-    callback_ptr_t callback;
-
-    ~unsubscription_confirmation_t() {
-        if (callback) {
-            (*callback)();
-        }
-    }
 };
 
 /** \struct state_response_t

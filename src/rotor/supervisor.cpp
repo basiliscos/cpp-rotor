@@ -155,7 +155,7 @@ void supervisor_t::on_shutdown_confirm(message::shutdown_response_t &msg) noexce
                 this->remove_actor(*actor);
             }
         };
-        auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
+        auto cb_ptr = std::make_shared<callback_t>(std::move(cb));
         for (auto &point : points) {
             unsubscribe(point.handler, point.address, cb_ptr);
         }

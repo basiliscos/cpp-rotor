@@ -354,8 +354,10 @@ auto system_context_t::create_supervisor(Args &&... args) -> intrusive_ptr_t<Sup
     return wrapper_t{raw_object};
 }
 
-template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
-    supervisor.put(make_message<M>(addr, std::forward<Args>(args)...));
+template <typename M, typename... Args> message_ptr_t actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
+    auto message = make_message<M>(addr, std::forward<Args>(args)...);
+    supervisor.put(message);
+    return message;
 }
 
 /** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
