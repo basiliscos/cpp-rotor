@@ -84,9 +84,13 @@ void supervisor_behavior_t::action_shutdown_children() noexcept {
     auto &sup = static_cast<supervisor_t &>(actor);
     auto &actors_map = sup.actors_map;
     if (!actors_map.empty()) {
-        for (auto pair : actors_map) {
-            auto &addr = pair.first;
-            sup.request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+        for (auto& pair : actors_map) {
+            auto &state = pair.second;
+            if (!state.shutdown_requesting) {
+                auto &addr = pair.first;
+                state.shutdown_requesting = true;
+                sup.request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+            }
         }
         substate = behavior_state_t::SHUTDOWN_CHILDREN_STARTED;
     } else {

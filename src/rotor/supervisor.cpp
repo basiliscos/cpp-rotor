@@ -55,7 +55,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
 void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     auto actor = msg.payload.actor;
     auto actor_address = actor->get_address();
-    actors_map.emplace(actor_address, std::move(actor));
+    actors_map.emplace(actor_address, actor_state_t{std::move(actor), false});
     request<payload::initialize_actor_t>(actor_address, actor_address).send(msg.payload.timeout);
 }
 
@@ -135,18 +135,23 @@ void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcep
             shutdown_start();
         }
     } else {
-        request<payload::shutdown_request_t>(source_addr, source_addr).send(shutdown_timeout);
+        auto &actor_state = actors_map.at(source_addr);
+        if (!actor_state.shutdown_requesting) {
+            actor_state.shutdown_requesting = true;
+            request<payload::shutdown_request_t>(source_addr, source_addr).send(shutdown_timeout);
+        }
     }
 }
 
 void supervisor_t::on_shutdown_confirm(message::shutdown_response_t &msg) noexcept {
     auto &source_addr = msg.payload.req->payload.request_payload.actor_address;
+    auto &actor_state = actors_map.at(source_addr);
+    actor_state.shutdown_requesting = false;
     auto &ec = msg.payload.ec;
     if (ec) {
         return static_cast<supervisor_behavior_t *>(behavior)->on_shutdown_fail(source_addr, ec);
     }
-    // std::cout << "supervisor_t::on_shutdown_confirm\n";
-    auto &actor = actors_map.at(source_addr);
+    auto &actor = actor_state.actor;
     auto points = address_mapping.destructive_get(*actor);
     if (!points.empty()) {
         auto cb = [this, actor = actor, count = points.size()]() mutable {
@@ -189,7 +194,9 @@ void supervisor_t::on_state_request(message::state_request_t &message) noexcept 
     } else {
         auto it = actors_map.find(addr);
         if (it != actors_map.end()) {
-            target_state = it->second->state;
+            auto &state = it->second;
+            auto &actor = state.actor;
+            target_state = actor->state;
         }
     }
     reply_to(message, target_state);
@@ -218,8 +225,8 @@ void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     if (it != request_map.end()) {
         auto &request_curry = it->second;
         message_ptr_t &request = request_curry.request_message;
-        auto timeout_message =
-            request_curry.fn(request_curry.reply_to, *request, make_error_code(error_code_t::request_timeout));
+        auto ec = make_error_code(error_code_t::request_timeout);
+        auto timeout_message =request_curry.fn(request_curry.reply_to, *request, std::move(ec));
         put(std::move(timeout_message));
         request_map.erase(it);
     }
