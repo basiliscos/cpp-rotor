@@ -282,8 +282,12 @@ struct supervisor_t : public actor_base_t {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
+    /** \brief child actror housekeeping strcuture */
     struct actor_state_t {
+        /** \brief intrusive pointer to actor */
         actor_ptr_t actor;
+
+        /** \brief whethe the shutdown request is already sent */
         bool shutdown_requesting;
     };
 
