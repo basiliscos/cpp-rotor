@@ -171,6 +171,9 @@ struct http_worker_t : public r::actor_base_t {
             } else if (sock) {
                 sys::error_code ec;
                 sock->cancel(ec);
+                assert(!ec);
+                sock->close(ec);
+                assert(!ec);
             } else {
                 r::actor_base_t::shutdown_start();
             }
@@ -227,6 +230,7 @@ struct http_worker_t : public r::actor_base_t {
         }
 
         sock = std::make_unique<tcp::socket>(strand.context());
+        sock->open(tcp::v4());
         auto fwd = ra::forwarder_t(*this, &http_worker_t::on_connect, &http_worker_t::on_tcp_error);
         asio::async_connect(*sock, results.begin(), results.end(), std::move(fwd));
     }
@@ -358,7 +362,6 @@ struct client_t : r::actor_base_t {
     }
 
     void shutdown_start() noexcept override {
-        std::cerr << "client_t::shutdown_start\n";
         r::actor_base_t::shutdown_start();
     }
 
@@ -370,7 +373,7 @@ struct client_t : r::actor_base_t {
 
         std::cerr << "client_t::shutdown_finish, stats: " << success_requests << "/" << total_requests
                   << " requests, in " << diff.count() << "s, rps = " << rps << "\n";
-        std::cerr << "client_t::shutdown_finish\n";
+        send<r::payload::shutdown_trigger_t>(supervisor.get_address(), manager_addr);
         manager_addr.reset();
         supervisor.do_shutdown(); /* trigger all system to shutdown */
     }
@@ -501,16 +504,18 @@ int main(int argc, char **argv) {
               << ", timeout: " << req_timeout << "\n";
     asio::io_context io_context;
 
+
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto man_timeout = req_timeout + r::pt::milliseconds{workers_count * 2};
     ra::supervisor_config_asio_t conf{man_timeout, strand};
     auto sup = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
 
-    http_manager_config_t http_conf{workers_count, man_timeout, man_timeout, strand};
+    auto worker_timeout = req_timeout * 2;
+    http_manager_config_t http_conf{workers_count, worker_timeout, worker_timeout, strand};
     auto man = sup->create_actor<http_manager_t>(man_timeout, http_conf);
 
-    auto client = sup->create_actor<client_t>(man_timeout);
+    auto client = sup->create_actor<client_t>(worker_timeout);
     client->manager_addr = man->get_address();
     client->timeout = req_timeout;
     client->concurrency = workers_count;

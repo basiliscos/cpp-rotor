@@ -282,6 +282,11 @@ struct supervisor_t : public actor_base_t {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
+    struct actor_state_t {
+        actor_ptr_t actor;
+        bool shutdown_requesting;
+    };
+
   protected:
     virtual actor_behavior_t *create_behavior() noexcept override;
 
@@ -295,7 +300,7 @@ struct supervisor_t : public actor_base_t {
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
 
     /** \brief (local) address-to-child_actor map type */
-    using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
+    using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
 
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
