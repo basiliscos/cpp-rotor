@@ -164,7 +164,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Internally it just constructs new message in supervisor's outbound queue.
      *
      */
-    template <typename M, typename... Args> message_ptr_t send(const address_ptr_t &addr, Args &&... args);
+    template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
 
     /** \brief returns request builder for destination address using the "main" actor address
      *
@@ -223,7 +223,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * The optional call can be providded to be called upon message destruction.
      *
      */
-    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const callback_ptr_t & = {}) noexcept;
+    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t & = {}) noexcept;
 
     /** \brief initiates handler unsubscription from the default actor address */
     inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }

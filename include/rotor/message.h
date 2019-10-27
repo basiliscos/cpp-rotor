@@ -9,12 +9,8 @@
 #include "arc.hpp"
 #include "address.hpp"
 #include <typeindex>
-#include <memory>
 
 namespace rotor {
-
-using callback_t = std::function<void()>;
-using callback_ptr_t = std::shared_ptr<callback_t>;
 
 /** \struct message_base_t
  *  \brief Base class for `rotor` message.
@@ -40,22 +36,11 @@ struct message_base_t : public arc_base_t<message_base_t> {
     /** \brief message destination address */
     address_ptr_t address;
 
-    /** \brief the optional callback to be invoked once message is locally
-     *  delivered, i.e. when it is destroyed.
-     */
-    callback_ptr_t callback;
-
     /** \brief constructor which takes destination address */
     message_base_t(const void *type_index_, const address_ptr_t &addr) : type_index{type_index_}, address{addr} {}
-
-    template <typename T> void set_callback(T &&callback_) noexcept { callback = std::forward<T>(callback_); }
 };
 
-inline message_base_t::~message_base_t() {
-    if (callback) {
-        (*callback)();
-    }
-}
+inline message_base_t::~message_base_t() {}
 
 /** \struct message_t
  *  \brief the generic message meant to hold user-specific payload

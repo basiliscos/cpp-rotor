@@ -66,12 +66,11 @@ void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_
 }
 
 void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr,
-                               const callback_ptr_t &callback) noexcept {
+                               const payload::callback_ptr_t &callback) noexcept {
 
     auto &dest = h->actor_ptr->address;
     if (&addr->supervisor == this) {
-        auto message = send<payload::unsubscription_confirmation_t>(dest, addr, h);
-        message->set_callback(callback);
+        send<payload::unsubscription_confirmation_t>(dest, addr, h, callback);
     } else {
         assert(!callback);
         send<payload::external_unsubscription_t>(dest, addr, h);
