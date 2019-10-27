@@ -74,6 +74,7 @@ TEST_CASE("registry", "[registry]") {
 
         REQUIRE((bool)act->discovery_reply);
         REQUIRE(act->discovery_reply->payload.ec == r::make_error_code(r::error_code_t::unknown_service));
+        REQUIRE(act->discovery_reply->payload.ec.message() == "the requested service name is not registered");
     }
 
     SECTION("duplicate registration attempt") {
@@ -86,6 +87,7 @@ TEST_CASE("registry", "[registry]") {
         sup->do_process();
         REQUIRE((bool)act->registration_reply->payload.ec);
         REQUIRE(act->registration_reply->payload.ec == r::make_error_code(r::error_code_t::already_registered));
+        REQUIRE(act->registration_reply->payload.ec.message() == "service name is already registered");
     }
 
     SECTION("reg 2 names, check, unreg on, check") {
