@@ -55,6 +55,10 @@ add_executable(022-supervisor-tree 022-supervisor-tree.cpp)
 target_link_libraries(022-supervisor-tree ${rotor_TEST_LIBS})
 add_test(022-supervisor-tree "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/022-supervisor-tree")
 
+add_executable(030-registry 030-registry.cpp)
+target_link_libraries(030-registry ${rotor_TEST_LIBS})
+add_test(030-registry "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/030-registry")
+
 if (BUILD_BOOST_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_asio)
 

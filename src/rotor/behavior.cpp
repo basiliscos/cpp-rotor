@@ -84,7 +84,7 @@ void supervisor_behavior_t::action_shutdown_children() noexcept {
     auto &sup = static_cast<supervisor_t &>(actor);
     auto &actors_map = sup.actors_map;
     if (!actors_map.empty()) {
-        for (auto& pair : actors_map) {
+        for (auto &pair : actors_map) {
             auto &state = pair.second;
             if (!state.shutdown_requesting) {
                 auto &addr = pair.first;

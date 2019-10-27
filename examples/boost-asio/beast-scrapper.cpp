@@ -361,9 +361,7 @@ struct client_t : r::actor_base_t {
         poll_status();
     }
 
-    void shutdown_start() noexcept override {
-        r::actor_base_t::shutdown_start();
-    }
+    void shutdown_start() noexcept override { r::actor_base_t::shutdown_start(); }
 
     void shutdown_finish() noexcept override {
         auto end = std::chrono::high_resolution_clock::now();
@@ -503,7 +501,6 @@ int main(int argc, char **argv) {
     std::cerr << "using " << workers_count << " workers for " << url->host << ":" << url->port << url->path
               << ", timeout: " << req_timeout << "\n";
     asio::io_context io_context;
-
 
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);

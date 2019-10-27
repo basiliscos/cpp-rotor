@@ -239,6 +239,32 @@ struct state_request_t {
     address_ptr_t subject_addr;
 };
 
+struct registration_response_t {};
+
+struct registration_request_t {
+    using response_t = registration_response_t;
+
+    std::string service_name;
+    address_ptr_t service_addr;
+};
+
+struct deregistration_notify_t {
+    address_ptr_t service_addr;
+};
+
+struct deregistration_service_t {
+    std::string service_name;
+};
+
+struct discovery_reply_t {
+    address_ptr_t service_addr;
+};
+
+struct discovery_request_t {
+    using response_t = discovery_reply_t;
+    std::string service_name;
+};
+
 } // namespace payload
 
 namespace message {
@@ -254,6 +280,13 @@ using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::respo
 
 using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
 using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
+
+using registration_request_t = request_traits_t<payload::registration_request_t>::request::message_t;
+using registration_response_t = request_traits_t<payload::registration_request_t>::response::message_t;
+using deregistration_notify_t = message_t<payload::deregistration_notify_t>;
+using deregistration_service_t = message_t<payload::deregistration_service_t>;
+using discovery_request_t = request_traits_t<payload::discovery_request_t>::request::message_t;
+using discovery_response_t = request_traits_t<payload::discovery_request_t>::response::message_t;
 
 } // namespace message
 
