@@ -42,6 +42,11 @@ struct statuses_observer_t : public r::actor_base_t {
         request<r::payload::state_request_t>(sup_addr, address).send(r::pt::seconds{1});
     }
 
+    void request_sup_state() noexcept {
+        auto sup_addr = supervisor.get_address();
+        request<r::payload::state_request_t>(sup_addr, sup_addr).send(r::pt::seconds{1});
+    }
+
     void on_state(r::message::state_response_t &msg) noexcept {
         auto &addr = msg.payload.req->payload.request_payload.subject_addr;
         auto &state = msg.payload.res.state;
@@ -71,8 +76,13 @@ TEST_CASE("statuses observer", "[actor]") {
     sup->do_process();
     REQUIRE(observer->dummy_status == r::state_t::UNKNOWN);
     REQUIRE(observer->observable_status == r::state_t::OPERATIONAL);
-    REQUIRE(observer->supervisor_status == r::state_t::OPERATIONAL);
+    REQUIRE(observer->supervisor_status == r::state_t::INITIALIZED);
     REQUIRE(observer->self_status == r::state_t::OPERATIONAL);
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    observer->request_sup_state();
+    sup->do_process();
+    REQUIRE(observer->supervisor_status == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();

@@ -133,6 +133,8 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
 
+    virtual void init_start() noexcept override;
+
     /** \brief sends {@link payload::start_actor_t} to the initialized actor  */
     virtual void on_initialize_confirm(message::init_response_t &msg) noexcept;
 
@@ -265,7 +267,11 @@ struct supervisor_t : public actor_base_t {
      */
     template <typename Actor, typename... Args>
     intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
-        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
+        auto &&actor = make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
+        if (state == state_t::INITIALIZING) {
+            initializing_actors.emplace(actor->get_address());
+        }
+        return actor;
     }
 
     /** \brief returns system context */
@@ -306,6 +312,8 @@ struct supervisor_t : public actor_base_t {
     /** \brief (local) address-to-child_actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
 
+    using initializing_actors_t = std::unordered_set<address_ptr_t>;
+
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
 
@@ -333,6 +341,8 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
+
+    initializing_actors_t initializing_actors;
 
     /** \brief counter for request/timer ids */
     timer_id_t last_req_id;

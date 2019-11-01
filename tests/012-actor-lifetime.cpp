@@ -177,9 +177,11 @@ TEST_CASE("fail initialize test", "[actor]") {
     auto timeout = r::pt::millisec{1};
     rt::supervisor_config_test_t config(timeout, nullptr);
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto act = sup->create_actor<fail_initialize_actor>(timeout);
-
     sup->do_process();
+
+    auto act = sup->create_actor<fail_initialize_actor>(timeout);
+    sup->do_process();
+
     REQUIRE(sup->get_children().size() == 1);
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup->active_timers.size() == 1);
