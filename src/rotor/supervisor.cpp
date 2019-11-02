@@ -59,27 +59,10 @@ void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     request<payload::initialize_actor_t>(actor_address, actor_address).send(msg.payload.timeout);
 }
 
-void supervisor_t::init_start() noexcept {
-    if (initializing_actors.empty()) {
-        actor_base_t::init_start();
-    }
-}
-
 void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept {
     auto &addr = msg.payload.req->payload.request_payload.actor_address;
     auto &ec = msg.payload.ec;
-    if (ec) {
-        static_cast<supervisor_behavior_t *>(behavior)->on_init_fail(addr, ec);
-    } else {
-        send<payload::start_actor_t>(addr, addr);
-        if (state == state_t::INITIALIZING) {
-            auto it = initializing_actors.find(addr);
-            if (it != initializing_actors.end()) {
-                initializing_actors.erase(it);
-                init_start();
-            }
-        }
-    }
+    static_cast<supervisor_behavior_t *>(behavior)->on_init(addr, ec);
 }
 
 void supervisor_t::do_process() noexcept {

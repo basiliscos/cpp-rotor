@@ -7,6 +7,7 @@
 
 #include "address.hpp"
 #include <system_error>
+#include <unordered_set>
 
 namespace rotor {
 
@@ -113,8 +114,17 @@ struct supervisor_behavior_t : public actor_behavior_t {
      * and forwared to the system context */
     virtual void on_shutdown_fail(const address_ptr_t &address, const std::error_code &ec) noexcept;
 
+    virtual void on_start_init() noexcept override;
+
     /** \brief reaction on child initialization failure. By default the child is asked for shut down */
     virtual void on_init_fail(const address_ptr_t &address, const std::error_code &ec) noexcept;
+
+    virtual void on_init(const address_ptr_t &address, const std::error_code &ec) noexcept;
+
+    virtual void on_create_child(const address_ptr_t &address) noexcept;
+
+    using initializing_actors_t = std::unordered_set<address_ptr_t>;
+    initializing_actors_t initializing_actors;
 };
 
 } // namespace rotor

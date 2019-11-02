@@ -110,5 +110,42 @@ void supervisor_behavior_t::on_shutdown_fail(const address_ptr_t &, const std::e
 
 void supervisor_behavior_t::on_init_fail(const address_ptr_t &addr, const std::error_code &) noexcept {
     auto &sup = static_cast<supervisor_t &>(actor);
-    sup.template request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+    if (sup.state == state_t::INITIALIZING) {
+        sup.do_shutdown();
+    } else {
+        sup.template request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+    }
+}
+
+void supervisor_behavior_t::on_start_init() noexcept {
+    auto &sup = static_cast<supervisor_t &>(actor);
+    (void)sup;
+    assert(sup.state == state_t::INITIALIZING);
+    substate = behavior_state_t::INIT_STARTED;
+    if (initializing_actors.empty()) {
+        action_confirm_init();
+    }
+}
+
+void supervisor_behavior_t::on_create_child(const address_ptr_t &address) noexcept {
+    auto &sup = static_cast<supervisor_t &>(actor);
+    if (sup.state == state_t::INITIALIZING) {
+        initializing_actors.emplace(address);
+    }
+}
+
+void supervisor_behavior_t::on_init(const address_ptr_t &address, const std::error_code &ec) noexcept {
+    if (ec) {
+        on_init_fail(address, ec);
+    } else {
+        auto &sup = static_cast<supervisor_t &>(actor);
+        sup.template send<payload::start_actor_t>(address, address);
+        if (sup.state == state_t::INITIALIZING) {
+            auto it = initializing_actors.find(address);
+            if (it != initializing_actors.end()) {
+                initializing_actors.erase(it);
+                on_start_init();
+            }
+        }
+    }
 }

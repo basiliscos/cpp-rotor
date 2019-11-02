@@ -15,8 +15,8 @@ struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
     void init_start() noexcept override {
+        if (state == r::state_t::INITIALIZING) { on_initialize_count++; }
         rt::supervisor_test_t::init_start();
-        if (state == r::state_t::INITIALIZED) { on_initialize_count++;}
     }
 
     void shutdown_finish() noexcept override {
@@ -45,18 +45,19 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup2->get_state() == r::state_t::INITIALIZING);
-    REQUIRE(sup1->on_initialize_count == 0);
+    REQUIRE(sup1->on_initialize_count == 1);
     REQUIRE(sup2->on_initialize_count == 0);
 
     sup2->do_process();
     REQUIRE(sup1->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup2->get_state() == r::state_t::INITIALIZED);
-    REQUIRE(sup1->on_initialize_count == 0);
+    REQUIRE(sup1->on_initialize_count == 1);
     REQUIRE(sup2->on_initialize_count == 1);
     REQUIRE(sup1->on_shutdown_count == 0);
 
     sup1->do_process();
     REQUIRE(sup1->on_initialize_count == 1);
+    REQUIRE(sup2->on_initialize_count == 1);
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(sup2->get_state() == r::state_t::INITIALIZED);
 
