@@ -7,7 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
-#include <unordered_set>
+#include <list>
 
 namespace rotor {
 namespace test {
@@ -15,17 +15,20 @@ namespace test {
 struct supervisor_config_test_t: public supervisor_config_t  {
     const void *locality;
 
-    supervisor_config_test_t(const pt::time_duration& shutdown_timeout_, const void *locality_): supervisor_config_t {shutdown_timeout_}, locality{locality_} {
+    supervisor_config_test_t(const pt::time_duration& shutdown_timeout_, const void *locality_,
+                             supervisor_policy_t policy_ = supervisor_policy_t::shutdown_self):
+        supervisor_config_t {shutdown_timeout_, policy_}, locality{locality_} {
 
     }
 };
 
 struct supervisor_test_t : public supervisor_t {
-    using set_t = std::unordered_set<timer_id_t>;
+    using timers_t = std::list<timer_id_t>;
     supervisor_test_t(supervisor_t *sup, const supervisor_config_test_t& config_);
 
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    timer_id_t pop_timer() noexcept;
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;
@@ -40,7 +43,7 @@ struct supervisor_test_t : public supervisor_t {
     request_map_t &get_requests() noexcept { return request_map; }
 
     const void *locality;
-    set_t active_timers;
+    timers_t active_timers;
 };
 
 } // namespace test

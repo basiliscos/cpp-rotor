@@ -16,14 +16,24 @@ supervisor_test_t::supervisor_test_t(supervisor_t *sup, const supervisor_config_
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
 void supervisor_test_t::start_timer(const pt::time_duration &, timer_id_t timer_id) noexcept {
-    active_timers.insert(timer_id);
+    active_timers.emplace_back(timer_id);
 }
 void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
-    auto it = active_timers.find(timer_id);
-    active_timers.erase(it);
+    for(auto it = active_timers.begin(); it != active_timers.end(); ++it) {
+        if (*it == timer_id) {
+            it = active_timers.erase(it);
+        }
+    }
 }
 
 void supervisor_test_t::start() noexcept { INFO("supervisor_test_t::start()") }
+
+supervisor_t::timer_id_t supervisor_test_t::pop_timer() noexcept {
+    auto r = active_timers.front();
+    active_timers.pop_front();
+    return r;
+}
+
 
 void supervisor_test_t::shutdown() noexcept { INFO("supervisor_test_t::shutdown()") }
 

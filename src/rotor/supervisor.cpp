@@ -12,7 +12,8 @@
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_t *sup, const supervisor_config_t &config)
-    : actor_base_t(*this), parent{sup}, last_req_id{1}, shutdown_timeout{config.shutdown_timeout} {}
+    : actor_base_t(*this), parent{sup}, last_req_id{1}, shutdown_timeout{config.shutdown_timeout}, policy{
+                                                                                                       config.policy} {}
 
 address_ptr_t supervisor_t::make_address() noexcept {
     auto root_sup = this;

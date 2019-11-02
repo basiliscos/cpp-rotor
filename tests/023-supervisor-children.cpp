@@ -101,13 +101,8 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
     REQUIRE(act1->get_state() == r::state_t::OPERATIONAL);
 
     REQUIRE(sup->active_timers.size() == 2);
-    auto sup_init_req = *(sup->active_timers.begin());
-    auto act2_init_req = sup_init_req;
-    for(auto& r: sup->active_timers) {
-        if(r > act2_init_req) {
-            act2_init_req = r;
-        }
-    }
+    sup->pop_timer();
+    auto act2_init_req = sup->pop_timer();
     sup->on_timer_trigger(act2_init_req);
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
@@ -116,7 +111,7 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
 }
 
 
-TEST_CASE("supervisor create child during initi phase", "[supervisor]") {
+TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     r::system_context_t system_context;
     const void *locality = &system_context;
 
@@ -136,4 +131,53 @@ TEST_CASE("supervisor create child during initi phase", "[supervisor]") {
 
     sup->do_shutdown();
     sup->do_process();
+}
+
+TEST_CASE("shutdown_failed policy", "[supervisor]") {
+    r::system_context_t system_context;
+    const void *locality = &system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, locality, r::supervisor_policy_t::shutdown_failed);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto act = sup->create_actor<sample_actor_t>(timeout);
+
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
+    REQUIRE(act->get_state() == r::state_t::INITIALIZING);
+
+    sup->pop_timer();
+    auto act_init_req = sup->pop_timer();
+    sup->on_timer_trigger(act_init_req);
+    sup->do_process();
+
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
+
+    sup->do_shutdown();
+    sup->do_process();
+}
+
+TEST_CASE("shutdown_self policy", "[supervisor]") {
+    r::system_context_t system_context;
+    const void *locality = &system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, locality, r::supervisor_policy_t::shutdown_self);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto act = sup->create_actor<sample_actor_t>(timeout);
+
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
+    REQUIRE(act->get_state() == r::state_t::INITIALIZING);
+
+    sup->pop_timer();
+    auto act_init_req = sup->pop_timer();
+    sup->on_timer_trigger(act_init_req);
+    sup->do_process();
+
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
 }
