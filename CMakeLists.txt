@@ -28,7 +28,6 @@ add_library(rotor
     src/rotor/address_mapping.cpp
     src/rotor/behavior.cpp
     src/rotor/error_code.cpp
-    src/rotor/message.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp
     src/rotor/supervisor.cpp

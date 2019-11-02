@@ -139,7 +139,6 @@ void supervisor_behavior_t::on_init(const address_ptr_t &address, const std::err
         on_init_fail(address, ec);
     } else {
         auto &sup = static_cast<supervisor_t &>(actor);
-        sup.template send<payload::start_actor_t>(address, address);
         if (sup.state == state_t::INITIALIZING) {
             auto it = initializing_actors.find(address);
             if (it != initializing_actors.end()) {
@@ -147,5 +146,6 @@ void supervisor_behavior_t::on_init(const address_ptr_t &address, const std::err
                 on_start_init();
             }
         }
+        sup.template send<payload::start_actor_t>(address, address);
     }
 }
