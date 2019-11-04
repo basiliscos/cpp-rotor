@@ -101,8 +101,7 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
     REQUIRE(act1->get_state() == r::state_t::OPERATIONAL);
 
     REQUIRE(sup->active_timers.size() == 2);
-    sup->pop_timer();
-    auto act2_init_req = sup->pop_timer();
+    auto act2_init_req = sup->get_timer(1);
     sup->on_timer_trigger(act2_init_req);
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
@@ -146,8 +145,7 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
-    sup->pop_timer();
-    auto act_init_req = sup->pop_timer();
+    auto act_init_req = sup->get_timer(1);
     sup->on_timer_trigger(act_init_req);
     sup->do_process();
 
@@ -172,8 +170,7 @@ TEST_CASE("shutdown_self policy", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
-    sup->pop_timer();
-    auto act_init_req = sup->pop_timer();
+    auto act_init_req = sup->get_timer(1);
     sup->on_timer_trigger(act_init_req);
     sup->do_process();
 

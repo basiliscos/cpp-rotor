@@ -28,7 +28,7 @@ struct supervisor_test_t : public supervisor_t {
 
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
-    timer_id_t pop_timer() noexcept;
+    timer_id_t get_timer(std::size_t index) noexcept;
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;

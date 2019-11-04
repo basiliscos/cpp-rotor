@@ -34,10 +34,12 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
 
 void supervisor_test_t::start() noexcept { INFO("supervisor_test_t::start()") }
 
-supervisor_t::timer_id_t supervisor_test_t::pop_timer() noexcept {
-    auto r = active_timers.front();
-    active_timers.pop_front();
-    return r;
+supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
+    auto it = active_timers.begin();
+    for(std::size_t i = 0; i < index; ++i) {
+        ++it;
+    }
+    return *it;
 }
 
 
