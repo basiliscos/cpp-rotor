@@ -6,6 +6,7 @@
 
 #include "supervisor_test.h"
 #include "catch.hpp"
+#include "cassert"
 
 using namespace rotor::test;
 using namespace rotor;
@@ -19,11 +20,15 @@ void supervisor_test_t::start_timer(const pt::time_duration &, timer_id_t timer_
     active_timers.emplace_back(timer_id);
 }
 void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
-    for(auto it = active_timers.begin(); it != active_timers.end(); ++it) {
+    auto it = active_timers.begin();
+    while (it != active_timers.end()) {
         if (*it == timer_id) {
             it = active_timers.erase(it);
+        } else {
+            ++it;
         }
     }
+    assert(0 && "should not happen");
 }
 
 void supervisor_test_t::start() noexcept { INFO("supervisor_test_t::start()") }
