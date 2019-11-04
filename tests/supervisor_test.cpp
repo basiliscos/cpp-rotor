@@ -23,7 +23,8 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
     auto it = active_timers.begin();
     while (it != active_timers.end()) {
         if (*it == timer_id) {
-            it = active_timers.erase(it);
+            active_timers.erase(it);
+            return;
         } else {
             ++it;
         }
