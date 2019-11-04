@@ -239,29 +239,58 @@ struct state_request_t {
     address_ptr_t subject_addr;
 };
 
+/** \struct registration_response_t
+ *  \brief Successful registraction response (no content)
+ */
 struct registration_response_t {};
 
+/** \struct registration_request_t
+ *  \brief "name - >service address mapping" request
+ */
 struct registration_request_t {
+    /** \brief link to registration response payload type */
     using response_t = registration_response_t;
 
+    /** \brief (unique) name of the sevice address in the registry */
     std::string service_name;
+
+    /** \brief actual service address */
     address_ptr_t service_addr;
 };
 
+/** \struct deregistration_notify_t
+ *  \brief deregistration notification for all names associated
+ *  with service address
+ */
 struct deregistration_notify_t {
+    /** \brief service address for deregistration */
     address_ptr_t service_addr;
 };
 
+/** \struct deregistration_service_t
+ *  \brief removes single service by name from a registry
+ */
 struct deregistration_service_t {
+    /** \brief the  name of the sevice address to be remoed for a registry */
     std::string service_name;
 };
 
+/** \struct discovery_reply_t
+ *  \brief successful result of service discovery
+ */
 struct discovery_reply_t {
+    /**  \brief the service address found by name in a registry */
     address_ptr_t service_addr;
 };
 
+/** \struct discovery_request_t
+ *  \brief discover service by name in a registry
+ */
 struct discovery_request_t {
+    /** \brief link to discovery response payload type */
     using response_t = discovery_reply_t;
+
+    /**  \brief the service name to be looked in a registry */
     std::string service_name;
 };
 

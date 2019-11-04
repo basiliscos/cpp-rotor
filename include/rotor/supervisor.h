@@ -344,6 +344,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief shutdown timeout value (copied from config) */
     pt::time_duration shutdown_timeout;
 
+    /** \brief reaction on child-actors termination */
     supervisor_policy_t policy;
 
     /** \brief per-actor and per-message request tracking support */

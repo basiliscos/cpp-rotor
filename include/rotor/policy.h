@@ -8,13 +8,16 @@
 
 namespace rotor {
 
+/** \brief how to behave on child actor initialization failures */
 enum class supervisor_policy_t {
-    /* shutdown supervisor (and all its actors) if a child-actor them fails during supervisor initialization phase*/
+    /** \brief shutdown supervisor (and all its actors) if a child-actor
+     * fails during supervisor initialization phase
+     */
     shutdown_self = 1,
 
-    /* just shutdown failed to initialize child-actor */
+    /** \brief shutdown a failed child and continue initialization */
     shutdown_failed,
 
 };
 
-}
+} // namespace rotor
