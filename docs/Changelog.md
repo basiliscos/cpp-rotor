@@ -8,6 +8,7 @@
 
 - [improvement] registy actor was added to allow via name/address runtime
 matching do services discovery
+- [example] `examples/ev/pong-registry.cpp` how to use registry
 - [doc] patterns/Registry was added
 
 ## 0.05 (22-Sep-2019)
