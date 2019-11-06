@@ -28,7 +28,7 @@ static const auto timeout = boost::posix_time::milliseconds{5};
 
 struct pinger_t : public rotor::actor_base_t {
 
-    pinger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {}
+    using rotor::actor_base_t::actor_base_t;
 
     void set_registry_addr(const rotor::address_ptr_t &addr) { registry_addr = addr; }
 
@@ -101,7 +101,7 @@ struct pinger_t : public rotor::actor_base_t {
 
 struct ponger_t : public rotor::actor_base_t {
 
-    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {}
+    using rotor::actor_base_t::actor_base_t;
 
     void set_registry_addr(const rotor::address_ptr_t &addr) { registry_addr = addr; }
 
@@ -160,7 +160,6 @@ int main(int argc, char **argv) {
     std::cout << "exiting...\n";
     return 0;
 }
-
 
 /*
 
