@@ -134,7 +134,7 @@ struct ponger_t : public rotor::actor_base_t {
     rotor::address_ptr_t registry_addr;
 };
 
-int main(int argc, char **argv) {
+int main() {
     try {
         auto *loop = ev_loop_new(0);
         auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
