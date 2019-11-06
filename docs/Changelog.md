@@ -4,6 +4,12 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.06 (xx-xxx-xxxx)
+
+- [improvement] registy actor was added to allow via name/address runtime
+matching do services discovery
+- [doc] patterns/Registry was added
+
 ## 0.05 (22-Sep-2019)
 
 - [improvement] response can be inherited from `rotor::arc_base`, to allow
@@ -46,7 +52,7 @@ to build superving trees, see [superving-trees]
  - [breaking] `rotor::asio::supervisor_config_t` now contains
 `std::shared_ptr` to `strand`, instead of creating private strand
 for each supervisor
- - [bugfix] redundant `do_start()` method in `rotor::supervisor_t` was
+ - [bugfix] redundant `do_start()` method in `rotor::supervisor_t` wase
 removed, since supervisor now is able to start self after compliting
 initialization.
  - [bugfix] `rotor::supervisor_t` sends `initialize_actor_t` to self

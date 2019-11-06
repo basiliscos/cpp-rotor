@@ -2,6 +2,7 @@
 
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
+[get-actor-address]: https://en.wikipedia.org/wiki/Actor_model#Synthesizing_addresses_of_actors
 
 Networking mindset hint: try to think of messages as if they where UDP-datagrams,
 supervisors as different network IP-addresses (which might or might not belong to
@@ -281,6 +282,27 @@ struct client_t: public r::actor_base_t {
     }
 }
 ~~~
+
+## Registry
+
+There is a known [get-actor-address] problem: how one actor should know the
+address of the other actor? Well known way is to carefully craft initialization
+taking addresses of just created actors and pass them in constructor to the
+other actors etc. The approach will work in the certain circumstances; however it
+leads to boilerplate and fragile code, which "smells bad", as some initialization
+is performed inside actors and some is outside; it also does not handles well
+the case of dynamic (virtual) addresses.
+
+The better solution is to have "the registry" actor, known to all other actors.
+Each actor, which provides some services registers it's main or virtual address
+in the registry via some application-known string names; upon the termination
+it undoes the registration. Each "client-actor" asks for the predefined service
+point by it's name in the actor initialization phase; once all addresses for
+the needed services are found, the initialization can continue and the actor
+then becomes "operational".
+
+Since the registry does not perform any I/O and can be implemented in loop-agnostic
+way, it was included in `rotor` since `v0.06`.
 
 ## check actor ready state (syncrhonizing stream)
 
