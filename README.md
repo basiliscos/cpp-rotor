@@ -33,6 +33,18 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+
+### 0.06 (09-Nov-2019)
+
+- [improvement] registy actor was added to allow via name/address runtime
+matching do services discovery
+- [improvement, breaking] minor changes in supervisor behavior: now it
+is considered initialied when all its children confirmed initialization
+- [improvement] `supervisor_policy_t` was introduced to control supervisor
+behavior on a child-actor startup failure
+- [example] `examples/ev/pong-registry.cpp` how to use registry
+- [doc] patterns/Registry was added
+
 ### 0.05 (22-Sep-2019)
 
 - [improvement] response can be inherited from `rotor::arc_base`, to allow

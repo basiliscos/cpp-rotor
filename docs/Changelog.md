@@ -57,7 +57,7 @@ to build superving trees, see [superving-trees]
  - [breaking] `rotor::asio::supervisor_config_t` now contains
 `std::shared_ptr` to `strand`, instead of creating private strand
 for each supervisor
- - [bugfix] redundant `do_start()` method in `rotor::supervisor_t` wase
+ - [bugfix] redundant `do_start()` method in `rotor::supervisor_t` was
 removed, since supervisor now is able to start self after compliting
 initialization.
  - [bugfix] `rotor::supervisor_t` sends `initialize_actor_t` to self
