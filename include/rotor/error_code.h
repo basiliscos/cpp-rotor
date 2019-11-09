@@ -16,6 +16,8 @@ enum class error_code_t {
     success = 0,
     request_timeout,
     supervisor_defined,
+    already_registered,
+    unknown_service,
 };
 
 namespace details {

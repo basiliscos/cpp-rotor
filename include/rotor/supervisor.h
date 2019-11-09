@@ -19,7 +19,6 @@
 #include <deque>
 #include <functional>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace rotor {
 
@@ -265,7 +264,9 @@ struct supervisor_t : public actor_base_t {
      */
     template <typename Actor, typename... Args>
     intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
-        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
+        auto &&actor = make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
+        static_cast<supervisor_behavior_t *>(behavior)->on_create_child(actor->get_address());
+        return actor;
     }
 
     /** \brief returns system context */
@@ -282,6 +283,15 @@ struct supervisor_t : public actor_base_t {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
+    /** \brief child actror housekeeping strcuture */
+    struct actor_state_t {
+        /** \brief intrusive pointer to actor */
+        actor_ptr_t actor;
+
+        /** \brief whethe the shutdown request is already sent */
+        bool shutdown_requesting;
+    };
+
   protected:
     virtual actor_behavior_t *create_behavior() noexcept override;
 
@@ -295,7 +305,7 @@ struct supervisor_t : public actor_base_t {
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
 
     /** \brief (local) address-to-child_actor map type */
-    using actors_map_t = std::unordered_map<address_ptr_t, actor_ptr_t>;
+    using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
 
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
@@ -333,6 +343,9 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief shutdown timeout value (copied from config) */
     pt::time_duration shutdown_timeout;
+
+    /** \brief reaction on child-actors termination */
+    supervisor_policy_t policy;
 
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;

@@ -19,6 +19,10 @@ std::string error_code_category::message(int c) const {
         return "request timeout";
     case error_code_t::supervisor_defined:
         return "supervisor is already defined";
+    case error_code_t::already_registered:
+        return "service name is already registered";
+    case error_code_t::unknown_service:
+        return "the requested service name is not registered";
     default:
         return "unknown";
     }

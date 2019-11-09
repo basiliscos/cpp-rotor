@@ -84,9 +84,13 @@ void supervisor_behavior_t::action_shutdown_children() noexcept {
     auto &sup = static_cast<supervisor_t &>(actor);
     auto &actors_map = sup.actors_map;
     if (!actors_map.empty()) {
-        for (auto pair : actors_map) {
-            auto &addr = pair.first;
-            sup.request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+        for (auto &pair : actors_map) {
+            auto &state = pair.second;
+            if (!state.shutdown_requesting) {
+                auto &addr = pair.first;
+                state.shutdown_requesting = true;
+                sup.request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+            }
         }
         substate = behavior_state_t::SHUTDOWN_CHILDREN_STARTED;
     } else {
@@ -104,7 +108,44 @@ void supervisor_behavior_t::on_shutdown_fail(const address_ptr_t &, const std::e
     sup.context->on_error(ec);
 }
 
-void supervisor_behavior_t::on_init_fail(const address_ptr_t &addr, const std::error_code &) noexcept {
+void supervisor_behavior_t::on_start_init() noexcept {
     auto &sup = static_cast<supervisor_t &>(actor);
-    sup.template request<payload::shutdown_request_t>(addr, addr).send(sup.shutdown_timeout);
+    (void)sup;
+    assert(sup.state == state_t::INITIALIZING);
+    substate = behavior_state_t::INIT_STARTED;
+    if (initializing_actors.empty()) {
+        action_confirm_init();
+    }
+}
+
+void supervisor_behavior_t::on_create_child(const address_ptr_t &address) noexcept {
+    auto &sup = static_cast<supervisor_t &>(actor);
+    if (sup.state == state_t::INITIALIZING) {
+        initializing_actors.emplace(address);
+    }
+}
+
+void supervisor_behavior_t::on_init(const address_ptr_t &address, const std::error_code &ec) noexcept {
+    auto &sup = static_cast<supervisor_t &>(actor);
+    bool continue_init = false;
+    bool in_init = sup.state == state_t::INITIALIZING;
+    auto it = initializing_actors.find(address);
+    if (it != initializing_actors.end()) {
+        initializing_actors.erase(it);
+        continue_init = in_init;
+    }
+    if (ec) {
+        auto shutdown_self = in_init && sup.policy == supervisor_policy_t::shutdown_self;
+        if (shutdown_self) {
+            continue_init = false;
+            sup.do_shutdown();
+        } else {
+            sup.template request<payload::shutdown_request_t>(address, address).send(sup.shutdown_timeout);
+        }
+    } else {
+        sup.template send<payload::start_actor_t>(address, address);
+    }
+    if (continue_init) {
+        on_start_init();
+    }
 }

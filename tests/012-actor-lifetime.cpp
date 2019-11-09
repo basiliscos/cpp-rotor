@@ -68,11 +68,24 @@ struct fail_shutdown_actor : public r::actor_base_t {
     }
 };
 
+struct double_shutdown_actor : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    std::uint32_t shutdown_starts = 0;
+
+    void shutdown_start() noexcept override {
+        ++shutdown_starts;
+    }
+
+    void continue_shutdown() noexcept { r::actor_base_t::shutdown_start(); }
+};
+
 struct fail_initialize_actor : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     void init_start() noexcept override {}
 };
+
 
 struct fail_test_behavior_t : public r::supervisor_behavior_t {
     using r::supervisor_behavior_t::supervisor_behavior_t;
@@ -164,9 +177,11 @@ TEST_CASE("fail initialize test", "[actor]") {
     auto timeout = r::pt::millisec{1};
     rt::supervisor_config_test_t config(timeout, nullptr);
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto act = sup->create_actor<fail_initialize_actor>(timeout);
-
     sup->do_process();
+
+    auto act = sup->create_actor<fail_initialize_actor>(timeout);
+    sup->do_process();
+
     REQUIRE(sup->get_children().size() == 1);
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup->active_timers.size() == 1);
@@ -178,3 +193,54 @@ TEST_CASE("fail initialize test", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 }
+
+TEST_CASE("double shutdown test (actor)", "[actor]") {
+    r::system_context_t system_context;
+
+    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, config);
+    auto act = sup->create_actor<double_shutdown_actor>(r::pt::milliseconds{1});
+
+    sup->do_process();
+
+    act->do_shutdown();
+    act->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->active_timers.size() == 1);
+    REQUIRE(act->shutdown_starts == 1);
+
+    act->continue_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_children().size() == 0);
+
+    sup->do_shutdown();
+    sup->do_process();
+}
+
+TEST_CASE("double shutdown test (supervisor)", "[actor]") {
+    r::system_context_t system_context;
+
+    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, config);
+    auto act = sup->create_actor<double_shutdown_actor>(r::pt::milliseconds{1});
+
+    sup->do_process();
+
+    sup->do_shutdown();
+    sup->do_shutdown();
+
+    sup->do_process();
+    REQUIRE(sup->active_timers.size() == 1);
+    REQUIRE(act->shutdown_starts == 1);
+
+    act->continue_shutdown();
+    sup->do_process();
+
+    REQUIRE(sup->get_children().size() == 0);
+
+    sup->do_shutdown();
+    sup->do_process();
+}
+
+

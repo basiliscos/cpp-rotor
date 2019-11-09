@@ -168,3 +168,18 @@ sets the actors status to `SHUTTED_DOWN` and then `shutdown_finish()` is called.
 
 In the `shutdown_finish()` is the final method called by `rotor`. For example,
 external addresses should be released to avoid memory leaks.
+
+## Supervisor lifecycle
+
+Generally supervisor's lifecycle is specialization of actors lifecycle. Supervisor
+is considered initialized when all it's children actors are initialized, i.e.
+it waits until all already created children confirm their initialization.
+The default policy (`supervisor_policy_t::shutdown_self`) specifies, that if
+something is wrong with a child initialization, then the supervisor will shutdown
+self (and all it's children). Once all children confirmed initialization their
+supervisor also confirms that (i.e. moves it's state from `INITIALIZING`
+to `INITIALIZED`). All children actors created in `OPERATIONAL` supervisor state
+are outside of the described behavior.
+
+The shutdown procedure is opposite: a supervisor waits all it's children confirm
+shutdown, and only then the supervisor shuts down self.
