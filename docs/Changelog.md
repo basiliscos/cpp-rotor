@@ -4,10 +4,14 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.06 (xx-xxx-xxxx)
+## 0.06 (09-Nov-2019)
 
 - [improvement] registy actor was added to allow via name/address runtime
 matching do services discovery
+- [improvement, breaking] minor changes in supervisor behavior: now it
+is considered initialied when all its children confirmed initialization
+- [improvement] `supervisor_policy_t` was introduced to control supervisor
+behavior on a child-actor startup failure
 - [example] `examples/ev/pong-registry.cpp` how to use registry
 - [doc] patterns/Registry was added
 
