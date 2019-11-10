@@ -16,7 +16,9 @@ actor_behavior_t::~actor_behavior_t() {}
 void actor_behavior_t::on_start_init() noexcept {
     assert(actor.state == state_t::INITIALIZING);
     substate = behavior_state_t::INIT_STARTED;
-    action_confirm_init();
+    if (linking_actors.empty()) {
+        action_confirm_init();
+    }
 }
 
 void actor_behavior_t::action_confirm_init() noexcept {
@@ -38,7 +40,36 @@ void actor_behavior_t::action_finish_init() noexcept {
 void actor_behavior_t::on_start_shutdown() noexcept {
     substate = behavior_state_t::SHUTDOWN_STARTED;
     actor.state = state_t::SHUTTING_DOWN;
+    action_clients_unliked();
+}
+
+void actor_behavior_t::action_clients_unliked() noexcept {
+    action_unlink_servers();
     action_unsubscribe_self();
+}
+
+void actor_behavior_t::action_unlink_clients() noexcept {
+#if 0
+    auto& linked_clients = actor.linked_clients;
+    if (linked_clients.empty()) {
+        substate = behavior_state_t::SHUTDOWN_CLIENTS_STARTED;
+        action_clients_unliked();
+    } else {
+        for(auto& linkage: actor.linked_clients) {
+            auto &server_addr = linkage.server_addr;
+            auto &client_addr = linkage.client_addr;
+            //sup.shutdown_timeout -- where to take it?
+            actor.template request<payload::shutdown_request_t>(server_addr, client_addr).send();
+        }
+    }
+#endif
+}
+
+void actor_behavior_t::action_unlink_servers() noexcept {
+    auto &linked_servers = actor.linked_servers;
+    while (!linked_servers.empty()) {
+        actor.unlink_notify(*linked_servers.begin());
+    }
 }
 
 void actor_behavior_t::action_unsubscribe_self() noexcept {
@@ -71,6 +102,32 @@ void actor_behavior_t::on_unsubscription() noexcept {
     action_confirm_shutdown();
 }
 
+/* link-related */
+void actor_behavior_t::on_link_response(const address_ptr_t &service_addr, const std::error_code &ec) noexcept {
+    auto it = linking_actors.find(service_addr);
+    bool remove_it = it != linking_actors.end();
+    if (remove_it) {
+        linking_actors.erase(service_addr);
+    }
+    if (ec) {
+        if (remove_it) {
+            actor.do_shutdown();
+        }
+    } else {
+        actor.linked_servers.insert(service_addr);
+        if (actor.state == state_t::INITIALIZING && remove_it) {
+            on_start_init();
+        }
+    }
+}
+
+void actor_behavior_t::on_link_request(const address_ptr_t &service_addr) {
+    if (actor.state == state_t::INITIALIZING) {
+        linking_actors.insert(service_addr);
+    }
+}
+
+/* supervisor */
 supervisor_behavior_t::supervisor_behavior_t(supervisor_t &sup) : actor_behavior_t{sup} {}
 
 void supervisor_behavior_t::on_start_shutdown() noexcept {

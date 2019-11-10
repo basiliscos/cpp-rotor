@@ -32,6 +32,9 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
     supervisor.subscribe_actor(*this, &actor_base_t::on_shutdown);
     supervisor.subscribe_actor(*this, &actor_base_t::on_shutdown_trigger);
     supervisor.subscribe_actor(*this, &actor_base_t::on_subscription);
+    supervisor.subscribe_actor(*this, &actor_base_t::on_link_request);
+    supervisor.subscribe_actor(*this, &actor_base_t::on_link_response);
+    supervisor.subscribe_actor(*this, &actor_base_t::on_unlink_notify);
     state = state_t::INITIALIZING;
 }
 
@@ -110,4 +113,39 @@ void actor_base_t::remove_subscription(const address_ptr_t &addr, const handler_
         }
     }
     assert(0 && "no subscription found");
+}
+
+void actor_base_t::unlink_notify(const address_ptr_t &service_addr) noexcept {
+    send<payload::unlink_notify_t>(service_addr, address);
+    linked_servers.erase(service_addr);
+}
+
+void actor_base_t::on_link_response(message::link_response_t &msg) noexcept {
+    auto &ec = msg.payload.ec;
+    auto &service_addr = msg.payload.req->address;
+    behavior->on_link_response(service_addr, ec);
+}
+
+actor_base_t::timer_id_t actor_base_t::link_request(const address_ptr_t &service_addr,
+                                                    const pt::time_duration &timeout) noexcept {
+    auto timer_id = request<payload::link_request_t>(service_addr, address).send(timeout);
+    behavior->on_link_request(service_addr);
+    return timer_id;
+}
+
+void actor_base_t::on_link_request(message::link_request_t &msg) noexcept {
+    auto &server_addr = msg.address;
+    auto &client_addr = msg.payload.request_payload.client_addr;
+    linked_clients.emplace(details::linkage_t{server_addr, client_addr});
+    reply_to(msg);
+}
+
+void actor_base_t::on_unlink_notify(message::unlink_notify_t &msg) noexcept {
+    auto &client_addr = msg.payload.client_addr;
+    auto &server_addr = msg.address;
+    auto linkage = details::linkage_t{server_addr, client_addr};
+    auto it = linked_clients.find(linkage);
+    if (it != linked_clients.end()) {
+        linked_clients.erase(it);
+    }
 }

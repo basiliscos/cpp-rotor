@@ -20,6 +20,8 @@ enum class behavior_state_t {
     INIT_STARTED,
     INIT_ENDED,
     SHUTDOWN_STARTED,
+    SHUTDOWN_CLIENTS_STARTED,
+    SHUTDOWN_CLIENTS_FINISHED,
     SHUTDOWN_CHILDREN_STARTED,
     SHUTDOWN_CHILDREN_FINISHED,
     UNSUBSCRIPTION_STARTED,
@@ -35,6 +37,8 @@ enum class behavior_state_t {
  *
  */
 struct actor_behavior_t {
+    using linking_actors_t = std::unordered_set<address_ptr_t>;
+
     /** \brief behaviror constructor */
     actor_behavior_t(actor_base_t &actor_) : actor{actor_}, substate{behavior_state_t::UNKNOWN} {}
     virtual ~actor_behavior_t();
@@ -44,6 +48,10 @@ struct actor_behavior_t {
 
     /** \brief invokes `init_finish` actor's method */
     virtual void action_finish_init() noexcept;
+
+    virtual void action_clients_unliked() noexcept;
+    virtual void action_unlink_clients() noexcept;
+    virtual void action_unlink_servers() noexcept;
 
     /** \brief trigger actor unsubscription */
     virtual void action_unsubscribe_self() noexcept;
@@ -78,12 +86,17 @@ struct actor_behavior_t {
     /** \brief event, which continues shutdown */
     virtual void on_unsubscription() noexcept;
 
+    virtual void on_link_response(const address_ptr_t &service_addr, const std::error_code &ec) noexcept;
+    virtual void on_link_request(const address_ptr_t &service_addr);
+
   protected:
     /** \brief a reference for the led actor */
     actor_base_t &actor;
 
     /** \brief internal behavior state for housekeeping */
     behavior_state_t substate;
+
+    linking_actors_t linking_actors;
 };
 
 /** \struct supervisor_behavior_t

@@ -12,7 +12,36 @@
 #include "state.h"
 #include "handler.hpp"
 #include <unordered_map>
+#include <unordered_set>
 #include <list>
+
+namespace rotor {
+
+namespace details {
+
+struct linkage_t {
+    address_ptr_t server_addr;
+    address_ptr_t client_addr;
+
+    inline bool operator==(const linkage_t &other) const noexcept {
+        return (client_addr == other.client_addr) && (server_addr == other.server_addr);
+    }
+};
+
+} // namespace details
+} // namespace rotor
+
+namespace std {
+
+template <> struct hash<rotor::details::linkage_t> {
+    inline size_t operator()(const rotor::details::linkage_t &linkage) const noexcept {
+        using hash_t = std::hash<rotor::address_ptr_t>;
+        auto h1 = hash_t{}(linkage.client_addr);
+        auto h2 = hash_t{}(linkage.server_addr);
+        return h1 ^ (h2 << 16);
+    }
+};
+} // namespace std
 
 namespace rotor {
 
@@ -66,6 +95,12 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief alias to the list of {@link subscription_point_t} */
     using subscription_points_t = std::list<subscription_point_t>;
+
+    using linked_servers_t = std::unordered_set<address_ptr_t>;
+    using linked_clients_t = std::unordered_set<details::linkage_t>;
+
+    /** \brief timer identifier type in the scope of the actor */
+    using timer_id_t = std::uint32_t;
 
     /** \brief constructs actor and links it's supervisor
      *
@@ -159,6 +194,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void on_external_unsubscription(message_t<payload::external_unsubscription_t> &) noexcept;
 
+    virtual void on_link_request(message::link_request_t &) noexcept;
+    virtual void on_link_response(message::link_response_t &) noexcept;
+    virtual void on_unlink_notify(message::unlink_notify_t &) noexcept;
+
     /** \brief sends message to the destination address
      *
      * Internally it just constructs new message in supervisor's outbound queue.
@@ -176,6 +215,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename R, typename... Args>
     request_builder_t<typename request_wrapper_t<R>::request_t> request(const address_ptr_t &dest_addr,
                                                                         Args &&... args);
+
+    virtual timer_id_t link_request(const address_ptr_t &service_addr, const pt::time_duration &timeout) noexcept;
+    void unlink_notify(const address_ptr_t &service_addr) noexcept;
 
     /** \brief returns request builder for destination address using the specified address for reply
      *
@@ -290,6 +332,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief suspended shutdown request message */
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
+
+    linked_servers_t linked_servers;
+    linked_clients_t linked_clients;
 
     friend struct actor_behavior_t;
     friend struct supervisor_t;

@@ -69,9 +69,6 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
  */
 struct supervisor_t : public actor_base_t {
 
-    /** \brief timer identifier type in the scope of the supervisor */
-    using timer_id_t = std::uint32_t;
-
     /** \brief constructs new supervisor with optional parent supervisor */
     supervisor_t(supervisor_t *sup, const supervisor_config_t &config);
     supervisor_t(const supervisor_t &) = delete;
