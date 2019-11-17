@@ -40,11 +40,10 @@ struct observer_t : public r::actor_base_t {
 TEST_CASE("lifetime observer, same locality", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto observer = sup->create_actor<observer_t>(timeout);
-    auto sample_actor = sup->create_actor<sample_actor_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto observer = sup->create_actor<observer_t>(rt::default_timeout, rt::default_timeout);
+    auto sample_actor = sup->create_actor<sample_actor_t>(rt::default_timeout, rt::default_timeout);
     observer->set_observable(sample_actor->get_address());
 
     sup->do_process();
@@ -65,15 +64,14 @@ TEST_CASE("lifetime observer, same locality", "[actor]") {
 TEST_CASE("lifetime observer, different localities", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
     const char locality1[] = "l1";
     const char locality2[] = "l2";
-    rt::supervisor_config_test_t config1(timeout, locality1);
-    rt::supervisor_config_test_t config2(timeout, locality2);
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config1);
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, config2);
-    auto observer = sup1->create_actor<observer_t>(timeout);
-    auto sample_actor = sup2->create_actor<sample_actor_t>(timeout);
+    rt::supervisor_config_test_t config1(nullptr, rt::default_timeout, rt::default_timeout, locality1);
+    rt::supervisor_config_test_t config2(nullptr, rt::default_timeout, rt::default_timeout, locality2);
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(config1);
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(config2);
+    auto observer = sup1->create_actor<observer_t>(rt::default_timeout, rt::default_timeout);
+    auto sample_actor = sup2->create_actor<sample_actor_t>(rt::default_timeout, rt::default_timeout);
     observer->set_observable(sample_actor->get_address());
 
     sup1->do_process();

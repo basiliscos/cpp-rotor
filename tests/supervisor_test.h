@@ -12,19 +12,25 @@
 namespace rotor {
 namespace test {
 
+extern pt::time_duration default_timeout;
+
+
 struct supervisor_config_test_t: public supervisor_config_t  {
     const void *locality;
 
-    supervisor_config_test_t(const pt::time_duration& shutdown_timeout_, const void *locality_,
+    supervisor_config_test_t(rotor::supervisor_t* parent, const pt::time_duration& init_timeout_,
+                             const pt::time_duration& shutdown_timeout_, const void *locality_,
                              supervisor_policy_t policy_ = supervisor_policy_t::shutdown_self):
-        supervisor_config_t {shutdown_timeout_, policy_}, locality{locality_} {
+        supervisor_config_t {parent, init_timeout_, shutdown_timeout_, policy_}, locality{locality_} {
 
     }
 };
 
 struct supervisor_test_t : public supervisor_t {
     using timers_t = std::list<timer_id_t>;
-    supervisor_test_t(supervisor_t *sup, const supervisor_config_test_t& config_);
+    using config_t = supervisor_config_test_t;
+
+    supervisor_test_t(const config_t& config_);
 
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;

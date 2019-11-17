@@ -12,21 +12,19 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-auto timeout = r::pt::milliseconds{1};
-
 TEST_CASE("client/server, common workflow", "[actor]") {
     r::system_context_t system_context;
     const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(timeout, locality);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto act_s = sup->create_actor<rt::actor_test_t>(timeout);
-    auto act_c = sup->create_actor<rt::actor_test_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto act_s = sup->create_actor<rt::actor_test_t>(rt::default_timeout, rt::default_timeout);
+    auto act_c = sup->create_actor<rt::actor_test_t>(rt::default_timeout, rt::default_timeout);
 
     auto server_addr = act_s->get_address();
     auto client_addr = act_c->get_address();
 
-    act_c->link_request(server_addr, timeout);
+    act_c->link_request(server_addr, rt::default_timeout);
     REQUIRE(act_c->get_behaviour().get_linking_actors().size() == 1);
     REQUIRE(act_c->get_linked_clients().size() == 0);
     REQUIRE(act_c->get_linked_servers().size() == 0);

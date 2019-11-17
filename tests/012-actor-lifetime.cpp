@@ -22,7 +22,7 @@ struct sample_actor_t : public r::actor_base_t {
 
     r::state_t &get_state() noexcept { return state; }
 
-    sample_actor_t(r::supervisor_t &sup) : r::actor_base_t{sup} {
+    sample_actor_t(r::actor_config_t &config_) : r::actor_base_t{config_} {
         event_current = 1;
         event_init = 0;
         event_start = 0;
@@ -110,9 +110,9 @@ void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, con
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
-    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto act = sup->create_actor<sample_actor_t>(r::pt::milliseconds{1});
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto act = sup->create_actor<sample_actor_t>(rt::default_timeout, rt::default_timeout);
 
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
@@ -145,9 +145,9 @@ TEST_CASE("actor litetimes", "[actor]") {
 TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, config);
-    auto act = sup->create_actor<fail_shutdown_actor>(r::pt::milliseconds{1});
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(config);
+    auto act = sup->create_actor<fail_shutdown_actor>(rt::default_timeout, rt::default_timeout);
 
     sup->do_process();
 
@@ -174,12 +174,11 @@ TEST_CASE("fail shutdown test", "[actor]") {
 TEST_CASE("fail initialize test", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::millisec{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
     sup->do_process();
 
-    auto act = sup->create_actor<fail_initialize_actor>(timeout);
+    auto act = sup->create_actor<fail_initialize_actor>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->get_children().size() == 1);
@@ -197,9 +196,9 @@ TEST_CASE("fail initialize test", "[actor]") {
 TEST_CASE("double shutdown test (actor)", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, config);
-    auto act = sup->create_actor<double_shutdown_actor>(r::pt::milliseconds{1});
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(config);
+    auto act = sup->create_actor<double_shutdown_actor>(rt::default_timeout, rt::default_timeout);
 
     sup->do_process();
 
@@ -221,9 +220,9 @@ TEST_CASE("double shutdown test (actor)", "[actor]") {
 TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(nullptr, config);
-    auto act = sup->create_actor<double_shutdown_actor>(r::pt::milliseconds{1});
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>(config);
+    auto act = sup->create_actor<double_shutdown_actor>(rt::default_timeout, rt::default_timeout);
 
     sup->do_process();
 
@@ -242,5 +241,3 @@ TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 }
-
-

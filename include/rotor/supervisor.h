@@ -69,8 +69,10 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
  */
 struct supervisor_t : public actor_base_t {
 
+    using config_t = supervisor_config_t;
+
     /** \brief constructs new supervisor with optional parent supervisor */
-    supervisor_t(supervisor_t *sup, const supervisor_config_t &config);
+    supervisor_t(const config_t &config);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 
@@ -236,7 +238,7 @@ struct supervisor_t : public actor_base_t {
      *
      */
     inline void subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) {
-        if (&addr->supervisor == &supervisor) {
+        if (&addr->supervisor == supervisor) {
             auto subs_info = subscription_map.try_emplace(addr, *this);
             subs_info.first->second.subscribe(handler);
             send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), addr, handler);
@@ -247,7 +249,7 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief templated version of `subscribe_actor` */
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
-        supervisor.subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
+        supervisor->subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
     /** \brief convenient templated version of `unsubscribe_actor */
@@ -259,9 +261,8 @@ struct supervisor_t : public actor_base_t {
     /** \brief creates actor, records it in internal structures and returns
      * intrusive pointer to it
      */
-    template <typename Actor, typename... Args>
-    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
-        auto &&actor = make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
+    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
+        auto &&actor = make_actor<Actor>(*this, std::forward<Args>(args)...);
         static_cast<supervisor_behavior_t *>(behavior)->on_create_child(actor->get_address());
         return actor;
     }
@@ -358,14 +359,15 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 template <typename Supervisor, typename... Args>
 auto system_context_t::create_supervisor(Args &&... args) -> intrusive_ptr_t<Supervisor> {
     using wrapper_t = intrusive_ptr_t<Supervisor>;
-    auto raw_object = new Supervisor{std::forward<Args>(args)...};
+    using config_t = typename Supervisor::config_t;
+    auto raw_object = new Supervisor{config_t{std::forward<Args>(args)...}};
     raw_object->do_initialize(this);
     supervisor = supervisor_ptr_t{raw_object};
     return wrapper_t{raw_object};
 }
 
 template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
-    supervisor.put(make_message<M>(addr, std::forward<Args>(args)...));
+    supervisor->put(make_message<M>(addr, std::forward<Args>(args)...));
 }
 
 /** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
@@ -377,25 +379,50 @@ template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Hand
 
 template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h) noexcept {
     auto wrapped_handler = wrap_handler(*this, std::move(h));
-    supervisor.subscribe_actor(address, wrapped_handler);
+    supervisor->subscribe_actor(address, wrapped_handler);
     return wrapped_handler;
 }
 
 template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*this, std::move(h));
-    supervisor.subscribe_actor(addr, wrapped_handler);
+    supervisor->subscribe_actor(addr, wrapped_handler);
     return wrapped_handler;
 }
 
 template <typename Handler, typename Enabled> void actor_base_t::unsubscribe(Handler &&h) noexcept {
-    supervisor.unsubscribe_actor(address, wrap_handler(*this, std::move(h)));
+    supervisor->unsubscribe_actor(address, wrap_handler(*this, std::move(h)));
 }
 
 template <typename Handler, typename Enabled>
 void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
-    supervisor.unsubscribe_actor(addr, wrap_handler(*this, std::move(h)));
+    supervisor->unsubscribe_actor(addr, wrap_handler(*this, std::move(h)));
 }
 
+namespace details {
+
+template <typename Config, typename... Args> struct config_helper_t;
+
+template <typename Config, typename Arg1> struct config_helper_t<Config, Arg1> {
+    static_assert(std::is_base_of_v<Config, std::remove_cv_t<Arg1>>, "config for actor is taken by ref");
+
+    template <typename Actor> static auto construct(supervisor_t *sup, Arg1 &&arg) noexcept -> Actor * {
+        arg.supervisor = sup;
+        return new Actor(arg);
+    }
+};
+
+template <typename Config, typename Arg1, typename... Args> struct config_helper_t<Config, Arg1, Args...> {
+
+    template <typename Actor>
+    static auto construct(supervisor_t *sup, Arg1 &&arg1, Args &&... args) noexcept -> Actor * {
+        auto config = Config{sup, std::forward<Arg1>(arg1), std::forward<Args>(args)...};
+        return new Actor(config);
+    }
+};
+
+} // namespace details
+
+#if 0
 namespace details {
 
 template <typename Actor, typename Supervisor, typename IsSupervisor = void> struct actor_ctor_t;
@@ -422,6 +449,7 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
     }
 };
 } // namespace details
+#endif
 
 /** \brief convenience method for creating an actor in the scope of supervisor
  *
@@ -430,11 +458,13 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
  *
  */
 template <typename Actor, typename Supervisor, typename... Args>
-intrusive_ptr_t<Actor> make_actor(Supervisor &sup, const pt::time_duration &timeout, Args... args) {
-    using ctor_t = details::actor_ctor_t<Actor, Supervisor>;
+intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
+    using config_t = typename Actor::config_t;
+    using helper_t = details::config_helper_t<config_t, Args...>;
+    auto actor = helper_t::template construct<Actor>(&sup, std::forward<Args>(args)...);
     auto context = sup.get_context();
-    auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);
     actor->do_initialize(context);
+    auto &timeout = actor->get_init_timeout();
     sup.template send<payload::create_actor_t>(sup.get_address(), actor, timeout);
     return actor;
 }
@@ -497,7 +527,7 @@ template <typename Request, typename... Args>
 request_builder_t<typename request_wrapper_t<Request>::request_t> actor_base_t::request(const address_ptr_t &dest_addr,
                                                                                         Args &&... args) {
     using request_t = typename request_wrapper_t<Request>::request_t;
-    return supervisor.do_request<request_t>(*this, dest_addr, address, std::forward<Args>(args)...);
+    return supervisor->do_request<request_t>(*this, dest_addr, address, std::forward<Args>(args)...);
 }
 
 /** \brief makes an reqest to the destination address with the message constructed from `args`
@@ -510,7 +540,7 @@ template <typename Request, typename... Args>
 request_builder_t<typename request_wrapper_t<Request>::request_t>
 actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args) {
     using request_t = typename request_wrapper_t<Request>::request_t;
-    return supervisor.do_request<request_t>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
+    return supervisor->do_request<request_t>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
 }
 
 template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
@@ -526,7 +556,7 @@ void actor_base_t::reply_with_error(Request &message, const std::error_code &ec)
     using payload_t = typename Request::payload_t::request_t;
     using traits_t = request_traits_t<payload_t>;
     auto response = traits_t::make_error_response(message.payload.reply_to, message, ec);
-    supervisor.put(std::move(response));
+    supervisor->put(std::move(response));
 }
 
 } // namespace rotor

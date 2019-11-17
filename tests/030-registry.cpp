@@ -59,11 +59,10 @@ struct sample_actor_t : public r::actor_base_t {
 TEST_CASE("registry", "[registry]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto reg = sup->create_actor<r::registry_t>(timeout);
-    auto act = sup->create_actor<sample_actor_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto reg = sup->create_actor<r::registry_t>(config);
+    auto act = sup->create_actor<sample_actor_t>(config);
     act->registry_addr = reg->get_address();
 
     sup->do_process();

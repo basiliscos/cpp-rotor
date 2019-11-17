@@ -26,8 +26,8 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     sup->do_process();
 }
 
-supervisor_ev_t::supervisor_ev_t(supervisor_ev_t *parent_, const supervisor_config_ev_t &config_)
-    : supervisor_t{parent_, config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
+supervisor_ev_t::supervisor_ev_t(const supervisor_config_ev_t &config_)
+    : supervisor_t{config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
     ev_async_init(&async_watcher, async_cb);
 
     async_watcher.data = this;
@@ -81,7 +81,7 @@ void supervisor_ev_t::shutdown_finish() noexcept {
 }
 
 void supervisor_ev_t::shutdown() noexcept {
-    supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
+    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(supervisor->get_address(), address));
 }
 
 void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {

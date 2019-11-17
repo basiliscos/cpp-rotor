@@ -9,8 +9,8 @@
 
 using namespace rotor::asio;
 
-supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, const supervisor_config_asio_t &config_)
-    : supervisor_t{sup, config_}, strand{config_.strand} {}
+supervisor_asio_t::supervisor_asio_t(const supervisor_config_asio_t &config_)
+    : supervisor_t{config_}, strand{config_.strand} {}
 
 rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(strand.get()); }
 

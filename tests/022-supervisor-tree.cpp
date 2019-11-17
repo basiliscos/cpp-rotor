@@ -96,17 +96,16 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     r::system_context_t system_context;
     const void *locality = &system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, locality);
-    auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, config);
-    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(timeout, config);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
+    auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto sup_A1 = sup_root->create_actor<rt::supervisor_test_t>(config);
+    auto sup_A2 = sup_A1->create_actor<rt::supervisor_test_t>(config);
 
-    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(timeout, config);
-    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(timeout, config);
+    auto sup_B1 = sup_root->create_actor<rt::supervisor_test_t>(config);
+    auto sup_B2 = sup_B1->create_actor<rt::supervisor_test_t>(config);
 
-    auto pinger = sup_A2->create_actor<pinger_t>(timeout);
-    auto ponger = sup_B2->create_actor<ponger_t>(timeout);
+    auto pinger = sup_A2->create_actor<pinger_t>(rt::default_timeout, rt::default_timeout);
+    auto ponger = sup_B2->create_actor<ponger_t>(rt::default_timeout, rt::default_timeout);
 
     pinger->set_ponger_addr(ponger->get_address());
     sup_A2->do_process();

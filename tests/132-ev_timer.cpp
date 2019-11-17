@@ -36,7 +36,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         ec = msg.payload.ec;
-        supervisor.do_shutdown();
+        supervisor->do_shutdown();
     }
 };
 
@@ -44,9 +44,9 @@ TEST_CASE("timer", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<re::system_context_ev_t>{new re::system_context_ev_t()};
     auto timeout = r::pt::milliseconds{10};
-    auto conf = re::supervisor_config_ev_t{timeout, loop, true};
+    auto conf = re::supervisor_config_ev_t{nullptr, timeout, timeout, loop, true};
     auto sup = system_context->create_supervisor<re::supervisor_ev_t>(conf);
-    auto actor = sup->create_actor<bad_actor_t>(timeout);
+    auto actor = sup->create_actor<bad_actor_t>(conf);
 
     sup->start();
     ev_run(loop);

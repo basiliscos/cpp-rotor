@@ -25,7 +25,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
     std::uint32_t shutdown_conf_invoked;
     r::address_ptr_t shutdown_addr;
 
-    explicit sample_sup_t(const rt::supervisor_config_test_t &config) : r::test::supervisor_test_t{nullptr, config} {
+    explicit sample_sup_t(const rt::supervisor_config_test_t &config) : r::test::supervisor_test_t{config} {
         initialized = 0;
         init_invoked = 0;
         start_invoked = 0;
@@ -63,7 +63,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     r::system_context_t *system_context = new r::system_context_t{};
-    rt::supervisor_config_test_t config(r::pt::milliseconds{1}, nullptr);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
     auto sup = system_context->create_supervisor<sample_sup_t>(config);
 
     REQUIRE(&sup->get_supervisor() == sup.get());

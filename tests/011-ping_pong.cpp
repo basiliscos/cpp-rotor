@@ -17,10 +17,10 @@ struct pong_t {};
 static std::uint32_t destroyed = 0;
 
 struct pinger_t : public r::actor_base_t {
-    std::uint32_t ping_sent;
-    std::uint32_t pong_received;
+    std::uint32_t ping_sent = 0;
+    std::uint32_t pong_received = 0;
 
-    explicit pinger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_sent = pong_received = 0; }
+    using r::actor_base_t::actor_base_t;
     ~pinger_t() override { destroyed += 1; }
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
@@ -42,10 +42,10 @@ struct pinger_t : public r::actor_base_t {
 };
 
 struct ponger_t : public r::actor_base_t {
-    std::uint32_t ping_received;
-    std::uint32_t pong_sent;
+    std::uint32_t ping_received = 0;
+    std::uint32_t pong_sent = 0;
 
-    explicit ponger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_received = pong_sent = 0; }
+    using r::actor_base_t::actor_base_t;
     ~ponger_t() override { destroyed += 3; }
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
@@ -68,11 +68,10 @@ struct ponger_t : public r::actor_base_t {
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto pinger = sup->create_actor<pinger_t>(timeout);
-    auto ponger = sup->create_actor<ponger_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto pinger = sup->create_actor<pinger_t>(rt::default_timeout, rt::default_timeout);
+    auto ponger = sup->create_actor<ponger_t>(rt::default_timeout, rt::default_timeout);
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

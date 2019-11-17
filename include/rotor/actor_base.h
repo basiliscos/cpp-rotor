@@ -7,6 +7,7 @@
 //
 
 #include "address.hpp"
+#include "actor_config.h"
 #include "messages.hpp"
 #include "behavior.h"
 #include "state.h"
@@ -102,6 +103,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief timer identifier type in the scope of the actor */
     using timer_id_t = std::uint32_t;
 
+    using config_t = actor_config_t;
+
     /** \brief constructs actor and links it's supervisor
      *
      * An actor cannot outlive it's supervisor.
@@ -109,7 +112,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Sets internal actor state to `NEW`
      *
      */
-    actor_base_t(supervisor_t &supervisor_);
+    actor_base_t(const config_t &cfg);
     virtual ~actor_base_t();
 
     /** \brief early actor initialization (pre-initialization)
@@ -132,7 +135,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     inline address_ptr_t get_address() const noexcept { return address; }
 
     /** \brief returns actor's supervisor */
-    inline supervisor_t &get_supervisor() const noexcept { return supervisor; }
+    inline supervisor_t &get_supervisor() const noexcept { return *supervisor; }
 
     /** \brief returns actor's state */
     inline state_t &get_state() noexcept { return state; }
@@ -270,6 +273,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief initiates handler unsubscription from the default actor address */
     inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
 
+    inline const pt::time_duration &get_init_timeout() noexcept { return init_timeout; }
+
+    inline const pt::time_duration &get_shutdown_timeout() noexcept { return shutdown_timeout; }
+
   protected:
     /** \brief constructs actor's behavior on early stage */
     virtual actor_behavior_t *create_behavior() noexcept;
@@ -310,8 +317,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void shutdown_finish() noexcept;
 
-    /** \brief actor's execution / infrastructure context */
-    supervisor_t &supervisor;
+    /** \brief non-owning pointer to actor's execution / infrastructure context */
+    supervisor_t *supervisor;
+    pt::time_duration init_timeout;
+    pt::time_duration shutdown_timeout;
 
     /** \brief current actor state */
     state_t state;

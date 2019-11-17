@@ -60,13 +60,16 @@ struct supervisor_wx_t : public supervisor_t {
         virtual void Notify() noexcept override;
     };
 
-    /** \brief constructs new supervisor from parent supervisor and supervisor config
+    using config_t = supervisor_config_wx_t;
+
+    /* \brief constructs new supervisor from parent supervisor and supervisor config
      *
      * the `parent` supervisor can be `null`
      *
      */
-    supervisor_wx_t(supervisor_wx_t *parent, const supervisor_config_wx_t &config);
+    supervisor_wx_t(const supervisor_config_wx_t &config);
 
+#if 0
     /** \brief creates an actor by forwaring `args` to it
      *
      * The newly created actor belogs to the wx supervisor / wx event loop
@@ -75,6 +78,7 @@ struct supervisor_wx_t : public supervisor_t {
     intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
         return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
+#endif
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;

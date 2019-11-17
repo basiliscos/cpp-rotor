@@ -49,6 +49,8 @@ template <typename Actor, typename Handler, typename ErrHandler> struct forwarde
  */
 struct supervisor_asio_t : public supervisor_t {
 
+    using config_t = supervisor_config_asio_t;
+
     /** \struct timer_t
      * \brief boos::asio::deadline_timer with timer identity  */
     struct timer_t : public asio::deadline_timer {
@@ -73,7 +75,7 @@ struct supervisor_asio_t : public supervisor_t {
      * the `parent` supervisor can be null
      *
      */
-    supervisor_asio_t(supervisor_t *sup, const supervisor_config_asio_t &config);
+    supervisor_asio_t(const supervisor_config_asio_t &config);
 
     virtual address_ptr_t make_address() noexcept override;
 
@@ -86,6 +88,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief callback when an error happen on the timer, identified by timer_id */
     virtual void on_timer_error(timer_id_t timer_id, const sys::error_code &ec) noexcept;
 
+#if 0
     /** \brief creates an actor by forwaring `args` to it
      *
      * The newly created actor belogs to the current supervisor
@@ -95,6 +98,7 @@ struct supervisor_asio_t : public supervisor_t {
     intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
         return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
+#endif
 
     /** \brief an helper for creation {@link forwarder_t} */
     template <typename Handler, typename ErrHandler>

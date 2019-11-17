@@ -44,9 +44,9 @@ struct bad_actor_t : public r::actor_base_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         ec = msg.payload.ec;
         // alternative for supervisor.do_shutdown() for better coverage
-        auto sup_addr = supervisor.get_address();
+        auto sup_addr = supervisor->get_address();
         auto shutdown_trigger = r::make_message<r::payload::shutdown_trigger_t>(sup_addr, sup_addr);
-        supervisor.enqueue(shutdown_trigger);
+        supervisor->enqueue(shutdown_trigger);
         auto loop = wxEventLoopBase::GetActive();
         loop->ScheduleExit();
     }
@@ -62,11 +62,11 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     wxEventLoopBase::SetActive(loop);
     rx::system_context_ptr_t system_context{new rx::system_context_wx_t(app)};
     wxEvtHandler handler;
-    rx::supervisor_config_wx_t conf{timeout, &handler};
+    rx::supervisor_config_wx_t conf{nullptr, timeout, timeout, &handler};
     auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(conf);
     sup->start();
 
-    auto actor = sup->create_actor<bad_actor_t>(timeout);
+    auto actor = sup->create_actor<bad_actor_t>(conf);
 
     sup->start();
     loop->Run();

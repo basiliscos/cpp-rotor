@@ -4,6 +4,18 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.07 (xx-XX-xxxx)
+ - [improvement] `actor_config_t` was introduced, which now holds pointer to
+supervisor, init and shutdown timeouts
+ - [breaking] `supervisor_config_t` was changed (inherited from `actor_config_t`)
+ - [breaking] `actor_base_t` and `supervisor_t` constructors has changed - now
+appropriate config is taken as single parameter. All descendant classes should
+be changed
+ - [breaking] if a custom config type is used for actors/supervisors, they
+should define `config_t` inside the class
+ - [breaking] supervisor in actor is now accessibe via pointer instead of
+refence
+
 ## 0.06 (09-Nov-2019)
 
 - [improvement] registy actor was added to allow via name/address runtime

@@ -185,7 +185,7 @@ struct good_actor2_t : public r::actor_base_t {
     std::error_code ec;
 
     void init_start() noexcept override {
-        reply_addr = supervisor.create_address();
+        reply_addr = supervisor->create_address();
         subscribe(&good_actor2_t::on_request);
         subscribe(&good_actor2_t::on_response, reply_addr);
         r::actor_base_t::init_start();
@@ -253,7 +253,7 @@ struct request_forwarder_t : public r::actor_base_t {
     req_ptr_t req_ptr;
 
     void init_start() noexcept override {
-        back_addr = supervisor.create_address();
+        back_addr = supervisor->create_address();
         subscribe(&request_forwarder_t::on_request_front);
         subscribe(&request_forwarder_t::on_response_front);
         subscribe(&request_forwarder_t::on_request_back, back_addr);
@@ -304,7 +304,7 @@ struct intrusive_actor_t : public r::actor_base_t {
     req_ptr_t req_ptr;
 
     void init_start() noexcept override {
-        back_addr = supervisor.create_address();
+        back_addr = supervisor->create_address();
         subscribe(&intrusive_actor_t::on_request_front);
         subscribe(&intrusive_actor_t::on_response_front);
         subscribe(&intrusive_actor_t::on_request_back, back_addr);
@@ -374,15 +374,14 @@ struct duplicating_actor_t : public r::actor_base_t {
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
     sup->do_process();
 
     auto init_subs_count = sup->get_subscription().size();
     auto init_pts_count = sup->get_points().size();
 
-    auto actor = sup->create_actor<good_actor_t>(timeout);
+    auto actor = sup->create_actor<good_actor_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -412,11 +411,10 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
 TEST_CASE("request-response successfull delivery indentical message to 2 actors", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor1 = sup->create_actor<good_actor_t>(timeout);
-    auto actor2 = sup->create_actor<good_actor_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor1 = sup->create_actor<good_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto actor2 = sup->create_actor<good_actor_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -442,10 +440,9 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
 TEST_CASE("request-response timeout", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<bad_actor_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<bad_actor_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(actor->req_val == 0);
@@ -483,10 +480,9 @@ TEST_CASE("request-response timeout", "[actor]") {
 TEST_CASE("response with custom error", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<bad_actor2_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<bad_actor2_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(actor->req_val == 4);
@@ -506,9 +502,8 @@ TEST_CASE("response with custom error", "[actor]") {
 TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<good_supervisor_t>(nullptr, config);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<good_supervisor_t>(config);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -531,10 +526,9 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
 TEST_CASE("request-response successfull delivery, ref-counted response", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<good_actor2_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<good_actor2_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -557,10 +551,9 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
 TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<good_actor3_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<good_actor3_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -584,10 +577,9 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
 TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<duplicating_actor_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<duplicating_actor_t>(rt::default_timeout, rt::default_timeout);
 
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 0);
@@ -610,10 +602,9 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
 TEST_CASE("ref-counted response forwarding", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<request_forwarder_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<request_forwarder_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -636,10 +627,9 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
 TEST_CASE("intrusive pointer request/responce", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<intrusive_actor_t>(timeout);
+    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto actor = sup->create_actor<intrusive_actor_t>(rt::default_timeout, rt::default_timeout);
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);

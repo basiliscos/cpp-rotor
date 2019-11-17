@@ -40,7 +40,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         ec = msg.payload.ec;
-        supervisor.do_shutdown();
+        supervisor->do_shutdown();
     }
 };
 
@@ -49,9 +49,9 @@ TEST_CASE("timer", "[supervisor][asio]") {
     auto timeout = r::pt::milliseconds{10};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto stand = std::make_shared<asio::io_context::strand>(io_context);
-    ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
+    ra::supervisor_config_asio_t conf{nullptr, timeout, timeout, std::move(stand)};
     auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
-    auto actor = sup->create_actor<bad_actor_t>(timeout);
+    auto actor = sup->create_actor<bad_actor_t>(conf);
 
     sup->start();
     io_context.run();
