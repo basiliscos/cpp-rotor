@@ -15,13 +15,17 @@ struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
     void init_start() noexcept override {
-        if (state == r::state_t::INITIALIZING) { on_initialize_count++; }
+        if (state == r::state_t::INITIALIZING) {
+            on_initialize_count++;
+        }
         rt::supervisor_test_t::init_start();
     }
 
     void shutdown_finish() noexcept override {
         rt::supervisor_test_t::shutdown_finish();
-        if (state == r::state_t::SHUTTED_DOWN) { on_shutdown_count++; }
+        if (state == r::state_t::SHUTTED_DOWN) {
+            on_shutdown_count++;
+        }
     }
 
     std::uint32_t on_initialize_count = 0;
@@ -33,10 +37,9 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
 
     const char locality1[] = "abc";
     const char locality2[] = "def";
-    rt::supervisor_config_test_t config1(nullptr, rt::default_timeout, rt::default_timeout, locality1);
-    rt::supervisor_config_test_t config2(nullptr, rt::default_timeout, rt::default_timeout, locality2);
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(config1);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(config2);
+    auto sup1 =
+        system_context.create_supervisor<my_supervisor_t>().locality(locality1).timeout(rt::default_timeout).finish();
+    auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality2).timeout(rt::default_timeout).finish();
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());
@@ -97,14 +100,13 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup2->get_subscription().size() == 0);
 }
 
-
 TEST_CASE("two supervisors, same locality", "[supervisor]") {
     r::system_context_t system_context;
 
     const char locality[] = "locality";
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(config);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(config);
+    auto sup1 =
+        system_context.create_supervisor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
+    auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());
@@ -134,9 +136,9 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
     r::system_context_t system_context;
 
     const char locality[] = "locality";
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
-    auto sup1 = system_context.create_supervisor<my_supervisor_t>(config);
-    auto sup2 = sup1->create_actor<my_supervisor_t>(config);
+    auto sup1 =
+        system_context.create_supervisor<my_supervisor_t>().timeout(rt::default_timeout).locality(locality).finish();
+    auto sup2 = sup1->create_actor<my_supervisor_t>().timeout(rt::default_timeout).locality(locality).finish();
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
     REQUIRE(sup2->get_parent_supervisor() == sup1.get());

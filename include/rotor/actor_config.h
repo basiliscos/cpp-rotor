@@ -7,10 +7,12 @@
 //
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include "arc.hpp"
 
 namespace rotor {
 
 struct supervisor_t;
+struct system_context_t;
 
 namespace pt = boost::posix_time;
 
@@ -22,12 +24,50 @@ struct actor_config_t {
     /** \brief how much time is allowed to spend in shutdown for children actor */
     pt::time_duration shutdown_timeout;
 
-    actor_config_t(const pt::time_duration &init_timeout_, const pt::time_duration &shutdown_timeout_)
-        : supervisor{nullptr}, init_timeout{init_timeout_}, shutdown_timeout{shutdown_timeout_} {}
+    actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
+};
 
-    actor_config_t(supervisor_t *supervisor_, const pt::time_duration &init_timeout_,
-                   const pt::time_duration &shutdown_timeout_)
-        : supervisor{supervisor_}, init_timeout{init_timeout_}, shutdown_timeout{shutdown_timeout_} {}
+template <typename Actor> struct actor_config_builder_t {
+    using builder_t = typename Actor::template config_builder_t<Actor>;
+    using config_t = typename Actor::config_t;
+
+    using actor_ptr_t = intrusive_ptr_t<Actor>;
+    using install_action_t = std::function<void(actor_ptr_t &)>;
+
+    constexpr static const std::uint32_t INIT_TIMEOUT = 1 << 0;
+    constexpr static const std::uint32_t SHUTDOWN_TIMEOUT = 1 << 1;
+    constexpr static const std::uint32_t requirements_mask = INIT_TIMEOUT | SHUTDOWN_TIMEOUT;
+
+    install_action_t install_action;
+    supervisor_t *supervisor;
+    system_context_t &system_context;
+    config_t config;
+
+    std::uint32_t mask = builder_t::requirements_mask;
+
+    actor_config_builder_t(install_action_t &&action_, supervisor_t *supervisor_);
+    actor_config_builder_t(install_action_t &&action_, system_context_t &system_context_)
+        : install_action{std::move(action_)}, supervisor{nullptr}, system_context{system_context_}, config{nullptr} {}
+
+    builder_t &&timeout(const pt::time_duration &timeout) && {
+        config.init_timeout = config.shutdown_timeout = timeout;
+        mask = (mask & (~INIT_TIMEOUT & ~SHUTDOWN_TIMEOUT));
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    actor_config_builder_t &&init_timeout(const pt::time_duration &timeout) && {
+        config.init_timeout = timeout;
+        mask = (mask & ~INIT_TIMEOUT);
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    actor_config_builder_t &&shutdown_timeout(const pt::time_duration &timeout) && {
+        config.shutdown_timeout = timeout;
+        mask = (mask & ~SHUTDOWN_TIMEOUT);
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    actor_ptr_t finish() &&;
 };
 
 } // namespace rotor

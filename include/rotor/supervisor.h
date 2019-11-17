@@ -70,9 +70,10 @@ intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
 struct supervisor_t : public actor_base_t {
 
     using config_t = supervisor_config_t;
+    template <typename Supervisor> using config_builder_t = supervisor_config_builder_t<Supervisor>;
 
     /** \brief constructs new supervisor with optional parent supervisor */
-    supervisor_t(const config_t &config);
+    supervisor_t(const supervisor_config_t &config);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 
@@ -258,13 +259,22 @@ struct supervisor_t : public actor_base_t {
         unsubscribe(wrapped_handler, addr);
     }
 
-    /** \brief creates actor, records it in internal structures and returns
+    /* \brief creates actor, records it in internal structures and returns
      * intrusive pointer to it
      */
-    template <typename Actor, typename... Args> intrusive_ptr_t<Actor> create_actor(Args... args) {
-        auto &&actor = make_actor<Actor>(*this, std::forward<Args>(args)...);
-        static_cast<supervisor_behavior_t *>(behavior)->on_create_child(actor->get_address());
-        return actor;
+    template <typename Actor> auto create_actor() {
+        using builder_t = typename Actor::template config_builder_t<Actor>;
+
+        return builder_t(
+            [this](auto &actor) {
+                actor->do_initialize(context);
+                auto &timeout = actor->get_init_timeout();
+                send<payload::create_actor_t>(get_address(), actor, timeout);
+
+                auto behavior = static_cast<supervisor_behavior_t *>(supervisor->behavior);
+                behavior->on_create_child(actor->get_address());
+            },
+            this);
     }
 
     /** \brief returns system context */
@@ -349,6 +359,7 @@ struct supervisor_t : public actor_base_t {
     address_mapping_t address_mapping;
 
     template <typename T> friend struct request_builder_t;
+    template <typename Supervisor> friend struct actor_config_builder_t;
     friend struct supervisor_behavior_t;
 };
 
@@ -356,14 +367,19 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /* third-party classes implementations */
 
-template <typename Supervisor, typename... Args>
-auto system_context_t::create_supervisor(Args &&... args) -> intrusive_ptr_t<Supervisor> {
-    using wrapper_t = intrusive_ptr_t<Supervisor>;
-    using config_t = typename Supervisor::config_t;
-    auto raw_object = new Supervisor{config_t{std::forward<Args>(args)...}};
-    raw_object->do_initialize(this);
-    supervisor = supervisor_ptr_t{raw_object};
-    return wrapper_t{raw_object};
+template <typename Supervisor> auto system_context_t::create_supervisor() {
+    using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
+    return builder_t(
+        [this](auto &actor) {
+            if (supervisor) {
+                on_error(make_error_code(error_code_t::supervisor_defined));
+                actor.reset();
+            } else {
+                this->supervisor = actor;
+                actor->do_initialize(this);
+            }
+        },
+        *this);
 }
 
 template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
@@ -396,77 +412,6 @@ template <typename Handler, typename Enabled> void actor_base_t::unsubscribe(Han
 template <typename Handler, typename Enabled>
 void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
     supervisor->unsubscribe_actor(addr, wrap_handler(*this, std::move(h)));
-}
-
-namespace details {
-
-template <typename Config, typename... Args> struct config_helper_t;
-
-template <typename Config, typename Arg1> struct config_helper_t<Config, Arg1> {
-    static_assert(std::is_base_of_v<Config, std::remove_cv_t<Arg1>>, "config for actor is taken by ref");
-
-    template <typename Actor> static auto construct(supervisor_t *sup, Arg1 &&arg) noexcept -> Actor * {
-        arg.supervisor = sup;
-        return new Actor(arg);
-    }
-};
-
-template <typename Config, typename Arg1, typename... Args> struct config_helper_t<Config, Arg1, Args...> {
-
-    template <typename Actor>
-    static auto construct(supervisor_t *sup, Arg1 &&arg1, Args &&... args) noexcept -> Actor * {
-        auto config = Config{sup, std::forward<Arg1>(arg1), std::forward<Args>(args)...};
-        return new Actor(config);
-    }
-};
-
-} // namespace details
-
-#if 0
-namespace details {
-
-template <typename Actor, typename Supervisor, typename IsSupervisor = void> struct actor_ctor_t;
-
-/** \brief constructs new actor (derived from supervisor), SFINAE-class */
-template <typename Actor, typename Supervisor>
-struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<std::is_base_of_v<supervisor_t, Actor>>> {
-
-    /** \brief constructs new actor (derived from supervisor) */
-    template <typename... Args>
-    static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
-        return new Actor{sup, std::forward<Args>(args)...};
-    }
-};
-
-/** \brief constructs new actor (not derived from supervisor), SFINAE-class */
-template <typename Actor, typename Supervisor>
-struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<supervisor_t, Actor>>> {
-
-    /** \brief constructs new actor (not derived from supervisor) */
-    template <typename... Args>
-    static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
-        return new Actor{*sup, std::forward<Args>(args)...};
-    }
-};
-} // namespace details
-#endif
-
-/** \brief convenience method for creating an actor in the scope of supervisor
- *
- * Actor performs early initialization, and further init will be request-based
- * and initiated  * by the supervisor.
- *
- */
-template <typename Actor, typename Supervisor, typename... Args>
-intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args) {
-    using config_t = typename Actor::config_t;
-    using helper_t = details::config_helper_t<config_t, Args...>;
-    auto actor = helper_t::template construct<Actor>(&sup, std::forward<Args>(args)...);
-    auto context = sup.get_context();
-    actor->do_initialize(context);
-    auto &timeout = actor->get_init_timeout();
-    sup.template send<payload::create_actor_t>(sup.get_address(), actor, timeout);
-    return actor;
 }
 
 template <typename T>
@@ -557,6 +502,25 @@ void actor_base_t::reply_with_error(Request &message, const std::error_code &ec)
     using traits_t = request_traits_t<payload_t>;
     auto response = traits_t::make_error_response(message.payload.reply_to, message, ec);
     supervisor->put(std::move(response));
+}
+
+template <typename Actor>
+actor_config_builder_t<Actor>::actor_config_builder_t(install_action_t &&action_, supervisor_t *supervisor_)
+    : install_action{std::move(action_)}, supervisor{supervisor_},
+      system_context{*supervisor_->get_context()}, config{supervisor_} {}
+
+template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::finish() && {
+    intrusive_ptr_t<Actor> actor_ptr;
+    if (mask) {
+        auto ec = make_error_code(error_code_t::actor_misconfigured);
+        system_context.on_error(ec);
+    } else {
+        auto cfg = static_cast<typename builder_t::config_t &>(config);
+        auto actor = new Actor(cfg);
+        actor_ptr.reset(actor);
+        install_action(actor_ptr);
+    }
+    return actor_ptr;
 }
 
 } // namespace rotor

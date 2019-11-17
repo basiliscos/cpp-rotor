@@ -30,10 +30,21 @@ struct supervisor_config_wx_t : public supervisor_config_t {
      */
     wxEvtHandler *handler;
 
-    /* \brief construct from shutdown timeout and non-owning wx event handler */
-    supervisor_config_wx_t(supervisor_t *parent_, pt::time_duration init_timeout_, pt::time_duration shutdown_timeout_,
-                           wxEvtHandler *handler_, supervisor_policy_t policy_ = supervisor_policy_t::shutdown_self)
-        : supervisor_config_t{parent_, init_timeout_, shutdown_timeout_, policy_}, handler{handler_} {}
+    using supervisor_config_t::supervisor_config_t;
+};
+
+template <typename Supervisor> struct supervisor_config_wx_builder_t : supervisor_config_builder_t<Supervisor> {
+    using parent_t = supervisor_config_builder_t<Supervisor>;
+    using parent_t::parent_t;
+
+    constexpr static const std::uint32_t EVT_LOOP = 1 << 2;
+    constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | EVT_LOOP;
+
+    supervisor_config_wx_builder_t &&handler(wxEvtHandler *handler_) && {
+        parent_t::config.handler = handler_;
+        parent_t::mask = (parent_t::mask & ~EVT_LOOP);
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
 };
 
 } // namespace wx

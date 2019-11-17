@@ -20,8 +20,8 @@ struct supervisor_wx_test_t : public rotor::wx::supervisor_wx_t {
     using rotor::wx::supervisor_wx_t::supervisor_wx_t;
 
     state_t &get_state() noexcept { return state; }
-    queue_t& get_leader_queue() { return get_leader().queue; }
-    supervisor_wx_test_t& get_leader() { return *static_cast<supervisor_wx_test_t*>(locality_leader); }
+    queue_t &get_leader_queue() { return get_leader().queue; }
+    supervisor_wx_test_t &get_leader() { return *static_cast<supervisor_wx_test_t *>(locality_leader); }
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
 };

@@ -29,10 +29,12 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
 supervisor_ev_t::supervisor_ev_t(const supervisor_config_ev_t &config_)
     : supervisor_t{config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
     ev_async_init(&async_watcher, async_cb);
+}
 
+void supervisor_ev_t::do_initialize(system_context_t *ctx) noexcept {
     async_watcher.data = this;
-
     ev_async_start(loop, &async_watcher);
+    supervisor_t::do_initialize(ctx);
 }
 
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {

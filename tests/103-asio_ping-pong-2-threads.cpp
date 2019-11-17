@@ -136,15 +136,13 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
     auto timeout = r::pt::milliseconds{10};
     auto sys_ctx1 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx1)};
     auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
-    auto stand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
-    auto stand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
-    ra::supervisor_config_asio_t conf1{nullptr, timeout, timeout, std::move(stand1)};
-    ra::supervisor_config_asio_t conf2{nullptr, timeout, timeout, std::move(stand2)};
-    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>(conf1);
-    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>(conf2);
+    auto strand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
+    auto strand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
+    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>().strand(strand1).timeout(timeout).finish();
+    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>().strand(strand2).timeout(timeout).finish();
 
-    auto pinger = sup1->create_actor<pinger_t>(timeout, timeout);
-    auto ponger = sup2->create_actor<ponger_t>(timeout, timeout);
+    auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
+    auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

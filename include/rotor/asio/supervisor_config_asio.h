@@ -25,11 +25,22 @@ struct supervisor_config_asio_t : public supervisor_config_t {
     /** \brief boost::asio execution strand (shared pointer) */
     strand_ptr_t strand;
 
-    /* \brief constructs config from shutdown timeout and shared pointer to strand  */
-    supervisor_config_asio_t(supervisor_t *parent_, pt::time_duration init_timeout_,
-                             pt::time_duration shutdown_timeout_, strand_ptr_t strand_,
-                             supervisor_policy_t policy_ = supervisor_policy_t::shutdown_self)
-        : supervisor_config_t{parent_, init_timeout_, shutdown_timeout_, policy_}, strand{std::move(strand_)} {}
+    using supervisor_config_t::supervisor_config_t;
+};
+
+template <typename Supervisor> struct supervisor_config_asio_builder_t : supervisor_config_builder_t<Supervisor> {
+    using parent_t = supervisor_config_builder_t<Supervisor>;
+    using parent_t::parent_t;
+    using strand_ptr_t = supervisor_config_asio_t::strand_ptr_t;
+
+    constexpr static const std::uint32_t STRAND = 1 << 2;
+    constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | STRAND;
+
+    supervisor_config_asio_builder_t &&strand(strand_ptr_t &strand) && {
+        parent_t::config.strand = strand;
+        parent_t::mask = (parent_t::mask & ~STRAND);
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
 };
 
 } // namespace asio

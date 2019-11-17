@@ -11,7 +11,7 @@
 
 using namespace rotor;
 
-supervisor_t::supervisor_t(const config_t &config)
+supervisor_t::supervisor_t(const supervisor_config_t &config)
     : actor_base_t(config), parent{config.supervisor}, last_req_id{1},
       shutdown_timeout{config.shutdown_timeout}, policy{config.policy} {
     if (!supervisor) {

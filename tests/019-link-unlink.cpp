@@ -14,12 +14,10 @@ namespace rt = r::test;
 
 TEST_CASE("client/server, common workflow", "[actor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto act_s = sup->create_actor<rt::actor_test_t>(rt::default_timeout, rt::default_timeout);
-    auto act_c = sup->create_actor<rt::actor_test_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
     auto server_addr = act_s->get_address();
     auto client_addr = act_c->get_address();

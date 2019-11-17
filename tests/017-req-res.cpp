@@ -36,8 +36,8 @@ struct req2_t {
 struct res3_t : r::arc_base_t<res3_t> {
     int value;
     explicit res3_t(int value_) : value{value_} {}
-    res3_t(const res3_t&) = delete ;
-    res3_t(res3_t&&) = delete ;
+    res3_t(const res3_t &) = delete;
+    res3_t(res3_t &&) = delete;
     virtual ~res3_t() {}
 };
 
@@ -47,8 +47,8 @@ struct req3_t : r::arc_base_t<req3_t> {
     int value;
 
     explicit req3_t(int value_) : value{value_} {}
-    req3_t(const req3_t&) = delete;
-    req3_t(req3_t&&) = delete;
+    req3_t(const req3_t &) = delete;
+    req3_t(req3_t &&) = delete;
 
     virtual ~req3_t() {}
 };
@@ -374,14 +374,13 @@ struct duplicating_actor_t : public r::actor_base_t {
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     auto init_subs_count = sup->get_subscription().size();
     auto init_pts_count = sup->get_points().size();
 
-    auto actor = sup->create_actor<good_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto actor = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -411,10 +410,9 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
 TEST_CASE("request-response successfull delivery indentical message to 2 actors", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor1 = sup->create_actor<good_actor_t>(rt::default_timeout, rt::default_timeout);
-    auto actor2 = sup->create_actor<good_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor1 = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
+    auto actor2 = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -440,9 +438,8 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
 TEST_CASE("request-response timeout", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<bad_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<bad_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(actor->req_val == 0);
@@ -480,9 +477,8 @@ TEST_CASE("request-response timeout", "[actor]") {
 TEST_CASE("response with custom error", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<bad_actor2_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<bad_actor2_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(actor->req_val == 4);
@@ -502,8 +498,7 @@ TEST_CASE("response with custom error", "[actor]") {
 TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<good_supervisor_t>(config);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -526,9 +521,8 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
 TEST_CASE("request-response successfull delivery, ref-counted response", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<good_actor2_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<good_actor2_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -551,9 +545,8 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
 TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<good_actor3_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<good_actor3_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -573,13 +566,11 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-
 TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<duplicating_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<duplicating_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 0);
@@ -602,14 +593,13 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
 TEST_CASE("ref-counted response forwarding", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<request_forwarder_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<request_forwarder_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
-    REQUIRE(actor->req_val == 4 + 4*2);
-    REQUIRE(actor->res_val == 5 + 5*2);
+    REQUIRE(actor->req_val == 4 + 4 * 2);
+    REQUIRE(actor->res_val == 5 + 5 * 2);
     REQUIRE(actor->back_req1_id == actor->back_req2_id);
 
     sup->do_shutdown();
@@ -627,14 +617,13 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
 TEST_CASE("intrusive pointer request/responce", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<intrusive_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<intrusive_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
-    REQUIRE(actor->req_val == 4 + 4*2);
-    REQUIRE(actor->res_val == 5 + 5*2);
+    REQUIRE(actor->req_val == 4 + 4 * 2);
+    REQUIRE(actor->res_val == 5 + 5 * 2);
 
     sup->do_shutdown();
     sup->do_process();

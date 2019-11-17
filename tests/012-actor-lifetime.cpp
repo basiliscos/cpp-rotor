@@ -73,9 +73,7 @@ struct double_shutdown_actor : public r::actor_base_t {
 
     std::uint32_t shutdown_starts = 0;
 
-    void shutdown_start() noexcept override {
-        ++shutdown_starts;
-    }
+    void shutdown_start() noexcept override { ++shutdown_starts; }
 
     void continue_shutdown() noexcept { r::actor_base_t::shutdown_start(); }
 };
@@ -85,7 +83,6 @@ struct fail_initialize_actor : public r::actor_base_t {
 
     void init_start() noexcept override {}
 };
-
 
 struct fail_test_behavior_t : public r::supervisor_behavior_t {
     using r::supervisor_behavior_t::supervisor_behavior_t;
@@ -110,9 +107,8 @@ void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, con
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto act = sup->create_actor<sample_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
@@ -145,9 +141,8 @@ TEST_CASE("actor litetimes", "[actor]") {
 TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(config);
-    auto act = sup->create_actor<fail_shutdown_actor>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<fail_shutdown_sup>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_shutdown_actor>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
 
@@ -174,11 +169,10 @@ TEST_CASE("fail shutdown test", "[actor]") {
 TEST_CASE("fail initialize test", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    auto act = sup->create_actor<fail_initialize_actor>(rt::default_timeout, rt::default_timeout);
+    auto act = sup->create_actor<fail_initialize_actor>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->get_children().size() == 1);
@@ -196,9 +190,8 @@ TEST_CASE("fail initialize test", "[actor]") {
 TEST_CASE("double shutdown test (actor)", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(config);
-    auto act = sup->create_actor<double_shutdown_actor>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<double_shutdown_actor>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
 
@@ -220,9 +213,8 @@ TEST_CASE("double shutdown test (actor)", "[actor]") {
 TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>(config);
-    auto act = sup->create_actor<double_shutdown_actor>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<double_shutdown_actor>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
 

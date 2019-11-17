@@ -57,10 +57,9 @@ struct foo_observer_t : public r::actor_base_t {
 TEST_CASE("obsrever", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto simpleton = sup->create_actor<simpleton_actor_t>(rt::default_timeout, rt::default_timeout);
-    auto observer = sup->create_actor<foo_observer_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto simpleton = sup->create_actor<simpleton_actor_t>().timeout(rt::default_timeout).finish();
+    auto observer = sup->create_actor<foo_observer_t>().timeout(rt::default_timeout).finish();
     observer->set_simpleton(simpleton->get_address());
 
     sup->do_process();

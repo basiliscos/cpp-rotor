@@ -115,11 +115,14 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = re::system_context_ev_t::ptr_t{new re::system_context_ev_t()};
     auto timeout = r::pt::milliseconds{10};
-    auto conf = re::supervisor_config_ev_t{nullptr, timeout, timeout, loop, true};
-    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>()
+                   .loop(loop)
+                   .loop_ownership(true)
+                   .timeout(timeout)
+                   .finish();
 
-    auto pinger = sup->create_actor<pinger_t>(conf);
-    auto ponger = sup->create_actor<ponger_t>(conf);
+    auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+    auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
@@ -149,11 +152,18 @@ TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
     auto timeout = r::pt::milliseconds{10};
-    auto conf = re::supervisor_config_ev_t{nullptr, timeout, timeout, loop, true};
-    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>()
+                    .loop(loop)
+                    .loop_ownership(true)
+                    .timeout(timeout)
+                    .finish();
     REQUIRE(system_context->code.value() == 0);
 
-    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>()
+                    .loop(loop)
+                    .loop_ownership(false)
+                    .timeout(timeout)
+                    .finish();
     REQUIRE(!sup2);
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::supervisor_defined));
 
@@ -168,11 +178,14 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
     auto timeout = r::pt::milliseconds{10};
-    auto conf = re::supervisor_config_ev_t{nullptr, timeout, timeout, loop, true};
-    auto sup = system_context->create_supervisor<supervisor_ev_test_t>(conf);
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>()
+                   .loop(loop)
+                   .loop_ownership(true)
+                   .timeout(timeout)
+                   .finish();
 
     sup->start();
-    auto actor = sup->create_actor<bad_actor_t>(conf);
+    auto actor = sup->create_actor<bad_actor_t>().timeout(timeout).finish();
     ev_run(loop);
 
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));

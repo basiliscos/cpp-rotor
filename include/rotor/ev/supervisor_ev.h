@@ -46,6 +46,7 @@ struct supervisor_ev_t : public supervisor_t {
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
     using config_t = supervisor_config_ev_t;
+    template <typename Supervisor> using config_builder_t = supervisor_config_ev_builder_t<Supervisor>;
 
     /** brief constructs new supervisor from parent supervisor and supervisor config
      *
@@ -53,18 +54,8 @@ struct supervisor_ev_t : public supervisor_t {
      *
      */
     supervisor_ev_t(const supervisor_config_ev_t &config);
+    virtual void do_initialize(system_context_t *ctx) noexcept override;
     ~supervisor_ev_t();
-
-#if 0
-    /** \brief creates an actor by forwaring `args` to it
-     *
-     * The newly created actor belogs to the ev supervisor / ev event loop
-     */
-    template <typename Actor, typename... Args>
-    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
-        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
-    }
-#endif
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;

@@ -7,14 +7,17 @@
 ## 0.07 (xx-XX-xxxx)
  - [improvement] `actor_config_t` was introduced, which now holds pointer to
 supervisor, init and shutdown timeouts
+ - [improvement] `builder` pattern was introduced to simplify actors construction
  - [breaking] `supervisor_config_t` was changed (inherited from `actor_config_t`)
  - [breaking] `actor_base_t` and `supervisor_t` constructors has changed - now
 appropriate config is taken as single parameter. All descendant classes should
 be changed
  - [breaking] if a custom config type is used for actors/supervisors, they
-should define `config_t` inside the class
+should define `config_t` inside the class, and templated `config_builder_t`.
  - [breaking] supervisor in actor is now accessibe via pointer instead of
 refence
+ - [bugfix] `supervisor_ev_t` not always correctly released EV-resousources, which
+lead to leak
 
 ## 0.06 (09-Nov-2019)
 

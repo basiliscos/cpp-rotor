@@ -46,12 +46,11 @@ struct sub_t : public r::actor_base_t {
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto pub_addr = sup->create_address();
-    auto pub = sup->create_actor<pub_t>(rt::default_timeout, rt::default_timeout);
-    auto sub1 = sup->create_actor<sub_t>(rt::default_timeout, rt::default_timeout);
-    auto sub2 = sup->create_actor<sub_t>(rt::default_timeout, rt::default_timeout);
+    auto pub = sup->create_actor<pub_t>().timeout(rt::default_timeout).finish();
+    auto sub1 = sup->create_actor<sub_t>().timeout(rt::default_timeout).finish();
+    auto sub2 = sup->create_actor<sub_t>().timeout(rt::default_timeout).finish();
 
     pub->set_pub_addr(pub_addr);
     sub1->set_pub_addr(pub_addr);

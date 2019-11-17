@@ -68,10 +68,9 @@ struct ponger_t : public r::actor_base_t {
 TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto pinger = sup->create_actor<pinger_t>(rt::default_timeout, rt::default_timeout);
-    auto ponger = sup->create_actor<ponger_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto pinger = sup->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
+    auto ponger = sup->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

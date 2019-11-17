@@ -104,6 +104,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     using timer_id_t = std::uint32_t;
 
     using config_t = actor_config_t;
+    template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
 
     /** \brief constructs actor and links it's supervisor
      *

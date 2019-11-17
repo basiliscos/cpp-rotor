@@ -17,6 +17,7 @@ enum class error_code_t {
     request_timeout,
     supervisor_defined,
     already_registered,
+    actor_misconfigured,
     unknown_service,
 };
 

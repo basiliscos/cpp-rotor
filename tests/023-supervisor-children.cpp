@@ -17,19 +17,15 @@ struct sample_actor_t : public rt::actor_test_t {
 
     virtual void init_start() noexcept override {}
 
-    virtual void confirm_init_start() noexcept {
-        r::actor_base_t::init_start();
-    }
-
+    virtual void confirm_init_start() noexcept { r::actor_base_t::init_start(); }
 };
 
-struct sample_supervisor_t: public rt::supervisor_test_t {
+struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
 
     virtual void init_start() noexcept override {
-        r::actor_config_t config(rt::default_timeout, rt::default_timeout);
-        child= create_actor<sample_actor_t>(config);
+        child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
     }
 
     child_ptr_t child;
@@ -37,11 +33,9 @@ struct sample_supervisor_t: public rt::supervisor_test_t {
 
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto act = sup->create_actor<sample_actor_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
@@ -58,12 +52,10 @@ TEST_CASE("supervisor is not initialized, while it child did not confirmed initi
 
 TEST_CASE("supervisor is not initialized, while it 1 of 2 children did not confirmed initialization", "[supervisor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>( config);
-    auto act1 = sup->create_actor<sample_actor_t>(config);
-    auto act2 = sup->create_actor<sample_actor_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
@@ -82,12 +74,10 @@ TEST_CASE("supervisor is not initialized, while it 1 of 2 children did not confi
 
 TEST_CASE("supervisor does not starts, if a children did not initialized", "[supervisor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto act1 = sup->create_actor<sample_actor_t>(config);
-    auto act2 = sup->create_actor<sample_actor_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
@@ -106,14 +96,11 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
     REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
-
 TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality);
-    auto sup = system_context.create_supervisor<sample_supervisor_t>(config);
-    auto& act = sup->child;
+    auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto &act = sup->child;
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
@@ -130,11 +117,11 @@ TEST_CASE("supervisor create child during init phase", "[supervisor]") {
 
 TEST_CASE("shutdown_failed policy", "[supervisor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
-
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality, r::supervisor_policy_t::shutdown_failed);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto act = sup->create_actor<sample_actor_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                   .policy(r::supervisor_policy_t::shutdown_failed)
+                   .timeout(rt::default_timeout)
+                   .finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
@@ -154,11 +141,12 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
 
 TEST_CASE("shutdown_self policy", "[supervisor]") {
     r::system_context_t system_context;
-    const void *locality = &system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, locality, r::supervisor_policy_t::shutdown_self);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto act = sup->create_actor<sample_actor_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                   .policy(r::supervisor_policy_t::shutdown_self)
+                   .timeout(rt::default_timeout)
+                   .finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);

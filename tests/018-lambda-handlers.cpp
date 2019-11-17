@@ -32,9 +32,8 @@ struct sample_actor_t : public r::actor_base_t {
 TEST_CASE("lambda handler", "[actor]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto actor = sup->create_actor<sample_actor_t>(rt::default_timeout, rt::default_timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);

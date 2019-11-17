@@ -118,15 +118,16 @@ struct ponger_t : public rt::actor_test_t {
 TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
     asio::io_context io_context{1};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    auto strand1 = std::make_shared<asio::io_context::strand>(io_context);
+    auto strand2 = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = r::pt::milliseconds{10};
-    ra::supervisor_config_asio_t conf{nullptr, timeout, timeout, std::move(stand)};
 
-    auto sup1 = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
-    auto sup2 = sup1->create_actor<rt::supervisor_asio_test_t>(conf);
+    auto sup1 =
+        system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand1).timeout(timeout).finish();
+    auto sup2 = sup1->create_actor<rt::supervisor_asio_test_t>().strand(strand2).timeout(timeout).finish();
 
-    auto pinger = sup1->create_actor<pinger_t>(conf);
-    auto ponger = sup2->create_actor<ponger_t>(conf);
+    auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
+    auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());

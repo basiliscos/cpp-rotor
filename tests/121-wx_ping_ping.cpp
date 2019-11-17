@@ -54,7 +54,7 @@ struct pinger_t : public r::actor_base_t {
 
 struct ponger_t : public r::actor_base_t {
     std::uint32_t pong_sent = 0;
-    std::uint32_t ping_received  = 0;
+    std::uint32_t ping_received = 0;
     rotor::address_ptr_t pinger_addr;
 
     using r::actor_base_t::actor_base_t;
@@ -85,12 +85,12 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     wxEventLoopBase::SetActive(loop);
     rx::system_context_ptr_t system_context{new rx::system_context_wx_t(app)};
     wxEvtHandler handler;
-    rx::supervisor_config_wx_t conf{nullptr, timeout, timeout, &handler};
-    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(conf);
+    auto sup =
+        system_context->create_supervisor<rt::supervisor_wx_test_t>().handler(&handler).timeout(timeout).finish();
     sup->start();
 
-    auto pinger = sup->create_actor<pinger_t>(conf);
-    auto ponger = sup->create_actor<ponger_t>(conf);
+    auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+    auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 

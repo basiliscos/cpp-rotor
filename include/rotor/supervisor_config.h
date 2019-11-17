@@ -22,11 +22,17 @@ struct supervisor_config_t : actor_config_t {
     /** \brief how to behave if child-actor fails */
     supervisor_policy_t policy = supervisor_policy_t::shutdown_self;
 
-    supervisor_config_t(supervisor_t *parent, pt::time_duration init_timeout_, pt::time_duration shutdown_timeout_,
-                        supervisor_policy_t policy_ = supervisor_policy_t::shutdown_self)
-        :
+    using actor_config_t::actor_config_t;
+};
 
-          actor_config_t{parent, init_timeout_, shutdown_timeout_}, policy{policy_} {}
+template <typename Supervisor> struct supervisor_config_builder_t : actor_config_builder_t<Supervisor> {
+    using parent_t = actor_config_builder_t<Supervisor>;
+    using parent_t::parent_t;
+
+    supervisor_config_builder_t &&policy(supervisor_policy_t policy_) && {
+        parent_t::config.policy = policy_;
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
 };
 
 } // namespace rotor

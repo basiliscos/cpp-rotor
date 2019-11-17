@@ -35,27 +35,11 @@ struct system_context_wx_t : public system_context_t {
      */
     system_context_wx_t(wxAppConsole *app = nullptr);
 
-    /** \brief creates root supervior. `args` and config are forwarded for supervisor constructor */
-    template <typename Supervisor = supervisor_t, typename... Args>
-    auto create_supervisor(Args &&... args) -> intrusive_ptr_t<Supervisor> {
-        if (supervisor) {
-            on_error(make_error_code(error_code_t::supervisor_defined));
-            return intrusive_ptr_t<Supervisor>{};
-        } else {
-            auto typed_sup = system_context_t::create_supervisor<Supervisor>(std::forward<Args>(args)...);
-            supervisor = typed_sup;
-            return typed_sup;
-        }
-    }
-
     /** \brief returns wx application */
     inline wxAppConsole *get_app() noexcept { return app; }
 
   protected:
     friend struct supervisor_wx_t;
-
-    /** \brief root wx supervisor */
-    supervisor_ptr_t supervisor;
 
     /** \brief non-owning pointer to the wx application */
     wxAppConsole *app;

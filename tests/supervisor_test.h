@@ -14,23 +14,19 @@ namespace test {
 
 extern pt::time_duration default_timeout;
 
-
-struct supervisor_config_test_t: public supervisor_config_t  {
-    const void *locality;
-
-    supervisor_config_test_t(rotor::supervisor_t* parent, const pt::time_duration& init_timeout_,
-                             const pt::time_duration& shutdown_timeout_, const void *locality_,
-                             supervisor_policy_t policy_ = supervisor_policy_t::shutdown_self):
-        supervisor_config_t {parent, init_timeout_, shutdown_timeout_, policy_}, locality{locality_} {
-
-    }
+struct supervisor_config_test_t : public supervisor_config_t {
+    const void *locality = nullptr;
 };
+
+template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
     using timers_t = std::list<timer_id_t>;
-    using config_t = supervisor_config_test_t;
 
-    supervisor_test_t(const config_t& config_);
+    using config_t = supervisor_config_test_t;
+    template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
+
+    supervisor_test_t(const supervisor_config_test_t &config_);
 
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
@@ -41,8 +37,8 @@ struct supervisor_test_t : public supervisor_t {
     virtual address_ptr_t make_address() noexcept override;
 
     state_t &get_state() noexcept { return state; }
-    queue_t& get_leader_queue() { return get_leader().queue; }
-    supervisor_test_t& get_leader() { return *static_cast<supervisor_test_t*>(locality_leader); }
+    queue_t &get_leader_queue() { return get_leader().queue; }
+    supervisor_test_t &get_leader() { return *static_cast<supervisor_test_t *>(locality_leader); }
     subscription_points_t &get_points() noexcept { return points; }
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
     actors_map_t &get_children() noexcept { return actors_map; }
@@ -50,6 +46,16 @@ struct supervisor_test_t : public supervisor_t {
 
     const void *locality;
     timers_t active_timers;
+};
+
+template <typename Supervisor> struct supervisor_test_config_builder_t : supervisor_config_builder_t<Supervisor> {
+    using parent_t = supervisor_config_builder_t<Supervisor>;
+    using parent_t::parent_t;
+
+    supervisor_test_config_builder_t &&locality(const void *locality_) && {
+        parent_t::config.locality = locality_;
+        return std::move(*this);
+    }
 };
 
 } // namespace test

@@ -11,7 +11,7 @@
 using namespace rotor::test;
 using namespace rotor;
 
-supervisor_test_t::supervisor_test_t(const supervisor_config_test_t& config_)
+supervisor_test_t::supervisor_test_t(const supervisor_config_test_t &config_)
     : supervisor_t{config_}, locality{config_.locality} {}
 
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
@@ -32,21 +32,18 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
     assert(0 && "should not happen");
 }
 
-void supervisor_test_t::start() noexcept { INFO("supervisor_test_t::start()") }
+void supervisor_test_t::start() noexcept {INFO("supervisor_test_t::start()")}
 
 supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
     auto it = active_timers.begin();
-    for(std::size_t i = 0; i < index; ++i) {
+    for (std::size_t i = 0; i < index; ++i) {
         ++it;
     }
     return *it;
 }
 
-
 void supervisor_test_t::shutdown() noexcept { INFO("supervisor_test_t::shutdown()") }
 
-void supervisor_test_t::enqueue(message_ptr_t message) noexcept {
-    get_leader().queue.emplace_back(std::move(message));
-}
+void supervisor_test_t::enqueue(message_ptr_t message) noexcept { get_leader().queue.emplace_back(std::move(message)); }
 
 pt::time_duration rotor::test::default_timeout{pt::milliseconds{1}};

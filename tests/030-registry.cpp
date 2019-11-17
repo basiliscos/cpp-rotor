@@ -27,42 +27,33 @@ struct sample_actor_t : public r::actor_base_t {
         r::actor_base_t::init_start();
     }
 
-    void query_name(const std::string& name) {
+    void query_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
         request<r::payload::discovery_request_t>(registry_addr, name).send(timeout);
     }
 
-    void register_name(const std::string& name) {
+    void register_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
         request<r::payload::registration_request_t>(registry_addr, name, address).send(timeout);
     }
 
-    void unregister_all() {
-        send<r::payload::deregistration_notify_t>(registry_addr, address);
-    }
+    void unregister_all() { send<r::payload::deregistration_notify_t>(registry_addr, address); }
 
-    void unregister_name(const std::string& name) {
-        send<r::payload::deregistration_service_t>(registry_addr, name);
-    }
+    void unregister_name(const std::string &name) { send<r::payload::deregistration_service_t>(registry_addr, name); }
 
-    void on_discovery(r::message::discovery_response_t& reply) noexcept {
-        discovery_reply.reset(&reply);
-    }
+    void on_discovery(r::message::discovery_response_t &reply) noexcept { discovery_reply.reset(&reply); }
 
-    void on_registration_reply(r::message::registration_response_t& reply) noexcept {
+    void on_registration_reply(r::message::registration_response_t &reply) noexcept {
         registration_reply.reset(&reply);
     }
 };
 
-
-
 TEST_CASE("registry", "[registry]") {
     r::system_context_t system_context;
 
-    rt::supervisor_config_test_t config(nullptr, rt::default_timeout, rt::default_timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(config);
-    auto reg = sup->create_actor<r::registry_t>(config);
-    auto act = sup->create_actor<sample_actor_t>(config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto reg = sup->create_actor<r::registry_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
     act->registry_addr = reg->get_address();
 
     sup->do_process();

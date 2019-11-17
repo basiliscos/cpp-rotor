@@ -10,7 +10,7 @@
 
 using namespace rotor;
 
-actor_base_t::actor_base_t(const config_t &cfg)
+actor_base_t::actor_base_t(const actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
       shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW}, behavior{nullptr} {}
 
