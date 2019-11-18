@@ -12,9 +12,6 @@
 namespace r = rotor;
 namespace rt = rotor::test;
 
-static std::uint32_t destroyed = 0;
-
-
 TEST_CASE("misconfigured root supervisor", "[system_context]") {
     rt::system_context_test_t *system_context = new rt::system_context_test_t{};
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().finish();
