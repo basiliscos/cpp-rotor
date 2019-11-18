@@ -27,9 +27,8 @@ struct pong_t {};
 struct pinger_t : public rotor::actor_base_t {
     using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    pinger_t(rotor::supervisor_t &sup, std::size_t pings)
-        : rotor::actor_base_t{sup}, pings_left{pings}, pings_count{pings} {}
-
+    using rotor::actor_base_t::actor_base_t;
+    void set_pings(std::size_t pings) { pings_left = pings_count = pings; }
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
     void init_start() noexcept override {
@@ -62,7 +61,7 @@ struct pinger_t : public rotor::actor_base_t {
             std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                       << ", freq = " << std::fixed << std::setprecision(10) << freq << ", real freq = " << std::fixed
                       << std::setprecision(10) << freq * 2 << "\n";
-            supervisor.shutdown();
+            supervisor->shutdown();
         }
     }
 
@@ -74,7 +73,7 @@ struct pinger_t : public rotor::actor_base_t {
 
 struct ponger_t : public rotor::actor_base_t {
 
-    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {}
+    using rotor::actor_base_t::actor_base_t;
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
@@ -100,14 +99,15 @@ int main(int argc, char **argv) {
         }
 
         auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-        auto stand = std::make_shared<asio::io_context::strand>(io_context);
+        auto strand = std::make_shared<asio::io_context::strand>(io_context);
         auto timeout = boost::posix_time::milliseconds{10};
-        ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
-        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
+        auto supervisor =
+            system_context->create_supervisor<ra::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
-        auto pinger = supervisor->create_actor<pinger_t>(timeout, count);
-        auto ponger = supervisor->create_actor<ponger_t>(timeout);
+        auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
+        pinger->set_pings(count);
         ponger->set_pinger_addr(pinger->get_address());
 
         supervisor->start();

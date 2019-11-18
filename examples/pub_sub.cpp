@@ -53,13 +53,12 @@ struct dummy_supervisor : public rotor::supervisor_t {
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    rotor::supervisor_config_t cfg{timeout};
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
+    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
 
     auto pub_addr = sup->create_address(); // (1)
-    auto pub = sup->create_actor<pub_t>(timeout);
-    auto sub1 = sup->create_actor<sub_t>(timeout);
-    auto sub2 = sup->create_actor<sub_t>(timeout);
+    auto pub = sup->create_actor<pub_t>().timeout(timeout).finish();
+    auto sub1 = sup->create_actor<sub_t>().timeout(timeout).finish();
+    auto sub2 = sup->create_actor<sub_t>().timeout(timeout).finish();
 
     pub->set_pub_addr(pub_addr);
     sub1->set_pub_addr(pub_addr);

@@ -31,15 +31,13 @@ struct pinger_t : public r::actor_base_t {
 
     std::size_t pings_left;
     std::size_t pings_count;
-    std::uint32_t request_attempts;
+    std::uint32_t request_attempts = 0;
     timepoint_t start;
     bool stop = false;
 
-    pinger_t(r::supervisor_t &sup, std::size_t pings) : r::actor_base_t{sup}, pings_left{pings}, pings_count{pings} {
-        request_attempts = 0;
-    }
-
+    using r::actor_base_t::actor_base_t;
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
+    void set_pings(std::size_t pings) { pings_count = pings_left = pings; }
 
     void init_start() noexcept override {
         subscribe(&pinger_t::on_pong);
@@ -115,7 +113,7 @@ struct pinger_t : public r::actor_base_t {
                 std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                           << ", freq = " << std::fixed << std::setprecision(10) << freq
                           << ", real freq = " << std::fixed << std::setprecision(10) << freq * 2 << "\n";
-                supervisor.shutdown();
+                supervisor->shutdown();
                 ponger_addr->supervisor.shutdown();
             }
         }
@@ -126,8 +124,7 @@ struct pinger_t : public r::actor_base_t {
 
 struct ponger_t : public r::actor_base_t {
 
-    ponger_t(r::supervisor_t &sup) : r::actor_base_t{sup} {}
-
+    using r::actor_base_t::actor_base_t;
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
     void on_initialize(r::message::init_request_t &msg) noexcept override {
@@ -159,19 +156,19 @@ int main(int argc, char **argv) {
         }
 
         auto sys_ctx = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx)};
-        auto stand = std::make_shared<asio::io_context::strand>(io_ctx);
+        auto strand1 = std::make_shared<asio::io_context::strand>(io_ctx);
+        auto strand2 = std::make_shared<asio::io_context::strand>(io_ctx);
         auto timeout = boost::posix_time::milliseconds{500};
-        ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
-        auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>(conf);
-        auto sup2 = sup1->create_actor<ra::supervisor_asio_t>(timeout, conf);
+        auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>().strand(strand1).timeout(timeout).finish();
+        auto sup2 = sup1->create_actor<ra::supervisor_asio_t>().strand(strand2).timeout(timeout).finish();
 
-        auto pinger = sup1->create_actor<pinger_t>(timeout, count);
-        auto ponger = sup2->create_actor<ponger_t>(timeout);
+        auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
+        pinger->set_pings(count);
         ponger->set_pinger_addr(pinger->get_address());
 
         sup1->start();
-        sup2->start();
 
         auto t1 = std::thread([&] { io_ctx.run(); });
         auto t2 = std::thread([&] { io_ctx.run(); });

@@ -57,7 +57,7 @@ struct pinger_t : public rotor::actor_base_t {
             // optional cleanup
             unsubscribe(&pinger_t::on_pong, reply_addr);
             request_map.erase(msg.address);
-            supervisor.do_shutdown();
+            supervisor->do_shutdown();
         }
     }
 
@@ -75,7 +75,7 @@ struct ponger_t : public rotor::actor_base_t {
     generator_t gen;
     distrbution_t dist;
 
-    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup}, gen(rd()) {}
+    ponger_t(const config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
 
     void on_initialize(rotor::message::init_request_t &msg) noexcept override {
         rotor::actor_base_t::on_initialize(msg);
@@ -96,14 +96,16 @@ int main() {
         auto *loop = ev_loop_new(0);
         auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
         auto timeout = boost::posix_time::milliseconds{10};
-        auto conf = rotor::ev::supervisor_config_ev_t{
-            timeout, loop, true, /* let supervisor takes ownership on the loop */
-        };
-        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(conf);
+        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>()
+                       .loop(loop)
+                       .loop_ownership(true) /* let supervisor takes ownership on the loop */
+                       .timeout(timeout)
+                       .finish();
 
-        auto pinger = sup->create_actor<pinger_t>(timeout);
-        auto ponger1 = sup->create_actor<ponger_t>(timeout);
-        auto ponger2 = sup->create_actor<ponger_t>(timeout);
+        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger1 = sup->create_actor<ponger_t>().timeout(timeout).finish();
+        auto ponger2 = sup->create_actor<ponger_t>().timeout(timeout).finish();
+        ;
         pinger->set_ponger_addr1(ponger1->get_address());
         pinger->set_ponger_addr2(ponger2->get_address());
 

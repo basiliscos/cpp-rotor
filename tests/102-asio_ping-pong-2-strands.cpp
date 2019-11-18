@@ -122,8 +122,7 @@ TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
     auto strand2 = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = r::pt::milliseconds{10};
 
-    auto sup1 =
-        system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand1).timeout(timeout).finish();
+    auto sup1 =system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand1).timeout(timeout).finish();
     auto sup2 = sup1->create_actor<rt::supervisor_asio_test_t>().strand(strand2).timeout(timeout).finish();
 
     auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();

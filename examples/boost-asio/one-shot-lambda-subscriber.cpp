@@ -57,7 +57,7 @@ struct pinger_t : public rotor::actor_base_t {
         auto &ec = msg.payload.ec;
         if (ec) {
             std::cout << "pong error: " << ec.message() << "\n";
-            supervisor.do_shutdown();
+            supervisor->do_shutdown();
         } else {
             std::cout << "ping\n";
             auto timeout = rotor::pt::milliseconds{1};
@@ -96,13 +96,13 @@ int main() {
     try {
 
         auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-        auto stand = std::make_shared<asio::io_context::strand>(io_context);
+        auto strand = std::make_shared<asio::io_context::strand>(io_context);
         auto timeout = boost::posix_time::milliseconds{10};
-        ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
-        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
+        auto supervisor =
+            system_context->create_supervisor<ra::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
-        auto pinger = supervisor->create_actor<pinger_t>(timeout);
-        auto ponger = supervisor->create_actor<ponger_t>(timeout);
+        auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
         ponger->set_pinger_addr(pinger->get_address());
 

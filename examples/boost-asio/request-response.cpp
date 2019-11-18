@@ -76,7 +76,7 @@ struct client_actor : public rotor::actor_base_t {
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";
         }
-        supervisor.do_shutdown(); // optional;
+        supervisor->do_shutdown(); // optional;
     }
 
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
@@ -89,12 +89,12 @@ struct client_actor : public rotor::actor_base_t {
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
-    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = boost::posix_time::milliseconds{500};
-    rotor::asio::supervisor_config_asio_t conf{timeout, std::move(stand)};
-    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
-    auto server = sup->create_actor<server_actor>(timeout);
-    auto client = sup->create_actor<client_actor>(timeout);
+    auto sup =
+        system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
+    auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
+    auto client = sup->create_actor<client_actor>().timeout(timeout).finish();
     client->set_server(server->get_address());
     sup->do_process();
     return 0;

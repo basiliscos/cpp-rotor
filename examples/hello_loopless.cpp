@@ -11,7 +11,7 @@ struct hello_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
         std::cout << "hello world\n";
-        supervisor.do_shutdown();
+        supervisor->do_shutdown();
     }
 };
 
@@ -28,9 +28,8 @@ struct dummy_supervisor : public rotor::supervisor_t {
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    rotor::supervisor_config_t cfg{timeout};
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
-    sup->create_actor<hello_actor>(timeout);
+    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
+    sup->create_actor<hello_actor>().timeout(timeout).finish();
     sup->do_process();
     return 0;
 }

@@ -48,7 +48,7 @@ struct pinger_t : public rotor::actor_base_t {
                 std::cout << "lets try to discover ponger address again (" << attempts << " attempts left)\n";
                 request<rotor::payload::discovery_request_t>(registry_addr, ponger_name).send(timeout);
             } else {
-                supervisor.do_shutdown();
+                supervisor->do_shutdown();
             }
             return;
         }
@@ -63,7 +63,7 @@ struct pinger_t : public rotor::actor_base_t {
         auto &ec = msg.payload.ec;
         if (ec) {
             std::cout << "ponger state cannot be determined: " << ec.message() << "\n";
-            supervisor.do_shutdown();
+            supervisor->do_shutdown();
             return;
         }
         auto state = msg.payload.res.state;
@@ -78,7 +78,7 @@ struct pinger_t : public rotor::actor_base_t {
                 auto ponger_sup_addr = ponger_addr->supervisor.get_address();
                 request<rotor::payload::state_request_t>(ponger_sup_addr, ponger_addr).send(timeout);
             } else {
-                supervisor.do_shutdown();
+                supervisor->do_shutdown();
             }
         }
     }
@@ -91,7 +91,7 @@ struct pinger_t : public rotor::actor_base_t {
 
     void on_pong(message::pong_t &) noexcept {
         std::cout << "pong received, going to shutdown\n";
-        supervisor.do_shutdown();
+        supervisor->do_shutdown();
     }
 
     std::uint32_t attempts = 3;
@@ -139,14 +139,15 @@ int main() {
         auto *loop = ev_loop_new(0);
         auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
         auto timeout = boost::posix_time::milliseconds{10};
-        auto conf = rotor::ev::supervisor_config_ev_t{
-            timeout, loop, true, /* let supervisor takes ownership on the loop */
-        };
 
-        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(conf);
-        auto registry = sup->create_actor<rotor::registry_t>(timeout);
-        auto pinger = sup->create_actor<pinger_t>(timeout);
-        auto ponger = sup->create_actor<ponger_t>(timeout);
+        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>()
+                       .loop(loop)
+                       .loop_ownership(true) /* let supervisor takes ownership on the loop */
+                       .timeout(timeout)
+                       .finish();
+        auto registry = sup->create_actor<rotor::registry_t>().timeout(timeout).finish();
+        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
 
         ponger->set_registry_addr(registry->get_address());
         pinger->set_registry_addr(registry->get_address());

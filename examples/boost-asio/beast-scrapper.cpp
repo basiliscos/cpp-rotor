@@ -151,9 +151,9 @@ struct http_worker_t : public r::actor_base_t {
     using resolve_results_t = tcp::resolver::results_type;
     using resolve_it_t = resolve_results_t::iterator;
 
-    explicit http_worker_t(r::supervisor_t &sup)
-        : r::actor_base_t{sup}, strand{static_cast<ra::supervisor_asio_t &>(sup).get_strand()}, resolver{
-                                                                                                    strand.context()} {}
+    explicit http_worker_t(r::actor_config_t &config)
+        : r::actor_base_t{config}, strand{static_cast<ra::supervisor_asio_t *>(config.supervisor)->get_strand()},
+          resolver{strand.context()} {}
 
     inline asio::io_context::strand &get_strand() noexcept { return strand; }
 
@@ -288,14 +288,30 @@ struct http_worker_t : public r::actor_base_t {
 };
 
 struct http_manager_config_t : public ra::supervisor_config_asio_t {
-    using strand_ptr_t = ra::supervisor_config_asio_t::strand_ptr_t;
     std::size_t worker_count;
-    r::pt::time_duration init_timeout;
+    r::pt::time_duration worker_timeout;
 
-    http_manager_config_t(std::size_t worker_count_, const r::pt::time_duration &init_timeout_,
-                          const r::pt::time_duration &shutdown_duration_, strand_ptr_t srtand_)
-        : ra::supervisor_config_asio_t{shutdown_duration_, srtand_}, worker_count{worker_count_}, init_timeout{
-                                                                                                      init_timeout_} {}
+    using ra::supervisor_config_asio_t::supervisor_config_asio_t;
+};
+
+template <typename Supervisor> struct http_manager_asio_builder_t : ra::supervisor_config_asio_builder_t<Supervisor> {
+    using parent_t = ra::supervisor_config_asio_builder_t<Supervisor>;
+    using parent_t::parent_t;
+    constexpr static const std::uint32_t WORKERS = 1 << 3;
+    constexpr static const std::uint32_t WORKER_TIMEOUT = 1 << 4;
+    constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | WORKERS | WORKER_TIMEOUT;
+
+    http_manager_asio_builder_t &&workers(std::size_t count) && {
+        parent_t::config.worker_count = count;
+        parent_t::mask = (parent_t::mask & ~WORKERS);
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
+
+    http_manager_asio_builder_t &&worker_timeout(r::pt::time_duration &value) && {
+        parent_t::config.worker_timeout = value;
+        parent_t::mask = (parent_t::mask & ~WORKER_TIMEOUT);
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
 };
 
 struct http_manager_t : public ra::supervisor_asio_t {
@@ -304,15 +320,18 @@ struct http_manager_t : public ra::supervisor_asio_t {
     using request_ptr_t = r::intrusive_ptr_t<message::http_request_t>;
     using req_mapping_t = std::unordered_map<request_id, request_ptr_t>;
 
-    http_manager_t(supervisor_t *parent_, const http_manager_config_t &config_)
-        : ra::supervisor_asio_t{parent_, config_} {
+    using config_t = http_manager_config_t;
+    template <typename Supervisor> using config_builder_t = http_manager_asio_builder_t<Supervisor>;
+
+    http_manager_t(const http_manager_config_t &config_) : ra::supervisor_asio_t{config_} {
         worker_count = config_.worker_count;
-        init_timeout = config_.init_timeout;
+        worker_timeout = config_.worker_timeout;
     }
 
     void init_start() noexcept override {
         for (std::size_t i = 0; i < worker_count; ++i) {
-            auto addr = create_actor<http_worker_t>(init_timeout)->get_address();
+            auto worker = create_actor<http_worker_t>().timeout(worker_timeout).finish();
+            auto addr = worker->get_address();
             workers.emplace(std::move(addr));
         }
         subscribe(&http_manager_t::on_request);
@@ -346,7 +365,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
     }
 
     std::size_t worker_count;
-    r::pt::time_duration init_timeout;
+    r::pt::time_duration worker_timeout;
     workers_set_t workers;
     req_mapping_t req_mapping;
 };
@@ -371,9 +390,9 @@ struct client_t : r::actor_base_t {
 
         std::cerr << "client_t::shutdown_finish, stats: " << success_requests << "/" << total_requests
                   << " requests, in " << diff.count() << "s, rps = " << rps << "\n";
-        send<r::payload::shutdown_trigger_t>(supervisor.get_address(), manager_addr);
+        send<r::payload::shutdown_trigger_t>(supervisor->get_address(), manager_addr);
         manager_addr.reset();
-        supervisor.do_shutdown(); /* trigger all system to shutdown */
+        supervisor->do_shutdown(); /* trigger all system to shutdown */
     }
 
     void poll_status() noexcept {
@@ -381,13 +400,13 @@ struct client_t : r::actor_base_t {
             request<r::payload::state_request_t>(manager_addr, manager_addr).send(timeout);
             ++poll_attempts;
         } else {
-            supervisor.do_shutdown();
+            supervisor->do_shutdown();
         }
     }
 
     void on_status(r::message::state_response_t &msg) noexcept {
         if (msg.payload.ec) {
-            return supervisor.do_shutdown();
+            return supervisor->do_shutdown();
         }
         if (msg.payload.res.state != r::state_t::OPERATIONAL) {
             poll_status();
@@ -505,14 +524,17 @@ int main(int argc, char **argv) {
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto man_timeout = req_timeout + r::pt::milliseconds{workers_count * 2};
-    ra::supervisor_config_asio_t conf{man_timeout, strand};
-    auto sup = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
+    auto sup = system_context->create_supervisor<ra::supervisor_asio_t>().strand(strand).timeout(man_timeout).finish();
 
     auto worker_timeout = req_timeout * 2;
-    http_manager_config_t http_conf{workers_count, worker_timeout, worker_timeout, strand};
-    auto man = sup->create_actor<http_manager_t>(man_timeout, http_conf);
+    auto man = sup->create_actor<http_manager_t>()
+                   .timeout(man_timeout)
+                   .workers(workers_count)
+                   .worker_timeout(worker_timeout)
+                   .strand(strand)
+                   .finish();
 
-    auto client = sup->create_actor<client_t>(worker_timeout);
+    auto client = sup->create_actor<client_t>().timeout(worker_timeout).finish();
     client->manager_addr = man->get_address();
     client->timeout = req_timeout;
     client->concurrency = workers_count;

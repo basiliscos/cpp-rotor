@@ -39,8 +39,12 @@ struct pong_t {};
 struct pinger_t : public rotor::actor_base_t {
     using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    pinger_t(rotor::supervisor_t &sup, std::size_t pings)
-        : rotor::actor_base_t{sup}, pings_left{pings}, pings_count{pings} {}
+    using rotor::actor_base_t::actor_base_t;
+
+    void set_pings(std::size_t pings) {
+        pings_left = pings;
+        pings_count = pings;
+    }
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
@@ -74,7 +78,7 @@ struct pinger_t : public rotor::actor_base_t {
             std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                       << ", freq = " << std::fixed << std::setprecision(10) << freq << ", real freq = " << std::fixed
                       << std::setprecision(10) << freq * 2 << "\n";
-            supervisor.shutdown();
+            supervisor->shutdown();
             ponger_addr.reset(); // do not hold reference to to ponger's supervisor
             // send<rotor::payload::shutdown_request_t>(ponger_addr->supervisor.get_address(), address);
         }
@@ -88,7 +92,7 @@ struct pinger_t : public rotor::actor_base_t {
 
 struct ponger_t : public rotor::actor_base_t {
 
-    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} {}
+    using rotor::actor_base_t::actor_base_t;
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
@@ -115,21 +119,23 @@ int main(int argc, char **argv) {
         auto timeout = boost::posix_time::milliseconds{500};
         auto asio_guard = asio::make_work_guard(io_ctx);
         auto sys_ctx_asio = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_ctx)};
-        auto stand = std::make_shared<asio::io_context::strand>(io_ctx);
-        rotor::asio::supervisor_config_asio_t conf_asio{timeout, std::move(stand)};
+        auto strand = std::make_shared<asio::io_context::strand>(io_ctx);
 
         auto *loop = ev_loop_new(0);
         auto sys_ctx_ev = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
-        auto conf_ev = rotor::ev::supervisor_config_ev_t{
-            timeout, loop, true, /* let supervisor takes ownership on the loop */
-        };
 
-        auto sup_ev = sys_ctx_ev->create_supervisor<rotor::ev::supervisor_ev_t>(conf_ev);
-        auto sup_asio = sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>(conf_asio);
+        auto sup_ev = sys_ctx_ev->create_supervisor<rotor::ev::supervisor_ev_t>()
+                          .loop(loop)
+                          .loop_ownership(true) /* let supervisor takes ownership on the loop */
+                          .timeout(timeout)
+                          .finish();
+        auto sup_asio =
+            sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
-        auto pinger = sup_ev->create_actor<pinger_t>(timeout, count);
-        auto ponger = sup_asio->create_actor<ponger_t>(timeout);
+        auto pinger = sup_ev->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = sup_asio->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
+        pinger->set_pings(count);
         ponger->set_pinger_addr(pinger->get_address());
 
         sup_asio->start();
