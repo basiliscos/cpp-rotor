@@ -7,6 +7,10 @@ target_link_libraries(rotor_test_lib rotor_core)
 
 set(rotor_TEST_LIBS rotor_core rotor_test_lib)
 
+add_executable(008-config-builder 008-config-builder.cpp)
+target_link_libraries(008-config-builder ${rotor_TEST_LIBS})
+add_test(008-config-builder "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/008-config-builder")
+
 add_executable(009-system-context 009-system-context.cpp)
 target_link_libraries(009-system-context ${rotor_TEST_LIBS})
 add_test(009-system-context "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/009-system-context")
