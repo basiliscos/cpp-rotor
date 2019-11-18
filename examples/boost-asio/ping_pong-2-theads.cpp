@@ -139,7 +139,7 @@ struct ponger_t : public r::actor_base_t {
 struct holding_supervisor_t : public ra::supervisor_asio_t {
     using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
 
-    holding_supervisor_t(config_t &cfg)
+    explicit holding_supervisor_t(config_t &cfg)
         : ra::supervisor_asio_t{cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
     guard_t guard;
 

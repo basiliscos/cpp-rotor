@@ -7,6 +7,10 @@ target_link_libraries(rotor_test_lib rotor_core)
 
 set(rotor_TEST_LIBS rotor_core rotor_test_lib)
 
+add_executable(009-system-context 009-system-context.cpp)
+target_link_libraries(009-system-context ${rotor_TEST_LIBS})
+add_test(009-system-context "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/009-system-context")
+
 add_executable(010-sup-start_stop 010-sup-start_stop.cpp)
 target_link_libraries(010-sup-start_stop ${rotor_TEST_LIBS})
 add_test(010-sup-start_stop "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/010-sup-start_stop")

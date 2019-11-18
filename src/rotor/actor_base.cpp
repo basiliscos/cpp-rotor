@@ -48,7 +48,11 @@ void actor_base_t::on_initialize(message::init_request_t &msg) noexcept {
     init_start();
 }
 
-void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept { state = state_t::OPERATIONAL; }
+void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept {
+    if (state == state_t::INITIALIZED) {
+        state = state_t::OPERATIONAL;
+    }
+}
 
 void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
     shutdown_request.reset(&msg);

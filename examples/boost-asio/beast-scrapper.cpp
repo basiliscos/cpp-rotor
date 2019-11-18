@@ -323,10 +323,8 @@ struct http_manager_t : public ra::supervisor_asio_t {
     using config_t = http_manager_config_t;
     template <typename Supervisor> using config_builder_t = http_manager_asio_builder_t<Supervisor>;
 
-    http_manager_t(const http_manager_config_t &config_) : ra::supervisor_asio_t{config_} {
-        worker_count = config_.worker_count;
-        worker_timeout = config_.worker_timeout;
-    }
+    explicit http_manager_t(const http_manager_config_t &config_)
+        : ra::supervisor_asio_t{config_}, worker_count{config_.worker_count}, worker_timeout{config_.worker_timeout} {}
 
     void init_start() noexcept override {
         for (std::size_t i = 0; i < worker_count; ++i) {
