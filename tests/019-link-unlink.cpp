@@ -79,7 +79,6 @@ TEST_CASE("link not possible => supervisor is shutted down", "[actor]") {
     auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
     auto server_addr = act_s->get_address();
-    auto client_addr = act_c->get_address();
 
     act_c->link_request(server_addr, rt::default_timeout);
     sup->do_process();
