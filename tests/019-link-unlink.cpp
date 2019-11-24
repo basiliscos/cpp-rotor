@@ -70,3 +70,21 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 }
+
+TEST_CASE("link not possible => supervisor is shutted down", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+    auto server_addr = act_s->get_address();
+    auto client_addr = act_c->get_address();
+
+    act_c->link_request(server_addr, rt::default_timeout);
+    sup->do_process();
+
+    REQUIRE(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act_s->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}

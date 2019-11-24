@@ -110,6 +110,10 @@ void actor_behavior_t::on_link_response(const address_ptr_t &service_addr, const
     }
     if (ec) {
         if (remove_it) {
+            if (actor.init_request) {
+                actor.reply_with_error(*actor.init_request, ec);
+                actor.init_request.reset();
+            }
             actor.do_shutdown();
         }
     } else {
