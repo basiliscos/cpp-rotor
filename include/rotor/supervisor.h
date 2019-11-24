@@ -511,7 +511,7 @@ actor_config_builder_t<Actor>::actor_config_builder_t(install_action_t &&action_
 
 template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::finish() && {
     intrusive_ptr_t<Actor> actor_ptr;
-    if (mask) {
+    if (!validate()) {
         auto ec = make_error_code(error_code_t::actor_misconfigured);
         system_context.on_error(ec);
     } else {

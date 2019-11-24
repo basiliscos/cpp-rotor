@@ -83,6 +83,18 @@ template <typename Actor> struct actor_config_builder_t {
         return std::move(*static_cast<builder_t *>(this));
     }
 
+    virtual bool validate() noexcept {
+        if (mask) {
+            return false;
+        }
+        if (config.unlink_timeout) {
+            if (*config.unlink_timeout > config.shutdown_timeout) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     actor_ptr_t finish() &&;
 };
 
