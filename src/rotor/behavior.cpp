@@ -40,29 +40,28 @@ void actor_behavior_t::action_finish_init() noexcept {
 void actor_behavior_t::on_start_shutdown() noexcept {
     substate = behavior_state_t::SHUTDOWN_STARTED;
     actor.state = state_t::SHUTTING_DOWN;
-    action_clients_unliked();
+    action_unlink_clients();
 }
 
 void actor_behavior_t::action_clients_unliked() noexcept {
+    substate = behavior_state_t::SHUTDOWN_CLIENTS_FINISHED;
     action_unlink_servers();
     action_unsubscribe_self();
 }
 
 void actor_behavior_t::action_unlink_clients() noexcept {
-#if 0
-    auto& linked_clients = actor.linked_clients;
+    substate = behavior_state_t::SHUTDOWN_CLIENTS_STARTED;
+    auto &linked_clients = actor.linked_clients;
     if (linked_clients.empty()) {
-        substate = behavior_state_t::SHUTDOWN_CLIENTS_STARTED;
         action_clients_unliked();
     } else {
-        for(auto& linkage: actor.linked_clients) {
+        for (auto &linkage : actor.linked_clients) {
             auto &server_addr = linkage.server_addr;
             auto &client_addr = linkage.client_addr;
-            //sup.shutdown_timeout -- where to take it?
-            actor.template request<payload::shutdown_request_t>(server_addr, client_addr).send();
+            auto &timeout = actor.unlink_timeout.value();
+            actor.template request<payload::unlink_request_t>(client_addr, server_addr).send(timeout);
         }
     }
-#endif
 }
 
 void actor_behavior_t::action_unlink_servers() noexcept {
@@ -121,9 +120,33 @@ void actor_behavior_t::on_link_response(const address_ptr_t &service_addr, const
     }
 }
 
-void actor_behavior_t::on_link_request(const address_ptr_t &service_addr) {
+void actor_behavior_t::on_link_request(const address_ptr_t &service_addr) noexcept {
     if (actor.state == state_t::INITIALIZING) {
         linking_actors.insert(service_addr);
+    }
+}
+
+bool actor_behavior_t::unlink_request(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept {
+    (void)service_addr;
+    (void)client_addr;
+    return true;
+}
+
+void actor_behavior_t::on_unlink_error(const std::error_code &ec) noexcept {
+    if (actor.unlink_policy == unlink_policy_t::escalate) {
+        actor.supervisor->get_context()->on_error(ec);
+    }
+}
+
+void actor_behavior_t::on_unlink(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept {
+    auto &linked_clients = actor.linked_clients;
+    auto linkage = details::linkage_t{service_addr, client_addr};
+    auto it = linked_clients.find(linkage);
+    if (it != linked_clients.end()) {
+        linked_clients.erase(it);
+    }
+    if (substate == behavior_state_t::SHUTDOWN_CLIENTS_STARTED) {
+        action_clients_unliked();
     }
 }
 

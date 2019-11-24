@@ -155,7 +155,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief start confirmation from supervisor
      *
-     * Sets internal actor state to `OPERATIONAL`.
+     * Sets internal actor state to `OPERATIONAL`, if the actors stare
+     * is already `INITIALIZED`
      *
      */
     virtual void on_start(message_t<payload::start_actor_t> &) noexcept;
@@ -200,6 +201,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     virtual void on_link_request(message::link_request_t &) noexcept;
     virtual void on_link_response(message::link_response_t &) noexcept;
+    virtual void on_unlink_request(message::unlink_request_t &) noexcept;
+    virtual void on_unlink_response(message::unlink_response_t &) noexcept;
     virtual void on_unlink_notify(message::unlink_notify_t &) noexcept;
 
     /** \brief sends message to the destination address
@@ -222,6 +225,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     virtual timer_id_t link_request(const address_ptr_t &service_addr, const pt::time_duration &timeout) noexcept;
     void unlink_notify(const address_ptr_t &service_addr) noexcept;
+    virtual bool unlink_request(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept;
 
     /** \brief returns request builder for destination address using the specified address for reply
      *
@@ -322,6 +326,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     supervisor_t *supervisor;
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
+    std::optional<pt::time_duration> unlink_timeout;
+    unlink_policy_t unlink_policy;
 
     /** \brief current actor state */
     state_t state;

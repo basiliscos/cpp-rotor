@@ -18,6 +18,7 @@ enum class error_code_t {
     supervisor_defined,
     already_registered,
     actor_misconfigured,
+    actor_not_linkable,
     unknown_service,
 };
 

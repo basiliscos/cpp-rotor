@@ -17,6 +17,7 @@ TEST_CASE("misconfigured root supervisor", "[system_context]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().finish();
     REQUIRE(!sup);
     REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
+    REQUIRE(system_context.ec.message() == "actor is misconfigured");
     REQUIRE(!system_context.get_supervisor());
 }
 

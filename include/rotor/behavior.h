@@ -87,7 +87,10 @@ struct actor_behavior_t {
     virtual void on_unsubscription() noexcept;
 
     virtual void on_link_response(const address_ptr_t &service_addr, const std::error_code &ec) noexcept;
-    virtual void on_link_request(const address_ptr_t &service_addr);
+    virtual void on_link_request(const address_ptr_t &service_addr) noexcept;
+    virtual bool unlink_request(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept;
+    virtual void on_unlink_error(const std::error_code &ec) noexcept;
+    virtual void on_unlink(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept;
 
   protected:
     /** \brief a reference for the led actor */

@@ -11,8 +11,8 @@
 using namespace rotor;
 
 actor_base_t::actor_base_t(const actor_config_t &cfg)
-    : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
-      shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW}, behavior{nullptr} {}
+    : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout},
+      unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, behavior{nullptr} {}
 
 actor_base_t::~actor_base_t() { delete behavior; }
 
@@ -36,6 +36,8 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
     supervisor->subscribe_actor(*this, &actor_base_t::on_link_request);
     supervisor->subscribe_actor(*this, &actor_base_t::on_link_response);
     supervisor->subscribe_actor(*this, &actor_base_t::on_unlink_notify);
+    supervisor->subscribe_actor(*this, &actor_base_t::on_unlink_request);
+    supervisor->subscribe_actor(*this, &actor_base_t::on_unlink_response);
     state = state_t::INITIALIZING;
 }
 
@@ -139,18 +141,45 @@ actor_base_t::timer_id_t actor_base_t::link_request(const address_ptr_t &service
 }
 
 void actor_base_t::on_link_request(message::link_request_t &msg) noexcept {
-    auto &server_addr = msg.address;
-    auto &client_addr = msg.payload.request_payload.client_addr;
-    linked_clients.emplace(details::linkage_t{server_addr, client_addr});
-    reply_to(msg);
+    if (unlink_timeout.has_value()) {
+        auto &server_addr = msg.address;
+        auto &client_addr = msg.payload.request_payload.client_addr;
+        linked_clients.emplace(details::linkage_t{server_addr, client_addr});
+        reply_to(msg);
+    } else {
+        auto ec = make_error_code(error_code_t::actor_not_linkable);
+        reply_with_error(msg, ec);
+    }
 }
 
 void actor_base_t::on_unlink_notify(message::unlink_notify_t &msg) noexcept {
     auto &client_addr = msg.payload.client_addr;
     auto &server_addr = msg.address;
-    auto linkage = details::linkage_t{server_addr, client_addr};
-    auto it = linked_clients.find(linkage);
-    if (it != linked_clients.end()) {
-        linked_clients.erase(it);
+    behavior->on_unlink(server_addr, client_addr);
+}
+
+bool actor_base_t::unlink_request(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept {
+    return behavior->unlink_request(service_addr, client_addr);
+}
+
+void actor_base_t::on_unlink_request(message::unlink_request_t &msg) noexcept {
+    auto &server_addr = msg.payload.request_payload.server_addr;
+    auto it = linked_servers.find(server_addr);
+    if (it != linked_servers.end()) {
+        auto &client_addr = msg.address;
+        if (unlink_request(server_addr, client_addr)) {
+            reply_to(msg, server_addr);
+            linked_servers.erase(it);
+        }
     }
+}
+
+void actor_base_t::on_unlink_response(message::unlink_response_t &msg) noexcept {
+    auto &ec = msg.payload.ec;
+    auto &server_addr = msg.payload.req->payload.request_payload.server_addr;
+    auto &client_addr = msg.payload.req->address;
+    if (ec) {
+        behavior->on_unlink_error(ec);
+    }
+    behavior->on_unlink(server_addr, client_addr);
 }

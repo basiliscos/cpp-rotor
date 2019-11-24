@@ -6,8 +6,10 @@
 // Distributed under the MIT Software License
 //
 
+#include <optional>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "arc.hpp"
+#include "policy.h"
 
 namespace rotor {
 
@@ -23,6 +25,10 @@ struct actor_config_t {
 
     /** \brief how much time is allowed to spend in shutdown for children actor */
     pt::time_duration shutdown_timeout;
+
+    std::optional<pt::time_duration> unlink_timeout;
+
+    unlink_policy_t unlink_policy = unlink_policy_t::ignore;
 
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
 };
@@ -64,6 +70,16 @@ template <typename Actor> struct actor_config_builder_t {
     actor_config_builder_t &&shutdown_timeout(const pt::time_duration &timeout) && {
         config.shutdown_timeout = timeout;
         mask = (mask & ~SHUTDOWN_TIMEOUT);
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    actor_config_builder_t &&unlink_timeout(const pt::time_duration &timeout) && {
+        config.unlink_timeout = timeout;
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    actor_config_builder_t &&unlink_policy(const unlink_policy_t &policy) && {
+        config.unlin_policy = policy;
         return std::move(*static_cast<builder_t *>(this));
     }
 

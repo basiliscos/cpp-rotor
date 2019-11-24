@@ -16,7 +16,7 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).unlink_timeout(rt::default_timeout).finish();
     auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
     auto server_addr = act_s->get_address();
@@ -58,7 +58,6 @@ TEST_CASE("client/server, common workflow", "[actor]") {
         REQUIRE(act_s->get_linked_servers().size() == 0);
     }
 
-#if 0
     SECTION("indirect client-initiated unlink via server-shutdown") {
         act_s->do_shutdown();
         sup->do_process();
@@ -67,7 +66,6 @@ TEST_CASE("client/server, common workflow", "[actor]") {
         REQUIRE(act_s->get_linked_clients().size() == 0);
         REQUIRE(act_s->get_linked_servers().size() == 0);
     }
-#endif
 
     sup->do_shutdown();
     sup->do_process();
