@@ -79,7 +79,7 @@ template <typename Actor> struct actor_config_builder_t {
     }
 
     actor_config_builder_t &&unlink_policy(const unlink_policy_t &policy) && {
-        config.unlin_policy = policy;
+        config.unlink_policy = policy;
         return std::move(*static_cast<builder_t *>(this));
     }
 

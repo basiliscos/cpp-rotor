@@ -24,9 +24,7 @@ struct sample_actor_t : public rt::actor_test_t {
 struct hello_actor_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
-        supervisor->do_shutdown();
-    }
+    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override { supervisor->do_shutdown(); }
 };
 
 struct sample_supervisor_t : public rt::supervisor_test_t {
@@ -172,9 +170,7 @@ TEST_CASE("shutdown_self policy", "[supervisor]") {
 
 TEST_CASE("shutdown supervisor during actor start", "[supervisor]") {
     r::system_context_t system_context;
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
-                   .timeout(rt::default_timeout)
-                   .finish();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<hello_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
@@ -184,9 +180,7 @@ TEST_CASE("shutdown supervisor during actor start", "[supervisor]") {
 
 TEST_CASE("misconfigured actor", "[supervisor]") {
     rt::system_context_test_t system_context;
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
-                   .timeout(rt::default_timeout)
-                   .finish();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
 
     auto act = sup->create_actor<hello_actor_t>().finish();
 
