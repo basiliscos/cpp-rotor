@@ -312,6 +312,13 @@ struct unlink_request_t {
 
 namespace message {
 
+using unsubscription_t = message_t<payload::unsubscription_confirmation_t>;
+using unsubscription_external_t = message_t<payload::external_unsubscription_t>;
+using subscription_t = message_t<payload::subscription_confirmation_t>;
+
+using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
+using init_response_t = request_traits_t<payload::initialize_actor_t>::response::message_t;
+
 using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
 using init_response_t = request_traits_t<payload::initialize_actor_t>::response::message_t;
 
@@ -323,6 +330,12 @@ using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::respo
 
 using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
 using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
+
+using external_subscription_t = message_t<payload::external_subscription_t>;
+using commit_unsubscription_t = message_t<payload::commit_unsubscription_t>;
+using handler_call_t = message_t<payload::handler_call_t>;
+
+using create_actor_t = message_t<payload::create_actor_t>;
 
 using registration_request_t = request_traits_t<payload::registration_request_t>::request::message_t;
 using registration_response_t = request_traits_t<payload::registration_request_t>::response::message_t;

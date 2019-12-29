@@ -11,6 +11,7 @@ using namespace rotor;
 
 registry_t::~registry_t() {}
 
+#if 0
 void registry_t::init_start() noexcept {
     subscribe(&registry_t::on_reg);
     subscribe(&registry_t::on_dereg);
@@ -18,6 +19,7 @@ void registry_t::init_start() noexcept {
     subscribe(&registry_t::on_discovery);
     actor_base_t::init_start();
 }
+#endif
 
 void registry_t::on_reg(message::registration_request_t &request) noexcept {
     auto &name = request.payload.request_payload.service_name;

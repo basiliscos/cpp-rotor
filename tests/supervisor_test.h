@@ -24,24 +24,25 @@ struct supervisor_test_t : public supervisor_t {
     using timers_t = std::list<timer_id_t>;
 
     using config_t = supervisor_config_test_t;
+    using subscription_points_t = internal::subscription_plugin_t::subscription_points_t;
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
 
-    supervisor_test_t(const supervisor_config_test_t &config_);
+    supervisor_test_t(supervisor_config_test_t &config_);
 
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     timer_id_t get_timer(std::size_t index) noexcept;
-    virtual void start() noexcept override;
-    virtual void shutdown() noexcept override;
+    //virtual void start() noexcept override;
+    //virtual void shutdown() noexcept override;
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;
     virtual address_ptr_t make_address() noexcept override;
 
     state_t &get_state() noexcept { return state; }
     queue_t &get_leader_queue() { return get_leader().queue; }
     supervisor_test_t &get_leader() { return *static_cast<supervisor_test_t *>(locality_leader); }
-    subscription_points_t &get_points() noexcept { return points; }
+    subscription_points_t &get_points() noexcept;
     subscription_map_t &get_subscription() noexcept { return subscription_map; }
-    actors_map_t &get_children() noexcept { return actors_map; }
+    auto &get_children() noexcept { return manager->actors_map; }
     request_map_t &get_requests() noexcept { return request_map; }
 
     const void *locality;

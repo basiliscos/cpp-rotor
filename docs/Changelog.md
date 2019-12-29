@@ -16,10 +16,10 @@ be changed
 should define `config_t` inside the class, and templated `config_builder_t`.
  - [breaking] supervisor in actor is now accessibe via pointer instead of
 refence
- - [bugfix] `supervisor_ev_t` not always correctly released EV-resousources, which
+ - [bugfix] `supervisor_ev_t` not always correctly released EV-resources, which
 lead to leak
  - [bugfix] `actor_base_t` can be shutted down properly even if it did not
-started yet.
+started yet
 
 ## 0.06 (09-Nov-2019)
 

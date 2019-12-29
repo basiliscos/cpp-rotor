@@ -4,6 +4,7 @@
 // Distributed under the MIT Software License
 //
 
+
 #include "rotor/supervisor.h"
 #include <assert.h>
 // #include <iostream>
@@ -11,9 +12,9 @@
 
 using namespace rotor;
 
-supervisor_t::supervisor_t(const supervisor_config_t &config)
+supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), parent{config.supervisor}, last_req_id{1},
-      shutdown_timeout{config.shutdown_timeout}, policy{config.policy} {
+      /* shutdown_timeout{config.shutdown_timeout},*/ policy{config.policy}, manager{nullptr}, subscription_support{nullptr} {
     if (!supervisor) {
         supervisor = this;
     }
@@ -32,18 +33,23 @@ address_ptr_t supervisor_t::instantiate_address(const void *locality) noexcept {
     return new address_t{*this, locality};
 }
 
+#if 0
 actor_behavior_t *supervisor_t::create_behavior() noexcept { return new supervisor_behavior_t(*this); }
+#endif
 
 void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     context = ctx;
+#if 0
     // should be created very early
     address = create_address();
     behavior = create_behavior();
 
     bool use_other = parent && parent->address->same_locality(*address);
     locality_leader = use_other ? parent->locality_leader : this;
+#endif
 
     actor_base_t::do_initialize(ctx);
+#if 0
     subscribe(&supervisor_t::on_call);
     subscribe(&supervisor_t::on_initialize_confirm);
     subscribe(&supervisor_t::on_shutdown_confirm);
@@ -51,13 +57,14 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     subscribe(&supervisor_t::on_external_subs);
     subscribe(&supervisor_t::on_commit_unsubscription);
     subscribe(&supervisor_t::on_state_request);
-
+#endif
     // do self-bootstrap
     if (!parent) {
         request<payload::initialize_actor_t>(address, address).send(shutdown_timeout);
     }
 }
 
+#if 0
 void supervisor_t::on_create(message_t<payload::create_actor_t> &msg) noexcept {
     auto actor = msg.payload.actor;
     auto actor_address = actor->get_address();
@@ -70,6 +77,7 @@ void supervisor_t::on_initialize_confirm(message::init_response_t &msg) noexcept
     auto &ec = msg.payload.ec;
     static_cast<supervisor_behavior_t *>(behavior)->on_init(addr, ec);
 }
+#endif
 
 void supervisor_t::do_process() noexcept {
     auto effective_queue = &locality_leader->queue;
@@ -112,22 +120,12 @@ void supervisor_t::deliver_local(message_ptr_t &&message) noexcept {
     }
 }
 
-void supervisor_t::unsubscribe_actor(const actor_ptr_t &actor) noexcept {
-    auto &points = actor->get_subscription_points();
-    auto it = points.rbegin();
-    while (it != points.rend()) {
-        auto &addr = it->address;
-        auto &handler = it->handler;
-        unsubscribe(handler, addr);
-        ++it;
-    }
-}
-
 void supervisor_t::do_shutdown() noexcept {
     auto upstream_sup = parent ? parent : this;
     send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
 }
 
+#if 0
 void supervisor_t::on_shutdown_trigger(message::shutdown_trigger_t &msg) noexcept {
     auto &source_addr = msg.payload.actor_address;
     if (source_addr == address) {
@@ -203,6 +201,7 @@ void supervisor_t::on_state_request(message::state_request_t &message) noexcept 
     }
     reply_to(message, target_state);
 }
+#endif
 
 void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
     auto &subscriptions = subscription_map.at(addr);
@@ -213,11 +212,14 @@ void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handle
 }
 
 void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
+#if 0
     auto it_actor = actors_map.find(actor.address);
     actors_map.erase(it_actor);
     if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
         static_cast<supervisor_behavior_t *>(behavior)->on_childen_removed();
     }
+#endif
+    manager->remove_child(actor);
 }
 
 void supervisor_t::shutdown_finish() noexcept { address_mapping.destructive_get(*this); }

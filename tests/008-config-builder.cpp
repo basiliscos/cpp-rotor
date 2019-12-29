@@ -33,6 +33,7 @@ TEST_CASE("direct builder configuration", "[config_builder]") {
                    .finish();
     REQUIRE(sup);
     REQUIRE(sup->locality == &system_context);
+    sup->do_process();
     sup->do_shutdown();
     sup->do_process();
 }
@@ -45,6 +46,7 @@ TEST_CASE("indirect builder configuration", "[config_builder]") {
                    .finish();
     REQUIRE(sup);
     REQUIRE(sup->locality == &system_context);
+    sup->do_process();
     sup->do_shutdown();
     sup->do_process();
 }
@@ -71,6 +73,7 @@ TEST_CASE("validation", "[config_builder]") {
         REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
     }
 
+    sup->do_process();
     sup->do_shutdown();
     sup->do_process();
 }

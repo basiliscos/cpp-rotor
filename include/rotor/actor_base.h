@@ -49,6 +49,8 @@ namespace rotor {
 struct supervisor_t;
 struct system_context_t;
 struct handler_base_t;
+struct plugin_t;
+enum class slot_t;
 
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
@@ -94,17 +96,17 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         address_ptr_t address;
     };
 
+#if 0
     /** \brief alias to the list of {@link subscription_point_t} */
     using subscription_points_t = std::list<subscription_point_t>;
-
-    using linked_servers_t = std::unordered_set<address_ptr_t>;
-    using linked_clients_t = std::unordered_set<details::linkage_t>;
+#endif
 
     /** \brief timer identifier type in the scope of the actor */
     using timer_id_t = std::uint32_t;
 
     using config_t = actor_config_t;
     template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
+
 
     /** \brief constructs actor and links it's supervisor
      *
@@ -113,7 +115,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Sets internal actor state to `NEW`
      *
      */
-    actor_base_t(const config_t &cfg);
+    actor_base_t(config_t &cfg);
     virtual ~actor_base_t();
 
     /** \brief early actor initialization (pre-initialization)
@@ -126,11 +128,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /** \brief convenient method to send actor's supervisor shutdown trigger message */
-    virtual void do_shutdown() noexcept;
-
+#if 0
     /** \brief creates actor's address by delegating the call to supervisor */
     virtual address_ptr_t create_address() noexcept;
+#endif
 
     /** \brief returns actor's "main" address (intrusive pointer) */
     inline address_ptr_t get_address() const noexcept { return address; }
@@ -140,6 +141,16 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief returns actor's state */
     inline state_t &get_state() noexcept { return state; }
+
+    /** \brief convenient method to send actor's supervisor shutdown trigger message */
+    virtual void do_shutdown() noexcept;
+
+    virtual void unsubscribe() noexcept;
+
+#if 0
+    using linked_servers_t = std::unordered_set<address_ptr_t>;
+    using linked_clients_t = std::unordered_set<details::linkage_t>;
+
 
     /** \brief returns actor's subscription points */
     inline subscription_points_t &get_subscription_points() noexcept { return points; }
@@ -204,6 +215,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual void on_unlink_request(message::unlink_request_t &) noexcept;
     virtual void on_unlink_response(message::unlink_response_t &) noexcept;
     virtual void on_unlink_notify(message::unlink_notify_t &) noexcept;
+#endif
 
     /** \brief sends message to the destination address
      *
@@ -223,9 +235,11 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     request_builder_t<typename request_wrapper_t<R>::request_t> request(const address_ptr_t &dest_addr,
                                                                         Args &&... args);
 
+    /*
     virtual timer_id_t link_request(const address_ptr_t &service_addr, const pt::time_duration &timeout) noexcept;
     void unlink_notify(const address_ptr_t &service_addr) noexcept;
     virtual bool unlink_request(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept;
+    */
 
     /** \brief returns request builder for destination address using the specified address for reply
      *
@@ -282,28 +296,29 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     inline const pt::time_duration &get_shutdown_timeout() noexcept { return shutdown_timeout; }
 
-  protected:
-    /** \brief constructs actor's behavior on early stage */
-    virtual actor_behavior_t *create_behavior() noexcept;
+    void install_plugin(plugin_t& plugin, slot_t slot) noexcept;
+    void activate_plugins() noexcept;
+    void commit_plugin_activation(plugin_t& plugin, bool success) noexcept;
 
-    /** \brief removes the subscription point */
-    virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
+    void deactivate_plugins() noexcept;
+    void commit_plugin_deactivation(plugin_t& plugin) noexcept;
 
-    /** \brief starts initialization
+    // ex-protected
+    /** \brief suspended shutdown request message */
+    intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
+
+    /** \brief actor address */
+    address_ptr_t address;
+
+    /** \brief finalize shutdown, release aquired resources
      *
-     * Some resources might be acquired synchronously, if needed. If resources need
-     * to be acquired asynchronously this method should be overriden, and
-     * invoked only after resources acquisition.
-     *
-     * In internals it forwards initialization sequence to the behavior.
+     * This is the last action in the shutdown sequence.
+     * No further methods will be invoked.
      *
      */
-    virtual void init_start() noexcept;
+    virtual void shutdown_finish() noexcept;
 
-    /** \brief finializes initialization  */
-    virtual void init_finish() noexcept;
-
-    /** \brief strart releasing acquired resources
+    /* brief strart releasing acquired resources
      *
      * The method can be overriden in derived classes to initiate the
      * release of resources, i.e. (asynchronously) close all opened
@@ -314,47 +329,67 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void shutdown_start() noexcept;
 
-    /** \brief finalize shutdown, release aquired resources
+    /*  starts initialization
      *
-     * This is the last action in the shutdown sequence.
-     * No further methods will be invoked.
+     * Some resources might be acquired synchronously, if needed. If resources need
+     * to be acquired asynchronously this method should be overriden, and
+     * invoked only after resources acquisition.
+     *
+     * In internals it forwards initialization sequence to the behavior.
      *
      */
-    virtual void shutdown_finish() noexcept;
+    void init_start() noexcept;
 
-    /** \brief non-owning pointer to actor's execution / infrastructure context */
-    supervisor_t *supervisor;
+#if 0
+    /** \brief removes the subscription point */
+    virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
+#endif
+
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
-    std::optional<pt::time_duration> unlink_timeout;
-    unlink_policy_t unlink_policy;
+
+    internal::init_shutdown_plugin_t* init_shutdown_plugin;
+    internal::subscription_plugin_t* subscription_plugin;
 
     /** \brief current actor state */
     state_t state;
+  protected:
 
+    /** \brief finializes initialization  */
+    virtual void init_finish() noexcept;
+
+
+    /** \brief non-owning pointer to actor's execution / infrastructure context */
+    supervisor_t *supervisor;
+    std::optional<pt::time_duration> unlink_timeout;
+    unlink_policy_t unlink_policy;
+
+
+#if 0
     /** \brief actor's behavior, used for runtime customization of actors's
      * behavioral aspects
      */
     actor_behavior_t *behavior;
+#endif
 
-    /** \brief actor address */
-    address_ptr_t address;
 
+#if 0
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
 
-    /** \brief suspended init request message */
-    intrusive_ptr_t<message::init_request_t> init_request;
-
-    /** \brief suspended shutdown request message */
-    intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
-
     linked_servers_t linked_servers;
     linked_clients_t linked_clients;
+#endif
+
+    actor_config_t::plugins_t inactive_plugins;
+    actor_config_t::plugins_t active_plugins;
+    actor_config_t::plugins_t init_plugins;
+    actor_config_t::plugins_t shutdown_plugins;
 
     friend struct actor_behavior_t;
     friend struct supervisor_t;
     template <typename T> friend struct request_builder_t;
+    template<typename T, typename M> friend struct accessor_t;
 };
 
 /** \brief intrusive pointer for actor*/

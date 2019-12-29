@@ -37,7 +37,9 @@ struct registry_t : public actor_base_t {
 
     virtual ~registry_t() override;
 
+#if 0
     virtual void init_start() noexcept override;
+#endif
 
     /** \brief registers address on the service. Fails, if the name already exists */
     virtual void on_reg(message::registration_request_t &request) noexcept;

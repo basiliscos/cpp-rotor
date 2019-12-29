@@ -28,7 +28,7 @@ TEST_CASE("properly configured root supervisor", "[system_context]") {
     REQUIRE(system_context.ec.value() == 0);
     REQUIRE(system_context.get_supervisor() == sup);
 
-    // sup->do_process();
+    sup->do_process();
     sup->do_shutdown();
     sup->do_process();
     sup.reset();

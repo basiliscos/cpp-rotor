@@ -73,7 +73,7 @@ struct supervisor_t : public actor_base_t {
     template <typename Supervisor> using config_builder_t = supervisor_config_builder_t<Supervisor>;
 
     /** \brief constructs new supervisor with optional parent supervisor */
-    supervisor_t(const supervisor_config_t &config);
+    supervisor_t(supervisor_config_t &config);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 
@@ -113,8 +113,6 @@ struct supervisor_t : public actor_base_t {
      */
     void deliver_local(message_ptr_t &&msg) noexcept;
 
-    /** \brief unsubcribes all actor's handlers */
-    virtual void unsubscribe_actor(const actor_ptr_t &actor) noexcept;
 
     /** \brief creates new {@link address_t} linked with the supervisor */
     virtual address_ptr_t make_address() noexcept;
@@ -123,6 +121,7 @@ struct supervisor_t : public actor_base_t {
      *  handler pair
      */
     virtual void commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
+#if 0
 
     /** \brief records just created actor and starts its initialization
      *
@@ -168,6 +167,7 @@ struct supervisor_t : public actor_base_t {
      *
      */
     virtual void on_state_request(message::state_request_t &message) noexcept;
+#endif
 
     /** \brief starts non-recurring timer, identified by `timer_id`
      *
@@ -188,6 +188,7 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_timer_trigger(timer_id_t timer_id);
 
+#if 0
     /** \brief thread-safe version of `do_process`
      *
      * Starts supervisor to processing messages queue in safe thread/loop
@@ -199,6 +200,7 @@ struct supervisor_t : public actor_base_t {
      * let it be processed by the supervisor */
     virtual void shutdown() noexcept = 0;
 
+#endif
     virtual void do_shutdown() noexcept override;
 
     virtual void shutdown_finish() noexcept override;
@@ -265,16 +267,15 @@ struct supervisor_t : public actor_base_t {
     template <typename Actor> auto create_actor() {
         using builder_t = typename Actor::template config_builder_t<Actor>;
 
-        return builder_t(
-            [this](auto &actor) {
+        return builder_t([this](auto &actor) { manager->create_child(actor); }, this);
+#if 0
                 actor->do_initialize(context);
                 auto &timeout = actor->get_init_timeout();
                 send<payload::create_actor_t>(get_address(), actor, timeout);
-
                 auto behavior = static_cast<supervisor_behavior_t *>(supervisor->behavior);
                 behavior->on_create_child(actor->get_address());
-            },
-            this);
+#endif
+
     }
 
     /** \brief returns system context */
@@ -291,6 +292,7 @@ struct supervisor_t : public actor_base_t {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
+#if 0
     /** \brief child actror housekeeping strcuture */
     struct actor_state_t {
         /** \brief intrusive pointer to actor */
@@ -299,9 +301,24 @@ struct supervisor_t : public actor_base_t {
         /** \brief whethe the shutdown request is already sent */
         bool shutdown_requesting;
     };
+#endif
+
+    /** \brief non-owning pointer to parent supervisor, `NULL` for root supervisor */
+    supervisor_t *parent;
+
+    /** \brief root supervisor for the locality */
+    supervisor_t *locality_leader;
+
+    internal::subscription_support_plugin_t* subscription_support;
+    internal::children_manager_plugin_t* manager;
+
+    /** \brief reaction on child-actors termination */
+    supervisor_policy_t policy;
 
   protected:
+#if 0
     virtual actor_behavior_t *create_behavior() noexcept override;
+#endif
 
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
@@ -312,8 +329,10 @@ struct supervisor_t : public actor_base_t {
     /** \brief address-to-subscription map type */
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
 
+#if 0
     /** \brief (local) address-to-child_actor map type */
     using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
+#endif
 
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
@@ -321,14 +340,8 @@ struct supervisor_t : public actor_base_t {
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
     virtual void remove_actor(actor_base_t &actor) noexcept;
 
-    /** \brief non-owning pointer to parent supervisor, `NULL` for root supervisor */
-    supervisor_t *parent;
-
     /** \brief non-owning pointer to system context. */
     system_context_t *context;
-
-    /** \brief root supervisor for the locality */
-    supervisor_t *locality_leader;
 
     /** \brief queue of unprocessed messages */
     queue_t queue;
@@ -340,8 +353,10 @@ struct supervisor_t : public actor_base_t {
      */
     subscription_map_t subscription_map;
 
+#if 0
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
+#endif
 
     /** \brief counter for request/timer ids */
     timer_id_t last_req_id;
@@ -349,11 +364,10 @@ struct supervisor_t : public actor_base_t {
     /** \brief timer to response with timeout procuder */
     request_map_t request_map;
 
+#if 0
     /** \brief shutdown timeout value (copied from config) */
     pt::time_duration shutdown_timeout;
-
-    /** \brief reaction on child-actors termination */
-    supervisor_policy_t policy;
+#endif
 
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
