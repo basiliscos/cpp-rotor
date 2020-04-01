@@ -39,7 +39,7 @@ add_library(rotor
 )
 target_include_directories(rotor
     PUBLIC
-        ${Boost_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
@@ -82,7 +82,6 @@ if (BUILD_BOOST_ASIO)
     add_library(rotor_asio
         src/rotor/asio/supervisor_asio.cpp
     )
-    target_include_directories(rotor_asio PUBLIC ${Boost_INCLUDE_DIRS})
     target_link_libraries(rotor_asio PUBLIC rotor Threads::Threads)
     add_library(rotor::asio ALIAS rotor_asio)
     list(APPEND ROTOR_TARGETS_TO_INSTALL rotor_asio)
