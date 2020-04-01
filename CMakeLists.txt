@@ -37,6 +37,7 @@ add_library(rotor
 )
 target_include_directories(rotor
     PUBLIC
+        ${Boost_INCLUDE_DIRS}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
