@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
-cmake_policy(SET CMP0074 NEW)
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
+    cmake_policy(SET CMP0074 NEW)
+endif()
 
 set(ROTOR_VERSION "0.07")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
