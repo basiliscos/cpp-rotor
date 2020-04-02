@@ -33,6 +33,10 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.07 (02-Apr-2020)
+
+- [improvement] more modern cmake usage
+
 
 ### 0.06 (09-Nov-2019)
 

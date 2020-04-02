@@ -4,6 +4,10 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.07 (02-Apr-2020)
+
+- [improvement] more modern cmake usage
+
 ## 0.06 (09-Nov-2019)
 
 - [improvement] registy actor was added to allow via name/address runtime
