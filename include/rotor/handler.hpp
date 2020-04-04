@@ -81,6 +81,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     const void *handler_type;
 
     /** \brief intrusive poiter to {@link actor_base_t} the actor of the handler */
+    //actor_base_t* actor_ptr;
     actor_ptr_t actor_ptr;
 
     /** \brief non-owning raw poiter to actor */

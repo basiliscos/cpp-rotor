@@ -34,8 +34,8 @@ struct sample_actor_t : public rt::actor_test_t {
     std::uint32_t deinit_seq = 0;
 };
 
-template <typename Actor> struct sample_config_builder2_t : public r::actor_config_builder_t<Actor> {
-    using parent_t = r::actor_config_builder_t<Actor>;
+template <typename Actor> struct sample_config_builder2_t : public sample_config_builder_t<Actor> {
+    using parent_t = sample_config_builder_t<Actor>;
     using parent_t::parent_t;
     using plugins_list_t = std::tuple<sample_plugin1_t, buggy_plugin_t, sample_plugin2_t>;
 };
@@ -78,7 +78,6 @@ struct buggy_plugin_t : public r::plugin_t {
     }
 };
 
-
 TEST_CASE("init/deinit sequence", "[plugin]") {
     rt::system_context_test_t system_context;
     using builder_t = typename sample_actor_t::template config_builder_t<sample_actor_t>;
@@ -99,10 +98,9 @@ TEST_CASE("init/deinit sequence", "[plugin]") {
     REQUIRE((actor->deinit_seq == ((PID_2 << 8) | PID_1)));
 };
 
-
 TEST_CASE("fail init-plugin sequence", "[plugin]") {
     rt::system_context_test_t system_context;
-    using builder_t = typename sample_actor_t::template config_builder_t<sample_actor2_t>;
+    using builder_t = typename sample_actor2_t::template config_builder_t<sample_actor2_t>;
     auto builder = builder_t([&](auto &){ }, system_context);
     auto actor = std::move(builder).timeout(rt::default_timeout).finish();
 
@@ -117,4 +115,3 @@ TEST_CASE("fail init-plugin sequence", "[plugin]") {
 
     REQUIRE((actor->deinit_seq == PID_1));
 };
-
