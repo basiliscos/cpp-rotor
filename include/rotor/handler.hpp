@@ -19,6 +19,7 @@ namespace rotor {
 
 struct actor_base_t;
 struct supervisor_t;
+struct plugin_t;
 
 /** \struct lambda_holder_t
  *
@@ -55,12 +56,14 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
  */
 template <typename T> struct handler_traits {};
 
+
 /** \struct handler_traits<void (A::*)(M &) noexcept>
  *  \brief Helper class to extract final actor class and message type from pointer-to-member function
  */
 template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcept> {
-    /** \brief final class of actor */
-    using actor_t = A;
+    static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
+    static auto const constexpr is_actor = std::is_base_of_v<actor_base_t, A>;
+    static auto const constexpr is_lambda = false;
 
     /** \brief message type, processed by the handler */
     using message_t = M;
@@ -68,6 +71,14 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
     /** \brief alias for message type payload */
     using payload_t = typename M::payload_t;
 };
+
+template <typename M, typename H> struct handler_traits<lambda_holder_t<M, H>> {
+    static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
+    static_assert (has_valid_message, "lambda does not process valid message");
+    static auto const constexpr is_actor = false;
+    static auto const constexpr is_lambda = true;
+};
+
 
 /** \struct handler_base_t
  *  \brief Base class for `rotor` handler, i.e concrete message type processing point
@@ -117,15 +128,32 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
 
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
+namespace details {
+
+template <typename Handler>
+inline constexpr bool is_actor_handler_v
+    =  handler_traits<Handler>::is_actor
+    && handler_traits<Handler>::has_valid_message
+    && !handler_traits<Handler>::is_lambda;
+
+template <typename Handler>
+inline constexpr bool is_lambda_handler_v = handler_traits<Handler>::is_lambda;
+
+template <typename Handler>
+inline constexpr bool is_generic_handler_v
+    =  handler_traits<Handler>::has_valid_message
+    && !handler_traits<Handler>::is_actor
+    && !handler_traits<Handler>::is_lambda;
+}
+
 template <typename Handler, typename Enable = void> struct handler_t;
 
 /** \struct handler_t
- *  \brief the generic handler meant to hold user-specific pointer-to-member function
+ *  \brief the actor handler meant to hold user-specific pointer-to-member function
  *  \tparam Handler pointer-to-member function type
  */
 template <typename Handler>
-struct handler_t<Handler,
-                 std::enable_if_t<std::is_base_of_v<message_base_t, typename handler_traits<Handler>::message_t>>>
+struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>>
     : public handler_base_t {
 
     /** \brief static pointer to unique pointer-to-member function name ( `typeid(Handler).name()` ) */
@@ -155,10 +183,40 @@ struct handler_t<Handler,
 template <typename Handler>
 const void *handler_t<
     Handler,
-    std::enable_if_t<std::is_base_of_v<message_base_t, typename handler_traits<Handler>::message_t>>>::handler_type =
+    std::enable_if_t<details::is_actor_handler_v<Handler>>>::handler_type =
     static_cast<const void *>(typeid(Handler).name());
 
-template <typename Handler, typename M> struct handler_t<lambda_holder_t<Handler, M>> : public handler_base_t {
+// plugin handler
+template <typename Handler>
+struct handler_t<Handler, std::enable_if_t<details::is_generic_handler_v<Handler>>>
+    : public handler_base_t {
+    static const void *handler_type;
+
+    plugin_t &plugin;
+    Handler handler;
+
+    explicit handler_t(plugin_t &plugin_, Handler &&handler_)
+        : handler_base_t{*plugin_.actor, final_message_t::message_type, handler_type}, plugin{plugin_}, handler{handler_} {}
+
+    void call(message_ptr_t &message) noexcept override {
+        if (message->type_index == final_message_t::message_type) {
+            auto final_message = static_cast<final_message_t *>(message.get());
+            auto &final_obj = static_cast<final_plugin_t &>(plugin);
+            (final_obj.*handler)(*final_message);
+        }
+    }
+
+private:
+  using traits = handler_traits<Handler>;
+  using final_message_t = typename traits::message_t;
+  using final_plugin_t = typename traits::actor_t;
+};
+
+// lambda handler
+template <typename Handler, typename M> struct handler_t<
+        lambda_holder_t<Handler, M>,
+        std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>
+    > : public handler_base_t {
     /** \brief alias type for lambda, which will actually process messages */
     using handler_backend_t = lambda_holder_t<Handler, M>;
 
@@ -185,7 +243,9 @@ template <typename Handler, typename M> struct handler_t<lambda_holder_t<Handler
 };
 
 template <typename Handler, typename M>
-const void *handler_t<lambda_holder_t<Handler, M>>::handler_type = static_cast<const void *>(typeid(Handler).name());
+const void *handler_t<lambda_holder_t<Handler, M>,
+        std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>
+    >::handler_type = static_cast<const void *>(typeid(Handler).name());
 
 } // namespace rotor
 

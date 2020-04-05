@@ -95,6 +95,9 @@ struct init_shutdown_plugin_t: public plugin_t {
     virtual void confirm_init() noexcept;
     virtual void confirm_shutdown() noexcept;
 
+    virtual void on_init(message::init_request_t&) noexcept;
+    virtual void on_shutdown(message::shutdown_request_t&) noexcept;
+
     handler_ptr_t init;
     handler_ptr_t shutdown;
 

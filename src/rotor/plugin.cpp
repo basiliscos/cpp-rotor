@@ -149,6 +149,7 @@ address_ptr_t actor_lifetime_plugin_t::create_address() noexcept {
 /* init_shutdown_plugin_t */
 void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
+#if 0
     auto lambda_shutdown = rotor::lambda<message::shutdown_request_t>([this](auto &msg) {
         actor->shutdown_request.reset(&msg);
         actor->shutdown_start();
@@ -160,6 +161,9 @@ void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
 
     shutdown = actor->subscribe(std::move(lambda_shutdown));
     init = actor->subscribe(std::move(lambda_init));
+#endif
+    actor->subscribe(&init_shutdown_plugin_t::on_shutdown, *this);
+    actor->subscribe(&init_shutdown_plugin_t::on_init, *this);
 
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
@@ -191,6 +195,17 @@ void init_shutdown_plugin_t::confirm_init() noexcept {
 void init_shutdown_plugin_t::confirm_shutdown() noexcept {
     actor->deactivate_plugins();
 }
+
+void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
+    init_request.reset(&msg);
+    actor->init_start();
+}
+
+void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexcept {
+    actor->shutdown_request.reset(&msg);
+    actor->shutdown_start();
+}
+
 
 /* started_plugin_t */
 void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
