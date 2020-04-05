@@ -27,34 +27,38 @@ struct sample_actor_t : public r::actor_base_t {
         r::actor_base_t::init_start();
     }
 
-    void query_name(const std::string& name) {
+    void query_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
         request<r::payload::discovery_request_t>(registry_addr, name).send(timeout);
     }
 
-    void register_name(const std::string& name) {
+    void register_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
         request<r::payload::registration_request_t>(registry_addr, name, address).send(timeout);
     }
 
-    void unregister_all() {
-        send<r::payload::deregistration_notify_t>(registry_addr, address);
-    }
+    void unregister_all() { send<r::payload::deregistration_notify_t>(registry_addr, address); }
 
-    void unregister_name(const std::string& name) {
-        send<r::payload::deregistration_service_t>(registry_addr, name);
-    }
+    void unregister_name(const std::string &name) { send<r::payload::deregistration_service_t>(registry_addr, name); }
 
-    void on_discovery(r::message::discovery_response_t& reply) noexcept {
-        discovery_reply.reset(&reply);
-    }
+    void on_discovery(r::message::discovery_response_t &reply) noexcept { discovery_reply.reset(&reply); }
 
-    void on_registration_reply(r::message::registration_response_t& reply) noexcept {
+    void on_registration_reply(r::message::registration_response_t &reply) noexcept {
         registration_reply.reset(&reply);
     }
 };
 
+struct sample_supervisor_t : public rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
 
+    void init_start() noexcept override {
+        auto timeout = r::pt::milliseconds{10};
+        registry = create_actor<r::registry_t>(timeout);
+        rt::supervisor_test_t::init_start();
+    }
+
+    r::actor_ptr_t registry;
+};
 
 TEST_CASE("registry", "[registry]") {
     r::system_context_t system_context;
@@ -134,4 +138,18 @@ TEST_CASE("registry", "[registry]") {
 
     sup->do_shutdown();
     sup->do_process();
+}
+
+TEST_CASE("common case for registry usage", "[registry]") {
+    r::system_context_t system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<sample_supervisor_t>(nullptr, config);
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }

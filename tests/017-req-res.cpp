@@ -36,8 +36,8 @@ struct req2_t {
 struct res3_t : r::arc_base_t<res3_t> {
     int value;
     explicit res3_t(int value_) : value{value_} {}
-    res3_t(const res3_t&) = delete ;
-    res3_t(res3_t&&) = delete ;
+    res3_t(const res3_t &) = delete;
+    res3_t(res3_t &&) = delete;
     virtual ~res3_t() {}
 };
 
@@ -47,8 +47,8 @@ struct req3_t : r::arc_base_t<req3_t> {
     int value;
 
     explicit req3_t(int value_) : value{value_} {}
-    req3_t(const req3_t&) = delete;
-    req3_t(req3_t&&) = delete;
+    req3_t(const req3_t &) = delete;
+    req3_t(req3_t &&) = delete;
 
     virtual ~req3_t() {}
 };
@@ -580,7 +580,6 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-
 TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     r::system_context_t system_context;
 
@@ -617,8 +616,8 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
-    REQUIRE(actor->req_val == 4 + 4*2);
-    REQUIRE(actor->res_val == 5 + 5*2);
+    REQUIRE(actor->req_val == 4 + 4 * 2);
+    REQUIRE(actor->res_val == 5 + 5 * 2);
     REQUIRE(actor->back_req1_id == actor->back_req2_id);
 
     sup->do_shutdown();
@@ -643,8 +642,8 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
-    REQUIRE(actor->req_val == 4 + 4*2);
-    REQUIRE(actor->res_val == 5 + 5*2);
+    REQUIRE(actor->req_val == 4 + 4 * 2);
+    REQUIRE(actor->res_val == 5 + 5 * 2);
 
     sup->do_shutdown();
     sup->do_process();

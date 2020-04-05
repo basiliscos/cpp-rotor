@@ -73,9 +73,7 @@ struct double_shutdown_actor : public r::actor_base_t {
 
     std::uint32_t shutdown_starts = 0;
 
-    void shutdown_start() noexcept override {
-        ++shutdown_starts;
-    }
+    void shutdown_start() noexcept override { ++shutdown_starts; }
 
     void continue_shutdown() noexcept { r::actor_base_t::shutdown_start(); }
 };
@@ -85,7 +83,6 @@ struct fail_initialize_actor : public r::actor_base_t {
 
     void init_start() noexcept override {}
 };
-
 
 struct fail_test_behavior_t : public r::supervisor_behavior_t {
     using r::supervisor_behavior_t::supervisor_behavior_t;
@@ -242,5 +239,3 @@ TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 }
-
-

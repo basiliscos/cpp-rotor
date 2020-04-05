@@ -17,19 +17,16 @@ struct sample_actor_t : public rt::actor_test_t {
 
     virtual void init_start() noexcept override {}
 
-    virtual void confirm_init_start() noexcept {
-        r::actor_base_t::init_start();
-    }
-
+    virtual void confirm_init_start() noexcept { r::actor_base_t::init_start(); }
 };
 
-struct sample_supervisor_t: public rt::supervisor_test_t {
+struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
 
     virtual void init_start() noexcept override {
         auto timeout = r::pt::milliseconds{1};
-        child= create_actor<sample_actor_t>(timeout);
+        child = create_actor<sample_actor_t>(timeout);
     }
 
     child_ptr_t child;
@@ -109,7 +106,6 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
     REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
-
 TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     r::system_context_t system_context;
     const void *locality = &system_context;
@@ -117,7 +113,7 @@ TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     auto timeout = r::pt::milliseconds{1};
     rt::supervisor_config_test_t config(timeout, locality);
     auto sup = system_context.create_supervisor<sample_supervisor_t>(nullptr, config);
-    auto& act = sup->child;
+    auto &act = sup->child;
 
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);

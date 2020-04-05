@@ -15,13 +15,17 @@ struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
     void init_start() noexcept override {
-        if (state == r::state_t::INITIALIZING) { on_initialize_count++; }
+        if (state == r::state_t::INITIALIZING) {
+            on_initialize_count++;
+        }
         rt::supervisor_test_t::init_start();
     }
 
     void shutdown_finish() noexcept override {
         rt::supervisor_test_t::shutdown_finish();
-        if (state == r::state_t::SHUTTED_DOWN) { on_shutdown_count++; }
+        if (state == r::state_t::SHUTTED_DOWN) {
+            on_shutdown_count++;
+        }
     }
 
     std::uint32_t on_initialize_count = 0;
