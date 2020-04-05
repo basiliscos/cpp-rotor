@@ -126,7 +126,7 @@ struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> {
                 actor->get_supervisor().do_process();
             });
         } else {
-            asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = arg]() {
+            asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = std::move(arg)]() {
                 ((*actor).*handler)(arg);
                 actor->get_supervisor().do_process();
             });
@@ -189,7 +189,7 @@ template <typename Actor, typename Handler> struct forwarder_t<Actor, Handler, d
     template <typename T> inline void operator()(T arg) noexcept {
         auto &sup = static_cast<typed_sup_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
-        asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = arg]() {
+        asio::defer(strand, [actor = typed_actor, handler = std::move(handler), arg = std::move(arg)]() {
             ((*actor).*handler)(arg);
             actor->get_supervisor().do_process();
         });
