@@ -92,7 +92,7 @@ struct supervisor_asio_t : public supervisor_t {
      *
      */
     template <typename Actor, typename... Args>
-    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args... args) {
+    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args &&... args) {
         return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
     }
 
