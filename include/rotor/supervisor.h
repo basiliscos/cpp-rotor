@@ -420,7 +420,7 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
 
     /** \brief constructs new actor (not derived from supervisor) */
     template <typename... Args>
-    static auto construct(Supervisor *sup, Args... args) noexcept -> intrusive_ptr_t<Actor> {
+    static auto construct(Supervisor *sup, Args&&... args) noexcept -> intrusive_ptr_t<Actor> {
         return new Actor{*sup, std::forward<Args>(args)...};
     }
 };
