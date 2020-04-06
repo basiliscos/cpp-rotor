@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -433,7 +433,7 @@ struct actor_ctor_t<Actor, Supervisor, std::enable_if_t<!std::is_base_of_v<super
  *
  */
 template <typename Actor, typename Supervisor, typename... Args>
-intrusive_ptr_t<Actor> make_actor(Supervisor &sup, const pt::time_duration &timeout, Args... args) {
+intrusive_ptr_t<Actor> make_actor(Supervisor &sup, const pt::time_duration &timeout, Args &&... args) {
     using ctor_t = details::actor_ctor_t<Actor, Supervisor>;
     auto context = sup.get_context();
     auto actor = ctor_t::construct(&sup, std::forward<Args>(args)...);

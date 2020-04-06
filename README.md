@@ -36,7 +36,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ### 0.07 (02-Apr-2020)
 
 - [bugfix] actor's arguments are more correctly forwarded in actor's
-creation in `rotor::asio::supervisor_asio_t`
+creation in`rotor::supervisor_t` and `rotor::asio::supervisor_asio_t`
 - [bugfix] `rotor::asio::forwarder_t` now more correctly dispatches
 `boost::asio` events to actor methods; e.g. it works correctly now with
 `async_accept` method of `socket_acceptor`
