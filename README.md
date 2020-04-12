@@ -33,7 +33,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
-### 0.08 (xx-xxx-2020)
+### 0.08 (12-Apr-2020)
 
 - [bugfix] message's arguments are more correctly forwarded
 - [bugfix] actor's arguments are more correctly forwarded in actor's
