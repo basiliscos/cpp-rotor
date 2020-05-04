@@ -77,3 +77,4 @@ TEST_CASE("validation", "[config_builder]") {
     sup->do_shutdown();
     sup->do_process();
 }
+

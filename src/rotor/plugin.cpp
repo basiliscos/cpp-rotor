@@ -26,6 +26,7 @@ bool plugin_t::is_shutdown_ready() noexcept {
 }
 
 void plugin_t::deactivate() noexcept {
+    own_subscriptions.clear();
     actor->commit_plugin_deactivation(*this);
     actor = nullptr;
 }
@@ -149,21 +150,8 @@ address_ptr_t actor_lifetime_plugin_t::create_address() noexcept {
 /* init_shutdown_plugin_t */
 void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
-#if 0
-    auto lambda_shutdown = rotor::lambda<message::shutdown_request_t>([this](auto &msg) {
-        actor->shutdown_request.reset(&msg);
-        actor->shutdown_start();
-   });
-    auto lambda_init = rotor::lambda<message::init_request_t>([this](auto &msg) {
-        init_request.reset(&msg);
-        actor->init_start();
-   });
-
-    shutdown = actor->subscribe(std::move(lambda_shutdown));
-    init = actor->subscribe(std::move(lambda_init));
-#endif
-    actor->subscribe(&init_shutdown_plugin_t::on_shutdown, *this);
-    actor->subscribe(&init_shutdown_plugin_t::on_init, *this);
+    subscribe(&init_shutdown_plugin_t::on_shutdown);
+    subscribe(&init_shutdown_plugin_t::on_init);
 
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
@@ -182,8 +170,6 @@ bool init_shutdown_plugin_t::is_shutdown_ready() noexcept {
 void init_shutdown_plugin_t::deactivate() noexcept {
     actor->init_shutdown_plugin = nullptr;
     plugin_t::deactivate();
-    init.reset();
-    shutdown.reset();
 }
 
 void init_shutdown_plugin_t::confirm_init() noexcept {

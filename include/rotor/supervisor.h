@@ -229,26 +229,6 @@ struct supervisor_t : public actor_base_t {
      */
     inline void put(message_ptr_t message) { locality_leader->queue.emplace_back(std::move(message)); }
 
-    /**
-     * \brief subscribes an handler to an address.
-     *
-     * If the address is local, then subscription point is recorded and
-     * {@link payload::subscription_confirmation_t} is send to the handler's actor.
-     *
-     * Otherwise, if the address is external (foreign), then subscription request
-     * is forwarded to approriate supervisor as {@link payload::external_subscription_t}
-     * request.
-     *
-     */
-    inline void subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) {
-        if (&addr->supervisor == supervisor) {
-            auto subs_info = subscription_map.try_emplace(addr, *this);
-            subs_info.first->second.subscribe(handler);
-            send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), addr, handler);
-        } else {
-            send<payload::external_subscription_t>(addr->supervisor.address, addr, handler);
-        }
-    }
 
     /** \brief templated version of `subscribe_actor` */
     template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
@@ -315,7 +295,28 @@ struct supervisor_t : public actor_base_t {
     /** \brief reaction on child-actors termination */
     supervisor_policy_t policy;
 
-  protected:
+
+    /**
+     * \brief subscribes an handler to an address.
+     *
+     * If the address is local, then subscription point is recorded and
+     * {@link payload::subscription_confirmation_t} is send to the handler's actor.
+     *
+     * Otherwise, if the address is external (foreign), then subscription request
+     * is forwarded to approriate supervisor as {@link payload::external_subscription_t}
+     * request.
+     *
+     */
+    inline void subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) {
+        if (&addr->supervisor == supervisor) {
+            auto subs_info = subscription_map.try_emplace(addr, *this);
+            subs_info.first->second.subscribe(handler);
+            send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), addr, handler);
+        } else {
+            send<payload::external_subscription_t>(addr->supervisor.address, addr, handler);
+        }
+    }
+protected:
 #if 0
     virtual actor_behavior_t *create_behavior() noexcept override;
 #endif
@@ -372,7 +373,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
 
-    template <typename T> friend struct request_builder_t;
+    template    <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;
     friend struct supervisor_behavior_t;
 };
@@ -416,6 +417,18 @@ template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h) n
 template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h, address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*this, std::move(h));
     supervisor->subscribe_actor(addr, wrapped_handler);
+    return wrapped_handler;
+}
+
+template <typename Handler> handler_ptr_t plugin_t::subscribe(Handler &&h) noexcept {
+    return subscribe(std::forward<Handler>(h), actor->get_address());
+}
+
+template <typename Handler> handler_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
+    using final_handler_t = handler_t<Handler>;
+    handler_ptr_t wrapped_handler(new final_handler_t(*this, std::move(h)));
+    actor->get_supervisor().subscribe_actor(addr, wrapped_handler);
+    own_subscriptions.emplace_back(subscription_point_t{wrapped_handler, addr});
     return wrapped_handler;
 }
 
@@ -529,7 +542,7 @@ template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::
         auto ec = make_error_code(error_code_t::actor_misconfigured);
         system_context.on_error(ec);
     } else {
-        auto cfg = static_cast<typename builder_t::config_t &>(config);
+        auto& cfg = static_cast<typename builder_t::config_t &>(config);
         auto actor = new Actor(cfg);
         actor_ptr.reset(actor);
         install_action(actor_ptr);

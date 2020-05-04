@@ -38,6 +38,11 @@ struct actor_config_t {
     unlink_policy_t unlink_policy = unlink_policy_t::ignore;
 
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
+    ~actor_config_t() {
+        for(auto it: plugins) {
+            delete it;
+        }
+    }
 };
 
 template <typename Actor> struct actor_config_builder_t {

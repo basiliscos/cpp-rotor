@@ -12,7 +12,6 @@
 #include <list>
 #include <system_error>
 #include <unordered_set>
-//#include "actor_base.h"
 
 namespace rotor {
 
@@ -21,6 +20,7 @@ enum class slot_t { INIT = 0, SHUTDOWN };
 struct actor_base_t;
 struct handler_base_t;
 using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
+using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 
 /** \brief intrusive pointer for handler */
@@ -28,24 +28,6 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 
 struct plugin_t {
-    plugin_t() = default;
-    virtual ~plugin_t();
-
-    virtual bool is_init_ready() noexcept;
-    virtual bool is_shutdown_ready() noexcept;
-    virtual void activate(actor_base_t* actor) noexcept;
-    virtual void deactivate() noexcept;
-
-    actor_base_t* actor;
-};
-
-
-
-namespace internal {
-
-struct subscription_plugin_t: public plugin_t {
-    using plugin_t::plugin_t;
-
     /** \struct subscription_point_t
      *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
      */
@@ -58,6 +40,29 @@ struct subscription_plugin_t: public plugin_t {
 
     /** \brief alias to the list of {@link subscription_point_t} */
     using subscription_points_t = std::list<subscription_point_t>;
+
+
+    plugin_t() = default;
+    virtual ~plugin_t();
+
+    virtual bool is_init_ready() noexcept;
+    virtual bool is_shutdown_ready() noexcept;
+    virtual void activate(actor_base_t* actor) noexcept;
+    virtual void deactivate() noexcept;
+
+    template<typename Handler> handler_ptr_t subscribe(Handler&& handler, const address_ptr_t& addresss) noexcept;
+    template<typename Handler> handler_ptr_t subscribe(Handler&& handler) noexcept;
+
+    actor_base_t* actor;
+    subscription_points_t own_subscriptions;
+};
+
+
+
+namespace internal {
+
+struct subscription_plugin_t: public plugin_t {
+    using plugin_t::plugin_t;
 
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
@@ -97,9 +102,6 @@ struct init_shutdown_plugin_t: public plugin_t {
 
     virtual void on_init(message::init_request_t&) noexcept;
     virtual void on_shutdown(message::shutdown_request_t&) noexcept;
-
-    handler_ptr_t init;
-    handler_ptr_t shutdown;
 
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
