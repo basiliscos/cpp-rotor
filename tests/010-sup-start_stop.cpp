@@ -13,15 +13,32 @@ namespace rt = rotor::test;
 
 static std::uint32_t destroyed = 0;
 
-struct sample_sup_t;
+struct init_shutdown_plugin_t;
+
+template <typename Actor> struct sample_config_builder_t : public r::supervisor_config_builder_t<Actor> {
+    using parent_t = r::supervisor_config_builder_t<Actor>;
+    using parent_t::parent_t;
+
+    using plugins_list_t = std::tuple<
+        r::internal::locality_plugin_t,
+        r::internal::actor_lifetime_plugin_t,
+        r::internal::subscription_plugin_t,
+        init_shutdown_plugin_t,                 /* use custom */
+        r::internal::starter_plugin_t,
+        r::internal::subscription_support_plugin_t,
+        r::internal::children_manager_plugin_t
+    >;
+};
+
 
 struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
+
+    template <typename Supervisor> using config_builder_t = sample_config_builder_t<Supervisor>;
+
     std::uint32_t initialized = 0;
-#if 0
     std::uint32_t init_invoked = 0;
     std::uint32_t shutdown_started = 0;
-#endif
     std::uint32_t shutdown_finished = 0;
     std::uint32_t shutdown_conf_invoked = 0;
     r::address_ptr_t shutdown_addr;
@@ -35,25 +52,30 @@ struct sample_sup_t : public rt::supervisor_test_t {
         sup_base_t::do_initialize(ctx);
     }
 
-#if 0
-    void init_start() noexcept override {
-        ++init_invoked;
-        sup_base_t::init_start();
-    }
-#endif
-
     virtual void shutdown_finish() noexcept override {
         ++shutdown_finished;
         rt::supervisor_test_t::shutdown_finish();
     }
 
-#if 0
-    virtual void shutdown_start() noexcept override {
-        ++shutdown_started;
-        rt::supervisor_test_t::shutdown_start();
-    }
-#endif
 };
+
+struct init_shutdown_plugin_t: r::internal::init_shutdown_plugin_t {
+    using parent_t = r::internal::init_shutdown_plugin_t;
+
+    virtual void confirm_init() noexcept {
+        auto sup = static_cast<sample_sup_t*>(actor);
+        sup->init_invoked++;
+        parent_t::confirm_init();
+    }
+
+    virtual void confirm_shutdown() noexcept {
+        auto sup = static_cast<sample_sup_t*>(actor);
+        sup->shutdown_started++;
+        parent_t::confirm_shutdown();
+    }
+};
+
+
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     r::system_context_t *system_context = new r::system_context_t{};
@@ -63,17 +85,15 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
-#if 0
     REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->shutdown_started == 0);
-#endif
     REQUIRE(sup->shutdown_conf_invoked == 0);
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();
-    //REQUIRE(sup->shutdown_started == 1);
+    REQUIRE(sup->shutdown_started == 1);
     REQUIRE(sup->shutdown_finished == 1);
     REQUIRE(sup->active_timers.size() == 0);
 
