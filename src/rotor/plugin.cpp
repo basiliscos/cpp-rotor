@@ -256,47 +256,12 @@ void subscription_support_plugin_t::on_unsubscription_external(message::external
 
 /* children_manager_plugin_t */
 void children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
-    auto lambda_create_actor = rotor::lambda<message::create_actor_t>([this](auto &msg) {
-        auto& sup = static_cast<supervisor_t&>(*actor);
-        auto actor = msg.payload.actor;
-        auto actor_address = actor->get_address();
-        actors_map.emplace(actor_address, actor_state_t{std::move(actor), false});
-        sup.template request<payload::initialize_actor_t>(actor_address, actor_address).send(msg.payload.timeout);
-    });
-
-    auto lambda_init_confirm = rotor::lambda<message::init_response_t>([this](auto &msg) {
-        auto &addr = msg.payload.req->payload.request_payload.actor_address;
-        auto &ec = msg.payload.ec;
-        on_init(addr, ec);
-    });
-
-    auto lambda_shutdown_trigger = rotor::lambda<message::shutdown_trigger_t>([this](auto &msg) {
-        auto& sup = static_cast<supervisor_t&>(*actor);
-        auto &source_addr = msg.payload.actor_address;
-        if (source_addr == sup.address) {
-            if (sup.parent) { // will be routed via shutdown request
-                sup.do_shutdown();
-            } else {
-                sup.shutdown_start();
-            }
-        } else {
-            auto &actor_state = actors_map.at(source_addr);
-            if (!actor_state.shutdown_requesting) {
-                actor_state.shutdown_requesting = true;
-                auto& timeout = actor->shutdown_timeout;
-                sup.request<payload::shutdown_request_t>(source_addr, source_addr).send(timeout);
-            }
-        }
-    });
-
-    create_actor = actor_->subscribe(std::move(lambda_create_actor));
-    init_confirm = actor_->subscribe(std::move(lambda_init_confirm));
-    shutdown_trigger = actor_->subscribe(std::move(lambda_shutdown_trigger));
-    this->actor = actor_;
-    auto& sup = static_cast<supervisor_t&>(*actor_);
-    sup.manager = this;
+    actor = actor_;
+    static_cast<supervisor_t&>(*actor_).manager = this;
+    subscribe(&children_manager_plugin_t::on_create);
+    subscribe(&children_manager_plugin_t::on_init);
+    subscribe(&children_manager_plugin_t::on_shutdown);
     actor->install_plugin(*this, slot_t::INIT);
-    //plugin_t::activate(actor);
 }
 
 void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
@@ -308,12 +273,8 @@ void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
 }
 
 void children_manager_plugin_t::deactivate() noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
-    sup.manager = nullptr;
+    static_cast<supervisor_t&>(*actor).manager = nullptr;
     plugin_t::deactivate();
-    shutdown_trigger.reset();
-    init_confirm.reset();
-    create_actor.reset();
 }
 
 void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
@@ -326,8 +287,22 @@ void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept 
         postponed_init = true;
     }
 }
+bool children_manager_plugin_t::is_init_ready() noexcept {
+    return initializing_actors.empty();
+}
 
-void children_manager_plugin_t::on_init(const address_ptr_t &address, const std::error_code &ec) noexcept {
+void children_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
+    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto actor = message.payload.actor;
+    auto actor_address = actor->get_address();
+    actors_map.emplace(actor_address, actor_state_t{std::move(actor), false});
+    sup.template request<payload::initialize_actor_t>(actor_address, actor_address).send(message.payload.timeout);
+}
+
+void children_manager_plugin_t::on_init(message::init_response_t &message) noexcept {
+    auto &address = message.payload.req->payload.request_payload.actor_address;
+    auto &ec = message.payload.ec;
+
     auto &sup = static_cast<supervisor_t &>(*actor);
     bool continue_init = false;
     auto it = initializing_actors.find(address);
@@ -356,13 +331,27 @@ void children_manager_plugin_t::on_init(const address_ptr_t &address, const std:
     }
 }
 
-bool children_manager_plugin_t::is_init_ready() noexcept {
-    return initializing_actors.empty();
+void children_manager_plugin_t::on_shutdown(message::shutdown_trigger_t& message) noexcept {
+    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto &source_addr = message.payload.actor_address;
+    if (source_addr == sup.address) {
+        if (sup.parent) { // will be routed via shutdown request
+            sup.do_shutdown();
+        } else {
+            sup.shutdown_start();
+        }
+    } else {
+        auto &actor_state = actors_map.at(source_addr);
+        if (!actor_state.shutdown_requesting) {
+            actor_state.shutdown_requesting = true;
+            auto& timeout = actor->shutdown_timeout;
+            sup.request<payload::shutdown_request_t>(source_addr, source_addr).send(timeout);
+        }
+    }
 }
 
 
 /*
-
 should trigger
 
     action_unlink_clients();

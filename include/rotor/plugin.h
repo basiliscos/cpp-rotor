@@ -156,11 +156,10 @@ struct children_manager_plugin_t: public plugin_t {
 
     virtual void create_child(const actor_ptr_t &actor) noexcept;
     virtual void remove_child(actor_base_t &actor) noexcept;
-    virtual void on_init(const address_ptr_t &address, const std::error_code &ec) noexcept;
 
-    handler_ptr_t create_actor;
-    handler_ptr_t init_confirm;
-    handler_ptr_t shutdown_trigger;
+    virtual void on_create(message::create_actor_t& message) noexcept;
+    virtual void on_init(message::init_response_t& message) noexcept;
+    virtual void on_shutdown(message::shutdown_trigger_t& message) noexcept;
 
     bool postponed_init = false;
     bool activated = false;
