@@ -20,8 +20,6 @@ enum class slot_t { INIT = 0, SHUTDOWN };
 struct actor_base_t;
 struct handler_base_t;
 using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
-using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
-
 
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
@@ -112,8 +110,7 @@ struct starter_plugin_t: public plugin_t {
 
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
-    //void on_start(message::start_trigger_t& message) noexcept;
-    handler_ptr_t start;
+    void on_start(message::start_trigger_t& message) noexcept;
 };
 
 // supervisor plugins
@@ -129,9 +126,9 @@ struct subscription_support_plugin_t: public plugin_t {
 
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
-    handler_ptr_t call;
-    handler_ptr_t commit_unsubscription;
-    handler_ptr_t external_subscription;
+    virtual void on_call(message::handler_call_t& message) noexcept;
+    virtual void on_unsubscription(message::commit_unsubscription_t& message) noexcept;
+    virtual void on_unsubscription_external(message::external_subscription_t& message) noexcept;
 };
 
 struct children_manager_plugin_t: public plugin_t {

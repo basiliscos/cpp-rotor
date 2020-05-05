@@ -193,23 +193,16 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexc
 /* started_plugin_t */
 void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
-    auto lambda_start = rotor::lambda<message::start_trigger_t>([this](auto &msg) {
-        actor->state = state_t::OPERATIONAL;
-   });
-    start = actor->subscribe(std::move(lambda_start));
-    //actor->get_supervisor().subscribe_actor(*actor, &starter_plugin_t::on_start);
+    subscribe(&starter_plugin_t::on_start);
     plugin_t::activate(actor);
 }
 
-/*
 void starter_plugin_t::on_start(message::start_trigger_t&) noexcept {
     actor->state = state_t::OPERATIONAL;
 }
-*/
 
 void starter_plugin_t::deactivate() noexcept {
     plugin_t::deactivate();
-    start.reset();
 }
 
 /* locality_plugin_t */
@@ -225,25 +218,12 @@ void locality_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 /* subscription_support_plugin_t */
 void subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
+    actor = actor_;
     auto& sup = static_cast<supervisor_t&>(*actor_);
-    auto lambda_call = rotor::lambda<message::handler_call_t>([](auto &msg) {
-        auto &handler = msg.payload.handler;
-        auto &orig_message = msg.payload.orig_message;
-        handler->call(orig_message);
-    });
-    auto lambda_commit_unsubscription = rotor::lambda<message::commit_unsubscription_t>([&sup](auto &msg) {
-        sup.commit_unsubscription(msg.payload.target_address, msg.payload.handler);
-    });
-    auto lambda_external_subscription = rotor::lambda<message::external_subscription_t>([&sup](auto &msg) {
-        auto &handler = msg.payload.handler;
-        auto &addr = msg.payload.target_address;
-        assert(&addr->supervisor == &sup);
-        sup.subscribe_actor(addr, handler);
-    });
 
-    call = actor_->subscribe(std::move(lambda_call));
-    commit_unsubscription = actor_->subscribe(std::move(lambda_commit_unsubscription));
-    external_subscription = actor_->subscribe(std::move(lambda_external_subscription));
+    subscribe(&subscription_support_plugin_t::on_call);
+    subscribe(&subscription_support_plugin_t::on_unsubscription);
+    subscribe(&subscription_support_plugin_t::on_unsubscription_external);
     sup.subscription_support = this;
     plugin_t::activate(actor_);
 }
@@ -252,9 +232,26 @@ void subscription_support_plugin_t::deactivate() noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     sup.subscription_support = nullptr;
     plugin_t::deactivate();
-    external_subscription.reset();
-    commit_unsubscription.reset();
-    call.reset();
+}
+
+void subscription_support_plugin_t::on_call(message::handler_call_t &message) noexcept {
+    auto &handler = message.payload.handler;
+    auto &orig_message = message.payload.orig_message;
+    handler->call(orig_message);
+}
+
+void subscription_support_plugin_t::on_unsubscription(message::commit_unsubscription_t &message) noexcept {
+    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto& payload = message.payload;
+    sup.commit_unsubscription(payload.target_address, payload.handler);
+}
+
+void subscription_support_plugin_t::on_unsubscription_external(message::external_subscription_t &message) noexcept {
+    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto &handler = message.payload.handler;
+    auto &addr = message.payload.target_address;
+    assert(&addr->supervisor == &sup);
+    sup.subscribe_actor(addr, handler);
 }
 
 /* children_manager_plugin_t */
