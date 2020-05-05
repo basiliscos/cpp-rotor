@@ -53,31 +53,11 @@ void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor_->subscription_plugin = this;
     this->actor = actor_;
 
-    auto lambda_unsubscribe = rotor::lambda<message::unsubscription_t>([this](auto &msg) {
-        auto &addr = msg.payload.target_address;
-        auto &handler = msg.payload.handler;
-        remove_subscription(addr, handler);
-        actor->get_supervisor().commit_unsubscription(addr, handler);
-        maybe_deactivate();
-    });
-
-    auto lambda_unsubscribe_external = rotor::lambda<message::unsubscription_external_t>([this](auto &msg) {
-        auto &addr = msg.payload.target_address;
-        auto &handler = msg.payload.handler;
-        remove_subscription(addr, handler);
-        auto sup_addr = addr->supervisor.get_address();
-        actor->send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
-        maybe_deactivate();
-    });
-
-    auto lambda_subscribe = rotor::lambda<message::subscription_t>([this](auto &msg) {
-        points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
-    });
-
     // order is important
-    unsubscription = actor->subscribe(std::move(lambda_unsubscribe));
-    extenal_unsubscription = actor->subscribe(std::move(lambda_unsubscribe_external));
-    subscription = actor->subscribe(std::move(lambda_subscribe));
+    subscribe(&subscription_plugin_t::on_unsubscription);
+    subscribe(&subscription_plugin_t::on_unsubscription_external);
+    subscribe(&subscription_plugin_t::on_subscription);
+
     plugin_t::activate(actor_);
 }
 
@@ -99,10 +79,7 @@ void subscription_plugin_t::remove_subscription(const address_ptr_t &addr, const
 void subscription_plugin_t::maybe_deactivate() noexcept {
     if (points.empty() && actor->get_state() == state_t::SHUTTING_DOWN) {
         actor->subscription_plugin = nullptr;
-        actor->commit_plugin_deactivation(*this);
-        subscription.reset();
-        extenal_unsubscription.reset();
-        unsubscription.reset();
+        plugin_t::deactivate();
     }
 }
 
@@ -121,6 +98,26 @@ void subscription_plugin_t::unsubscribe() noexcept {
     }
 }
 
+void subscription_plugin_t::on_subscription(message::subscription_t &msg) noexcept {
+    points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
+}
+
+void subscription_plugin_t::on_unsubscription(message::unsubscription_t &msg) noexcept {
+    auto &addr = msg.payload.target_address;
+    auto &handler = msg.payload.handler;
+    remove_subscription(addr, handler);
+    actor->get_supervisor().commit_unsubscription(addr, handler);
+    maybe_deactivate();
+}
+
+void subscription_plugin_t::on_unsubscription_external(message::unsubscription_external_t &msg) noexcept {
+    auto &addr = msg.payload.target_address;
+    auto &handler = msg.payload.handler;
+    remove_subscription(addr, handler);
+    auto sup_addr = addr->supervisor.get_address();
+    actor->send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
+    maybe_deactivate();
+}
 
 /* after_shutdown_plugin_t (-1) */
 void actor_lifetime_plugin_t::deactivate() noexcept {

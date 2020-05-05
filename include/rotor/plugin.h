@@ -76,9 +76,9 @@ struct subscription_plugin_t: public plugin_t {
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
 
-    handler_ptr_t subscription;
-    handler_ptr_t unsubscription;
-    handler_ptr_t extenal_unsubscription;
+    virtual void on_subscription(message::subscription_t&) noexcept;
+    virtual void on_unsubscription(message::unsubscription_t&) noexcept;
+    virtual void on_unsubscription_external(message::unsubscription_external_t&) noexcept;
 };
 
 struct actor_lifetime_plugin_t: public plugin_t {
