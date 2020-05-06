@@ -76,8 +76,43 @@ struct init_shutdown_plugin_t: r::internal::init_shutdown_plugin_t {
 };
 
 
+struct sample_sup2_t : public rt::supervisor_test_t {
+    using sup_base_t = rt::supervisor_test_t;
 
-TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
+    std::uint32_t initialized = 0;
+    std::uint32_t init_invoked = 0;
+    std::uint32_t shutdown_started = 0;
+    std::uint32_t shutdown_finished = 0;
+    std::uint32_t shutdown_conf_invoked = 0;
+    r::address_ptr_t shutdown_addr;
+
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    ~sample_sup2_t() override { ++destroyed; }
+
+    void do_initialize(r::system_context_t *ctx) noexcept override {
+        ++initialized;
+        sup_base_t::do_initialize(ctx);
+    }
+
+    void init_finish() noexcept override {
+        ++init_invoked;
+    }
+
+    virtual void shutdown_start() noexcept override {
+        ++shutdown_started;
+        rt::supervisor_test_t::shutdown_start();
+    }
+
+    virtual void shutdown_finish() noexcept override {
+        ++shutdown_finished;
+        rt::supervisor_test_t::shutdown_finish();
+    }
+
+};
+
+TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
+    destroyed  = 0;
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup_t>().timeout(rt::default_timeout).finish();
 
@@ -109,3 +144,38 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     sup.reset();
     REQUIRE(destroyed == 1);
 }
+
+TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
+    destroyed  = 0;
+    r::system_context_t *system_context = new r::system_context_t{};
+    auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
+
+    REQUIRE(&sup->get_supervisor() == sup.get());
+    REQUIRE(sup->initialized == 1);
+
+    sup->do_process();
+    REQUIRE(sup->init_invoked == 1);
+    REQUIRE(sup->shutdown_started == 0);
+    REQUIRE(sup->shutdown_conf_invoked == 0);
+    REQUIRE(sup->active_timers.size() == 0);
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->shutdown_started == 1);
+    REQUIRE(sup->shutdown_finished == 1);
+    REQUIRE(sup->active_timers.size() == 0);
+
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_leader_queue().size() == 0);
+    REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_subscription().size() == 0);
+
+    REQUIRE(destroyed == 0);
+    delete system_context;
+
+    sup->shutdown_addr.reset();
+    sup.reset();
+    REQUIRE(destroyed == 1);
+}
+

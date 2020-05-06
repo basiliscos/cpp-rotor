@@ -132,13 +132,11 @@ void actor_base_t::init_start() noexcept {
         state = state_t::INITIALIZED;
         init_shutdown_plugin->confirm_init();
         init_plugins.clear();
-        //init_finish();
+        init_finish();
     }
 }
 
 void actor_base_t::init_finish() noexcept {}
-
-/* behavior->on_start_shutdown(); */
 
 void actor_base_t::shutdown_start() noexcept {
     assert(state == state_t::OPERATIONAL);
@@ -151,7 +149,6 @@ void actor_base_t::shutdown_start() noexcept {
     if (ok) {
         init_shutdown_plugin->confirm_shutdown();
         shutdown_plugins.clear();
-        //shutdown_finish();
     }
 }
 
