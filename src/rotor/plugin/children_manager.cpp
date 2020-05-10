@@ -25,14 +25,10 @@ void children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.address);
+    assert(it_actor != actors_map.end());
     actors_map.erase(it_actor);
     if (actors_map.size() == 1 && actor->get_state() == state_t::SHUTTING_DOWN) {
         actor->shutdown_continue();
-        /*
-        auto* orig_actor = actor;
-        orig_actor->shutdown_continue();
-        static_cast<supervisor_t&>(*orig_actor).manager = nullptr;
-        */
     }
 }
 
@@ -166,7 +162,7 @@ void children_manager_plugin_t::unsubscribe_all() noexcept {
             auto& actor_addr = it.first;
             if ((actor_addr != sup.get_address()) || sup.parent) {
                 auto& timeout = actor->shutdown_timeout;
-                sup.request<payload::shutdown_request_t>(actor_addr, actor->address).send(timeout);
+                sup.request<payload::shutdown_request_t>(actor_addr, actor_addr).send(timeout);
             }
             actor_state.shutdown_requesting = true;
         }
