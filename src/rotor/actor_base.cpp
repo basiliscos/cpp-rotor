@@ -124,17 +124,6 @@ void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept {
 */
 
 
-template <typename SuccessFn> void poll(actor_config_t::plugins_t& plugins, slot_t slot, SuccessFn&& fn) {
-    bool ok = !plugins.empty();
-    for(auto plugin: plugins) {
-        ok = plugin->is_complete_for(slot);
-        if (!ok) { break; }
-    }
-    if (ok) {
-        fn();
-    }
-}
-
 static void poll_remove(actor_config_t::plugins_t& plugins, slot_t slot, const subscription_point_t point) {
     for(auto it = plugins.begin(); it != plugins.end();) {
         auto& plugin = *it;
@@ -146,14 +135,16 @@ static void poll_remove(actor_config_t::plugins_t& plugins, slot_t slot, const s
     }
 }
 
-void actor_base_t::init_start() noexcept {
+void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
-    poll(init_plugins, slot_t::INIT, [this] {
-         state = state_t::INITIALIZED;
-         init_shutdown_plugin->confirm_init();
-         init_plugins.clear();
-         init_finish();
-    });
+    while (!init_plugins.empty()) {
+        auto& plugin = init_plugins.back();
+        if (plugin->handle_init(*init_request)) {
+            init_plugins.pop_back();
+            continue;
+        }
+        break;
+    }
 }
 
 void actor_base_t::init_subscribe(internal::initializer_plugin_t&) noexcept { }

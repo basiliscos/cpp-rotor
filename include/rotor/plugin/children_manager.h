@@ -32,7 +32,6 @@ struct children_manager_plugin_t: public plugin_t {
 
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
-    virtual bool is_complete_for(slot_t slot) noexcept override;
 
     virtual void create_child(const actor_ptr_t &actor) noexcept;
     virtual void remove_child(actor_base_t &actor) noexcept;
@@ -42,6 +41,8 @@ struct children_manager_plugin_t: public plugin_t {
     virtual void on_init(message::init_response_t& message) noexcept;
     virtual void on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept;
     virtual void on_shutdown_confirm(message::shutdown_response_t& message) noexcept;
+
+    virtual bool handle_init(message::init_request_t&) noexcept override;
     virtual bool handle_shutdown(message::shutdown_request_t&) noexcept override;
 
     bool postponed_init = false;

@@ -21,25 +21,18 @@ void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     plugin_t::activate(actor);
 }
 
-bool init_shutdown_plugin_t::is_complete_for(slot_t slot) noexcept {
-    if (slot == slot_t::INIT) return (bool)init_request;
-    return true;
-}
-
 void init_shutdown_plugin_t::deactivate() noexcept {
     actor->init_shutdown_plugin = nullptr;
     plugin_t::deactivate();
 }
 
-void init_shutdown_plugin_t::confirm_init() noexcept {
-    assert(init_request);
-    actor->reply_to(*init_request);
-    init_request.reset();
-}
-
 void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
-    init_request.reset(&msg);
-    actor->init_start();
+    /*
+    assert(actor->state == state_t::NEW);
+    actor->state = state_t::INITIALIZING;
+    */
+    actor->init_request.reset(&msg);
+    actor->init_continue();
 }
 
 void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexcept {
@@ -49,7 +42,16 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexc
     actor->shutdown_continue();
 }
 
+bool init_shutdown_plugin_t::handle_init(message::init_request_t&) noexcept {
+    auto& init_request = actor->init_request;
+    actor->reply_to(*init_request);
+    init_request.reset();
+    return true;
+}
+
+
 bool init_shutdown_plugin_t::handle_shutdown(message::shutdown_request_t&) noexcept {
     actor->deactivate_plugins();
     return true;
 }
+

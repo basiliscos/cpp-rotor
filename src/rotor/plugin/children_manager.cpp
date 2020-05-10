@@ -48,11 +48,6 @@ void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept 
         postponed_init = true;
     }
 }
-bool children_manager_plugin_t::is_complete_for(slot_t slot) noexcept {
-    if (slot == slot_t::INIT) return initializing_actors.empty();
-    else if (slot == slot_t::SHUTDOWN) return actors_map.empty();
-    return true;
-}
 
 void children_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
@@ -88,7 +83,7 @@ void children_manager_plugin_t::on_init(message::init_response_t &message) noexc
     if (continue_init) {
         activated = true;
         if (postponed_init) {
-            actor->init_start();
+            actor->init_continue();
         }
         plugin_t::activate(actor);
     }
@@ -139,6 +134,10 @@ void children_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t
     } else {
         remove_child(*child_actor);
     }
+}
+
+bool children_manager_plugin_t::handle_init(message::init_request_t&) noexcept {
+    return initializing_actors.empty();
 }
 
 bool children_manager_plugin_t::handle_shutdown(message::shutdown_request_t&) noexcept {

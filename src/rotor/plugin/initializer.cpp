@@ -18,15 +18,15 @@ void initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor);
 }
 
-bool initializer_plugin_t::is_complete_for(slot_t slot) noexcept {
-    if (slot == slot_t::INIT) return tracked.empty();
-    std::abort();
-}
-
 bool initializer_plugin_t::is_complete_for(slot_t slot, const subscription_point_t& point) noexcept {
     if (slot == slot_t::SUBSCRIPTION) {
         tracked.remove(point);
         return tracked.empty();
     }
     std::abort();
+}
+
+
+bool initializer_plugin_t::handle_init(message::init_request_t&) noexcept {
+    return tracked.empty();
 }

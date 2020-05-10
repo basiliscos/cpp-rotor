@@ -297,6 +297,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void on_unsubscription(const subscription_point_t& point) noexcept;
 
     // ex-protected
+    /** \brief suspended init request message */
+    intrusive_ptr_t<message::init_request_t> init_request;
+
     /** \brief suspended shutdown request message */
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
 
@@ -331,7 +334,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * In internals it forwards initialization sequence to the behavior.
      *
      */
-    void init_start() noexcept;
+    void init_continue() noexcept;
 
     virtual void init_subscribe(internal::initializer_plugin_t& plugin) noexcept;
 
