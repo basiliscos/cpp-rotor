@@ -320,7 +320,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * It actually forwards shutdown for the behavior
      *
      */
-    virtual void shutdown_start() noexcept;
+    void shutdown_continue() noexcept;
 
     /*  starts initialization
      *

@@ -36,8 +36,10 @@ TEST_CASE("direct builder configuration", "[config_builder]") {
     sup->do_process();
     sup->do_shutdown();
     sup->do_process();
+    sup->do_process();
 }
 
+#if 0
 TEST_CASE("indirect builder configuration", "[config_builder]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
@@ -77,4 +79,4 @@ TEST_CASE("validation", "[config_builder]") {
     sup->do_shutdown();
     sup->do_process();
 }
-
+#endif

@@ -160,13 +160,16 @@ void actor_base_t::init_subscribe(internal::initializer_plugin_t&) noexcept { }
 
 void actor_base_t::init_finish() noexcept {}
 
-void actor_base_t::shutdown_start() noexcept {
-    assert(state == state_t::OPERATIONAL);
-    state = state_t::SHUTTING_DOWN;
-    poll(shutdown_plugins, slot_t::SHUTDOWN, [this]{
-        init_shutdown_plugin->confirm_shutdown();
-        shutdown_plugins.clear();
-    });
+void actor_base_t::shutdown_continue() noexcept {
+    assert(state == state_t::SHUTTING_DOWN);
+    while (!shutdown_plugins.empty()) {
+        auto& plugin = shutdown_plugins.back();
+        if (plugin->handle_shutdown(*shutdown_request)) {
+            shutdown_plugins.pop_back();
+            continue;
+        }
+        break;
+    }
 }
 
 void actor_base_t::shutdown_finish() noexcept {}

@@ -12,7 +12,7 @@
 #include <tuple>
 #include <functional>
 #include "arc.hpp"
-#include "plugin.h"
+#include "plugins.h"
 #include "policy.h"
 
 namespace rotor {

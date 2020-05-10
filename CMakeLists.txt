@@ -27,11 +27,19 @@ add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/address_mapping.cpp
     src/rotor/error_code.cpp
-    src/rotor/plugin.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
+    src/rotor/plugin/actor_lifetime.cpp
+    src/rotor/plugin/children_manager.cpp
+    src/rotor/plugin/init_shutdown.cpp
+    src/rotor/plugin/initializer.cpp
+    src/rotor/plugin/locality.cpp
+    src/rotor/plugin/plugin.cpp
+    src/rotor/plugin/starter.cpp
+    src/rotor/plugin/subscription.cpp
+    src/rotor/plugin/subscription_support.cpp
 )
 target_include_directories(rotor PUBLIC ${Boost_INCLUDE_DIRS} include/)
 target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
