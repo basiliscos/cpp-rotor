@@ -17,11 +17,11 @@ void plugin_t::activate(actor_base_t* actor_) noexcept {
     actor->commit_plugin_activation(*this, true);
 }
 
-bool plugin_t::is_init_ready() noexcept {
+bool plugin_t::is_complete_for(slot_t) noexcept {
     std::abort();
 }
 
-bool plugin_t::is_shutdown_ready() noexcept {
+bool plugin_t::is_complete_for(slot_t, const subscription_point_t&) noexcept {
     std::abort();
 }
 
@@ -53,6 +53,7 @@ void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor_->subscription_plugin = this;
     this->actor = actor_;
 
+    actor->install_plugin(*this, slot_t::UNSUBSCRIPTION);
     // order is important
     subscribe(&subscription_plugin_t::on_unsubscription);
     subscribe(&subscription_plugin_t::on_unsubscription_external);
@@ -62,13 +63,11 @@ void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 
-void subscription_plugin_t::remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
+subscription_plugin_t::iterator_t subscription_plugin_t::find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
     auto it = points.rbegin();
     while (it != points.rend()) {
         if (it->address == addr && *it->handler == *handler) {
-            auto dit = it.base();
-            points.erase(--dit);
-            return;
+            return --it.base();
         } else {
             ++it;
         }
@@ -76,11 +75,13 @@ void subscription_plugin_t::remove_subscription(const address_ptr_t &addr, const
     assert(0 && "no subscription found");
 }
 
-void subscription_plugin_t::maybe_deactivate() noexcept {
-    if (points.empty() && actor->get_state() == state_t::SHUTTING_DOWN) {
+bool subscription_plugin_t::is_complete_for(slot_t slot, const subscription_point_t& point) noexcept {
+    if (slot == slot_t::UNSUBSCRIPTION && points.empty() && actor->get_state() == state_t::SHUTTING_DOWN) {
         actor->subscription_plugin = nullptr;
         plugin_t::deactivate();
+        return true;
     }
+    return false;
 }
 
 void subscription_plugin_t::deactivate() noexcept  {
@@ -99,24 +100,30 @@ void subscription_plugin_t::unsubscribe() noexcept {
 }
 
 void subscription_plugin_t::on_subscription(message::subscription_t &msg) noexcept {
-    points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
+    auto point = subscription_point_t{msg.payload.handler, msg.payload.target_address};
+    points.push_back(point);
+    actor->on_subscription(point);
 }
 
 void subscription_plugin_t::on_unsubscription(message::unsubscription_t &msg) noexcept {
     auto &addr = msg.payload.target_address;
     auto &handler = msg.payload.handler;
-    remove_subscription(addr, handler);
+    auto it = find_subscription(addr, handler);
+    auto point = *it; /* copy */
+    points.erase(it);
     actor->get_supervisor().commit_unsubscription(addr, handler);
-    maybe_deactivate();
+    actor->on_unsubscription(point);
 }
 
 void subscription_plugin_t::on_unsubscription_external(message::unsubscription_external_t &msg) noexcept {
     auto &addr = msg.payload.target_address;
     auto &handler = msg.payload.handler;
-    remove_subscription(addr, handler);
+    auto it = find_subscription(addr, handler);
+    auto point = *it; /* copy */
+    points.erase(it);
     auto sup_addr = addr->supervisor.get_address();
     actor->send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
-    maybe_deactivate();
+    actor->on_unsubscription(point);
 }
 
 /* after_shutdown_plugin_t (-1) */
@@ -156,11 +163,8 @@ void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     plugin_t::activate(actor);
 }
 
-bool init_shutdown_plugin_t::is_init_ready() noexcept {
-    return (bool)init_request;
-}
-
-bool init_shutdown_plugin_t::is_shutdown_ready() noexcept {
+bool init_shutdown_plugin_t::is_complete_for(slot_t slot) noexcept {
+    if (slot == slot_t::INIT) return (bool)init_request;
     return true;
 }
 
@@ -189,6 +193,27 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexc
     actor->shutdown_start();
 }
 
+/* initializer_plugin_t */
+void initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
+    actor = actor_;
+    actor->install_plugin(*this, slot_t::INIT);
+    actor->install_plugin(*this, slot_t::SUBSCRIPTION);
+    actor->init_subscribe(*this);
+    plugin_t::activate(actor);
+}
+
+bool initializer_plugin_t::is_complete_for(slot_t slot) noexcept {
+    if (slot == slot_t::INIT) return tracked.empty();
+    std::abort();
+}
+
+bool initializer_plugin_t::is_complete_for(slot_t slot, const subscription_point_t& point) noexcept {
+    if (slot == slot_t::SUBSCRIPTION) {
+        tracked.remove(point);
+        return tracked.empty();
+    }
+    std::abort();
+}
 
 /* started_plugin_t */
 void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
@@ -199,10 +224,8 @@ void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
 
 void starter_plugin_t::on_start(message::start_trigger_t&) noexcept {
     actor->state = state_t::OPERATIONAL;
-}
-
-void starter_plugin_t::deactivate() noexcept {
-    plugin_t::deactivate();
+    auto& callback = actor->start_callback;
+    if (callback) callback(*actor);
 }
 
 /* locality_plugin_t */
@@ -260,8 +283,11 @@ void children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     static_cast<supervisor_t&>(*actor_).manager = this;
     subscribe(&children_manager_plugin_t::on_create);
     subscribe(&children_manager_plugin_t::on_init);
-    subscribe(&children_manager_plugin_t::on_shutdown);
+    subscribe(&children_manager_plugin_t::on_shutdown_trigger);
+    subscribe(&children_manager_plugin_t::on_shutdown_confirm);
     actor->install_plugin(*this, slot_t::INIT);
+    actor->install_plugin(*this, slot_t::SHUTDOWN);
+    actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
 }
 
 void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
@@ -287,8 +313,10 @@ void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept 
         postponed_init = true;
     }
 }
-bool children_manager_plugin_t::is_init_ready() noexcept {
-    return initializing_actors.empty();
+bool children_manager_plugin_t::is_complete_for(slot_t slot) noexcept {
+    if (slot == slot_t::INIT) return initializing_actors.empty();
+    else if (slot == slot_t::SHUTDOWN) return actors_map.empty();
+    return true;
 }
 
 void children_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
@@ -331,7 +359,7 @@ void children_manager_plugin_t::on_init(message::init_response_t &message) noexc
     }
 }
 
-void children_manager_plugin_t::on_shutdown(message::shutdown_trigger_t& message) noexcept {
+void children_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto &source_addr = message.payload.actor_address;
     if (source_addr == sup.address) {
@@ -339,6 +367,15 @@ void children_manager_plugin_t::on_shutdown(message::shutdown_trigger_t& message
             sup.do_shutdown();
         } else {
             sup.shutdown_start();
+            for(auto it: actors_map) {
+                auto& actor_state = it.second;
+                if (!actor_state.shutdown_requesting) {
+                    actor_state.shutdown_requesting = true;
+                    auto& timeout = actor->shutdown_timeout;
+                    auto& actor_addr = it.first;
+                    sup.request<payload::shutdown_request_t>(actor_addr, actor->address).send(timeout);
+                }
+            }
         }
     } else {
         auto &actor_state = actors_map.at(source_addr);
@@ -350,6 +387,37 @@ void children_manager_plugin_t::on_shutdown(message::shutdown_trigger_t& message
     }
 }
 
+void children_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept {
+    actor.get_supervisor().get_context()->on_error(ec);
+}
+
+
+void children_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& message) noexcept {
+    auto &source_addr = message.payload.req->payload.request_payload.actor_address;
+    auto &actor_state = actors_map.at(source_addr);
+    actor_state.shutdown_requesting = false;
+    auto &ec = message.payload.ec;
+    auto child_actor = actor_state.actor;
+    if (ec) {
+        on_shutdown_fail(*child_actor, ec);
+    }
+    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto points = sup.address_mapping.destructive_get(*actor);
+    if (!points.empty()) {
+        auto cb = [this, child_actor = child_actor, count = points.size()]() mutable {
+            --count;
+            if (count == 0) {
+                remove_child(*child_actor);
+            }
+        };
+        auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
+        for (auto &point : points) {
+            sup.unsubscribe(point.handler, point.address, cb_ptr);
+        }
+    } else {
+        remove_child(*child_actor);
+    }
+}
 
 /*
 should trigger

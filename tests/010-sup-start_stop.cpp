@@ -108,9 +108,13 @@ struct sample_sup2_t : public rt::supervisor_test_t {
         ++shutdown_finished;
         rt::supervisor_test_t::shutdown_finish();
     }
-
 };
 
+struct sample_actor_t : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+};
+
+#if 0
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
     destroyed  = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -178,4 +182,19 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     sup.reset();
     REQUIRE(destroyed == 1);
 }
+#endif
 
+TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+}

@@ -24,7 +24,6 @@ struct supervisor_test_t : public supervisor_t {
     using timers_t = std::list<timer_id_t>;
 
     using config_t = supervisor_config_test_t;
-    using subscription_points_t = internal::subscription_plugin_t::subscription_points_t;
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
 
     supervisor_test_t(supervisor_config_test_t &config_);

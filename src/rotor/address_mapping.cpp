@@ -13,7 +13,7 @@ using namespace rotor;
 void address_mapping_t::set(actor_base_t &actor, const void *message, const handler_ptr_t &handler,
                             const address_ptr_t &dest_addr) noexcept {
     auto &point_map = actor_map[static_cast<const void *>(&actor)];
-    point_map.try_emplace(message, point_t{handler, dest_addr});
+    point_map.try_emplace(message, subscription_point_t{handler, dest_addr});
 }
 
 address_ptr_t address_mapping_t::get_addr(actor_base_t &actor, const void *message) noexcept {

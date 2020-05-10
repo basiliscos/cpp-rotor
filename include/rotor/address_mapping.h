@@ -7,7 +7,7 @@
 //
 
 #include "arc.hpp"
-#include "actor_base.h"
+#include "subscription.h"
 #include <unordered_map>
 #include <vector>
 
@@ -26,11 +26,8 @@ namespace rotor {
  *
  */
 struct address_mapping_t {
-    /** \brief alias for actor's subscription point */
-    using point_t = typename actor_base_t::subscription_point_t;
-
     /** \brief alias for vector of subscription points */
-    using points_t = std::vector<point_t>;
+    using points_t = std::vector<subscription_point_t>;
 
     /** \brief associates temporal destination point with actor's message type
      *
@@ -57,7 +54,7 @@ struct address_mapping_t {
     points_t destructive_get(actor_base_t &actor) noexcept;
 
   private:
-    using point_map_t = std::unordered_map<const void *, point_t>;
+    using point_map_t = std::unordered_map<const void *, subscription_point_t>;
     using actor_map_t = std::unordered_map<const void *, point_map_t>;
     actor_map_t actor_map;
 };

@@ -272,3 +272,4 @@ template <> struct hash<rotor::handler_ptr_t> {
     size_t operator()(const rotor::handler_ptr_t &handler) const noexcept { return handler->precalc_hash; }
 };
 } // namespace std
+

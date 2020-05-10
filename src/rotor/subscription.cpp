@@ -4,20 +4,21 @@
 // Distributed under the MIT Software License
 //
 
-#include "rotor/actor_base.h"
 #include "rotor/subscription.h"
 #include "rotor/supervisor.h"
+#include "rotor/handler.hpp"
 
 using namespace rotor;
 
 subscription_t::subscription_t(supervisor_t &sup) : supervisor{sup} {}
+subscription_t::~subscription_t() {}
 
 void subscription_t::subscribe(handler_ptr_t handler) {
     bool mine = &handler->actor_ptr->get_supervisor() == &supervisor;
     map[handler->message_type].emplace_back(classified_handlers_t{std::move(handler), mine});
 }
 
-subscription_t::list_t *subscription_t::get_recipients(const subscription_t::slot_t &slot) noexcept {
+subscription_t::list_t *subscription_t::get_recipients(const subscription_t::message_type_t &slot) noexcept {
     auto it = map.find(slot);
     if (it != map.end()) {
         return &it->second;
@@ -40,3 +41,4 @@ std::size_t subscription_t::unsubscribe(handler_ptr_t handler) {
     }
     return map.size();
 }
+

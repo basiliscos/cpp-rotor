@@ -6,13 +6,32 @@
 // Distributed under the MIT Software License
 //
 
-#include "handler.hpp"
-#include "message.h"
+
+#include "rotor/forward.hpp"
+#include "rotor/address.hpp"
 #include <typeindex>
 #include <map>
 #include <vector>
+#include <list>
 
 namespace rotor {
+
+/** \struct subscription_point_t
+ *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
+ */
+struct subscription_point_t {
+    /** \brief intrusive pointer to messages' handler */
+    handler_ptr_t handler;
+    /** \brief intrusive pointer to address */
+    address_ptr_t address;
+
+    bool operator==(const subscription_point_t& other) const noexcept {
+        return address == other.address && handler == other.handler;
+    }
+};
+
+/** \brief alias to the list of {@link subscription_point_t} */
+using subscription_points_t = std::list<subscription_point_t>;
 
 /** \struct subscription_t
  *  \brief Holds and classifies message handlers on behalf of supervisor
@@ -36,10 +55,11 @@ struct subscription_t {
     using list_t = std::vector<classified_handlers_t>;
 
     /** \brief alias for message type */
-    using slot_t = const void *;
+    using message_type_t = const void *;
 
     /** \brief constructor which takes the source @{link supervisor_t}  reference */
     subscription_t(supervisor_t &sup);
+    ~subscription_t();
 
     /** \brief records the subscription for the handler */
     void subscribe(handler_ptr_t handler);
@@ -48,10 +68,10 @@ struct subscription_t {
     std::size_t unsubscribe(handler_ptr_t handler);
 
     /** \brief optioally returns classified list of subscribers to the message type */
-    list_t *get_recipients(const slot_t &slot) noexcept;
+    list_t *get_recipients(const message_type_t &slot) noexcept;
 
   private:
-    using map_t = std::map<slot_t, list_t>;
+    using map_t = std::map<message_type_t, list_t>;
 
     supervisor_t &supervisor;
     map_t map;

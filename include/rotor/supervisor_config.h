@@ -34,6 +34,7 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
         internal::actor_lifetime_plugin_t,
         internal::subscription_plugin_t,
         internal::init_shutdown_plugin_t,
+        internal::initializer_plugin_t,
         internal::starter_plugin_t,
         internal::subscription_support_plugin_t,
         internal::children_manager_plugin_t

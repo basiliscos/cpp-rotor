@@ -25,16 +25,29 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_start();
+    void init_subscribe(r::internal::initializer_plugin_t& plugin) noexcept override {
+        plugin.subscribe_actor(&pinger_t::on_pong);
     }
 
+#if 0
+    void init_finish() noexcept override {
+        subscribe(&pinger_t::on_pong);
+        r::actor_base_t::init_finish();
+    }
+#endif
+
+    void on_start() noexcept {
+        ++ping_sent;
+        send<ping_t>(ponger_addr);
+    }
+
+#if 0
     void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
         ++ping_sent;
         r::actor_base_t::on_start(msg);
         send<ping_t>(ponger_addr);
     }
+#endif
 
     void on_pong(r::message_t<pong_t> &) noexcept { ++pong_received; }
 
@@ -50,10 +63,19 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
+    void init_subscribe(r::internal::initializer_plugin_t& plugin) noexcept override {
+        plugin.subscribe_actor(&ponger_t::on_ping);
+    }
+
+#if 0
+    void init_finish() noexcept override {
+        subscribe(&ponger_t::on_ping);
+    }
     void init_start() noexcept override {
         subscribe(&ponger_t::on_ping);
         r::actor_base_t::init_start();
     }
+#endif
 
     void on_ping(r::message_t<ping_t> &) noexcept {
         ++ping_received;
@@ -69,7 +91,10 @@ TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto pinger = sup->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
+    auto pinger = sup->create_actor<pinger_t>()
+            .timeout(rt::default_timeout)
+            .on_start(&pinger_t::on_start)
+            .finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());

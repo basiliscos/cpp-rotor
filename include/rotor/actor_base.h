@@ -86,16 +86,6 @@ using is_handler =
  *
  */
 struct actor_base_t : public arc_base_t<actor_base_t> {
-    /** \struct subscription_point_t
-     *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
-     */
-    struct subscription_point_t {
-        /** \brief intrusive pointer to messages' handler */
-        handler_ptr_t handler;
-        /** \brief intrusive pointer to address */
-        address_ptr_t address;
-    };
-
 #if 0
     /** \brief alias to the list of {@link subscription_point_t} */
     using subscription_points_t = std::list<subscription_point_t>;
@@ -303,6 +293,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void deactivate_plugins() noexcept;
     void commit_plugin_deactivation(plugin_t& plugin) noexcept;
 
+    void on_subscription(const subscription_point_t& point) noexcept;
+    void on_unsubscription(const subscription_point_t& point) noexcept;
+
     // ex-protected
     /** \brief suspended shutdown request message */
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
@@ -340,6 +333,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void init_start() noexcept;
 
+    virtual void init_subscribe(internal::initializer_plugin_t& plugin) noexcept;
+
 #if 0
     /** \brief removes the subscription point */
     virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
@@ -353,6 +348,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief current actor state */
     state_t state;
+
+    actor_config_t::callback_t start_callback;
   protected:
 
     /** \brief finializes initialization  */
@@ -383,8 +380,12 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     actor_config_t::plugins_t inactive_plugins;
     actor_config_t::plugins_t active_plugins;
+
+    /* slots */
     actor_config_t::plugins_t init_plugins;
     actor_config_t::plugins_t shutdown_plugins;
+    actor_config_t::plugins_t subscription_plugins;
+    actor_config_t::plugins_t unsubscription_plugins;
 
     friend struct actor_behavior_t;
     friend struct supervisor_t;

@@ -316,6 +316,10 @@ struct supervisor_t : public actor_base_t {
             send<payload::external_subscription_t>(addr->supervisor.address, addr, handler);
         }
     }
+
+
+    /** \brief per-actor and per-message request tracking support */
+    address_mapping_t address_mapping;
 protected:
 #if 0
     virtual actor_behavior_t *create_behavior() noexcept override;
@@ -369,9 +373,6 @@ protected:
     /** \brief shutdown timeout value (copied from config) */
     pt::time_duration shutdown_timeout;
 #endif
-
-    /** \brief per-actor and per-message request tracking support */
-    address_mapping_t address_mapping;
 
     template    <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;
@@ -431,6 +432,19 @@ template <typename Handler> handler_ptr_t plugin_t::subscribe(Handler &&h, const
     own_subscriptions.emplace_back(subscription_point_t{wrapped_handler, addr});
     return wrapped_handler;
 }
+
+namespace internal {
+
+template<typename Handler> void initializer_plugin_t::subscribe_actor(Handler&& handler) noexcept {
+    auto addr = actor->get_address();
+    auto wrapped_handler = actor->subscribe(std::forward<Handler>(handler), addr);
+    auto point = subscription_point_t{wrapped_handler, addr};
+    tracked.emplace_back(point);
+    own_subscriptions.emplace_back(std::move(point));
+}
+
+}
+
 
 template <typename Handler, typename Enabled> void actor_base_t::unsubscribe(Handler &&h) noexcept {
     supervisor->unsubscribe_actor(address, wrap_handler(*this, std::move(h)));

@@ -10,6 +10,7 @@
 #include <deque>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <tuple>
+#include <functional>
 #include "arc.hpp"
 #include "plugin.h"
 #include "policy.h"
@@ -19,11 +20,13 @@ namespace rotor {
 struct supervisor_t;
 struct system_context_t;
 struct plugin_t;
+struct actor_base_t;
 
 namespace pt = boost::posix_time;
 
 struct actor_config_t {
     using plugins_t = std::deque<plugin_t*>;
+    using callback_t = std::function<void(actor_base_t&)>;
 
     plugins_t plugins;
     supervisor_t *supervisor;
@@ -36,6 +39,10 @@ struct actor_config_t {
     std::optional<pt::time_duration> unlink_timeout;
 
     unlink_policy_t unlink_policy = unlink_policy_t::ignore;
+
+    callback_t init_finish;
+    callback_t start_callback;
+    callback_t shutdown_finish;
 
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
     ~actor_config_t() {
@@ -52,6 +59,7 @@ template <typename Actor> struct actor_config_builder_t {
         internal::actor_lifetime_plugin_t,
         internal::subscription_plugin_t,
         internal::init_shutdown_plugin_t,
+        internal::initializer_plugin_t,
         internal::starter_plugin_t
     >;
 
@@ -99,6 +107,14 @@ template <typename Actor> struct actor_config_builder_t {
 
     builder_t &&unlink_policy(const unlink_policy_t &policy) && noexcept {
         config.unlink_policy = policy;
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    template<typename Callback> builder_t && on_start(Callback&& callback) && noexcept {
+        config.start_callback = [callback = std::forward<Callback>(callback)](auto& actor) noexcept {
+            Actor& typed = static_cast<Actor&>(actor);
+            (typed.*callback)();
+        };
         return std::move(*static_cast<builder_t *>(this));
     }
 

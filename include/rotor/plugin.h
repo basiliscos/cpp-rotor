@@ -6,49 +6,29 @@
 // Distributed under the MIT Software License
 //
 
-#include "arc.hpp"
 #include "address.hpp"
 #include "messages.hpp"
-#include <list>
+#include "subscription.h"
 #include <system_error>
 #include <unordered_set>
+#include <set>
 
 namespace rotor {
 
-enum class slot_t { INIT = 0, SHUTDOWN };
-
-struct actor_base_t;
-struct handler_base_t;
-using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
-
-/** \brief intrusive pointer for handler */
-using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
+enum class slot_t { INIT = 0, SHUTDOWN, SUBSCRIPTION, UNSUBSCRIPTION };
 
 
 struct plugin_t {
-    /** \struct subscription_point_t
-     *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
-     */
-    struct subscription_point_t {
-        /** \brief intrusive pointer to messages' handler */
-        handler_ptr_t handler;
-        /** \brief intrusive pointer to address */
-        address_ptr_t address;
-    };
-
-    /** \brief alias to the list of {@link subscription_point_t} */
-    using subscription_points_t = std::list<subscription_point_t>;
-
 
     plugin_t() = default;
     virtual ~plugin_t();
 
-    virtual bool is_init_ready() noexcept;
-    virtual bool is_shutdown_ready() noexcept;
+    virtual bool is_complete_for(slot_t slot) noexcept;
+    virtual bool is_complete_for(slot_t slot, const subscription_point_t& point) noexcept;
     virtual void activate(actor_base_t* actor) noexcept;
     virtual void deactivate() noexcept;
 
-    template<typename Handler> handler_ptr_t subscribe(Handler&& handler, const address_ptr_t& addresss) noexcept;
+    template<typename Handler> handler_ptr_t subscribe(Handler&& handler, const address_ptr_t& address) noexcept;
     template<typename Handler> handler_ptr_t subscribe(Handler&& handler) noexcept;
 
     actor_base_t* actor;
@@ -61,12 +41,12 @@ namespace internal {
 
 struct subscription_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
+    using iterator_t = typename subscription_points_t::iterator;
 
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
 
-    void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
-    void maybe_deactivate() noexcept;
+    iterator_t find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 
     /* \brief unsubcribes all actor's handlers */
     void unsubscribe() noexcept;
@@ -74,6 +54,7 @@ struct subscription_plugin_t: public plugin_t {
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
 
+    virtual bool is_complete_for(slot_t slot, const subscription_point_t& point) noexcept override;
     virtual void on_subscription(message::subscription_t&) noexcept;
     virtual void on_unsubscription(message::unsubscription_t&) noexcept;
     virtual void on_unsubscription_external(message::unsubscription_external_t&) noexcept;
@@ -91,8 +72,7 @@ struct actor_lifetime_plugin_t: public plugin_t {
 struct init_shutdown_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
-    virtual bool is_init_ready() noexcept override;
-    virtual bool is_shutdown_ready() noexcept override;
+    virtual bool is_complete_for(slot_t slot) noexcept override;
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
     virtual void confirm_init() noexcept;
@@ -105,13 +85,22 @@ struct init_shutdown_plugin_t: public plugin_t {
     intrusive_ptr_t<message::init_request_t> init_request;
 };
 
+struct initializer_plugin_t: public plugin_t {
+    virtual void activate(actor_base_t* actor) noexcept override;
+    virtual bool is_complete_for(slot_t slot) noexcept override;
+    virtual bool is_complete_for(slot_t slot, const subscription_point_t& point) noexcept override;
+    template<typename Handler> void subscribe_actor(Handler&& handler) noexcept;
+    subscription_points_t tracked;
+};
+
+
 struct starter_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
     virtual void activate(actor_base_t* actor) noexcept override;
-    virtual void deactivate() noexcept override;
     void on_start(message::start_trigger_t& message) noexcept;
 };
+
 
 // supervisor plugins
 
@@ -135,7 +124,7 @@ struct children_manager_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
 
-    /** \brief child actror housekeeping strcuture */
+    /** \brief child actror housekeeping structure */
     struct actor_state_t {
         /** \brief intrusive pointer to actor */
         actor_ptr_t actor;
@@ -152,14 +141,16 @@ struct children_manager_plugin_t: public plugin_t {
 
     virtual void activate(actor_base_t* actor) noexcept override;
     virtual void deactivate() noexcept override;
-    virtual bool is_init_ready() noexcept override;
+    virtual bool is_complete_for(slot_t slot) noexcept override;
 
     virtual void create_child(const actor_ptr_t &actor) noexcept;
     virtual void remove_child(actor_base_t &actor) noexcept;
+    virtual void on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept;
 
     virtual void on_create(message::create_actor_t& message) noexcept;
     virtual void on_init(message::init_response_t& message) noexcept;
-    virtual void on_shutdown(message::shutdown_trigger_t& message) noexcept;
+    virtual void on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept;
+    virtual void on_shutdown_confirm(message::shutdown_response_t& message) noexcept;
 
     bool postponed_init = false;
     bool activated = false;

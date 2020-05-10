@@ -13,7 +13,7 @@ using namespace rotor;
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout},
       unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, inactive_plugins{std::move(cfg.plugins)},
-      init_shutdown_plugin{nullptr}, subscription_plugin{nullptr}  {}
+      init_shutdown_plugin{nullptr}, subscription_plugin{nullptr}, start_callback{cfg.start_callback} {}
 
 actor_base_t::~actor_base_t() {
     for(auto plugin: inactive_plugins) {
@@ -47,13 +47,16 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
 
 void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor->get_address(), address); }
 
-#if 0
-address_ptr_t actor_base_t::create_address() noexcept { return supervisor->make_address(); }
-#endif
-
 void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
-    if (slot == slot_t::INIT) { init_plugins.emplace_back(&plugin); }
-    else if (slot == slot_t::SHUTDOWN) { shutdown_plugins.emplace_back(&plugin); }
+    actor_config_t::plugins_t* dest = nullptr;
+    switch (slot) {
+    case slot_t::INIT: dest = &init_plugins; break;
+    case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
+    case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
+    case slot_t::UNSUBSCRIPTION: dest = &unsubscription_plugins; break;
+    default: std::abort();
+    }
+    if (dest) dest->emplace_back(&plugin);
 }
 
 void actor_base_t::activate_plugins() noexcept {
@@ -120,36 +123,50 @@ void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
 void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
 */
 
-/* behavior->on_start_init(); */
-void actor_base_t::init_start() noexcept {
-    assert(state == state_t::INITIALIZING);
-    bool ok = !init_plugins.empty();
-    for(auto plugin: init_plugins) {
-        ok = plugin->is_init_ready();
+
+template <typename SuccessFn> void poll(actor_config_t::plugins_t& plugins, slot_t slot, SuccessFn&& fn) {
+    bool ok = !plugins.empty();
+    for(auto plugin: plugins) {
+        ok = plugin->is_complete_for(slot);
         if (!ok) { break; }
     }
     if (ok) {
-        state = state_t::INITIALIZED;
-        init_shutdown_plugin->confirm_init();
-        init_plugins.clear();
-        init_finish();
+        fn();
     }
 }
+
+static void poll_remove(actor_config_t::plugins_t& plugins, slot_t slot, const subscription_point_t point) {
+    for(auto it = plugins.begin(); it != plugins.end();) {
+        auto& plugin = *it;
+        if (plugin->is_complete_for(slot, point)) {
+            it = plugins.erase(it);
+        } else {
+            it = ++it;
+        }
+    }
+}
+
+void actor_base_t::init_start() noexcept {
+    assert(state == state_t::INITIALIZING);
+    poll(init_plugins, slot_t::INIT, [this] {
+         state = state_t::INITIALIZED;
+         init_shutdown_plugin->confirm_init();
+         init_plugins.clear();
+         init_finish();
+    });
+}
+
+void actor_base_t::init_subscribe(internal::initializer_plugin_t&) noexcept { }
 
 void actor_base_t::init_finish() noexcept {}
 
 void actor_base_t::shutdown_start() noexcept {
     assert(state == state_t::OPERATIONAL);
     state = state_t::SHUTTING_DOWN;
-    bool ok = !shutdown_plugins.empty();
-    for(auto plugin: shutdown_plugins) {
-        ok = plugin->is_shutdown_ready();
-        if (!ok) { break; }
-    }
-    if (ok) {
+    poll(shutdown_plugins, slot_t::SHUTDOWN, [this]{
         init_shutdown_plugin->confirm_shutdown();
         shutdown_plugins.clear();
-    }
+    });
 }
 
 void actor_base_t::shutdown_finish() noexcept {}
@@ -174,6 +191,14 @@ void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr
 
 void actor_base_t::unsubscribe() noexcept {
     subscription_plugin->unsubscribe();
+}
+
+void actor_base_t::on_subscription(const subscription_point_t& point) noexcept {
+    poll_remove(subscription_plugins, slot_t::SUBSCRIPTION, point);
+}
+
+void actor_base_t::on_unsubscription(const subscription_point_t& point) noexcept {
+    poll_remove(unsubscription_plugins, slot_t::UNSUBSCRIPTION, point);
 }
 
 
