@@ -6,6 +6,7 @@
 
 #include "rotor/plugin/children_manager.h"
 #include "rotor/supervisor.h"
+//#include <iostream>
 
 using namespace rotor;
 using namespace rotor::internal;
@@ -25,14 +26,17 @@ void children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
 void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.address);
     actors_map.erase(it_actor);
-    if (actors_map.empty() && actor->get_state() == state_t::SHUTTING_DOWN) {
-        deactivate();
+    if (actors_map.size() == 1 && actor->get_state() == state_t::SHUTTING_DOWN) {
         actor->shutdown_continue();
+        /*
+        auto* orig_actor = actor;
+        orig_actor->shutdown_continue();
+        static_cast<supervisor_t&>(*orig_actor).manager = nullptr;
+        */
     }
 }
 
 void children_manager_plugin_t::deactivate() noexcept {
-    static_cast<supervisor_t&>(*actor).manager = nullptr;
     assert(actors_map.size() == 1);
     actors_map.clear();
     plugin_t::deactivate();
@@ -92,8 +96,17 @@ void children_manager_plugin_t::on_init(message::init_response_t &message) noexc
 void children_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto &source_addr = message.payload.actor_address;
-    if (source_addr == sup.address && sup.parent) { // will be routed via shutdown request
-        sup.do_shutdown();
+    if (source_addr == sup.address) {
+        if (sup.parent) {
+            // will be routed via shutdown request
+            sup.do_shutdown();
+        } else {
+            // do not do shutdown-request on self
+            assert(actor->state == state_t::OPERATIONAL);
+            actor->state = state_t::SHUTTING_DOWN;
+            unsubscribe_all();
+            actor->shutdown_continue();
+        }
     } else {
         auto &actor_state = actors_map.at(source_addr);
         if (!actor_state.shutdown_requesting) {
@@ -136,22 +149,28 @@ void children_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t
     }
 }
 
-bool children_manager_plugin_t::handle_init(message::init_request_t&) noexcept {
+bool children_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
     return initializing_actors.empty();
 }
 
-bool children_manager_plugin_t::handle_shutdown(message::shutdown_request_t&) noexcept {
+bool children_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
+    unsubscribe_all();
+    return actors_map.size() == 1; /* only own actor left, which will be handled differently */
+}
+
+void children_manager_plugin_t::unsubscribe_all() noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
-    for(auto it: actors_map) {
+    for(auto& it: actors_map) {
         auto& actor_state = it.second;
         if (!actor_state.shutdown_requesting) {
-            actor_state.shutdown_requesting = true;
-            auto& timeout = actor->shutdown_timeout;
             auto& actor_addr = it.first;
-            sup.request<payload::shutdown_request_t>(actor_addr, actor->address).send(timeout);
+            if ((actor_addr != sup.get_address()) || sup.parent) {
+                auto& timeout = actor->shutdown_timeout;
+                sup.request<payload::shutdown_request_t>(actor_addr, actor->address).send(timeout);
+            }
+            actor_state.shutdown_requesting = true;
         }
     }
-    return actors_map.size() == 1; /* only own actor left, which will be handled differently */
 }
 
 

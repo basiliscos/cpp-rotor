@@ -27,6 +27,6 @@ bool initializer_plugin_t::is_complete_for(slot_t slot, const subscription_point
 }
 
 
-bool initializer_plugin_t::handle_init(message::init_request_t&) noexcept {
+bool initializer_plugin_t::handle_init(message::init_request_t*) noexcept {
     return tracked.empty();
 }

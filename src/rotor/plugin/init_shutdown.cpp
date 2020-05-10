@@ -12,18 +12,12 @@ using namespace rotor::internal;
 
 void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
-    subscribe(&init_shutdown_plugin_t::on_shutdown);
     subscribe(&init_shutdown_plugin_t::on_init);
+    subscribe(&init_shutdown_plugin_t::on_shutdown);
 
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
-    actor->init_shutdown_plugin = this;
     plugin_t::activate(actor);
-}
-
-void init_shutdown_plugin_t::deactivate() noexcept {
-    actor->init_shutdown_plugin = nullptr;
-    plugin_t::deactivate();
 }
 
 void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
@@ -42,7 +36,7 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexc
     actor->shutdown_continue();
 }
 
-bool init_shutdown_plugin_t::handle_init(message::init_request_t&) noexcept {
+bool init_shutdown_plugin_t::handle_init(message::init_request_t*) noexcept {
     auto& init_request = actor->init_request;
     actor->reply_to(*init_request);
     init_request.reset();
@@ -50,7 +44,7 @@ bool init_shutdown_plugin_t::handle_init(message::init_request_t&) noexcept {
 }
 
 
-bool init_shutdown_plugin_t::handle_shutdown(message::shutdown_request_t&) noexcept {
+bool init_shutdown_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
     actor->deactivate_plugins();
     return true;
 }

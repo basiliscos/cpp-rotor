@@ -7,13 +7,14 @@
 #include "rotor/actor_base.h"
 #include "rotor/supervisor.h"
 //#include <iostream>
+//#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout},
       unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, inactive_plugins{std::move(cfg.plugins)},
-      init_shutdown_plugin{nullptr}, subscription_plugin{nullptr}, start_callback{cfg.start_callback} {}
+      start_callback{cfg.start_callback} {}
 
 actor_base_t::~actor_base_t() {
     for(auto plugin: inactive_plugins) {
@@ -139,23 +140,29 @@ void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     while (!init_plugins.empty()) {
         auto& plugin = init_plugins.back();
-        if (plugin->handle_init(*init_request)) {
+        if (plugin->handle_init(init_request.get())) {
             init_plugins.pop_back();
             continue;
         }
         break;
     }
+    if (init_plugins.empty()) {
+        init_finish();
+    }
+
 }
 
 void actor_base_t::init_subscribe(internal::initializer_plugin_t&) noexcept { }
 
-void actor_base_t::init_finish() noexcept {}
+void actor_base_t::init_finish() noexcept {
+    state = state_t::INITIALIZED;
+}
 
 void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
     while (!shutdown_plugins.empty()) {
         auto& plugin = shutdown_plugins.back();
-        if (plugin->handle_shutdown(*shutdown_request)) {
+        if (plugin->handle_shutdown(shutdown_request.get())) {
             shutdown_plugins.pop_back();
             continue;
         }
@@ -188,10 +195,20 @@ void actor_base_t::unsubscribe() noexcept {
 }
 
 void actor_base_t::on_subscription(const subscription_point_t& point) noexcept {
+    /*
+    std::cout << "actor " << point.handler->actor_ptr.get() << " subscribed to "
+              << boost::core::demangle((const char*)point.handler->message_type)
+              << " at " << (void*)point.address.get() << "\n";
+    */
     poll_remove(subscription_plugins, slot_t::SUBSCRIPTION, point);
 }
 
 void actor_base_t::on_unsubscription(const subscription_point_t& point) noexcept {
+    /*
+    std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed from "
+              << boost::core::demangle((const char*)point.handler->message_type)
+              << " at " << (void*)point.address.get() << "\n";
+    */
     poll_remove(unsubscription_plugins, slot_t::UNSUBSCRIPTION, point);
 }
 

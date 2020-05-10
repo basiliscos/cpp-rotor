@@ -26,10 +26,10 @@ void plugin_t::deactivate() noexcept {
     actor = nullptr;
 }
 
-bool plugin_t::handle_shutdown(message::shutdown_request_t&) noexcept {
+bool plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
     return true;
 }
 
-bool plugin_t::handle_init(message::init_request_t&) noexcept {
+bool plugin_t::handle_init(message::init_request_t*) noexcept {
     return true;
 }

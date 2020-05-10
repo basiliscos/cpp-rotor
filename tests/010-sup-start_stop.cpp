@@ -62,17 +62,18 @@ struct sample_sup_t : public rt::supervisor_test_t {
 struct init_shutdown_plugin_t: r::internal::init_shutdown_plugin_t {
     using parent_t = r::internal::init_shutdown_plugin_t;
 
-    virtual void confirm_init() noexcept {
-        auto sup = static_cast<sample_sup_t*>(actor);
-        sup->init_invoked++;
-        parent_t::confirm_init();
-    }
-
-    virtual void confirm_shutdown() noexcept {
+    virtual bool handle_shutdown(r::message::shutdown_request_t* message) noexcept override {
         auto sup = static_cast<sample_sup_t*>(actor);
         sup->shutdown_started++;
-        parent_t::confirm_shutdown();
+        return parent_t::handle_shutdown(message);
     }
+
+    virtual bool handle_init(r::message::init_request_t* message) noexcept override {
+        auto sup = static_cast<sample_sup_t*>(actor);
+        sup->init_invoked++;
+        return parent_t::handle_init(message);
+    }
+
 };
 
 
@@ -81,7 +82,6 @@ struct sample_sup2_t : public rt::supervisor_test_t {
 
     std::uint32_t initialized = 0;
     std::uint32_t init_invoked = 0;
-    std::uint32_t shutdown_started = 0;
     std::uint32_t shutdown_finished = 0;
     std::uint32_t shutdown_conf_invoked = 0;
     r::address_ptr_t shutdown_addr;
@@ -99,11 +99,6 @@ struct sample_sup2_t : public rt::supervisor_test_t {
         ++init_invoked;
     }
 
-    virtual void shutdown_start() noexcept override {
-        ++shutdown_started;
-        rt::supervisor_test_t::shutdown_start();
-    }
-
     virtual void shutdown_finish() noexcept override {
         ++shutdown_finished;
         rt::supervisor_test_t::shutdown_finish();
@@ -114,7 +109,6 @@ struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };
 
-#if 0
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
     destroyed  = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -159,14 +153,12 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
 
     sup->do_process();
     REQUIRE(sup->init_invoked == 1);
-    REQUIRE(sup->shutdown_started == 0);
     REQUIRE(sup->shutdown_conf_invoked == 0);
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->shutdown_started == 1);
     REQUIRE(sup->shutdown_finished == 1);
     REQUIRE(sup->active_timers.size() == 0);
 
@@ -182,7 +174,6 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     sup.reset();
     REQUIRE(destroyed == 1);
 }
-#endif
 
 TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();

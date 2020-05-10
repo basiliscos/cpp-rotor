@@ -346,7 +346,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
 
-    internal::init_shutdown_plugin_t* init_shutdown_plugin;
     internal::subscription_plugin_t* subscription_plugin;
 
     /** \brief current actor state */

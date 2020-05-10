@@ -42,8 +42,10 @@ struct children_manager_plugin_t: public plugin_t {
     virtual void on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept;
     virtual void on_shutdown_confirm(message::shutdown_response_t& message) noexcept;
 
-    virtual bool handle_init(message::init_request_t&) noexcept override;
-    virtual bool handle_shutdown(message::shutdown_request_t&) noexcept override;
+    virtual bool handle_init(message::init_request_t*) noexcept override;
+    virtual bool handle_shutdown(message::shutdown_request_t*) noexcept override;
+
+    void unsubscribe_all() noexcept;
 
     bool postponed_init = false;
     bool activated = false;

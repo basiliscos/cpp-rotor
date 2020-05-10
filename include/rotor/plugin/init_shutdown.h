@@ -14,13 +14,12 @@ struct init_shutdown_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
     virtual void activate(actor_base_t* actor) noexcept override;
-    virtual void deactivate() noexcept override;
 
-    virtual void on_init(message::init_request_t&) noexcept;
-    virtual void on_shutdown(message::shutdown_request_t&) noexcept;
+    virtual void on_init(message::init_request_t& message) noexcept;
+    virtual void on_shutdown(message::shutdown_request_t& message) noexcept;
 
-    virtual bool handle_shutdown(message::shutdown_request_t&) noexcept override;
-    virtual bool handle_init(message::init_request_t&) noexcept override;
+    virtual bool handle_shutdown(message::shutdown_request_t* message) noexcept override;
+    virtual bool handle_init(message::init_request_t* message) noexcept override;
 
 };
 
