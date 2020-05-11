@@ -16,9 +16,6 @@ void plugin_t::activate(actor_base_t* actor_) noexcept {
     actor->commit_plugin_activation(*this, true);
 }
 
-bool plugin_t::is_complete_for(slot_t, const subscription_point_t&) noexcept {
-    std::abort();
-}
 
 void plugin_t::deactivate() noexcept {
     own_subscriptions.clear();
@@ -33,3 +30,16 @@ bool plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
 bool plugin_t::handle_init(message::init_request_t*) noexcept {
     return true;
 }
+
+processing_result_t plugin_t::handle_subscription(message::subscription_t&) noexcept {
+    std::abort();
+}
+
+processing_result_t plugin_t::handle_unsubscription(message::unsubscription_t&) noexcept {
+    std::abort();
+}
+
+processing_result_t plugin_t::handle_unsubscription_external(message::unsubscription_external_t&) noexcept {
+    std::abort();
+}
+

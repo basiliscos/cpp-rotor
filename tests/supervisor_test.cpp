@@ -34,7 +34,7 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
 
 
 subscription_points_t& supervisor_test_t::get_points() noexcept {
-    auto plugin = subscription_plugin;
+    auto plugin = static_cast<internal::subscription_plugin_t*>(subscription_plugins.front());
     if (!plugin) {
         for (plugin_t* p: inactive_plugins) {
             if (dynamic_cast<internal::subscription_plugin_t*>(p)) {

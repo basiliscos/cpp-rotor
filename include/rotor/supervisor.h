@@ -308,12 +308,13 @@ struct supervisor_t : public actor_base_t {
      *
      */
     inline void subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) {
+        subscription_point_t point{handler, addr};
         if (&addr->supervisor == supervisor) {
             auto subs_info = subscription_map.try_emplace(addr, *this);
             subs_info.first->second.subscribe(handler);
-            send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), addr, handler);
+            send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), point);
         } else {
-            send<payload::external_subscription_t>(addr->supervisor.address, addr, handler);
+            send<payload::external_subscription_t>(addr->supervisor.address, point);
         }
     }
 

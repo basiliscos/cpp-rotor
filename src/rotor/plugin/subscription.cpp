@@ -11,10 +11,11 @@ using namespace rotor;
 using namespace rotor::internal;
 
 void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
-    actor_->subscription_plugin = this;
     this->actor = actor_;
 
+    actor->install_plugin(*this, slot_t::SUBSCRIPTION);
     actor->install_plugin(*this, slot_t::UNSUBSCRIPTION);
+
     // order is important
     subscribe(&subscription_plugin_t::on_unsubscription);
     subscribe(&subscription_plugin_t::on_unsubscription_external);
@@ -36,15 +37,6 @@ subscription_plugin_t::iterator_t subscription_plugin_t::find_subscription(const
     assert(0 && "no subscription found");
 }
 
-bool subscription_plugin_t::is_complete_for(slot_t slot, const subscription_point_t&) noexcept {
-    if (slot == slot_t::UNSUBSCRIPTION && points.empty() && actor->get_state() == state_t::SHUTTING_DOWN) {
-        actor->subscription_plugin = nullptr;
-        plugin_t::deactivate();
-        return true;
-    }
-    return false;
-}
-
 void subscription_plugin_t::deactivate() noexcept  {
     unsubscribe();
 }
@@ -61,29 +53,45 @@ void subscription_plugin_t::unsubscribe() noexcept {
 }
 
 void subscription_plugin_t::on_subscription(message::subscription_t &msg) noexcept {
-    auto point = subscription_point_t{msg.payload.handler, msg.payload.target_address};
-    points.push_back(point);
-    actor->on_subscription(point);
+    actor->on_subscription(msg);
 }
 
 void subscription_plugin_t::on_unsubscription(message::unsubscription_t &msg) noexcept {
-    auto &addr = msg.payload.target_address;
-    auto &handler = msg.payload.handler;
-    auto it = find_subscription(addr, handler);
-    auto point = *it; /* copy */
-    points.erase(it);
-    actor->get_supervisor().commit_unsubscription(addr, handler);
-    actor->on_unsubscription(point);
+    actor->on_unsubscription(msg);
 }
 
 void subscription_plugin_t::on_unsubscription_external(message::unsubscription_external_t &msg) noexcept {
-    auto &addr = msg.payload.target_address;
-    auto &handler = msg.payload.handler;
-    auto it = find_subscription(addr, handler);
-    auto point = *it; /* copy */
+    actor->on_unsubscription_external(msg);
+}
+
+processing_result_t subscription_plugin_t::remove_subscription(const subscription_point_t& point) noexcept {
+    auto rit = std::find(points.rbegin(), points.rend(), point);
+    assert(rit != points.rend());
+    auto it = --rit.base();
     points.erase(it);
-    auto sup_addr = addr->supervisor.get_address();
-    actor->send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
-    actor->on_unsubscription(point);
+    if (points.empty()) {
+        plugin_t::deactivate();
+        return processing_result_t::FINISHED;
+    }
+    return processing_result_t::CONSUMED;
+}
+
+
+processing_result_t subscription_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
+    points.push_back(message.payload.point);
+    return processing_result_t::CONSUMED;
+}
+
+processing_result_t subscription_plugin_t::handle_unsubscription(message::unsubscription_t& message) noexcept {
+    auto& point = message.payload.point;
+    actor->get_supervisor().commit_unsubscription(point.address, point.handler);
+    return remove_subscription(point);
+}
+
+processing_result_t subscription_plugin_t::handle_unsubscription_external(message::unsubscription_external_t& message) noexcept {
+    auto& point = message.payload.point;
+    auto sup_addr = point.address->supervisor.get_address();
+    actor->send<payload::commit_unsubscription_t>(sup_addr, point);
+    return remove_subscription(point);
 }
 

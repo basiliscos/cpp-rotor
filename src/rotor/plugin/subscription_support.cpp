@@ -35,14 +35,13 @@ void subscription_support_plugin_t::on_call(message::handler_call_t &message) no
 
 void subscription_support_plugin_t::on_unsubscription(message::commit_unsubscription_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
-    auto& payload = message.payload;
-    sup.commit_unsubscription(payload.target_address, payload.handler);
+    auto& point = message.payload.point;
+    sup.commit_unsubscription(point.address, point.handler);
 }
 
 void subscription_support_plugin_t::on_unsubscription_external(message::external_subscription_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
-    auto &handler = message.payload.handler;
-    auto &addr = message.payload.target_address;
-    assert(&addr->supervisor == &sup);
-    sup.subscribe_actor(addr, handler);
+    auto& point = message.payload.point;
+    assert(&point.address->supervisor == &sup);
+    sup.subscribe_actor(point.address, point.handler);
 }

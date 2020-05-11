@@ -25,10 +25,15 @@ struct subscription_plugin_t: public plugin_t {
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
 
-    virtual bool is_complete_for(slot_t slot, const subscription_point_t& point) noexcept override;
     virtual void on_subscription(message::subscription_t&) noexcept;
     virtual void on_unsubscription(message::unsubscription_t&) noexcept;
     virtual void on_unsubscription_external(message::unsubscription_external_t&) noexcept;
+
+    processing_result_t handle_subscription(message::subscription_t& message) noexcept override;
+    processing_result_t handle_unsubscription(message::unsubscription_t& message) noexcept override;
+    processing_result_t handle_unsubscription_external(message::unsubscription_external_t& message) noexcept override;
+
+    processing_result_t remove_subscription(const subscription_point_t& point) noexcept;
 };
 
 

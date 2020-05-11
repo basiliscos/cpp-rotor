@@ -125,17 +125,6 @@ void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept {
 */
 
 
-static void poll_remove(actor_config_t::plugins_t& plugins, slot_t slot, const subscription_point_t point) {
-    for(auto it = plugins.begin(); it != plugins.end();) {
-        auto& plugin = *it;
-        if (plugin->is_complete_for(slot, point)) {
-            it = plugins.erase(it);
-        } else {
-            it = ++it;
-        }
-    }
-}
-
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     while (!init_plugins.empty()) {
@@ -172,83 +161,69 @@ void actor_base_t::shutdown_continue() noexcept {
 
 void actor_base_t::shutdown_finish() noexcept {}
 
-/*
-void actor_base_t::on_subscription(message_t<payload::subscription_confirmation_t> &msg) noexcept {
-    points.push_back(subscription_point_t{msg.payload.handler, msg.payload.target_address});
-}
-*/
-
 void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr,
                                const payload::callback_ptr_t &callback) noexcept {
 
     auto &dest = h->actor_ptr->address;
+    auto point = subscription_point_t{h, addr};
     if (&addr->supervisor == this) {
-        send<payload::unsubscription_confirmation_t>(dest, addr, h, callback);
+        send<payload::unsubscription_confirmation_t>(dest, point, callback);
     } else {
         assert(!callback);
-        send<payload::external_unsubscription_t>(dest, addr, h);
+        send<payload::external_unsubscription_t>(dest, point);
     }
 }
 
 void actor_base_t::unsubscribe() noexcept {
-    subscription_plugin->unsubscribe();
+    auto plugin = static_cast<internal::subscription_plugin_t*>(subscription_plugins.front());
+    plugin->unsubscribe();
 }
 
-void actor_base_t::on_subscription(const subscription_point_t& point) noexcept {
+template <typename Fn, typename Message>
+static void poll(actor_config_t::plugins_t& plugins, Message& message, Fn&& fn) {
+    for(auto it = plugins.begin(); it != plugins.end();) {
+        auto& plugin = *it;
+        auto result = fn(plugin, message);
+        switch (result) {
+        case processing_result_t::IGNORED: it++; break;
+        case processing_result_t::CONSUMED: return;
+        case processing_result_t::FINISHED: it = plugins.erase(it); break;
+        }
+    }
+}
+
+void actor_base_t::on_subscription(message::subscription_t& message) noexcept {
     /*
     std::cout << "actor " << point.handler->actor_ptr.get() << " subscribed to "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll_remove(subscription_plugins, slot_t::SUBSCRIPTION, point);
+    poll(subscription_plugins, message, [](auto& plugin, auto& message) {
+        return plugin->handle_subscription(message);
+    });
 }
 
-void actor_base_t::on_unsubscription(const subscription_point_t& point) noexcept {
+void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcept {
     /*
-    std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed from "
+    std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[i] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll_remove(unsubscription_plugins, slot_t::UNSUBSCRIPTION, point);
+    poll(unsubscription_plugins, message, [](auto& plugin, auto& message) {
+        return plugin->handle_unsubscription(message);
+    });
 }
 
-
-/*
-void actor_base_t::on_unsubscription(message_t<payload::unsubscription_confirmation_t> &msg) noexcept {
-    auto &addr = msg.payload.target_address;
-    auto &handler = msg.payload.handler;
-    remove_subscription(addr, handler);
-    supervisor->commit_unsubscription(addr, handler);
-    if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        behavior->on_unsubscription();
-    }
+void actor_base_t::on_unsubscription_external(message::unsubscription_external_t& message) noexcept {
+    /*
+    std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[e] from "
+              << boost::core::demangle((const char*)point.handler->message_type)
+              << " at " << (void*)point.address.get() << "\n";
+    */
+    poll(unsubscription_plugins, message, [](auto& plugin, auto& message) {
+        return plugin->handle_unsubscription_external(message);
+    });
 }
-
-void actor_base_t::on_external_unsubscription(message_t<payload::external_unsubscription_t> &msg) noexcept {
-    auto &addr = msg.payload.target_address;
-    auto &handler = msg.payload.handler;
-    remove_subscription(addr, msg.payload.handler);
-    auto &sup_addr = addr->supervisor.address;
-    send<payload::commit_unsubscription_t>(sup_addr, addr, handler);
-    if (points.empty() && state == state_t::SHUTTING_DOWN) {
-        behavior->on_unsubscription();
-    }
-}
-
-void actor_base_t::remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
-    auto it = points.rbegin();
-    while (it != points.rend()) {
-        if (it->address == addr && *it->handler == *handler) {
-            auto dit = it.base();
-            points.erase(--dit);
-            return;
-        } else {
-            ++it;
-        }
-    }
-    assert(0 && "no subscription found");
-}
-*/
 
 /*
 void actor_base_t::unlink_notify(const address_ptr_t &service_addr) noexcept {

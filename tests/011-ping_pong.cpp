@@ -29,25 +29,11 @@ struct pinger_t : public r::actor_base_t {
         plugin.subscribe_actor(&pinger_t::on_pong);
     }
 
-#if 0
-    void init_finish() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_finish();
-    }
-#endif
-
     void on_start() noexcept {
         ++ping_sent;
         send<ping_t>(ponger_addr);
     }
 
-#if 0
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        ++ping_sent;
-        r::actor_base_t::on_start(msg);
-        send<ping_t>(ponger_addr);
-    }
-#endif
 
     void on_pong(r::message_t<pong_t> &) noexcept { ++pong_received; }
 
@@ -67,15 +53,6 @@ struct ponger_t : public r::actor_base_t {
         plugin.subscribe_actor(&ponger_t::on_ping);
     }
 
-#if 0
-    void init_finish() noexcept override {
-        subscribe(&ponger_t::on_ping);
-    }
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
-    }
-#endif
 
     void on_ping(r::message_t<ping_t> &) noexcept {
         ++ping_received;

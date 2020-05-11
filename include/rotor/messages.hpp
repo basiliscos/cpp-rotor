@@ -10,6 +10,7 @@
 #include "message.h"
 #include "state.h"
 #include "request.hpp"
+#include "subscription_point.h"
 
 namespace rotor {
 
@@ -141,11 +142,7 @@ struct handler_call_t {
  *
  */
 struct external_subscription_t {
-    /** \brief The target address for subscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    subscription_point_t point;
 };
 
 /** \struct subscription_confirmation_t
@@ -156,11 +153,7 @@ struct external_subscription_t {
  *
  */
 struct subscription_confirmation_t {
-    /** \brief The target address for subscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    subscription_point_t point;
 };
 
 /** \struct external_unsubscription_t
@@ -171,11 +164,7 @@ struct subscription_confirmation_t {
  *
  */
 struct external_unsubscription_t {
-    /** \brief The target address for unsubscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    subscription_point_t point;
 };
 
 /** \struct commit_unsubscription_t
@@ -186,11 +175,7 @@ struct external_unsubscription_t {
  *
  */
 struct commit_unsubscription_t {
-    /** \brief The target address for unsubscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    subscription_point_t point;
 };
 
 /** \struct unsubscription_confirmation_t
@@ -198,12 +183,7 @@ struct commit_unsubscription_t {
  *  confirmation that `handler` is no longer subscribed to `target_address`
  */
 struct unsubscription_confirmation_t {
-
-    /** \brief The target address for unsubscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    subscription_point_t point;
 
     /** \brief the optional callback to be invoked once message is locally
      *  delivered, i.e. when it is destroyed.

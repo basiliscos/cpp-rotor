@@ -293,8 +293,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void deactivate_plugins() noexcept;
     void commit_plugin_deactivation(plugin_t& plugin) noexcept;
 
-    void on_subscription(const subscription_point_t& point) noexcept;
-    void on_unsubscription(const subscription_point_t& point) noexcept;
+    void on_subscription(message::subscription_t& message) noexcept;
+    void on_unsubscription(message::unsubscription_t& message) noexcept;
+    void on_unsubscription_external(message::unsubscription_external_t& message) noexcept;
 
     // ex-protected
     /** \brief suspended init request message */
@@ -346,7 +347,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
 
-    internal::subscription_plugin_t* subscription_plugin;
+    //internal::subscription_plugin_t* subscription_plugin;
 
     /** \brief current actor state */
     state_t state;
