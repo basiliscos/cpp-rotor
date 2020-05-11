@@ -6,8 +6,8 @@
 
 #include "rotor/actor_base.h"
 #include "rotor/supervisor.h"
-//#include <iostream>
-//#include <boost/core/demangle.hpp>
+#include <iostream>
+#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 
@@ -24,24 +24,6 @@ actor_base_t::~actor_base_t() {
 }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
-    /*
-    if (!address) {
-        address = create_address();
-    }
-    supervisor->subscribe_actor(*this, &actor_base_t::on_unsubscription);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_external_unsubscription);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_initialize);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_start);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_shutdown);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_shutdown_trigger);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_subscription);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_link_request);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_link_response);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_unlink_notify);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_unlink_request);
-    supervisor->subscribe_actor(*this, &actor_base_t::on_unlink_response);
-    state = state_t::INITIALIZING;
-    */
     state = state_t::INITIALIZING;
     activate_plugins();
 }
@@ -104,27 +86,6 @@ void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
     deactivate_plugins();
 }
 
-/*
-void actor_base_t::on_initialize(message::init_request_t &msg) noexcept {
-    init_request.reset(&msg);
-    init_start();
-}
-
-void actor_base_t::on_start(message_t<payload::start_actor_t> &) noexcept {
-    if (state == state_t::INITIALIZED) {
-        state = state_t::OPERATIONAL;
-    }
-}
-
-void actor_base_t::on_shutdown(message::shutdown_request_t &msg) noexcept {
-    shutdown_request.reset(&msg);
-    shutdown_start();
-}
-
-void actor_base_t::on_shutdown_trigger(message::shutdown_trigger_t &) noexcept { do_shutdown(); }
-*/
-
-
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     while (!init_plugins.empty()) {
@@ -181,19 +142,21 @@ void actor_base_t::unsubscribe() noexcept {
 
 template <typename Fn, typename Message>
 static void poll(actor_config_t::plugins_t& plugins, Message& message, Fn&& fn) {
-    for(auto it = plugins.begin(); it != plugins.end();) {
-        auto& plugin = *it;
+    for(auto rit = plugins.rbegin(); rit != plugins.rend();) {
+        auto it = --rit.base();
+        auto plugin = *it;
         auto result = fn(plugin, message);
         switch (result) {
-        case processing_result_t::IGNORED: it++; break;
+        case processing_result_t::IGNORED: ++rit; break;
         case processing_result_t::CONSUMED: return;
-        case processing_result_t::FINISHED: it = plugins.erase(it); break;
+        case processing_result_t::FINISHED: it = plugins.erase(it); rit = std::reverse_iterator(it); break;
         }
     }
 }
 
 void actor_base_t::on_subscription(message::subscription_t& message) noexcept {
     /*
+    auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " subscribed to "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";

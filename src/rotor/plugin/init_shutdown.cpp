@@ -38,9 +38,12 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexc
 
 bool init_shutdown_plugin_t::handle_init(message::init_request_t*) noexcept {
     auto& init_request = actor->init_request;
-    actor->reply_to(*init_request);
-    init_request.reset();
-    return true;
+    if (init_request) {
+        actor->reply_to(*init_request);
+        init_request.reset();
+        return true;
+    }
+    return false;
 }
 
 

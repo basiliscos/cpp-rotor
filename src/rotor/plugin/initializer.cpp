@@ -18,9 +18,16 @@ void initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor);
 }
 
+void initializer_plugin_t::deactivate() noexcept {
+    tracked.clear();
+    plugin_t::deactivate();
+}
+
+
 processing_result_t initializer_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
     tracked.remove(message.payload.point);
     if (tracked.empty()) {
+        actor->init_continue();
         return processing_result_t::FINISHED;
     }
     return processing_result_t::IGNORED;

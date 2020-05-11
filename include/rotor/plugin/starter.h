@@ -14,6 +14,8 @@ struct starter_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
     virtual void activate(actor_base_t* actor) noexcept override;
+
+    virtual bool handle_init(message::init_request_t* message) noexcept override;
     void on_start(message::start_trigger_t& message) noexcept;
 };
 
