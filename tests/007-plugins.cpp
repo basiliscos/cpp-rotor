@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -47,34 +47,35 @@ struct sample_actor2_t : public sample_actor_t {
 
 
 struct sample_plugin1_t : public r::plugin_t {
-    void activate(r::actor_base_t* actor_) noexcept override {
+    bool activate(r::actor_base_t* actor_) noexcept override {
         auto& init_seq = static_cast<sample_actor_t*>(actor_)->init_seq ;
         init_seq = (init_seq << 8 | PID_1);
-        r::plugin_t::activate(actor_);
+        return r::plugin_t::activate(actor_);
     }
-    void deactivate() noexcept override {
+    bool deactivate() noexcept override {
         auto& deinit_seq = static_cast<sample_actor_t*>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_1);
-        r::plugin_t::deactivate();
+        return r::plugin_t::deactivate();
     }
 };
 
 struct sample_plugin2_t : public r::plugin_t {
-    void activate(r::actor_base_t* actor_) noexcept override {
+    bool activate(r::actor_base_t* actor_) noexcept override {
         auto& init_seq = static_cast<sample_actor_t*>(actor_)->init_seq ;
         init_seq = (init_seq << 8 | PID_2);
-        r::plugin_t::activate(actor_);
+        return r::plugin_t::activate(actor_);
     }
-    void deactivate() noexcept override {
+    bool deactivate() noexcept override {
         auto& deinit_seq = static_cast<sample_actor_t*>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_2);
-        r::plugin_t::deactivate();
+        return r::plugin_t::deactivate();
     }
 };
 
 struct buggy_plugin_t : public r::plugin_t {
-    void activate(r::actor_base_t* actor_) noexcept override {
+    bool activate(r::actor_base_t* actor_) noexcept override {
         actor_->commit_plugin_activation(*this, false);
+        return false;
     }
 };
 

@@ -11,7 +11,18 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void actor_lifetime_plugin_t::deactivate() noexcept {
+bool actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
+    actor = actor_;
+    actor->state = state_t::INITIALIZING;
+
+    if (!actor_->address) {
+        actor_->address = create_address();
+    }
+    return plugin_t::activate(actor_);
+}
+
+
+bool actor_lifetime_plugin_t::deactivate() noexcept {
     auto& req = actor->shutdown_request;
     if (req) {
         actor->reply_to(*req);
@@ -20,15 +31,7 @@ void actor_lifetime_plugin_t::deactivate() noexcept {
 
     actor->get_state() = state_t::SHUTTED_DOWN;
     actor->shutdown_finish();
-    plugin_t::deactivate();
-}
-
-void actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
-    actor = actor_;
-    if (!actor_->address) {
-        actor_->address = create_address();
-    }
-    plugin_t::activate(actor_);
+    return plugin_t::deactivate();
 }
 
 address_ptr_t actor_lifetime_plugin_t::create_address() noexcept {

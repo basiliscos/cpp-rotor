@@ -10,14 +10,14 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
+bool init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     subscribe(&init_shutdown_plugin_t::on_init);
     subscribe(&init_shutdown_plugin_t::on_shutdown);
 
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
-    plugin_t::activate(actor);
+    return plugin_t::activate(actor);
 }
 
 void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {

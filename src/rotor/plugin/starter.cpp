@@ -10,10 +10,10 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
+bool starter_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     subscribe(&starter_plugin_t::on_start);
-    plugin_t::activate(actor);
+    return plugin_t::activate(actor);
 }
 
 bool starter_plugin_t::handle_init(message::init_request_t*) noexcept {

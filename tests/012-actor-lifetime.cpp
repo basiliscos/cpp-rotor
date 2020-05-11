@@ -56,6 +56,7 @@ struct sample_actor_t : public r::actor_base_t {
     }
 };
 
+#if 0
 struct fail_shutdown_actor : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
@@ -104,6 +105,7 @@ void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, con
     sup.fail_addr = address;
     sup.fail_reason = ec;
 }
+#endif
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
@@ -138,6 +140,7 @@ TEST_CASE("actor litetimes", "[actor]") {
     REQUIRE(sup->get_subscription().size() == 0);
 }
 
+#if 0
 TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
@@ -233,3 +236,4 @@ TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 }
+#endif

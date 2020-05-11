@@ -10,7 +10,7 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
+bool subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     auto& sup = static_cast<supervisor_t&>(*actor_);
 
@@ -18,13 +18,13 @@ void subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
     subscribe(&subscription_support_plugin_t::on_unsubscription);
     subscribe(&subscription_support_plugin_t::on_unsubscription_external);
     sup.subscription_support = this;
-    plugin_t::activate(actor_);
+    return plugin_t::activate(actor_);
 }
 
-void subscription_support_plugin_t::deactivate() noexcept {
+bool subscription_support_plugin_t::deactivate() noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     sup.subscription_support = nullptr;
-    plugin_t::deactivate();
+    return plugin_t::deactivate();
 }
 
 void subscription_support_plugin_t::on_call(message::handler_call_t &message) noexcept {

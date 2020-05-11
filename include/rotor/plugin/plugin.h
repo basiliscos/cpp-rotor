@@ -19,8 +19,8 @@ struct plugin_t {
     plugin_t() = default;
     virtual ~plugin_t();
 
-    virtual void activate(actor_base_t* actor) noexcept;
-    virtual void deactivate() noexcept;
+    virtual bool activate(actor_base_t* actor) noexcept;
+    virtual bool deactivate() noexcept;
 
     virtual bool handle_init(message::init_request_t* message) noexcept;
     virtual bool handle_shutdown(message::shutdown_request_t* message) noexcept;

@@ -13,8 +13,8 @@ namespace rotor::internal {
 struct actor_lifetime_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
-    virtual void activate(actor_base_t* actor) noexcept override;
-    virtual void deactivate() noexcept override;
+    bool activate(actor_base_t* actor) noexcept override;
+    bool deactivate() noexcept override;
 
     virtual address_ptr_t create_address() noexcept;
 };

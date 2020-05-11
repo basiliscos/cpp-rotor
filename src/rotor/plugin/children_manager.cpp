@@ -11,7 +11,7 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
+bool children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     static_cast<supervisor_t&>(*actor_).manager = this;
     subscribe(&children_manager_plugin_t::on_create);
@@ -21,6 +21,14 @@ void children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
     actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
+    return false;
+}
+
+
+bool children_manager_plugin_t::deactivate() noexcept {
+    assert(actors_map.size() == 1);
+    actors_map.clear();
+    return plugin_t::deactivate();
 }
 
 void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
@@ -30,12 +38,6 @@ void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
     if (actors_map.size() == 1 && actor->get_state() == state_t::SHUTTING_DOWN) {
         actor->shutdown_continue();
     }
-}
-
-void children_manager_plugin_t::deactivate() noexcept {
-    assert(actors_map.size() == 1);
-    actors_map.clear();
-    plugin_t::deactivate();
 }
 
 void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {

@@ -11,8 +11,8 @@
 namespace rotor::internal {
 
 struct initializer_plugin_t: public plugin_t {
-    void activate(actor_base_t* actor) noexcept override;
-    void deactivate() noexcept override;
+    bool activate(actor_base_t* actor) noexcept override;
+    bool deactivate() noexcept override;
 
     virtual bool handle_init(message::init_request_t*) noexcept override;
 

@@ -13,8 +13,9 @@ namespace rotor::internal {
 struct subscription_support_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
-    virtual void activate(actor_base_t* actor) noexcept override;
-    virtual void deactivate() noexcept override;
+    bool activate(actor_base_t* actor) noexcept override;
+    bool deactivate() noexcept override;
+
     virtual void on_call(message::handler_call_t& message) noexcept;
     virtual void on_unsubscription(message::commit_unsubscription_t& message) noexcept;
     virtual void on_unsubscription_external(message::external_subscription_t& message) noexcept;

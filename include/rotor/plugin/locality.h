@@ -13,7 +13,7 @@ namespace rotor::internal {
 struct locality_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
-    virtual void activate(actor_base_t* actor) noexcept override;
+    bool activate(actor_base_t* actor) noexcept override;
 };
 
 }

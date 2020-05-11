@@ -364,15 +364,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     std::optional<pt::time_duration> unlink_timeout;
     unlink_policy_t unlink_policy;
 
-
-#if 0
-    /** \brief actor's behavior, used for runtime customization of actors's
-     * behavioral aspects
-     */
-    actor_behavior_t *behavior;
-#endif
-
-
 #if 0
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_points_t points;
@@ -381,6 +372,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     linked_clients_t linked_clients;
 #endif
 
+    bool activating;
+    bool inactivating;
     actor_config_t::plugins_t inactive_plugins;
     actor_config_t::plugins_t active_plugins;
 

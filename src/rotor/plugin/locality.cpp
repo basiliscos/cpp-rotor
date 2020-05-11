@@ -10,13 +10,13 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void locality_plugin_t::activate(actor_base_t* actor_) noexcept {
+bool locality_plugin_t::activate(actor_base_t* actor_) noexcept {
     auto& sup =static_cast<supervisor_t&>(*actor_);
     auto& address = sup.address;
     auto parent = sup.parent;
     bool use_other = parent && parent->address->same_locality(*address);
     auto locality_leader = use_other ? parent->locality_leader : &sup;
     sup.locality_leader = locality_leader;
-    plugin_t::activate(actor_);
+    return plugin_t::activate(actor_);
 }
 

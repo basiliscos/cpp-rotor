@@ -10,7 +10,7 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
+bool subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
     this->actor = actor_;
 
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
@@ -21,9 +21,14 @@ void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
     subscribe(&subscription_plugin_t::on_unsubscription_external);
     subscribe(&subscription_plugin_t::on_subscription);
 
-    plugin_t::activate(actor_);
+    return plugin_t::activate(actor_);
 }
 
+
+bool subscription_plugin_t::deactivate() noexcept  {
+    unsubscribe();
+    return false;
+}
 
 subscription_plugin_t::iterator_t subscription_plugin_t::find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
     auto it = points.rbegin();
@@ -35,10 +40,6 @@ subscription_plugin_t::iterator_t subscription_plugin_t::find_subscription(const
         }
     }
     assert(0 && "no subscription found");
-}
-
-void subscription_plugin_t::deactivate() noexcept  {
-    unsubscribe();
 }
 
 void subscription_plugin_t::unsubscribe() noexcept {

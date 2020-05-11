@@ -10,17 +10,17 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-void initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
+bool initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
     actor->init_subscribe(*this);
-    plugin_t::activate(actor);
+    return plugin_t::activate(actor);
 }
 
-void initializer_plugin_t::deactivate() noexcept {
+bool initializer_plugin_t::deactivate() noexcept {
     tracked.clear();
-    plugin_t::deactivate();
+    return plugin_t::deactivate();
 }
 
 

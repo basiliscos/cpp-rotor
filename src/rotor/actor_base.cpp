@@ -24,7 +24,6 @@ actor_base_t::~actor_base_t() {
 }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
-    state = state_t::INITIALIZING;
     activate_plugins();
 }
 
@@ -43,10 +42,13 @@ void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
 }
 
 void actor_base_t::activate_plugins() noexcept {
-    if (inactive_plugins.size()) {
+    bool ok = !inactive_plugins.empty();
+    while (ok) {
+        activating = true;
         auto plugin = inactive_plugins.front();
-        plugin->activate(this);
+        ok = plugin->activate(this) && !inactive_plugins.empty();
     }
+    activating = false;
 }
 
 void actor_base_t::commit_plugin_activation(plugin_t& plugin, bool success) noexcept {
@@ -60,17 +62,20 @@ void actor_base_t::commit_plugin_activation(plugin_t& plugin, bool success) noex
                 ++it;
             }
         }
-        activate_plugins();
+        if (!activating) { activate_plugins(); }
     } else {
         deactivate_plugins();
     }
 }
 
 void actor_base_t::deactivate_plugins() noexcept {
-    if (active_plugins.size()) {
+    bool ok = !active_plugins.empty();
+    while (ok) {
+        inactivating = true;
         auto plugin = active_plugins.back();
-        plugin->deactivate();
+        ok = plugin->deactivate() && !active_plugins.empty();
     }
+    inactivating = false;
 }
 
 void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
@@ -83,7 +88,9 @@ void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
             ++it;
         }
     }
-    deactivate_plugins();
+    if (!inactivating) {
+        deactivate_plugins();
+    }
 }
 
 void actor_base_t::init_continue() noexcept {
