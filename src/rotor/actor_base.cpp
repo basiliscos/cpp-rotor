@@ -13,8 +13,8 @@ using namespace rotor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout},
-      unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, inactive_plugins{std::move(cfg.plugins)},
-      start_callback{cfg.start_callback} {}
+      unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, inactive_plugins{std::move(cfg.plugins)}
+      {}
 
 actor_base_t::~actor_base_t() {
     for(auto plugin: inactive_plugins) {
@@ -93,6 +93,26 @@ void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
     }
 }
 
+void actor_base_t::init_start() noexcept {
+    state = state_t::INITIALIZING;
+}
+
+void actor_base_t::init_finish() noexcept {
+    state = state_t::INITIALIZED;
+}
+
+void actor_base_t::on_start() noexcept {
+    state = state_t::OPERATIONAL;
+}
+
+void actor_base_t::shutdown_start() noexcept {
+    state = state_t::SHUTTING_DOWN;
+}
+
+void actor_base_t::shutdown_finish() noexcept {
+    state = state_t::SHUTTED_DOWN;
+}
+
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     while (!init_plugins.empty()) {
@@ -111,9 +131,6 @@ void actor_base_t::init_continue() noexcept {
 
 void actor_base_t::init_subscribe(internal::initializer_plugin_t&) noexcept { }
 
-void actor_base_t::init_finish() noexcept {
-    state = state_t::INITIALIZED;
-}
 
 void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
@@ -126,8 +143,6 @@ void actor_base_t::shutdown_continue() noexcept {
         break;
     }
 }
-
-void actor_base_t::shutdown_finish() noexcept {}
 
 void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr,
                                const payload::callback_ptr_t &callback) noexcept {

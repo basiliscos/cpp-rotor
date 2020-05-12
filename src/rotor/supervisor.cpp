@@ -222,7 +222,10 @@ void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     manager->remove_child(actor);
 }
 
-void supervisor_t::shutdown_finish() noexcept { address_mapping.destructive_get(*this); }
+void supervisor_t::shutdown_finish() noexcept {
+    address_mapping.destructive_get(*this);
+    actor_base_t::shutdown_finish();
+}
 
 void supervisor_t::on_timer_trigger(timer_id_t timer_id) {
     auto it = request_map.find(timer_id);

@@ -137,6 +137,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     virtual void unsubscribe() noexcept;
 
+    virtual void on_start() noexcept;
+
+
 #if 0
     using linked_servers_t = std::unordered_set<address_ptr_t>;
     using linked_clients_t = std::unordered_set<details::linkage_t>;
@@ -314,6 +317,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     virtual void shutdown_finish() noexcept;
+    virtual void shutdown_start() noexcept;
 
     /* brief strart releasing acquired resources
      *
@@ -326,6 +330,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void shutdown_continue() noexcept;
 
+    /** \brief finializes initialization  */
+    virtual void init_start() noexcept;
+
     /*  starts initialization
      *
      * Some resources might be acquired synchronously, if needed. If resources need
@@ -336,6 +343,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     void init_continue() noexcept;
+
+    /** \brief finializes initialization  */
+    virtual void init_finish() noexcept;
+
 
     virtual void init_subscribe(internal::initializer_plugin_t& plugin) noexcept;
 
@@ -352,11 +363,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief current actor state */
     state_t state;
 
-    actor_config_t::callback_t start_callback;
   protected:
-
-    /** \brief finializes initialization  */
-    virtual void init_finish() noexcept;
 
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */

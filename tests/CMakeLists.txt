@@ -27,9 +27,9 @@ add_executable(011-ping_pong 011-ping_pong.cpp)
 target_link_libraries(011-ping_pong ${rotor_TEST_LIBS})
 add_test(011-ping_pong "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/011-ping_pong")
 
-#add_executable(012-actor-lifetime 012-actor-lifetime.cpp)
-#target_link_libraries(012-actor-lifetime ${rotor_TEST_LIBS})
-#add_test(012-actor-lifetime "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/012-actor-lifetime")
+add_executable(012-actor-lifetime 012-actor-lifetime.cpp)
+target_link_libraries(012-actor-lifetime ${rotor_TEST_LIBS})
+add_test(012-actor-lifetime "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/012-actor-lifetime")
 
 #add_executable(013-observer 013-observer.cpp)
 #target_link_libraries(013-observer ${rotor_TEST_LIBS})

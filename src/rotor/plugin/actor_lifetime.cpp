@@ -13,11 +13,11 @@ using namespace rotor::internal;
 
 bool actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
-    actor->state = state_t::INITIALIZING;
 
     if (!actor_->address) {
         actor_->address = create_address();
     }
+    actor->init_start();
     return plugin_t::activate(actor_);
 }
 
@@ -29,7 +29,6 @@ bool actor_lifetime_plugin_t::deactivate() noexcept {
         req.reset();
     }
 
-    actor->get_state() = state_t::SHUTTED_DOWN;
     actor->shutdown_finish();
     return plugin_t::deactivate();
 }

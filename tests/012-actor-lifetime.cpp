@@ -15,43 +15,47 @@ static std::uint32_t destroyed = 0;
 
 struct sample_actor_t : public r::actor_base_t {
     std::uint32_t event_current;
-    std::uint32_t event_init;
+    std::uint32_t event_init_start;
+    std::uint32_t event_init_finish;
     std::uint32_t event_start;
-    std::uint32_t event_shutdown;
-    std::uint32_t event_shutingdown;
+    std::uint32_t event_shutdown_start;
+    std::uint32_t event_shutdown_finish;
 
     r::state_t &get_state() noexcept { return state; }
 
     sample_actor_t(r::actor_config_t &config_) : r::actor_base_t{config_} {
         event_current = 1;
-        event_init = 0;
+        event_init_start = 0;
+        event_init_finish = 0;
         event_start = 0;
-        event_shutdown = 0;
-        event_shutingdown = 0;
+        event_shutdown_start = 0;
+        event_shutdown_finish = 0;
     }
     ~sample_actor_t() override { ++destroyed; }
 
-    void on_initialize(r::message::init_request_t &msg) noexcept override {
-        event_init = event_current++;
-        r::actor_base_t::on_initialize(msg);
+    void init_start() noexcept override {
+        event_init_start = event_current++;
+        r::actor_base_t::init_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        event_start = event_current++;
-        r::actor_base_t::on_start(msg);
+    void init_finish() noexcept override {
+        event_init_finish = event_current++;
+        r::actor_base_t::init_finish();
     }
+
+    void on_start() noexcept override{
+        event_start = event_current++;
+        r::actor_base_t::on_start();
+    }
+
 
     void shutdown_start() noexcept override {
+        event_shutdown_start = event_current++;
         r::actor_base_t::shutdown_start();
-        if (state == r::state_t::SHUTTING_DOWN) {
-            event_shutingdown = event_current++;
-        }
     }
 
     void shutdown_finish() noexcept override {
-        if (state == r::state_t::SHUTTED_DOWN) {
-            event_shutdown = event_current++;
-        }
+        event_shutdown_finish = event_current++;
         r::actor_base_t::shutdown_finish();
     }
 };
@@ -118,13 +122,14 @@ TEST_CASE("actor litetimes", "[actor]") {
     REQUIRE(act->get_state() == r::state_t::OPERATIONAL);
 
     auto actor_addr = act->get_address();
-    act->send<r::payload::shutdown_trigger_t>(actor_addr, actor_addr);
+    act->do_shutdown();
     sup->do_process();
-    REQUIRE(act->event_current == 5);
-    REQUIRE(act->event_shutdown == 4);
-    REQUIRE(act->event_shutingdown == 3);
-    REQUIRE(act->event_start == 2);
-    REQUIRE(act->event_init == 1);
+    CHECK(act->event_current == 6);
+    CHECK(act->event_shutdown_finish == 5);
+    CHECK(act->event_shutdown_start == 4);
+    CHECK(act->event_start == 3);
+    CHECK(act->event_init_finish == 2);
+    CHECK(act->event_init_start == 1);
 
     REQUIRE(destroyed == 0);
     REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);

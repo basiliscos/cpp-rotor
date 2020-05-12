@@ -25,7 +25,5 @@ bool starter_plugin_t::handle_init(message::init_request_t*) noexcept {
 
 
 void starter_plugin_t::on_start(message::start_trigger_t&) noexcept {
-    actor->state = state_t::OPERATIONAL;
-    auto& callback = actor->start_callback;
-    if (callback) callback(*actor);
+    actor->on_start();
 }

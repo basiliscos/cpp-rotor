@@ -40,10 +40,6 @@ struct actor_config_t {
 
     unlink_policy_t unlink_policy = unlink_policy_t::ignore;
 
-    callback_t init_finish;
-    callback_t start_callback;
-    callback_t shutdown_finish;
-
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
     ~actor_config_t() {
         for(auto it: plugins) {
@@ -107,14 +103,6 @@ template <typename Actor> struct actor_config_builder_t {
 
     builder_t &&unlink_policy(const unlink_policy_t &policy) && noexcept {
         config.unlink_policy = policy;
-        return std::move(*static_cast<builder_t *>(this));
-    }
-
-    template<typename Callback> builder_t && on_start(Callback&& callback) && noexcept {
-        config.start_callback = [callback = std::forward<Callback>(callback)](auto& actor) noexcept {
-            Actor& typed = static_cast<Actor&>(actor);
-            (typed.*callback)();
-        };
         return std::move(*static_cast<builder_t *>(this));
     }
 

@@ -29,7 +29,8 @@ struct pinger_t : public r::actor_base_t {
         plugin.subscribe_actor(&pinger_t::on_pong);
     }
 
-    void on_start() noexcept {
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         ++ping_sent;
         send<ping_t>(ponger_addr);
     }
@@ -70,7 +71,6 @@ TEST_CASE("ping-pong", "[supervisor]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto pinger = sup->create_actor<pinger_t>()
             .timeout(rt::default_timeout)
-            .on_start(&pinger_t::on_start)
             .finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
