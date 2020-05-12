@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -53,7 +53,7 @@ template <typename T> struct message_t : public message_base_t {
 
     /** \brief forwards `args` for payload construction */
     template <typename... Args>
-    message_t(const address_ptr_t &addr, Args... args)
+    message_t(const address_ptr_t &addr, Args &&... args)
         : message_base_t{message_type, addr}, payload{std::forward<Args>(args)...} {}
 
     /** \brief user-defined payload */

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -20,7 +20,7 @@ namespace asio {
 namespace asio = boost::asio;
 namespace sys = boost::system;
 
-template <typename Actor, typename Handler, typename ErrHandler> struct forwarder_t;
+template <typename Actor, typename Handler, typename ArgsCount, typename ErrHandler> struct forwarder_t;
 
 /** \struct supervisor_asio_t
  *

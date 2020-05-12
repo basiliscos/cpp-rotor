@@ -3,9 +3,10 @@ add_library(rotor_test_lib
     supervisor_test.cpp
     test-main.cpp
 )
-target_link_libraries(rotor_test_lib rotor_core)
+target_link_libraries(rotor_test_lib rotor::core)
+add_library(rotor::test ALIAS rotor_test_lib)
 
-set(rotor_TEST_LIBS rotor_core rotor_test_lib)
+set(rotor_TEST_LIBS rotor::core rotor::test)
 
 add_executable(007-plugins 007-plugins.cpp)
 target_link_libraries(007-plugins ${rotor_TEST_LIBS})
@@ -80,7 +81,7 @@ add_test(012-actor-lifetime "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/012-actor-lifetim
 #add_test(030-registry "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/030-registry")
 
 if (BUILD_BOOST_ASIO)
-    set(rotor_BOOTS_TEST_LIBS rotor_test_lib rotor_asio)
+    set(rotor_BOOTS_TEST_LIBS rotor::test rotor::asio)
 
     add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
     target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})
@@ -105,22 +106,21 @@ if (BUILD_WX)
     include(${wxWidgets_USE_FILE})
 
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
-    target_link_libraries(121-wx_ping_ping rotor_test_lib rotor_wx ${wxWidgets_LIBRARIES})
+    target_link_libraries(121-wx_ping_ping rotor::test rotor::wx ${wxWidgets_LIBRARIES})
     add_test(121-wx_ping_ping "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/121-wx_ping_ping")
 
     add_executable(122-wx_timer 122-wx_timer.cpp)
-    target_link_libraries(122-wx_timer rotor_test_lib rotor_wx ${wxWidgets_LIBRARIES})
+    target_link_libraries(122-wx_timer rotor::test rotor::wx ${wxWidgets_LIBRARIES})
     add_test(122-wx_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/122-wx_timer")
 endif()
 
 
 if (BUILD_EV)
     add_executable(131-ev_ping-pong 131-ev_ping-pong.cpp)
-    target_link_libraries(131-ev_ping-pong rotor_test_lib rotor_ev)
+    target_link_libraries(131-ev_ping-pong rotor::test rotor::ev)
     add_test(131-ev_ping-pong "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/131-ev_ping-pong")
 
     add_executable(132-ev_timer 132-ev_timer.cpp)
-    target_link_libraries(132-ev_timer rotor_test_lib rotor_ev)
+    target_link_libraries(132-ev_timer rotor::test rotor::ev)
     add_test(132-ev_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/132-ev_timer")
-
 endif()

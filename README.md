@@ -33,6 +33,20 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.08 (12-Apr-2020)
+
+- [bugfix] message's arguments are more correctly forwarded
+- [bugfix] actor's arguments are more correctly forwarded in actor's
+creation in`rotor::supervisor_t` and `rotor::asio::supervisor_asio_t`
+- [bugfix] `rotor::asio::forwarder_t` now more correctly dispatches
+`boost::asio` events to actor methods; e.g. it works correctly now with
+`async_accept` method of `socket_acceptor`
+
+
+### 0.07 (02-Apr-2020)
+
+- [improvement] more modern cmake usage
+
 
 ### 0.06 (09-Nov-2019)
 

@@ -33,6 +33,8 @@ struct sample_supervisor_t : public rt::supervisor_test_t {
 
     virtual void init_start() noexcept override {
         child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        auto timeout = r::pt::milliseconds{1};
+        child = create_actor<sample_actor_t>(timeout);
     }
 
     child_ptr_t child;
@@ -106,7 +108,13 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
 TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     r::system_context_t system_context;
 
+<<<<<<< HEAD
     auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout).finish();
+=======
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, locality);
+    auto sup = system_context.create_supervisor<sample_supervisor_t>(nullptr, config);
+>>>>>>> master
     auto &act = sup->child;
 
     sup->do_process();

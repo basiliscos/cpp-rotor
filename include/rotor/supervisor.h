@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -25,10 +25,6 @@ namespace rotor {
 namespace pt = boost::posix_time;
 
 struct supervisor_t;
-
-/** \brief constucts actor on the supervisor */
-template <typename Actor, typename Supervisor, typename... Args>
-intrusive_ptr_t<Actor> make_actor(Supervisor &sup, Args... args);
 
 /** \struct supervisor_t
  *  \brief supervisor is responsible for managing actors (workers) lifetime
@@ -248,14 +244,6 @@ struct supervisor_t : public actor_base_t {
         using builder_t = typename Actor::template config_builder_t<Actor>;
         assert(manager && "children_manager_plugin_t should be already inited");
         return builder_t([this](auto &actor) { manager->create_child(actor); }, this);
-#if 0
-                actor->do_initialize(context);
-                auto &timeout = actor->get_init_timeout();
-                send<payload::create_actor_t>(get_address(), actor, timeout);
-                auto behavior = static_cast<supervisor_behavior_t *>(supervisor->behavior);
-                behavior->on_create_child(actor->get_address());
-#endif
-
     }
 
     /** \brief returns system context */

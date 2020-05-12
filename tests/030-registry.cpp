@@ -48,6 +48,18 @@ struct sample_actor_t : public r::actor_base_t {
     }
 };
 
+struct sample_supervisor_t : public rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    void init_start() noexcept override {
+        auto timeout = r::pt::milliseconds{10};
+        registry = create_actor<r::registry_t>(timeout);
+        rt::supervisor_test_t::init_start();
+    }
+
+    r::actor_ptr_t registry;
+};
+
 TEST_CASE("registry", "[registry]") {
     r::system_context_t system_context;
 
@@ -124,4 +136,18 @@ TEST_CASE("registry", "[registry]") {
 
     sup->do_shutdown();
     sup->do_process();
+}
+
+TEST_CASE("common case for registry usage", "[registry]") {
+    r::system_context_t system_context;
+
+    auto timeout = r::pt::milliseconds{1};
+    rt::supervisor_config_test_t config(timeout, nullptr);
+    auto sup = system_context.create_supervisor<sample_supervisor_t>(nullptr, config);
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
