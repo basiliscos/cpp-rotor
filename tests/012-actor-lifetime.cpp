@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "actor_test.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -58,6 +59,99 @@ struct sample_actor_t : public r::actor_base_t {
         event_shutdown_finish = event_current++;
         r::actor_base_t::shutdown_finish();
     }
+};
+
+struct custom_child_manager_t: public r::internal::children_manager_plugin_t {
+    r::address_ptr_t fail_addr;
+    std::error_code fail_ec;
+    void on_shutdown_fail(r::actor_base_t &actor, const std::error_code &ec) noexcept {
+        fail_addr = actor.get_address();
+        fail_ec = ec;
+    }
+};
+
+template <typename Actor> struct custom_sup_config_builder_t : public rt::supervisor_test_config_builder_t<Actor> {
+    using parent_t = rt::supervisor_test_config_builder_t<Actor>;
+    using parent_t::parent_t;
+
+    using plugins_list_t = std::tuple<
+        r::internal::locality_plugin_t,
+        r::internal::actor_lifetime_plugin_t,
+        r::internal::subscription_plugin_t,
+        r::internal::init_shutdown_plugin_t,
+        r::internal::initializer_plugin_t,
+        r::internal::starter_plugin_t,
+        r::internal::subscription_support_plugin_t,
+        custom_child_manager_t
+    >;
+};
+
+struct custom_supervisor_t: rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
+    template <typename Supervisor> using config_builder_t = custom_sup_config_builder_t<Supervisor>;
+};
+
+#if 0
+struct fail_init_plugin_t: public r::plugin_t {
+    bool activate(r::actor_base_t* actor_) noexcept override {
+        actor_->install_plugin(*this, r::slot_t::INIT);
+        return r::plugin_t::activate(actor_);
+    }
+
+    bool handle_init(r::message::init_request_t* ) noexcept override {
+        return false;
+    }
+};
+
+template <typename Actor> struct fail_init_config_builder_t : public r::actor_config_builder_t<Actor> {
+    using parent_t = r::actor_config_builder_t<Actor>;
+    using parent_t::parent_t;
+
+    using plugins_list_t = std::tuple<
+        r::internal::actor_lifetime_plugin_t,
+        r::internal::subscription_plugin_t,
+        r::internal::init_shutdown_plugin_t,
+        r::internal::initializer_plugin_t,
+        r::internal::starter_plugin_t,
+        fail_init_plugin_t
+    >;
+};
+
+struct fail_init_actor_t: public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+    template <typename Actor> using config_builder_t = fail_init_config_builder_t<Actor>;
+};
+#endif
+
+struct fail_shutdown_plugin_t: public r::plugin_t {
+    bool allow_shutdown = false;
+    bool activate(r::actor_base_t* actor_) noexcept override {
+        actor_->install_plugin(*this, r::slot_t::SHUTDOWN);
+        return r::plugin_t::activate(actor_);
+    }
+
+    bool handle_shutdown(r::message::shutdown_request_t* ) noexcept override {
+        return allow_shutdown;
+    }
+};
+
+template <typename Actor> struct fail_shutdown_config_builder_t : public r::actor_config_builder_t<Actor> {
+    using parent_t = r::actor_config_builder_t<Actor>;
+    using parent_t::parent_t;
+
+    using plugins_list_t = std::tuple<
+        r::internal::actor_lifetime_plugin_t,
+        r::internal::subscription_plugin_t,
+        r::internal::init_shutdown_plugin_t,
+        r::internal::initializer_plugin_t,
+        r::internal::starter_plugin_t,
+        fail_shutdown_plugin_t
+    >;
+};
+
+struct fail_shutdown_actor_t: public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+    template <typename Actor> using config_builder_t = fail_shutdown_config_builder_t<Actor>;
 };
 
 #if 0
@@ -145,34 +239,46 @@ TEST_CASE("actor litetimes", "[actor]") {
     REQUIRE(sup->get_subscription().size() == 0);
 }
 
-#if 0
 TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<fail_shutdown_sup>().timeout(rt::default_timeout).finish();
-    auto act = sup->create_actor<fail_shutdown_actor>().timeout(rt::default_timeout).finish();
+    auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_shutdown_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
+    REQUIRE(sup->active_timers.size() == 0);
 
     act->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->active_timers.size() == 1);
+    REQUIRE(sup->active_timers.size() == 1); // "init child + shutdown children"
 
     sup->on_timer_trigger(*sup->active_timers.begin());
     sup->do_process();
 
     REQUIRE(sup->get_children().size() == 1);
-    REQUIRE(sup->fail_addr == act->get_address());
-    REQUIRE(sup->fail_reason.value() == static_cast<int>(r::error_code_t::request_timeout));
+    CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    act->allow_shutdown = true;
-    act->do_shutdown();
-    sup->do_process();
-    REQUIRE(sup->get_children().size() == 0);
+    auto cm_plugin = static_cast<custom_child_manager_t*>(sup->get_inactive_plugins().front());
+
+    REQUIRE(cm_plugin->fail_addr == act->get_address());
+    REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
+
+    auto fail_plugin = static_cast<fail_shutdown_plugin_t*>(act->get_inactive_plugins().front());
+    fail_plugin->allow_shutdown = true;
+    act->shutdown_continue();
 
     sup->do_shutdown();
     sup->do_process();
+    REQUIRE(sup->get_children().size() == 0);
+
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_leader_queue().size() == 0);
+    CHECK(sup->get_points().size() == 0);
+    CHECK(sup->get_subscription().size() == 0);
+
 }
+#if 0
 
 TEST_CASE("fail initialize test", "[actor]") {
     r::system_context_t system_context;

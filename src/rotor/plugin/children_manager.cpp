@@ -28,6 +28,7 @@ bool children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
 bool children_manager_plugin_t::deactivate() noexcept {
     assert(actors_map.size() == 1);
     actors_map.clear();
+    initializing_actors.clear();
     return plugin_t::deactivate();
 }
 
@@ -100,7 +101,7 @@ void children_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t&
             sup.do_shutdown();
         } else {
             // do not do shutdown-request on self
-            assert(actor->state == state_t::OPERATIONAL);
+            assert((actor->state != state_t::SHUTTING_DOWN) || (actor->state != state_t::SHUTTED_DOWN));
             actor->state = state_t::SHUTTING_DOWN;
             unsubscribe_all();
             actor->shutdown_continue();
