@@ -124,7 +124,14 @@ struct fail_init_actor_t: public r::actor_base_t {
 #endif
 
 struct fail_shutdown_plugin_t: public r::plugin_t {
+    bool allow_init = false;
     bool allow_shutdown = false;
+
+    static const void* class_identity;
+    const void* identity() const noexcept override {
+        return class_identity;
+    }
+
     bool activate(r::actor_base_t* actor_) noexcept override {
         actor_->install_plugin(*this, r::slot_t::SHUTDOWN);
         return r::plugin_t::activate(actor_);
@@ -134,6 +141,8 @@ struct fail_shutdown_plugin_t: public r::plugin_t {
         return allow_shutdown;
     }
 };
+
+const void* fail_shutdown_plugin_t::class_identity = static_cast<const void *>(typeid(fail_shutdown_plugin_t).name());
 
 template <typename Actor> struct fail_shutdown_config_builder_t : public r::actor_config_builder_t<Actor> {
     using parent_t = r::actor_config_builder_t<Actor>;
@@ -245,6 +254,8 @@ TEST_CASE("fail shutdown test", "[actor]") {
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_shutdown_actor_t>().timeout(rt::default_timeout).finish();
 
+    auto fail_plugin = static_cast<fail_shutdown_plugin_t*>(act->get_plugin(fail_shutdown_plugin_t::class_identity));
+
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 0);
 
@@ -263,7 +274,6 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(cm_plugin->fail_addr == act->get_address());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
 
-    auto fail_plugin = static_cast<fail_shutdown_plugin_t*>(act->get_inactive_plugins().front());
     fail_plugin->allow_shutdown = true;
     act->shutdown_continue();
 

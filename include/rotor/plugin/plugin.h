@@ -19,6 +19,8 @@ struct plugin_t {
     plugin_t() = default;
     virtual ~plugin_t();
 
+    virtual const void* identity() const noexcept = 0;
+
     virtual bool activate(actor_base_t* actor) noexcept;
     virtual bool deactivate() noexcept;
 

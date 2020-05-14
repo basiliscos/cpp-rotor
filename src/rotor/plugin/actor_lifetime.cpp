@@ -7,9 +7,16 @@
 #include "rotor/plugin/actor_lifetime.h"
 #include "rotor/actor_base.h"
 #include "rotor/supervisor.h"
+#include <typeinfo>
 
 using namespace rotor;
 using namespace rotor::internal;
+
+const void* actor_lifetime_plugin_t::class_identity = static_cast<const void *>(typeid(actor_lifetime_plugin_t).name());
+
+const void* actor_lifetime_plugin_t::identity() const noexcept {
+    return class_identity;
+}
 
 bool actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;

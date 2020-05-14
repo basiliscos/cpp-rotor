@@ -30,6 +30,9 @@ struct children_manager_plugin_t: public plugin_t {
     /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
     using initializing_actors_t = std::unordered_set<address_ptr_t>;
 
+    static const void* class_identity;
+    const void* identity() const noexcept override;
+
     bool activate(actor_base_t* actor) noexcept override;
     bool deactivate() noexcept override;
 

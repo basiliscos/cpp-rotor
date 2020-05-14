@@ -11,6 +11,12 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+const void* children_manager_plugin_t::class_identity = static_cast<const void *>(typeid(children_manager_plugin_t).name());
+
+const void* children_manager_plugin_t::identity() const noexcept {
+    return class_identity;
+}
+
 bool children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     static_cast<supervisor_t&>(*actor_).manager = this;

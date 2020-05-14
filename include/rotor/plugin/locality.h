@@ -13,6 +13,9 @@ namespace rotor::internal {
 struct locality_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
+    static const void* class_identity;
+    const void* identity() const noexcept override;
+
     bool activate(actor_base_t* actor) noexcept override;
 };
 

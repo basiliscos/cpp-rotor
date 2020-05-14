@@ -10,6 +10,12 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+const void* init_shutdown_plugin_t::class_identity = static_cast<const void *>(typeid(init_shutdown_plugin_t).name());
+
+const void* init_shutdown_plugin_t::identity() const noexcept {
+    return class_identity;
+}
+
 bool init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     subscribe(&init_shutdown_plugin_t::on_init);

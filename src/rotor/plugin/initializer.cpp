@@ -10,6 +10,12 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+const void* initializer_plugin_t::class_identity = static_cast<const void *>(typeid(initializer_plugin_t).name());
+
+const void* initializer_plugin_t::identity() const noexcept {
+    return class_identity;
+}
+
 bool initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->install_plugin(*this, slot_t::INIT);

@@ -15,6 +15,7 @@ namespace test {
 struct actor_test_t: public actor_base_t {
     using actor_base_t::actor_base_t;
 
+    plugin_t* get_plugin(const void* identity) const noexcept;
     auto get_active_plugins() noexcept -> actor_config_t::plugins_t& { return this->active_plugins; }
     auto get_inactive_plugins() noexcept -> actor_config_t::plugins_t& { return this->inactive_plugins; }
 };

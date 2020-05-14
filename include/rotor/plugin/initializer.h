@@ -11,6 +11,10 @@
 namespace rotor::internal {
 
 struct initializer_plugin_t: public plugin_t {
+
+    static const void* class_identity;
+    const void* identity() const noexcept override;
+
     bool activate(actor_base_t* actor) noexcept override;
     bool deactivate() noexcept override;
 

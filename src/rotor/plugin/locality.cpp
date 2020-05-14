@@ -10,6 +10,12 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+const void* locality_plugin_t::class_identity = static_cast<const void *>(typeid(locality_plugin_t).name());
+
+const void* locality_plugin_t::identity() const noexcept {
+    return class_identity;
+}
+
 bool locality_plugin_t::activate(actor_base_t* actor_) noexcept {
     auto& sup =static_cast<supervisor_t&>(*actor_);
     auto& address = sup.address;
