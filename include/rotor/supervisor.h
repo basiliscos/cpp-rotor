@@ -278,7 +278,7 @@ struct supervisor_t : public actor_base_t {
     supervisor_t *locality_leader;
 
     internal::subscription_support_plugin_t* subscription_support;
-    internal::children_manager_plugin_t* manager;
+    internal::child_manager_plugin_t* manager;
 
     /** \brief reaction on child-actors termination */
     supervisor_policy_t policy;

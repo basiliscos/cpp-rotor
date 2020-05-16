@@ -4,26 +4,26 @@
 // Distributed under the MIT Software License
 //
 
-#include "rotor/plugin/children_manager.h"
+#include "rotor/plugin/child_manager.h"
 #include "rotor/supervisor.h"
 //#include <iostream>
 
 using namespace rotor;
 using namespace rotor::internal;
 
-const void* children_manager_plugin_t::class_identity = static_cast<const void *>(typeid(children_manager_plugin_t).name());
+const void* child_manager_plugin_t::class_identity = static_cast<const void *>(typeid(child_manager_plugin_t).name());
 
-const void* children_manager_plugin_t::identity() const noexcept {
+const void* child_manager_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
+bool child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     static_cast<supervisor_t&>(*actor_).manager = this;
-    subscribe(&children_manager_plugin_t::on_create);
-    subscribe(&children_manager_plugin_t::on_init);
-    subscribe(&children_manager_plugin_t::on_shutdown_trigger);
-    subscribe(&children_manager_plugin_t::on_shutdown_confirm);
+    subscribe(&child_manager_plugin_t::on_create);
+    subscribe(&child_manager_plugin_t::on_init);
+    subscribe(&child_manager_plugin_t::on_shutdown_trigger);
+    subscribe(&child_manager_plugin_t::on_shutdown_confirm);
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
     actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
@@ -31,14 +31,14 @@ bool children_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 
-bool children_manager_plugin_t::deactivate() noexcept {
+bool child_manager_plugin_t::deactivate() noexcept {
     assert(actors_map.size() == 1);
     actors_map.clear();
     initializing_actors.clear();
     return plugin_t::deactivate();
 }
 
-void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
+void child_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.address);
     assert(it_actor != actors_map.end());
     actors_map.erase(it_actor);
@@ -47,7 +47,7 @@ void children_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
     }
 }
 
-void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
+void child_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     child->do_initialize(sup.get_context());
     auto &timeout = child->get_init_timeout();
@@ -58,7 +58,7 @@ void children_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept 
     }
 }
 
-void children_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
+void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto actor = message.payload.actor;
     auto actor_address = actor->get_address();
@@ -66,7 +66,7 @@ void children_manager_plugin_t::on_create(message::create_actor_t &message) noex
     sup.template request<payload::initialize_actor_t>(actor_address, actor_address).send(message.payload.timeout);
 }
 
-void children_manager_plugin_t::on_init(message::init_response_t &message) noexcept {
+void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept {
     auto &address = message.payload.req->payload.request_payload.actor_address;
     auto &ec = message.payload.ec;
 
@@ -98,7 +98,7 @@ void children_manager_plugin_t::on_init(message::init_response_t &message) noexc
     }
 }
 
-void children_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept {
+void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto &source_addr = message.payload.actor_address;
     if (source_addr == sup.address) {
@@ -122,12 +122,12 @@ void children_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t&
     }
 }
 
-void children_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept {
+void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept {
     actor.get_supervisor().get_context()->on_error(ec);
 }
 
 
-void children_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& message) noexcept {
+void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& message) noexcept {
     auto &source_addr = message.payload.req->payload.request_payload.actor_address;
     auto &actor_state = actors_map.at(source_addr);
     actor_state.shutdown_requesting = false;
@@ -154,16 +154,16 @@ void children_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t
     }
 }
 
-bool children_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
+bool child_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
     return initializing_actors.empty();
 }
 
-bool children_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
+bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
     unsubscribe_all();
     return actors_map.size() == 1; /* only own actor left, which will be handled differently */
 }
 
-void children_manager_plugin_t::unsubscribe_all() noexcept {
+void child_manager_plugin_t::unsubscribe_all() noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     for(auto& it: actors_map) {
         auto& actor_state = it.second;

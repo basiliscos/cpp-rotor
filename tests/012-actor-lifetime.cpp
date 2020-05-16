@@ -61,7 +61,7 @@ struct sample_actor_t : public r::actor_base_t {
     }
 };
 
-struct custom_child_manager_t: public r::internal::children_manager_plugin_t {
+struct custom_child_manager_t: public r::internal::child_manager_plugin_t {
     r::address_ptr_t fail_addr;
     std::error_code fail_ec;
     void on_shutdown_fail(r::actor_base_t &actor, const std::error_code &ec) noexcept {

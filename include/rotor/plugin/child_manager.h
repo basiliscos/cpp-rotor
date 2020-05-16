@@ -11,7 +11,7 @@
 
 namespace rotor::internal {
 
-struct children_manager_plugin_t: public plugin_t {
+struct child_manager_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
 

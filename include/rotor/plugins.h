@@ -14,7 +14,7 @@
 #include "plugin/subscription.h"
 
 // supervisors plugins
-#include "plugin/children_manager.h"
+#include "plugin/child_manager.h"
 #include "plugin/locality.h"
 #include "plugin/subscription_support.h"
 

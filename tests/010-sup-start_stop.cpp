@@ -26,7 +26,7 @@ template <typename Actor> struct sample_config_builder_t : public r::supervisor_
         init_shutdown_plugin_t,                 /* use custom */
         r::internal::starter_plugin_t,
         r::internal::subscription_support_plugin_t,
-        r::internal::children_manager_plugin_t
+        r::internal::child_manager_plugin_t
     >;
 };
 
