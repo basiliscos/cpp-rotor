@@ -51,14 +51,6 @@ struct actor_config_t {
 template <typename Actor> struct actor_config_builder_t {
     using builder_t = typename Actor::template config_builder_t<Actor>;
     using config_t = typename Actor::config_t;
-    using plugins_list_t = std::tuple<
-        internal::actor_lifetime_plugin_t,
-        internal::subscription_plugin_t,
-        internal::init_shutdown_plugin_t,
-        internal::initializer_plugin_t,
-        internal::starter_plugin_t
-    >;
-
     using actor_ptr_t = intrusive_ptr_t<Actor>;
     using install_action_t = std::function<void(actor_ptr_t &)>;
 
@@ -106,15 +98,6 @@ template <typename Actor> struct actor_config_builder_t {
         return std::move(*static_cast<builder_t *>(this));
     }
 
-/*
-    template<typename Plugin>
-    builder_t&& plugin() && noexcept {
-        instantiate_plugins();
-        instantiate_plugin<Plugin>();
-        return std::move(*static_cast<builder_t *>(this));
-    }
-*/
-
     virtual bool validate() noexcept {
         instantiate_plugins();
         if (mask) {
@@ -132,7 +115,7 @@ template <typename Actor> struct actor_config_builder_t {
 private:
     void instantiate_plugins() noexcept {
         if (!plugins_expanded) {
-            using plugins_t = typename builder_t::plugins_list_t;
+            using plugins_t = typename Actor::plugins_list_t;
             add_plugin<plugins_t>();
             plugins_expanded = true;
         }

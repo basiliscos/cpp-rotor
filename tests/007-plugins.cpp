@@ -20,29 +20,17 @@ struct sample_plugin1_t;
 struct buggy_plugin_t;
 struct sample_plugin2_t;
 
-template <typename Actor> struct sample_config_builder_t : public r::actor_config_builder_t<Actor> {
-    using parent_t = r::actor_config_builder_t<Actor>;
-    using parent_t::parent_t;
-    using plugins_list_t = std::tuple<sample_plugin1_t, sample_plugin2_t>;
-};
-
 struct sample_actor_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
-    template <typename Actor> using config_builder_t = sample_config_builder_t<Actor>;
+    using plugins_list_t = std::tuple<sample_plugin1_t, sample_plugin2_t>;
 
     std::uint32_t init_seq = 0;
     std::uint32_t deinit_seq = 0;
 };
 
-template <typename Actor> struct sample_config_builder2_t : public sample_config_builder_t<Actor> {
-    using parent_t = sample_config_builder_t<Actor>;
-    using parent_t::parent_t;
-    using plugins_list_t = std::tuple<sample_plugin1_t, buggy_plugin_t, sample_plugin2_t>;
-};
-
 struct sample_actor2_t : public sample_actor_t {
     using sample_actor_t::sample_actor_t;
-    template <typename Actor> using config_builder_t = sample_config_builder2_t<Actor>;
+    using plugins_list_t = std::tuple<sample_plugin1_t, buggy_plugin_t, sample_plugin2_t>;
 };
 
 

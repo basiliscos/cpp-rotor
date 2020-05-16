@@ -66,6 +66,16 @@ struct supervisor_t;
 struct supervisor_t : public actor_base_t {
 
     using config_t = supervisor_config_t;
+    using plugins_list_t = std::tuple<
+        internal::locality_plugin_t,
+        internal::actor_lifetime_plugin_t,
+        internal::subscription_plugin_t,
+        internal::init_shutdown_plugin_t,
+        internal::initializer_plugin_t,
+        internal::starter_plugin_t,
+        internal::subscription_support_plugin_t,
+        internal::child_manager_plugin_t
+    >;
     template <typename Supervisor> using config_builder_t = supervisor_config_builder_t<Supervisor>;
 
     /** \brief constructs new supervisor with optional parent supervisor */

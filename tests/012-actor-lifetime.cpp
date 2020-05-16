@@ -70,10 +70,8 @@ struct custom_child_manager_t: public r::internal::child_manager_plugin_t {
     }
 };
 
-template <typename Actor> struct custom_sup_config_builder_t : public rt::supervisor_test_config_builder_t<Actor> {
-    using parent_t = rt::supervisor_test_config_builder_t<Actor>;
-    using parent_t::parent_t;
-
+struct custom_supervisor_t: rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
     using plugins_list_t = std::tuple<
         r::internal::locality_plugin_t,
         r::internal::actor_lifetime_plugin_t,
@@ -84,11 +82,6 @@ template <typename Actor> struct custom_sup_config_builder_t : public rt::superv
         r::internal::subscription_support_plugin_t,
         custom_child_manager_t
     >;
-};
-
-struct custom_supervisor_t: rt::supervisor_test_t {
-    using rt::supervisor_test_t::supervisor_test_t;
-    template <typename Supervisor> using config_builder_t = custom_sup_config_builder_t<Supervisor>;
 };
 
 #if 0
@@ -144,10 +137,8 @@ struct fail_shutdown_plugin_t: public r::plugin_t {
 
 const void* fail_shutdown_plugin_t::class_identity = static_cast<const void *>(typeid(fail_shutdown_plugin_t).name());
 
-template <typename Actor> struct fail_shutdown_config_builder_t : public r::actor_config_builder_t<Actor> {
-    using parent_t = r::actor_config_builder_t<Actor>;
-    using parent_t::parent_t;
-
+struct fail_shutdown_actor_t: public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
     using plugins_list_t = std::tuple<
         r::internal::actor_lifetime_plugin_t,
         r::internal::subscription_plugin_t,
@@ -156,11 +147,6 @@ template <typename Actor> struct fail_shutdown_config_builder_t : public r::acto
         r::internal::starter_plugin_t,
         fail_shutdown_plugin_t
     >;
-};
-
-struct fail_shutdown_actor_t: public rt::actor_test_t {
-    using rt::actor_test_t::actor_test_t;
-    template <typename Actor> using config_builder_t = fail_shutdown_config_builder_t<Actor>;
 };
 
 #if 0

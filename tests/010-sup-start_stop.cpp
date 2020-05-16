@@ -15,9 +15,9 @@ static std::uint32_t destroyed = 0;
 
 struct init_shutdown_plugin_t;
 
-template <typename Actor> struct sample_config_builder_t : public r::supervisor_config_builder_t<Actor> {
-    using parent_t = r::supervisor_config_builder_t<Actor>;
-    using parent_t::parent_t;
+
+struct sample_sup_t : public rt::supervisor_test_t {
+    using sup_base_t = rt::supervisor_test_t;
 
     using plugins_list_t = std::tuple<
         r::internal::locality_plugin_t,
@@ -28,13 +28,6 @@ template <typename Actor> struct sample_config_builder_t : public r::supervisor_
         r::internal::subscription_support_plugin_t,
         r::internal::child_manager_plugin_t
     >;
-};
-
-
-struct sample_sup_t : public rt::supervisor_test_t {
-    using sup_base_t = rt::supervisor_test_t;
-
-    template <typename Supervisor> using config_builder_t = sample_config_builder_t<Supervisor>;
 
     std::uint32_t initialized = 0;
     std::uint32_t init_invoked = 0;
