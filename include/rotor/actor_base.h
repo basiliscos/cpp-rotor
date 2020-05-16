@@ -355,7 +355,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual void init_finish() noexcept;
 
 
-    virtual void init_subscribe(internal::initializer_plugin_t& plugin) noexcept;
+    virtual void configure(plugin_t& plugin) noexcept;
 
 #if 0
     /** \brief removes the subscription point */

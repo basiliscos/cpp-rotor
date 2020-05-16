@@ -129,7 +129,7 @@ void actor_base_t::init_continue() noexcept {
 
 }
 
-void actor_base_t::init_subscribe(internal::initializer_plugin_t&) noexcept { }
+void actor_base_t::configure(plugin_t&) noexcept { }
 
 
 void actor_base_t::shutdown_continue() noexcept {

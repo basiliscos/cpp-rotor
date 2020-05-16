@@ -20,7 +20,7 @@ bool initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
-    actor->init_subscribe(*this);
+    actor->configure(*this);
     return plugin_t::activate(actor);
 }
 
