@@ -15,23 +15,17 @@ namespace rt = r::test;
 static std::uint32_t destroyed = 0;
 
 struct sample_actor_t : public r::actor_base_t {
-    std::uint32_t event_current;
-    std::uint32_t event_init_start;
-    std::uint32_t event_init_finish;
-    std::uint32_t event_start;
-    std::uint32_t event_shutdown_start;
-    std::uint32_t event_shutdown_finish;
+    std::uint32_t event_current = 1;
+    std::uint32_t event_init_start = 0;
+    std::uint32_t event_init_finish = 0;
+    std::uint32_t event_start = 0;
+    std::uint32_t event_shutdown_start = 0;
+    std::uint32_t event_shutdown_finish = 0;
 
     r::state_t &get_state() noexcept { return state; }
 
-    sample_actor_t(r::actor_config_t &config_) : r::actor_base_t{config_} {
-        event_current = 1;
-        event_init_start = 0;
-        event_init_finish = 0;
-        event_start = 0;
-        event_shutdown_start = 0;
-        event_shutdown_finish = 0;
-    }
+    using r::actor_base_t::actor_base_t;
+
     ~sample_actor_t() override { ++destroyed; }
 
     void init_start() noexcept override {
@@ -245,28 +239,18 @@ TEST_CASE("double shutdown test (actor)", "[actor]") {
     sup->do_process();
 }
 
-#if 0
 TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto act = sup->create_actor<double_shutdown_actor>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
 
     sup->do_shutdown();
     sup->do_shutdown();
-
-    sup->do_process();
-    REQUIRE(sup->active_timers.size() == 1);
-    REQUIRE(act->shutdown_starts == 1);
-
-    act->continue_shutdown();
     sup->do_process();
 
     REQUIRE(sup->get_children().size() == 0);
-
-    sup->do_shutdown();
-    sup->do_process();
+    REQUIRE(sup->active_timers.size() == 0);
 }
-#endif
