@@ -84,41 +84,9 @@ struct custom_supervisor_t: rt::supervisor_test_t {
     >;
 };
 
-#if 0
-struct fail_init_plugin_t: public r::plugin_t {
-    bool activate(r::actor_base_t* actor_) noexcept override {
-        actor_->install_plugin(*this, r::slot_t::INIT);
-        return r::plugin_t::activate(actor_);
-    }
-
-    bool handle_init(r::message::init_request_t* ) noexcept override {
-        return false;
-    }
-};
-
-template <typename Actor> struct fail_init_config_builder_t : public r::actor_config_builder_t<Actor> {
-    using parent_t = r::actor_config_builder_t<Actor>;
-    using parent_t::parent_t;
-
-    using plugins_list_t = std::tuple<
-        r::internal::actor_lifetime_plugin_t,
-        r::internal::subscription_plugin_t,
-        r::internal::init_shutdown_plugin_t,
-        r::internal::initializer_plugin_t,
-        r::internal::starter_plugin_t,
-        fail_init_plugin_t
-    >;
-};
-
-struct fail_init_actor_t: public r::actor_base_t {
-    using r::actor_base_t::actor_base_t;
-    template <typename Actor> using config_builder_t = fail_init_config_builder_t<Actor>;
-};
-#endif
-
-struct fail_shutdown_plugin_t: public r::plugin_t {
-    bool allow_init = false;
-    bool allow_shutdown = false;
+struct fail_plugin_t: public r::plugin_t {
+    static bool allow_init;
+    bool allow_shutdown = true;
 
     static const void* class_identity;
     const void* identity() const noexcept override {
@@ -126,8 +94,13 @@ struct fail_shutdown_plugin_t: public r::plugin_t {
     }
 
     bool activate(r::actor_base_t* actor_) noexcept override {
+        actor_->install_plugin(*this, r::slot_t::INIT);
         actor_->install_plugin(*this, r::slot_t::SHUTDOWN);
         return r::plugin_t::activate(actor_);
+    }
+
+    bool handle_init(r::message::init_request_t* ) noexcept override {
+        return allow_init;
     }
 
     bool handle_shutdown(r::message::shutdown_request_t* ) noexcept override {
@@ -135,9 +108,11 @@ struct fail_shutdown_plugin_t: public r::plugin_t {
     }
 };
 
-const void* fail_shutdown_plugin_t::class_identity = static_cast<const void *>(typeid(fail_shutdown_plugin_t).name());
+bool fail_plugin_t::allow_init = true;
 
-struct fail_shutdown_actor_t: public rt::actor_test_t {
+const void* fail_plugin_t::class_identity = static_cast<const void *>(typeid(fail_plugin_t).name());
+
+struct fail_actor_t: public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
     using plugins_list_t = std::tuple<
         r::internal::actor_lifetime_plugin_t,
@@ -145,23 +120,11 @@ struct fail_shutdown_actor_t: public rt::actor_test_t {
         r::internal::init_shutdown_plugin_t,
         r::internal::initializer_plugin_t,
         r::internal::starter_plugin_t,
-        fail_shutdown_plugin_t
+        fail_plugin_t
     >;
 };
 
 #if 0
-struct fail_shutdown_actor : public r::actor_base_t {
-    using r::actor_base_t::actor_base_t;
-
-    bool allow_shutdown = false;
-
-    void shutdown_start() noexcept override {
-        if (allow_shutdown) {
-            r::actor_base_t::shutdown_start();
-        }
-    }
-};
-
 struct double_shutdown_actor : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
@@ -171,33 +134,6 @@ struct double_shutdown_actor : public r::actor_base_t {
 
     void continue_shutdown() noexcept { r::actor_base_t::shutdown_start(); }
 };
-
-struct fail_initialize_actor : public r::actor_base_t {
-    using r::actor_base_t::actor_base_t;
-
-    void init_start() noexcept override {}
-};
-
-struct fail_test_behavior_t : public r::supervisor_behavior_t {
-    using r::supervisor_behavior_t::supervisor_behavior_t;
-
-    void on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept override;
-};
-
-struct fail_shutdown_sup : public rt::supervisor_test_t {
-    using rt::supervisor_test_t::supervisor_test_t;
-
-    r::address_ptr_t fail_addr;
-    std::error_code fail_reason;
-
-    virtual r::actor_behavior_t *create_behavior() noexcept override { return new fail_test_behavior_t(*this); }
-};
-
-void fail_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept {
-    auto &sup = static_cast<fail_shutdown_sup &>(actor);
-    sup.fail_addr = address;
-    sup.fail_reason = ec;
-}
 #endif
 
 TEST_CASE("actor litetimes", "[actor]") {
@@ -238,9 +174,11 @@ TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
-    auto act = sup->create_actor<fail_shutdown_actor_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
 
-    auto fail_plugin = static_cast<fail_shutdown_plugin_t*>(act->get_plugin(fail_shutdown_plugin_t::class_identity));
+    auto fail_plugin = static_cast<fail_plugin_t*>(act->get_plugin(fail_plugin_t::class_identity));
+    fail_plugin->allow_init = true;
+    fail_plugin->allow_shutdown = false;
 
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 0);
@@ -272,31 +210,32 @@ TEST_CASE("fail shutdown test", "[actor]") {
     CHECK(sup->get_leader_queue().size() == 0);
     CHECK(sup->get_points().size() == 0);
     CHECK(sup->get_subscription().size() == 0);
-
 }
-#if 0
+
 
 TEST_CASE("fail initialize test", "[actor]") {
     r::system_context_t system_context;
 
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    auto act = sup->create_actor<fail_initialize_actor>().timeout(rt::default_timeout).finish();
+    fail_plugin_t::allow_init = false;
+    auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    REQUIRE(sup->get_children().size() == 1);
+    REQUIRE(sup->get_children().size() == 2); // sup + actor
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup->active_timers.size() == 1);
 
     sup->on_timer_trigger(*sup->active_timers.begin());
     sup->do_process();
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children().size() == 1); // just sup
 
     sup->do_shutdown();
     sup->do_process();
 }
 
+#if 0
 TEST_CASE("double shutdown test (actor)", "[actor]") {
     r::system_context_t system_context;
 
