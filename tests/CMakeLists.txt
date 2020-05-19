@@ -32,9 +32,9 @@ add_executable(012-actor-lifetime 012-actor-lifetime.cpp)
 target_link_libraries(012-actor-lifetime ${rotor_TEST_LIBS})
 add_test(012-actor-lifetime "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/012-actor-lifetime")
 
-#add_executable(013-observer 013-observer.cpp)
-#target_link_libraries(013-observer ${rotor_TEST_LIBS})
-#add_test(013-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/013-observer")
+add_executable(013-observer 013-observer.cpp)
+target_link_libraries(013-observer ${rotor_TEST_LIBS})
+add_test(013-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/013-observer")
 
 #add_executable(014-lifetime-observer 014-lifetime-observer.cpp)
 #target_link_libraries(014-lifetime-observer ${rotor_TEST_LIBS})

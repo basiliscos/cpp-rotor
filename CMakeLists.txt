@@ -36,7 +36,7 @@ add_library(rotor
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
     src/rotor/plugin/actor_lifetime.cpp
-    src/rotor/plugin/children_manager.cpp
+    src/rotor/plugin/child_manager.cpp
     src/rotor/plugin/init_shutdown.cpp
     src/rotor/plugin/initializer.cpp
     src/rotor/plugin/locality.cpp
