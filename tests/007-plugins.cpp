@@ -30,7 +30,7 @@ struct sample_actor_t : public rt::actor_test_t {
 
 struct sample_actor2_t : public sample_actor_t {
     using sample_actor_t::sample_actor_t;
-    using plugins_list_t = std::tuple<sample_plugin1_t, buggy_plugin_t, sample_plugin2_t>;
+    using plugins_list_t = std::tuple<sample_plugin1_t,  sample_plugin2_t, buggy_plugin_t>;
 };
 
 
@@ -39,12 +39,12 @@ struct sample_plugin1_t : public r::plugin_t {
         return static_cast<const void *>(typeid(sample_plugin1_t).name());
     }
 
-    bool activate(r::actor_base_t* actor_) noexcept override {
+    void activate(r::actor_base_t* actor_) noexcept override {
         auto& init_seq = static_cast<sample_actor_t*>(actor_)->init_seq ;
         init_seq = (init_seq << 8 | PID_1);
         return r::plugin_t::activate(actor_);
     }
-    bool deactivate() noexcept override {
+    void deactivate() noexcept override {
         auto& deinit_seq = static_cast<sample_actor_t*>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_1);
         return r::plugin_t::deactivate();
@@ -55,12 +55,12 @@ struct sample_plugin2_t : public r::plugin_t {
     const void* identity() const noexcept override {
         return static_cast<const void *>(typeid(sample_plugin2_t).name());
     }
-    bool activate(r::actor_base_t* actor_) noexcept override {
+    void activate(r::actor_base_t* actor_) noexcept override {
         auto& init_seq = static_cast<sample_actor_t*>(actor_)->init_seq ;
         init_seq = (init_seq << 8 | PID_2);
         return r::plugin_t::activate(actor_);
     }
-    bool deactivate() noexcept override {
+    void deactivate() noexcept override {
         auto& deinit_seq = static_cast<sample_actor_t*>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_2);
         return r::plugin_t::deactivate();
@@ -71,9 +71,9 @@ struct buggy_plugin_t : public r::plugin_t {
     const void* identity() const noexcept override {
         return static_cast<const void *>(typeid(buggy_plugin_t).name());
     }
-    bool activate(r::actor_base_t* actor_) noexcept override {
+    void activate(r::actor_base_t* actor_) noexcept override {
+        actor = actor_;
         actor_->commit_plugin_activation(*this, false);
-        return false;
     }
 };
 
@@ -83,18 +83,18 @@ TEST_CASE("init/deinit sequence", "[plugin]") {
     auto builder = builder_t([&](auto &){ }, system_context);
     auto actor = std::move(builder).timeout(rt::default_timeout).finish();
 
-    REQUIRE(actor->get_inactive_plugins().size() == 2);
-    REQUIRE(actor->get_active_plugins().size() == 0);
+    REQUIRE(actor->get_activating_plugins().size() == 2);
+    REQUIRE(actor->get_deactivating_plugins().size() == 0);
 
-    //actor->do_initialize(&system_context);
     actor->activate_plugins();
     REQUIRE((actor->init_seq == ((PID_1 << 8) | PID_2)));
 
-    REQUIRE(actor->get_inactive_plugins().size() == 0);
-    REQUIRE(actor->get_active_plugins().size() == 2);
+    REQUIRE(actor->get_activating_plugins().size() == 0);
+    REQUIRE(actor->get_deactivating_plugins().size() == 0);
 
     actor->deactivate_plugins();
     REQUIRE((actor->deinit_seq == ((PID_2 << 8) | PID_1)));
+    REQUIRE(actor->get_deactivating_plugins().size() == 0);
 };
 
 TEST_CASE("fail init-plugin sequence", "[plugin]") {
@@ -103,14 +103,14 @@ TEST_CASE("fail init-plugin sequence", "[plugin]") {
     auto builder = builder_t([&](auto &){ }, system_context);
     auto actor = std::move(builder).timeout(rt::default_timeout).finish();
 
-    REQUIRE(actor->get_inactive_plugins().size() == 3);
-    REQUIRE(actor->get_active_plugins().size() == 0);
+    REQUIRE(actor->get_activating_plugins().size() == 3);
+    REQUIRE(actor->get_deactivating_plugins().size() == 0);
 
     actor->activate_plugins();
-    REQUIRE((actor->init_seq == PID_1));
+    CHECK(actor->init_seq == ((PID_1 << 8) | PID_2));
 
-    REQUIRE(actor->get_inactive_plugins().size() == 3);
-    REQUIRE(actor->get_active_plugins().size() == 0);
+    REQUIRE(actor->get_activating_plugins().size() == 1);
+    REQUIRE(actor->get_deactivating_plugins().size() == 0);
 
-    REQUIRE((actor->deinit_seq == PID_1));
+    CHECK(actor->deinit_seq == ((PID_2 << 8) | PID_1));
 };

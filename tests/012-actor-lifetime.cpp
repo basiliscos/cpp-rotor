@@ -72,9 +72,9 @@ struct custom_supervisor_t: rt::supervisor_test_t {
         r::internal::subscription_plugin_t,
         r::internal::init_shutdown_plugin_t,
         r::internal::initializer_plugin_t,
-        r::internal::starter_plugin_t,
         r::internal::subscription_support_plugin_t,
-        custom_child_manager_t
+        custom_child_manager_t,
+        r::internal::starter_plugin_t
     >;
 };
 
@@ -87,7 +87,7 @@ struct fail_plugin_t: public r::plugin_t {
         return class_identity;
     }
 
-    bool activate(r::actor_base_t* actor_) noexcept override {
+    void activate(r::actor_base_t* actor_) noexcept override {
         actor_->install_plugin(*this, r::slot_t::INIT);
         actor_->install_plugin(*this, r::slot_t::SHUTDOWN);
         return r::plugin_t::activate(actor_);
@@ -113,8 +113,8 @@ struct fail_actor_t: public rt::actor_test_t {
         r::internal::subscription_plugin_t,
         r::internal::init_shutdown_plugin_t,
         r::internal::initializer_plugin_t,
-        r::internal::starter_plugin_t,
-        fail_plugin_t
+        fail_plugin_t,
+        r::internal::starter_plugin_t
     >;
 };
 
@@ -175,7 +175,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(sup->get_children().size() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    auto cm_plugin = static_cast<custom_child_manager_t*>(sup->get_inactive_plugins().front());
+    auto cm_plugin = static_cast<custom_child_manager_t*>(sup->get_plugin(custom_child_manager_t::class_identity));
 
     REQUIRE(cm_plugin->fail_addr == act->get_address());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
@@ -193,7 +193,6 @@ TEST_CASE("fail shutdown test", "[actor]") {
     CHECK(sup->get_points().size() == 0);
     CHECK(sup->get_subscription().size() == 0);
 }
-
 
 TEST_CASE("fail initialize test", "[actor]") {
     r::system_context_t system_context;
@@ -243,7 +242,7 @@ TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    /* auto act = */ sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
 

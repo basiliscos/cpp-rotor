@@ -11,18 +11,16 @@ using namespace rotor;
 
 plugin_t::~plugin_t() {}
 
-bool plugin_t::activate(actor_base_t* actor_) noexcept {
+void plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     actor->commit_plugin_activation(*this, true);
-    return true;
 }
 
 
-bool plugin_t::deactivate() noexcept {
+void plugin_t::deactivate() noexcept {
     own_subscriptions.clear();
     actor->commit_plugin_deactivation(*this);
     actor = nullptr;
-    return true;
 }
 
 bool plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {

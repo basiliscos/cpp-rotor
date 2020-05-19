@@ -18,18 +18,18 @@ const void* actor_lifetime_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
+void actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
 
     if (!actor_->address) {
         actor_->address = create_address();
     }
+    plugin_t::activate(actor_);
     actor->init_start();
-    return plugin_t::activate(actor_);
 }
 
 
-bool actor_lifetime_plugin_t::deactivate() noexcept {
+void actor_lifetime_plugin_t::deactivate() noexcept {
     auto& req = actor->shutdown_request;
     if (req) {
         actor->reply_to(*req);

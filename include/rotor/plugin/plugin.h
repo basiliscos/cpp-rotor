@@ -21,8 +21,8 @@ struct plugin_t {
 
     virtual const void* identity() const noexcept = 0;
 
-    virtual bool activate(actor_base_t* actor) noexcept;
-    virtual bool deactivate() noexcept;
+    virtual void activate(actor_base_t* actor) noexcept;
+    virtual void deactivate() noexcept;
 
     virtual bool handle_init(message::init_request_t* message) noexcept;
     virtual bool handle_shutdown(message::shutdown_request_t* message) noexcept;

@@ -16,8 +16,8 @@ struct actor_lifetime_plugin_t: public plugin_t {
     static const void* class_identity;
     const void* identity() const noexcept override;
 
-    bool activate(actor_base_t* actor) noexcept override;
-    bool deactivate() noexcept override;
+    void activate(actor_base_t* actor) noexcept override;
+    void deactivate() noexcept override;
 
     virtual address_ptr_t create_address() noexcept;
 };

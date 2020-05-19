@@ -14,6 +14,7 @@
 #include "handler.hpp"
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 #include <list>
 
 namespace rotor {
@@ -86,10 +87,6 @@ using is_handler =
  *
  */
 struct actor_base_t : public arc_base_t<actor_base_t> {
-#if 0
-    /** \brief alias to the list of {@link subscription_point_t} */
-    using subscription_points_t = std::list<subscription_point_t>;
-#endif
 
     /** \brief timer identifier type in the scope of the actor */
     using timer_id_t = std::uint32_t;
@@ -124,11 +121,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
-
-#if 0
-    /** \brief creates actor's address by delegating the call to supervisor */
-    virtual address_ptr_t create_address() noexcept;
-#endif
 
     /** \brief returns actor's "main" address (intrusive pointer) */
     inline address_ptr_t get_address() const noexcept { return address; }
@@ -266,7 +258,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
-    template <typename Handler> handler_ptr_t subscribe(Handler &&h, address_ptr_t &addr) noexcept;
+    template <typename Handler> handler_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
 
     /** \brief subscribes actor's handler to process messages on the actor's "main" address */
     template <typename Handler> handler_ptr_t subscribe(Handler &&h) noexcept;
@@ -357,11 +349,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     virtual void configure(plugin_t& plugin) noexcept;
 
-#if 0
-    /** \brief removes the subscription point */
-    virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
-#endif
-
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
 
@@ -372,24 +359,14 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
   protected:
 
-
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
     std::optional<pt::time_duration> unlink_timeout;
     unlink_policy_t unlink_policy;
 
-#if 0
-    /** \brief recorded subscription points (i.e. handler/address pairs) */
-    subscription_points_t points;
-
-    linked_servers_t linked_servers;
-    linked_clients_t linked_clients;
-#endif
-
-    bool activating;
-    bool inactivating;
-    actor_config_t::plugins_t inactive_plugins;
-    actor_config_t::plugins_t active_plugins;
+    actor_config_t::plugins_t plugins;
+    std::set<const void*> activating_plugins;
+    std::set<const void*> deactivating_plugins;
 
     /* slots */
     actor_config_t::plugins_t init_plugins;

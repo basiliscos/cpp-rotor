@@ -16,15 +16,14 @@ const void* initializer_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
+void initializer_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
     actor->configure(*this);
-    return plugin_t::activate(actor);
 }
 
-bool initializer_plugin_t::deactivate() noexcept {
+void initializer_plugin_t::deactivate() noexcept {
     tracked.clear();
     return plugin_t::deactivate();
 }
@@ -33,6 +32,7 @@ bool initializer_plugin_t::deactivate() noexcept {
 processing_result_t initializer_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
     tracked.remove(message.payload.point);
     if (tracked.empty()) {
+        plugin_t::activate(actor);
         actor->init_continue();
         return processing_result_t::FINISHED;
     }

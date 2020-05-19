@@ -16,17 +16,21 @@ const void* starter_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool starter_plugin_t::activate(actor_base_t *actor_) noexcept {
+void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     subscribe(&starter_plugin_t::on_start);
-    return plugin_t::activate(actor);
+    actor->install_plugin(*this, slot_t::INIT);
 }
 
-bool starter_plugin_t::handle_init(message::init_request_t*) noexcept {
-    auto& init_request = actor->init_request;
-    actor->reply_to(*init_request);
-    init_request.reset();
-    return true;
+bool starter_plugin_t::handle_init(message::init_request_t* req) noexcept {
+    if (req) {
+        auto& init_request = actor->init_request;
+        actor->reply_to(*init_request);
+        actor->init_request.reset();
+        plugin_t::activate(actor);
+        return true;
+    }
+    return false;
 }
 
 

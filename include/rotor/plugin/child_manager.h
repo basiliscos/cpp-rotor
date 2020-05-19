@@ -33,8 +33,8 @@ struct child_manager_plugin_t: public plugin_t {
     static const void* class_identity;
     const void* identity() const noexcept override;
 
-    bool activate(actor_base_t* actor) noexcept override;
-    bool deactivate() noexcept override;
+    void activate(actor_base_t* actor) noexcept override;
+    void deactivate() noexcept override;
 
     virtual void create_child(const actor_ptr_t &actor) noexcept;
     virtual void remove_child(actor_base_t &actor) noexcept;

@@ -17,8 +17,8 @@ struct subscription_plugin_t: public plugin_t {
     static const void* class_identity;
     const void* identity() const noexcept override;
 
-    bool activate(actor_base_t* actor) noexcept override;
-    bool deactivate() noexcept override;
+    void activate(actor_base_t* actor) noexcept override;
+    void deactivate() noexcept override;
 
     iterator_t find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
 

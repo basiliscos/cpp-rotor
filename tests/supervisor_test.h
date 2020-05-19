@@ -44,8 +44,9 @@ struct supervisor_test_t : public supervisor_t {
     auto &get_children() noexcept { return manager->actors_map; }
     request_map_t &get_requests() noexcept { return request_map; }
 
-    auto get_active_plugins() noexcept -> actor_config_t::plugins_t& { return this->active_plugins; }
-    auto get_inactive_plugins() noexcept -> actor_config_t::plugins_t& { return this->inactive_plugins; }
+    plugin_t* get_plugin(const void* identity) const noexcept;
+    auto get_activating_plugins() noexcept { return this->activating_plugins; }
+    auto get_deactivating_plugins() noexcept { return this->deactivating_plugins; }
 
     const void *locality;
     timers_t active_timers;

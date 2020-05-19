@@ -16,7 +16,7 @@ const void* subscription_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
+void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
     this->actor = actor_;
 
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
@@ -31,9 +31,8 @@ bool subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 
-bool subscription_plugin_t::deactivate() noexcept  {
+void subscription_plugin_t::deactivate() noexcept  {
     unsubscribe();
-    return false;
 }
 
 subscription_plugin_t::iterator_t subscription_plugin_t::find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {

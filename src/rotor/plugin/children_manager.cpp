@@ -17,7 +17,7 @@ const void* child_manager_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
+void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     static_cast<supervisor_t&>(*actor_).manager = this;
     subscribe(&child_manager_plugin_t::on_create);
@@ -27,11 +27,10 @@ bool child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
     actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
-    return false;
 }
 
 
-bool child_manager_plugin_t::deactivate() noexcept {
+void child_manager_plugin_t::deactivate() noexcept {
     assert(actors_map.size() == 1);
     actors_map.clear();
     initializing_actors.clear();

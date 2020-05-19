@@ -1,10 +1,11 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "supervisor_test.h"
+#include "actor_test.h"
 #include "catch.hpp"
 #include "cassert"
 
@@ -19,6 +20,7 @@ address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_ad
 void supervisor_test_t::start_timer(const pt::time_duration &, timer_id_t timer_id) noexcept {
     active_timers.emplace_back(timer_id);
 }
+
 void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
     auto it = active_timers.begin();
     while (it != active_timers.end()) {
@@ -34,16 +36,13 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
 
 
 subscription_points_t& supervisor_test_t::get_points() noexcept {
-    auto plugin = static_cast<internal::subscription_plugin_t*>(subscription_plugins.front());
-    if (!plugin) {
-        for (plugin_t* p: inactive_plugins) {
-            if (dynamic_cast<internal::subscription_plugin_t*>(p)) {
-                plugin = static_cast<internal::subscription_plugin_t*>(p);
-                break;
-            }
+    for(auto p: plugins) {
+        if (p->identity() == internal::subscription_plugin_t::class_identity) {
+            auto plugin = static_cast<internal::subscription_plugin_t*>(p);
+            return plugin->points;
         }
     }
-    return plugin->points;
+    std::abort();
 }
 
 //void supervisor_test_t::start() noexcept {INFO("supervisor_test_t::start()")}
@@ -55,6 +54,11 @@ supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcep
     }
     return *it;
 }
+
+plugin_t* supervisor_test_t::get_plugin(const void* identity) const noexcept {
+    return actor_test_t::get_plugin(plugins, identity);
+}
+
 
 //void supervisor_test_t::shutdown() noexcept { INFO("supervisor_test_t::shutdown()") }
 

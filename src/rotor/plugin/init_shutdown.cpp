@@ -16,14 +16,13 @@ const void* init_shutdown_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
+void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     subscribe(&init_shutdown_plugin_t::on_init);
     subscribe(&init_shutdown_plugin_t::on_shutdown);
 
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
-    return plugin_t::activate(actor);
 }
 
 void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
@@ -32,6 +31,7 @@ void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
     actor->state = state_t::INITIALIZING;
     */
     actor->init_request.reset(&msg);
+    plugin_t::activate(actor);
     actor->init_continue();
 }
 
@@ -43,13 +43,7 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexc
 }
 
 bool init_shutdown_plugin_t::handle_init(message::init_request_t*) noexcept {
-    auto& init_request = actor->init_request;
-    if (init_request) {
-        actor->reply_to(*init_request);
-        init_request.reset();
-        return true;
-    }
-    return false;
+    return bool(actor->init_request);
 }
 
 

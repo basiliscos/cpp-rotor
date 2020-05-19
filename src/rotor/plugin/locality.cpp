@@ -16,7 +16,7 @@ const void* locality_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool locality_plugin_t::activate(actor_base_t* actor_) noexcept {
+void locality_plugin_t::activate(actor_base_t* actor_) noexcept {
     auto& sup =static_cast<supervisor_t&>(*actor_);
     auto& address = sup.address;
     auto parent = sup.parent;

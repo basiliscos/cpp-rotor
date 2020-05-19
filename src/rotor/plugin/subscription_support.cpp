@@ -16,7 +16,7 @@ const void* subscription_support_plugin_t::identity() const noexcept {
     return class_identity;
 }
 
-bool subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
+void subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor = actor_;
     auto& sup = static_cast<supervisor_t&>(*actor_);
 
@@ -27,7 +27,7 @@ bool subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
     return plugin_t::activate(actor_);
 }
 
-bool subscription_support_plugin_t::deactivate() noexcept {
+void subscription_support_plugin_t::deactivate() noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     sup.subscription_support = nullptr;
     return plugin_t::deactivate();

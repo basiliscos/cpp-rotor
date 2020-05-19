@@ -15,14 +15,16 @@ struct initializer_plugin_t: public plugin_t {
     static const void* class_identity;
     const void* identity() const noexcept override;
 
-    bool activate(actor_base_t* actor) noexcept override;
-    bool deactivate() noexcept override;
+    void activate(actor_base_t* actor) noexcept override;
+    void deactivate() noexcept override;
 
     virtual bool handle_init(message::init_request_t*) noexcept override;
 
     processing_result_t handle_subscription(message::subscription_t& message) noexcept override;
 
     template<typename Handler> void subscribe_actor(Handler&& handler) noexcept;
+    template<typename Handler> void subscribe_actor(Handler&& handler, const address_ptr_t& addr) noexcept;
+
     subscription_points_t tracked;
 };
 

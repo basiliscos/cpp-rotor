@@ -13,14 +13,18 @@ using namespace rotor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout},
-      unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, inactive_plugins{std::move(cfg.plugins)}
-      {}
+      unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, plugins{std::move(cfg.plugins)}
+      {
+    for(auto plugin : plugins) {
+        activating_plugins.insert(plugin->identity());
+    }
+}
 
 actor_base_t::~actor_base_t() {
-    for(auto plugin: inactive_plugins) {
+    assert(deactivating_plugins.empty() && "active plugins should not be present during actor destructor");
+    for(auto plugin: plugins) {
         delete plugin;
     }
-    assert(active_plugins.empty() && "active plugins should not be present during actor destructor");
 }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept {
@@ -42,55 +46,29 @@ void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
 }
 
 void actor_base_t::activate_plugins() noexcept {
-    bool ok = !inactive_plugins.empty();
-    while (ok) {
-        activating = true;
-        auto plugin = inactive_plugins.front();
-        ok = plugin->activate(this) && !inactive_plugins.empty();
+    for(auto plugin : plugins) {
+        plugin->activate(this);
     }
-    activating = false;
 }
 
 void actor_base_t::commit_plugin_activation(plugin_t& plugin, bool success) noexcept {
     if (success) {
-        for(auto it = inactive_plugins.begin(); it != inactive_plugins.end(); ) {
-            if (*it == &plugin) {
-                active_plugins.push_back(*it);
-                it = inactive_plugins.erase(it);
-                break;
-            } else {
-                ++it;
-            }
-        }
-        if (!activating) { activate_plugins(); }
+        activating_plugins.erase(plugin.identity());
     } else {
         deactivate_plugins();
     }
 }
 
 void actor_base_t::deactivate_plugins() noexcept {
-    bool ok = !active_plugins.empty();
-    while (ok) {
-        inactivating = true;
-        auto plugin = active_plugins.back();
-        ok = plugin->deactivate() && !active_plugins.empty();
+    for(auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
+        auto& plugin = *--(it.base());
+        deactivating_plugins.insert(plugin->identity());
+        plugin->deactivate();
     }
-    inactivating = false;
 }
 
 void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
-    for(auto it = active_plugins.rbegin(); it != active_plugins.rend(); ) {
-        if (*it == &plugin) {
-            inactive_plugins.push_back(*it);
-            active_plugins.erase(it.base());
-            break;
-        } else {
-            ++it;
-        }
-    }
-    if (!inactivating) {
-        deactivate_plugins();
-    }
+    deactivating_plugins.erase(plugin.identity());
 }
 
 void actor_base_t::init_start() noexcept {
@@ -116,9 +94,9 @@ void actor_base_t::shutdown_finish() noexcept {
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     while (!init_plugins.empty()) {
-        auto& plugin = init_plugins.back();
+        auto& plugin = init_plugins.front();
         if (plugin->handle_init(init_request.get())) {
-            init_plugins.pop_back();
+            init_plugins.pop_front();
             continue;
         }
         break;
