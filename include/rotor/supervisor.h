@@ -67,8 +67,8 @@ struct supervisor_t : public actor_base_t {
 
     using config_t = supervisor_config_t;
     using plugins_list_t = std::tuple<
-        internal::locality_plugin_t,
         internal::actor_lifetime_plugin_t,
+        internal::locality_plugin_t,
         internal::subscription_plugin_t,
         internal::init_shutdown_plugin_t,
         internal::initializer_plugin_t,

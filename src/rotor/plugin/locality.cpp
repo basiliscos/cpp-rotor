@@ -17,7 +17,7 @@ const void* locality_plugin_t::identity() const noexcept {
 }
 
 void locality_plugin_t::activate(actor_base_t* actor_) noexcept {
-    auto& sup =static_cast<supervisor_t&>(*actor_);
+    auto& sup = static_cast<supervisor_t&>(*actor_);
     auto& address = sup.address;
     auto parent = sup.parent;
     bool use_other = parent && parent->address->same_locality(*address);
