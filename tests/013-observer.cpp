@@ -61,7 +61,7 @@ struct foo_observer_t : public r::actor_base_t {
     using config_t = observer_config_t;
     template <typename Actor> using config_builder_t = observer_config_builder_t<Actor>;
 
-    foo_observer_t(config_t& cfg): r::actor_base_t(cfg), simpleton_addr{cfg.observable} {}
+    explicit foo_observer_t(config_t& cfg): r::actor_base_t(cfg), simpleton_addr{cfg.observable} {}
 
     void configure(r::plugin_t& plugin) noexcept override {
         if (plugin.identity() == r::internal::initializer_plugin_t::class_identity) {
