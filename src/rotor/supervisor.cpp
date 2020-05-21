@@ -7,8 +7,8 @@
 
 #include "rotor/supervisor.h"
 #include <assert.h>
-#include <iostream>
-#include <boost/core/demangle.hpp>
+//#include <iostream>
+//#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 
@@ -106,6 +106,7 @@ void supervisor_t::deliver_local(message_ptr_t &&message) noexcept {
     if (it_subscriptions != subscription_map.end()) {
         auto &subscription = it_subscriptions->second;
         auto recipients = subscription.get_recipients(message->type_index);
+        //std::cout << "r: " << (recipients ? "+" : "-") << " \n";
         if (recipients) {
             for (auto &it : *recipients) {
                 if (it.mine) {

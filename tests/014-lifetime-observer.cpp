@@ -95,13 +95,6 @@ TEST_CASE("lifetime observer, different localities", "[actor]") {
     sup1->do_process();
     REQUIRE(observer->event == 0);
 
-    /*
-    std::cout << "sup1 " << sup1->get_address().get() << "\n";
-    std::cout << "sup2 " << sup2->get_address().get() << "\n";
-    std::cout << "observer " << observer->get_address().get() << "\n";
-    std::cout << "sample_actor " << sample_actor->get_address().get() << "\n";
-    */
-
     sup1->do_process();
     sup2->do_process();
     sup1->do_process();
@@ -120,7 +113,7 @@ TEST_CASE("lifetime observer, different localities", "[actor]") {
 
     sup1->do_shutdown();
     sup1->do_process();
-    //std::cout << "sup1->do_process()\n";
+    std::cout << "sup1->do_process()\n";
     sup2->do_process();
     sup1->do_process();
     sup2->do_process();

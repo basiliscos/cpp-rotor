@@ -48,7 +48,7 @@ struct child_manager_plugin_t: public plugin_t {
     bool handle_init(message::init_request_t*) noexcept override;
     bool handle_shutdown(message::shutdown_request_t*) noexcept override;
 
-    void unsubscribe_all() noexcept;
+    void unsubscribe_all(bool continue_shutdow) noexcept;
 
     bool postponed_init = false;
     bool activated = false;

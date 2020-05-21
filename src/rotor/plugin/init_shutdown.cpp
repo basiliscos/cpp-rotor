@@ -37,6 +37,7 @@ void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
 
 void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexcept {
     assert((actor->state != state_t::SHUTTING_DOWN) || (actor->state != state_t::SHUTTED_DOWN));
+    // std::cout << "received shutdown_request for " << actor->address.get() << " from " << msg.payload.reply_to.get() << "\n";
     actor->shutdown_request.reset(&msg);
     actor->shutdown_start();
     actor->shutdown_continue();

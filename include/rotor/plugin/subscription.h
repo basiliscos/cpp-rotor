@@ -36,6 +36,8 @@ struct subscription_plugin_t: public plugin_t {
     processing_result_t handle_unsubscription(message::unsubscription_t& message) noexcept override;
     processing_result_t handle_unsubscription_external(message::unsubscription_external_t& message) noexcept override;
 
+    bool handle_shutdown(message::shutdown_request_t* message) noexcept override;
+
     processing_result_t remove_subscription(const subscription_point_t& point) noexcept;
 };
 

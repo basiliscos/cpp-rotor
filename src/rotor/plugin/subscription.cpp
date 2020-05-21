@@ -19,6 +19,7 @@ const void* subscription_plugin_t::identity() const noexcept {
 void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
     this->actor = actor_;
 
+    actor->install_plugin(*this, slot_t::SHUTDOWN);
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
     actor->install_plugin(*this, slot_t::UNSUBSCRIPTION);
 
@@ -32,9 +33,15 @@ void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 
 void subscription_plugin_t::deactivate() noexcept  {
-    // bug too early unsubscribing, should be after shutdown confirming...
-    unsubscribe();
+    // NOOP, do not unsubscribe too early.
 }
+
+bool subscription_plugin_t::handle_shutdown(message::shutdown_request_t* message) noexcept {
+    if (points.empty()) return true;
+    unsubscribe();
+    return false;
+}
+
 
 subscription_plugin_t::iterator_t subscription_plugin_t::find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
     auto it = points.rbegin();
@@ -77,12 +84,12 @@ processing_result_t subscription_plugin_t::remove_subscription(const subscriptio
     auto it = --rit.base();
     points.erase(it);
     if (points.empty()) {
-        std::cout << "deactivating, no more points for " << actor->address.get() << "\n";
+        // std::cout << "deactivating, no more points for " << actor->address.get() << "\n";
 
         auto& req = actor->shutdown_request;
         if (req) {
             actor->reply_to(*req);
-            std::cout << "confirming shutdown for " << actor->address.get() << "\n";
+            // std::cout << "confirming shutdown of " << actor->address.get() << " for " << req->address << "\n";
             req.reset();
         }
         actor->shutdown_finish();

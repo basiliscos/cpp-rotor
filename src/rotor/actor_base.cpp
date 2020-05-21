@@ -167,8 +167,8 @@ void actor_base_t::on_subscription(message::subscription_t& message) noexcept {
 }
 
 void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcept {
-    /*
     auto& point = message.payload.point;
+    /*
     std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[i] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
@@ -179,8 +179,8 @@ void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcep
 }
 
 void actor_base_t::on_unsubscription_external(message::unsubscription_external_t& message) noexcept {
-    /*
     auto& point = message.payload.point;
+    /*
     std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[e] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
