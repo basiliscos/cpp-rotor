@@ -32,6 +32,7 @@ void subscription_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 
 void subscription_plugin_t::deactivate() noexcept  {
+    // bug too early unsubscribing, should be after shutdown confirming...
     unsubscribe();
 }
 
@@ -76,6 +77,16 @@ processing_result_t subscription_plugin_t::remove_subscription(const subscriptio
     auto it = --rit.base();
     points.erase(it);
     if (points.empty()) {
+        std::cout << "deactivating, no more points for " << actor->address.get() << "\n";
+
+        auto& req = actor->shutdown_request;
+        if (req) {
+            actor->reply_to(*req);
+            std::cout << "confirming shutdown for " << actor->address.get() << "\n";
+            req.reset();
+        }
+        actor->shutdown_finish();
+
         plugin_t::deactivate();
         return processing_result_t::FINISHED;
     }

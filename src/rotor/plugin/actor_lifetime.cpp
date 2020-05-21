@@ -30,13 +30,6 @@ void actor_lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 
 void actor_lifetime_plugin_t::deactivate() noexcept {
-    auto& req = actor->shutdown_request;
-    if (req) {
-        actor->reply_to(*req);
-        req.reset();
-    }
-
-    actor->shutdown_finish();
     return plugin_t::deactivate();
 }
 

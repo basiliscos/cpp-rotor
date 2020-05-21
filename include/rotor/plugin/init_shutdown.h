@@ -15,6 +15,7 @@ struct init_shutdown_plugin_t: public plugin_t {
 
     static const void* class_identity;
     const void* identity() const noexcept override;
+
     void activate(actor_base_t* actor) noexcept override;
 
     virtual void on_init(message::init_request_t& message) noexcept;

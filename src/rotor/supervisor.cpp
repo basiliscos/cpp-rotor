@@ -7,8 +7,8 @@
 
 #include "rotor/supervisor.h"
 #include <assert.h>
-//#include <iostream>
-//#include <boost/core/demangle.hpp>
+#include <iostream>
+#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 
@@ -89,7 +89,7 @@ void supervisor_t::do_process() noexcept {
         auto internal = &dest_sup == this;
         /*
         std::cout << "msg [" << (internal ? "i" : "e") << "] :" << boost::core::demangle((const char*)
-             message->type_index) << "\n";
+             message->type_index) << " for " << dest.get() << "\n";
         */
         if (internal) { /* subscriptions are handled by me */
             deliver_local(std::move(message));

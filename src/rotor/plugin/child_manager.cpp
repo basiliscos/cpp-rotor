@@ -135,6 +135,7 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     if (ec) {
         on_shutdown_fail(*child_actor, ec);
     }
+    // std::cout << "shutdown confirmed from " << (void*) source_addr.get() << "\n";
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto points = sup.address_mapping.destructive_get(*actor);
     if (!points.empty()) {
@@ -158,7 +159,11 @@ bool child_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
 }
 
 bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
+    /* prevent double sending req, i.e. from parent and from self */
+    auto& self = actors_map.at(actor->address);
+    self.shutdown_requesting = true;
     unsubscribe_all();
+
     return actors_map.size() == 1; /* only own actor left, which will be handled differently */
 }
 

@@ -22,15 +22,13 @@ void subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
 
     subscribe(&subscription_support_plugin_t::on_call);
     subscribe(&subscription_support_plugin_t::on_unsubscription);
-    subscribe(&subscription_support_plugin_t::on_unsubscription_external);
+    subscribe(&subscription_support_plugin_t::on_subscription_external);
     sup.subscription_support = this;
     return plugin_t::activate(actor_);
 }
 
 void subscription_support_plugin_t::deactivate() noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
-    sup.subscription_support = nullptr;
-    return plugin_t::deactivate();
+    if (external_subscriptions.empty()) plugin_t::deactivate();
 }
 
 void subscription_support_plugin_t::on_call(message::handler_call_t &message) noexcept {
@@ -43,11 +41,17 @@ void subscription_support_plugin_t::on_unsubscription(message::commit_unsubscrip
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto& point = message.payload.point;
     sup.commit_unsubscription(point.address, point.handler);
+    external_subscriptions.remove(point);
+
+    if (external_subscriptions.empty() && actor->state == state_t::SHUTTING_DOWN) {
+        plugin_t::deactivate();
+    }
 }
 
-void subscription_support_plugin_t::on_unsubscription_external(message::external_subscription_t &message) noexcept {
+void subscription_support_plugin_t::on_subscription_external(message::external_subscription_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto& point = message.payload.point;
     assert(&point.address->supervisor == &sup);
     sup.subscribe_actor(point.address, point.handler);
+    external_subscriptions.emplace_back(point);
 }

@@ -20,13 +20,14 @@ struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
 
     using plugins_list_t = std::tuple<
-        r::internal::locality_plugin_t,
         r::internal::actor_lifetime_plugin_t,
+        r::internal::locality_plugin_t,
         r::internal::subscription_plugin_t,
         init_shutdown_plugin_t,                 /* use custom */
-        r::internal::starter_plugin_t,
+        r::internal::initializer_plugin_t,
         r::internal::subscription_support_plugin_t,
-        r::internal::child_manager_plugin_t
+        r::internal::child_manager_plugin_t,
+        r::internal::starter_plugin_t
     >;
 
     std::uint32_t initialized = 0;
@@ -55,13 +56,17 @@ struct sample_sup_t : public rt::supervisor_test_t {
 struct init_shutdown_plugin_t: r::internal::init_shutdown_plugin_t {
     using parent_t = r::internal::init_shutdown_plugin_t;
 
-    virtual bool handle_shutdown(r::message::shutdown_request_t* message) noexcept override {
+    void deactivate() noexcept override {
+        parent_t::deactivate();
+    }
+
+    bool handle_shutdown(r::message::shutdown_request_t* message) noexcept override {
         auto sup = static_cast<sample_sup_t*>(actor);
         sup->shutdown_started++;
         return parent_t::handle_shutdown(message);
     }
 
-    virtual bool handle_init(r::message::init_request_t* message) noexcept override {
+    bool handle_init(r::message::init_request_t* message) noexcept override {
         auto sup = static_cast<sample_sup_t*>(actor);
         sup->init_invoked++;
         return parent_t::handle_init(message);
@@ -111,7 +116,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
-    REQUIRE(sup->init_invoked == 1);
+    REQUIRE(sup->init_invoked == 2);
     REQUIRE(sup->shutdown_started == 0);
     REQUIRE(sup->shutdown_conf_invoked == 0);
     REQUIRE(sup->active_timers.size() == 0);
