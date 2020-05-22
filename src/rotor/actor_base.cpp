@@ -136,7 +136,7 @@ void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr
 }
 
 void actor_base_t::unsubscribe() noexcept {
-    auto plugin = static_cast<internal::subscription_plugin_t*>(subscription_plugins.front());
+    auto plugin = static_cast<internal::lifetime_plugin_t*>(subscription_plugins.front());
     plugin->unsubscribe();
 }
 

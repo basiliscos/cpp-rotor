@@ -68,8 +68,8 @@ struct custom_supervisor_t: rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using plugins_list_t = std::tuple<
         r::internal::locality_plugin_t,
-        r::internal::actor_lifetime_plugin_t,
-        r::internal::subscription_plugin_t,
+        r::internal::address_maker_plugin_t,
+        r::internal::lifetime_plugin_t,
         r::internal::init_shutdown_plugin_t,
         r::internal::initializer_plugin_t,
         r::internal::subscription_support_plugin_t,
@@ -109,8 +109,8 @@ const void* fail_plugin_t::class_identity = static_cast<const void *>(typeid(fai
 struct fail_actor_t: public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
     using plugins_list_t = std::tuple<
-        r::internal::actor_lifetime_plugin_t,
-        r::internal::subscription_plugin_t,
+        r::internal::address_maker_plugin_t,
+        r::internal::lifetime_plugin_t,
         r::internal::init_shutdown_plugin_t,
         r::internal::initializer_plugin_t,
         fail_plugin_t,

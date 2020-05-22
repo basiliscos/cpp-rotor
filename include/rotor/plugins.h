@@ -7,11 +7,11 @@
 //
 
 // actors plugins
-#include "plugin/actor_lifetime.h"
+#include "plugin/address_maker.h"
 #include "plugin/init_shutdown.h"
 #include "plugin/initializer.h"
 #include "plugin/starter.h"
-#include "plugin/subscription.h"
+#include "plugin/lifetime.h"
 
 // supervisors plugins
 #include "plugin/child_manager.h"

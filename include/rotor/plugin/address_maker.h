@@ -10,7 +10,7 @@
 
 namespace rotor::internal {
 
-struct actor_lifetime_plugin_t: public plugin_t {
+struct address_maker_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
     static const void* class_identity;

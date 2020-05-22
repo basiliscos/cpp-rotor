@@ -20,9 +20,9 @@ struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
 
     using plugins_list_t = std::tuple<
-        r::internal::actor_lifetime_plugin_t,
+        r::internal::address_maker_plugin_t,
         r::internal::locality_plugin_t,
-        r::internal::subscription_plugin_t,
+        r::internal::lifetime_plugin_t,
         init_shutdown_plugin_t,                 /* use custom */
         r::internal::initializer_plugin_t,
         r::internal::subscription_support_plugin_t,

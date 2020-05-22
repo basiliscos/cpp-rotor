@@ -10,7 +10,7 @@
 
 namespace rotor::internal {
 
-struct subscription_plugin_t: public plugin_t {
+struct lifetime_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
     using iterator_t = typename subscription_points_t::iterator;
 

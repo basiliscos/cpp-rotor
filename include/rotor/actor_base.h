@@ -95,8 +95,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
 
     using plugins_list_t = std::tuple<
-        internal::actor_lifetime_plugin_t,
-        internal::subscription_plugin_t,
+        internal::address_maker_plugin_t,
+        internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
         internal::initializer_plugin_t,
         internal::starter_plugin_t
