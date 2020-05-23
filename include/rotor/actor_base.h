@@ -98,7 +98,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         internal::address_maker_plugin_t,
         internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
-        internal::initializer_plugin_t,
         internal::starter_plugin_t
     >;
 

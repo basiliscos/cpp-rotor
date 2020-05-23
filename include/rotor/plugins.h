@@ -9,7 +9,6 @@
 // actors plugins
 #include "plugin/address_maker.h"
 #include "plugin/init_shutdown.h"
-#include "plugin/initializer.h"
 #include "plugin/starter.h"
 #include "plugin/lifetime.h"
 

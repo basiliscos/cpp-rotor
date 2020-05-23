@@ -71,7 +71,6 @@ struct custom_supervisor_t: rt::supervisor_test_t {
         r::internal::address_maker_plugin_t,
         r::internal::lifetime_plugin_t,
         r::internal::init_shutdown_plugin_t,
-        r::internal::initializer_plugin_t,
         r::internal::subscription_support_plugin_t,
         custom_child_manager_t,
         r::internal::starter_plugin_t
@@ -112,7 +111,6 @@ struct fail_actor_t: public rt::actor_test_t {
         r::internal::address_maker_plugin_t,
         r::internal::lifetime_plugin_t,
         r::internal::init_shutdown_plugin_t,
-        r::internal::initializer_plugin_t,
         fail_plugin_t,
         r::internal::starter_plugin_t
     >;

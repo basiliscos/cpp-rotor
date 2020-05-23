@@ -18,14 +18,30 @@ const void* starter_plugin_t::identity() const noexcept {
 
 void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor_);
-    subscribe(&starter_plugin_t::on_start);
     actor->install_plugin(*this, slot_t::INIT);
+    actor->install_plugin(*this, slot_t::SUBSCRIPTION);
+    actor->configure(*this);
+    subscribe(&starter_plugin_t::on_start);
 }
 
-bool starter_plugin_t::handle_init(message::init_request_t* req) noexcept {
-    return (bool)req;
+void starter_plugin_t::deactivate() noexcept {
+    tracked.clear();
+    return plugin_t::deactivate();
 }
 
+
+processing_result_t starter_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
+    tracked.remove(message.payload.point);
+    if (tracked.empty()) {
+        actor->init_continue();
+        return processing_result_t::FINISHED;
+    }
+    return processing_result_t::IGNORED;
+}
+
+bool starter_plugin_t::handle_init(message::init_request_t* request) noexcept {
+    return tracked.empty() && request;
+}
 
 void starter_plugin_t::on_start(message::start_trigger_t&) noexcept {
     actor->on_start();

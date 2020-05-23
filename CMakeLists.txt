@@ -38,7 +38,6 @@ add_library(rotor
     src/rotor/plugin/address_maker.cpp
     src/rotor/plugin/child_manager.cpp
     src/rotor/plugin/init_shutdown.cpp
-    src/rotor/plugin/initializer.cpp
     src/rotor/plugin/lifetime.cpp
     src/rotor/plugin/locality.cpp
     src/rotor/plugin/plugin.cpp

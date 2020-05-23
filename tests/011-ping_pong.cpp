@@ -26,8 +26,8 @@ struct pinger_t : public r::actor_base_t {
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::initializer_plugin_t::class_identity) {
-            auto& ip = static_cast<r::internal::initializer_plugin_t&>(plugin);
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& ip = static_cast<r::internal::starter_plugin_t&>(plugin);
             ip.subscribe_actor(&pinger_t::on_pong);
         }
     }
@@ -54,8 +54,8 @@ struct ponger_t : public r::actor_base_t {
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::initializer_plugin_t::class_identity) {
-            auto& ip = static_cast<r::internal::initializer_plugin_t&>(plugin);
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& ip = static_cast<r::internal::starter_plugin_t&>(plugin);
             ip.subscribe_actor(&ponger_t::on_ping);
         }
     }
