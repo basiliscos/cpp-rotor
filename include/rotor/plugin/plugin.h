@@ -17,6 +17,7 @@ enum class processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 struct plugin_t {
 
     plugin_t() = default;
+    plugin_t(const plugin_t&) = delete ;
     virtual ~plugin_t();
 
     virtual const void* identity() const noexcept = 0;

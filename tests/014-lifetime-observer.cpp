@@ -40,7 +40,7 @@ struct observer_t : public r::actor_base_t {
 
     void configure(r::plugin_t& plugin) noexcept override {
         if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
             p.subscribe_actor(&observer_t::on_sample_initialize, observable);
             p.subscribe_actor(&observer_t::on_sample_start, observable);
             p.subscribe_actor(&observer_t::on_sample_shutdown, observable);
@@ -93,14 +93,13 @@ TEST_CASE("lifetime observer, different localities", "[actor]") {
     auto observer = sup1->create_actor<observer_t>().observable(sample_actor->get_address()).timeout(rt::default_timeout).finish();
 
     sup1->do_process();
-    REQUIRE(observer->event == 0);
+    CHECK(observer->event == 0);
+    CHECK(observer->get_state() == r::state_t::INITIALIZING);
 
     sup1->do_process();
     sup2->do_process();
-    /*
     CHECK(sample_actor->get_state() == r::state_t::OPERATIONAL);
     CHECK(observer->get_state() == r::state_t::INITIALIZING);
-    */
 
     sup1->do_process();
     sup2->do_process();

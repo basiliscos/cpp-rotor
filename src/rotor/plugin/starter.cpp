@@ -31,7 +31,10 @@ void starter_plugin_t::deactivate() noexcept {
 
 
 processing_result_t starter_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
-    tracked.remove(message.payload.point);
+    auto it = std::find(tracked.begin(), tracked.end(), message.payload.point);
+    if (it != tracked.end()) {
+        tracked.erase(it);
+    }
     if (tracked.empty()) {
         actor->init_continue();
         return processing_result_t::FINISHED;
