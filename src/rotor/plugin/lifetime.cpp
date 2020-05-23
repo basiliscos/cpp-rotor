@@ -84,16 +84,7 @@ processing_result_t lifetime_plugin_t::remove_subscription(const subscription_po
     auto it = --rit.base();
     points.erase(it);
     if (points.empty()) {
-        // std::cout << "deactivating, no more points for " << actor->address.get() << "\n";
-
-        auto& req = actor->shutdown_request;
-        if (req) {
-            actor->reply_to(*req);
-            // std::cout << "confirming shutdown of " << actor->address.get() << " for " << req->address << "\n";
-            req.reset();
-        }
-        actor->shutdown_finish();
-
+        actor->shutdown_continue();
         plugin_t::deactivate();
         return processing_result_t::FINISHED;
     }

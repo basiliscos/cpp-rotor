@@ -90,6 +90,13 @@ void actor_base_t::shutdown_start() noexcept {
 }
 
 void actor_base_t::shutdown_finish() noexcept {
+    // shutdown_request might be missing for root supervisor
+    if (shutdown_request) {
+        reply_to(*shutdown_request);
+        // std::cout << "confirming shutdown of " << actor->address.get() << " for " << req->address << "\n";
+        shutdown_request.reset();
+    }
+
     state = state_t::SHUTTED_DOWN;
 }
 
@@ -106,7 +113,6 @@ void actor_base_t::init_continue() noexcept {
     if (init_plugins.empty()) {
         init_finish();
     }
-
 }
 
 void actor_base_t::configure(plugin_t&) noexcept { }
@@ -121,6 +127,9 @@ void actor_base_t::shutdown_continue() noexcept {
             continue;
         }
         break;
+    }
+    if (shutdown_plugins.empty()) {
+        shutdown_finish();
     }
 }
 
