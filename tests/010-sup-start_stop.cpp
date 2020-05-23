@@ -95,6 +95,7 @@ struct sample_sup2_t : public rt::supervisor_test_t {
 
     void init_finish() noexcept override {
         ++init_invoked;
+        sup_base_t::init_finish();
     }
 
     virtual void shutdown_finish() noexcept override {

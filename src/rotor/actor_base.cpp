@@ -76,6 +76,8 @@ void actor_base_t::init_start() noexcept {
 }
 
 void actor_base_t::init_finish() noexcept {
+    reply_to(*init_request);
+    init_request.reset();
     state = state_t::INITIALIZED;
 }
 
