@@ -44,9 +44,9 @@ add_executable(015-actor-statuses 015-actor-statuses.cpp)
 target_link_libraries(015-actor-statuses ${rotor_TEST_LIBS})
 add_test(015-actor-statuses "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/015-actor-statuses")
 
-#add_executable(016-pub_sub 016-pub_sub.cpp)
-#target_link_libraries(016-pub_sub ${rotor_TEST_LIBS})
-#add_test(016-pub_sub "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/016-pub_sub")
+add_executable(016-pub_sub 016-pub_sub.cpp)
+target_link_libraries(016-pub_sub ${rotor_TEST_LIBS})
+add_test(016-pub_sub "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/016-pub_sub")
 
 #add_executable(017-req-res 017-req-res.cpp)
 #target_link_libraries(017-req-res ${rotor_TEST_LIBS})
