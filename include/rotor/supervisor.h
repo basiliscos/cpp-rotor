@@ -161,17 +161,6 @@ struct supervisor_t : public actor_base_t {
      *
      */
     virtual void on_call(message_t<payload::handler_call_t> &message) noexcept;
-
-    /** \brief answers about actor's state, identified by it's address
-     *
-     * If there is no information about the address (including the case when an actor
-     * is not yet created or already destroyed), then it replies with `UNKNOWN` status.
-     *
-     * It replies to the address specified to the `reply_addr` specified in
-     * the message {@link payload::state_request_t}.
-     *
-     */
-    virtual void on_state_request(message::state_request_t &message) noexcept;
 #endif
 
     /** \brief starts non-recurring timer, identified by `timer_id`
@@ -269,17 +258,6 @@ struct supervisor_t : public actor_base_t {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
 
-#if 0
-    /** \brief child actror housekeeping strcuture */
-    struct actor_state_t {
-        /** \brief intrusive pointer to actor */
-        actor_ptr_t actor;
-
-        /** \brief whethe the shutdown request is already sent */
-        bool shutdown_requesting;
-    };
-#endif
-
     /** \brief non-owning pointer to parent supervisor, `NULL` for root supervisor */
     supervisor_t *parent;
 
@@ -319,9 +297,6 @@ struct supervisor_t : public actor_base_t {
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
 protected:
-#if 0
-    virtual actor_behavior_t *create_behavior() noexcept override;
-#endif
 
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
@@ -331,11 +306,6 @@ protected:
 
     /** \brief address-to-subscription map type */
     using subscription_map_t = std::unordered_map<address_ptr_t, subscription_t>;
-
-#if 0
-    /** \brief (local) address-to-child_actor map type */
-    using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
-#endif
 
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
@@ -356,21 +326,11 @@ protected:
      */
     subscription_map_t subscription_map;
 
-#if 0
-    /** \brief local address to local actor (intrusive pointer) mapping */
-    actors_map_t actors_map;
-#endif
-
     /** \brief counter for request/timer ids */
     timer_id_t last_req_id;
 
     /** \brief timer to response with timeout procuder */
     request_map_t request_map;
-
-#if 0
-    /** \brief shutdown timeout value (copied from config) */
-    pt::time_duration shutdown_timeout;
-#endif
 
     template    <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;

@@ -358,6 +358,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief current actor state */
     state_t state;
 
+    /* non-owning pointers */
+    internal::address_maker_plugin_t* address_maker = nullptr;
+    internal::lifetime_plugin_t* lifetime = nullptr;
+
   protected:
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */
@@ -369,9 +373,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     std::set<const void*> activating_plugins;
     std::set<const void*> deactivating_plugins;
 
-    /* non-owning pointers */
-    internal::address_maker_plugin_t* address_maker = nullptr;
-    internal::lifetime_plugin_t* lifetime = nullptr;
 
     /* slots */
     actor_config_t::plugins_t init_plugins;

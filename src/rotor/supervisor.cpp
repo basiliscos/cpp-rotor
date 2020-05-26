@@ -186,22 +186,6 @@ void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept
     auto &orig_message = message.payload.orig_message;
     handler->call(orig_message);
 }
-
-void supervisor_t::on_state_request(message::state_request_t &message) noexcept {
-    auto &addr = message.payload.request_payload.subject_addr;
-    state_t target_state = state_t::UNKNOWN;
-    if (addr == address) {
-        target_state = state;
-    } else {
-        auto it = actors_map.find(addr);
-        if (it != actors_map.end()) {
-            auto &state = it->second;
-            auto &actor = state.actor;
-            target_state = actor->state;
-        }
-    }
-    reply_to(message, target_state);
-}
 #endif
 
 void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
@@ -213,13 +197,6 @@ void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handle
 }
 
 void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
-#if 0
-    auto it_actor = actors_map.find(actor.address);
-    actors_map.erase(it_actor);
-    if (actors_map.empty() && state == state_t::SHUTTING_DOWN) {
-        static_cast<supervisor_behavior_t *>(behavior)->on_childen_removed();
-    }
-#endif
     manager->remove_child(actor);
 }
 

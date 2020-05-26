@@ -24,6 +24,7 @@ void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     subscribe(&child_manager_plugin_t::on_init);
     subscribe(&child_manager_plugin_t::on_shutdown_trigger);
     subscribe(&child_manager_plugin_t::on_shutdown_confirm);
+    subscribe(&child_manager_plugin_t::on_state_request);
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
     actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
@@ -155,6 +156,20 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     }
 }
 
+void child_manager_plugin_t::on_state_request(message::state_request_t& message) noexcept {
+    auto &addr = message.payload.request_payload.subject_addr;
+    state_t target_state = state_t::UNKNOWN;
+    auto it = actors_map.find(addr);
+    if (it != actors_map.end()) {
+        auto &state = it->second;
+        auto &actor = state.actor;
+        target_state = actor->state;
+    }
+    actor->reply_to(message, target_state);
+}
+
+
+
 bool child_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
     return initializing_actors.empty();
 }
@@ -185,6 +200,7 @@ void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
         actor->shutdown_continue();
     }
 }
+
 
 
 /*

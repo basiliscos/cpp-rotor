@@ -28,6 +28,7 @@ void lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
     subscribe(&lifetime_plugin_t::on_unsubscription_external);
     subscribe(&lifetime_plugin_t::on_subscription);
 
+    actor->lifetime = this;
     return plugin_t::activate(actor_);
 }
 
@@ -85,6 +86,7 @@ processing_result_t lifetime_plugin_t::remove_subscription(const subscription_po
     points.erase(it);
     if (points.empty()) {
         actor->shutdown_continue();
+        actor->lifetime = nullptr;
         plugin_t::deactivate();
         return processing_result_t::FINISHED;
     }

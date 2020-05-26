@@ -24,12 +24,14 @@ void address_maker_plugin_t::activate(actor_base_t* actor_) noexcept {
     if (!actor_->address) {
         actor_->address = create_address();
     }
+    actor->address_maker = this;
     plugin_t::activate(actor_);
     actor->init_start();
 }
 
 
 void address_maker_plugin_t::deactivate() noexcept {
+    actor->address_maker = nullptr;
     return plugin_t::deactivate();
 }
 

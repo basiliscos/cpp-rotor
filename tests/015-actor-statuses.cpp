@@ -30,6 +30,7 @@ struct statuses_observer_t : public r::actor_base_t {
     }
 
     void on_start() noexcept override {
+        r::actor_base_t::on_start();
         auto sup_addr = supervisor->get_address();
         request<r::payload::state_request_t>(sup_addr, sup_addr).send(r::pt::seconds{1});
         request<r::payload::state_request_t>(sup_addr, dummy_addr).send(r::pt::seconds{1});
@@ -67,15 +68,15 @@ TEST_CASE("statuses observer", "[actor]") {
     observer->dummy_addr = sup->create_address();
 
     sup->do_process();
-    REQUIRE(observer->dummy_status == r::state_t::UNKNOWN);
-    REQUIRE(observer->observable_status == r::state_t::OPERATIONAL);
-    REQUIRE(observer->supervisor_status == r::state_t::INITIALIZED);
-    REQUIRE(observer->self_status == r::state_t::OPERATIONAL);
-    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+    CHECK(observer->dummy_status == r::state_t::UNKNOWN);
+    CHECK(observer->observable_status == r::state_t::OPERATIONAL);
+    CHECK(observer->supervisor_status == r::state_t::INITIALIZED);
+    CHECK(observer->self_status == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
     observer->request_sup_state();
     sup->do_process();
-    REQUIRE(observer->supervisor_status == r::state_t::OPERATIONAL);
+    CHECK(observer->supervisor_status == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();

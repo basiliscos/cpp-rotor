@@ -17,13 +17,6 @@ actor_base_t::actor_base_t(actor_config_t &cfg)
       {
     for(auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
-        if (!address_maker) {
-            address_maker = dynamic_cast<internal::address_maker_plugin_t*>(plugin);
-            if (address_maker) continue;
-        } else if (!lifetime) {
-            lifetime = dynamic_cast<internal::lifetime_plugin_t*>(plugin);
-            if (lifetime) continue;
-        }
     }
 }
 
