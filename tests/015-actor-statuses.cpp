@@ -7,13 +7,10 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "actor_test.h"
 
 namespace r = rotor;
 namespace rt = r::test;
-
-struct sample_actor_t : public r::actor_base_t {
-    using r::actor_base_t::actor_base_t;
-};
 
 struct statuses_observer_t : public r::actor_base_t {
     r::address_ptr_t observable_addr;
@@ -25,13 +22,14 @@ struct statuses_observer_t : public r::actor_base_t {
 
     using r::actor_base_t::actor_base_t;
 
-    void init_start() noexcept override {
-        subscribe(&statuses_observer_t::on_state);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&statuses_observer_t::on_state);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
         auto sup_addr = supervisor->get_address();
         request<r::payload::state_request_t>(sup_addr, sup_addr).send(r::pt::seconds{1});
         request<r::payload::state_request_t>(sup_addr, dummy_addr).send(r::pt::seconds{1});
@@ -64,7 +62,7 @@ TEST_CASE("statuses observer", "[actor]") {
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto observer = sup->create_actor<statuses_observer_t>().timeout(rt::default_timeout).finish();
-    auto sample_actor = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    auto sample_actor = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     observer->observable_addr = sample_actor->get_address();
     observer->dummy_addr = sup->create_address();
 

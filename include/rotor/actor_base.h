@@ -298,6 +298,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void on_unsubscription(message::unsubscription_t& message) noexcept;
     void on_unsubscription_external(message::unsubscription_external_t& message) noexcept;
 
+    address_ptr_t create_address() noexcept;
+
     // ex-protected
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
@@ -366,6 +368,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     actor_config_t::plugins_t plugins;
     std::set<const void*> activating_plugins;
     std::set<const void*> deactivating_plugins;
+
+    /* non-owning pointers */
+    internal::address_maker_plugin_t* address_maker = nullptr;
+    internal::lifetime_plugin_t* lifetime = nullptr;
 
     /* slots */
     actor_config_t::plugins_t init_plugins;

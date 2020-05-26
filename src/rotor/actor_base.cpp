@@ -17,6 +17,13 @@ actor_base_t::actor_base_t(actor_config_t &cfg)
       {
     for(auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
+        if (!address_maker) {
+            address_maker = dynamic_cast<internal::address_maker_plugin_t*>(plugin);
+            if (address_maker) continue;
+        } else if (!lifetime) {
+            lifetime = dynamic_cast<internal::lifetime_plugin_t*>(plugin);
+            if (lifetime) continue;
+        }
     }
 }
 
@@ -147,8 +154,7 @@ void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr
 }
 
 void actor_base_t::unsubscribe() noexcept {
-    auto plugin = static_cast<internal::lifetime_plugin_t*>(subscription_plugins.front());
-    plugin->unsubscribe();
+    lifetime->unsubscribe();
 }
 
 template <typename Fn, typename Message>
@@ -178,8 +184,8 @@ void actor_base_t::on_subscription(message::subscription_t& message) noexcept {
 }
 
 void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcept {
-    auto& point = message.payload.point;
     /*
+    auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[i] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
@@ -190,8 +196,8 @@ void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcep
 }
 
 void actor_base_t::on_unsubscription_external(message::unsubscription_external_t& message) noexcept {
-    auto& point = message.payload.point;
     /*
+    auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[e] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
@@ -200,6 +206,11 @@ void actor_base_t::on_unsubscription_external(message::unsubscription_external_t
         return plugin->handle_unsubscription_external(message);
     });
 }
+
+address_ptr_t actor_base_t::create_address() noexcept {
+    return address_maker->create_address();
+}
+
 
 /*
 void actor_base_t::unlink_notify(const address_ptr_t &service_addr) noexcept {
