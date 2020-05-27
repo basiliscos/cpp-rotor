@@ -253,7 +253,6 @@ struct good_actor3_t : public r::actor_base_t {
         }
     }
 };
-#if 0
 
 struct request_forwarder_t : public r::actor_base_t {
     using traits2_t = r::request_traits_t<req2_t>;
@@ -268,13 +267,15 @@ struct request_forwarder_t : public r::actor_base_t {
     r::request_id_t back_req2_id = 0;
     req_ptr_t req_ptr;
 
-    void init_start() noexcept override {
-        back_addr = supervisor->create_address();
-        subscribe(&request_forwarder_t::on_request_front);
-        subscribe(&request_forwarder_t::on_response_front);
-        subscribe(&request_forwarder_t::on_request_back, back_addr);
-        subscribe(&request_forwarder_t::on_response_back, back_addr);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            back_addr = supervisor->create_address();
+            p.subscribe_actor(&request_forwarder_t::on_request_front);
+            p.subscribe_actor(&request_forwarder_t::on_response_front);
+            p.subscribe_actor(&request_forwarder_t::on_request_back, back_addr);
+            p.subscribe_actor(&request_forwarder_t::on_response_back, back_addr);
+        }
     }
 
     void shutdown_start() noexcept override {
@@ -282,9 +283,9 @@ struct request_forwarder_t : public r::actor_base_t {
         r::actor_base_t::shutdown_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<req2_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<req2_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request_front(traits2_t::request::message_t &msg) noexcept {
@@ -319,22 +320,26 @@ struct intrusive_actor_t : public r::actor_base_t {
     r::address_ptr_t back_addr;
     req_ptr_t req_ptr;
 
-    void init_start() noexcept override {
-        back_addr = supervisor->create_address();
-        subscribe(&intrusive_actor_t::on_request_front);
-        subscribe(&intrusive_actor_t::on_response_front);
-        subscribe(&intrusive_actor_t::on_request_back, back_addr);
-        subscribe(&intrusive_actor_t::on_response_back, back_addr);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            back_addr = supervisor->create_address();
+            p.subscribe_actor(&intrusive_actor_t::on_request_front);
+            p.subscribe_actor(&intrusive_actor_t::on_response_front);
+            p.subscribe_actor(&intrusive_actor_t::on_request_back, back_addr);
+            p.subscribe_actor(&intrusive_actor_t::on_response_back, back_addr);
+        }
     }
+
+
 
     void shutdown_start() noexcept override {
         req_ptr.reset();
         r::actor_base_t::shutdown_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request<req3_t>(address, 4).send(r::pt::seconds(1));
     }
 
@@ -358,7 +363,6 @@ struct intrusive_actor_t : public r::actor_base_t {
     }
 };
 
-#endif
 struct duplicating_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
@@ -608,7 +612,6 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
-#if 0
 
 TEST_CASE("ref-counted response forwarding", "[actor]") {
     r::system_context_t system_context;
@@ -656,4 +659,3 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
-#endif
