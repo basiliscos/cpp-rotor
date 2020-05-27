@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -63,14 +63,17 @@ struct good_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&good_actor_t::on_request);
-        subscribe(&good_actor_t::on_response);
-        r::actor_base_t::init_start();
+
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&good_actor_t::on_request);
+            p.subscribe_actor(&good_actor_t::on_response);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request<request_sample_t>(address, 4).send(r::pt::seconds(1));
     }
 
@@ -90,20 +93,23 @@ struct bad_actor_t : public r::actor_base_t {
     std::error_code ec;
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
-    void init_start() noexcept override {
-        subscribe(&bad_actor_t::on_request);
-        subscribe(&bad_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&bad_actor_t::on_request);
+            p.subscribe_actor(&bad_actor_t::on_response);
+        }
     }
+
 
     void shutdown_start() noexcept override {
         req_msg.reset();
         r::actor_base_t::shutdown_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<request_sample_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { req_msg.reset(&msg); }
@@ -117,21 +123,24 @@ struct bad_actor_t : public r::actor_base_t {
     }
 };
 
+
 struct bad_actor2_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&bad_actor2_t::on_request);
-        subscribe(&bad_actor2_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&bad_actor2_t::on_request);
+            p.subscribe_actor(&bad_actor2_t::on_response);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<request_sample_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept {
@@ -154,15 +163,17 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void init_start() noexcept override {
-        subscribe(&good_supervisor_t::on_request);
-        subscribe(&good_supervisor_t::on_response);
-        rt::supervisor_test_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&good_supervisor_t::on_request);
+            p.subscribe_actor(&good_supervisor_t::on_response);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        rt::supervisor_test_t::on_start(msg);
-        request<request_sample_t>(this->address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        rt::supervisor_test_t::on_start();
+        request<request_sample_t>(this->address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -184,16 +195,18 @@ struct good_actor2_t : public r::actor_base_t {
     r::address_ptr_t reply_addr;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        reply_addr = supervisor->create_address();
-        subscribe(&good_actor2_t::on_request);
-        subscribe(&good_actor2_t::on_response, reply_addr);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            reply_addr = create_address();
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&good_actor2_t::on_request);
+            p.subscribe_actor(&good_actor2_t::on_response, reply_addr);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request_via<req2_t>(address, reply_addr, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request_via<req2_t>(address, reply_addr, 4).send(rt::default_timeout);
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -215,15 +228,17 @@ struct good_actor3_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&good_actor3_t::on_request);
-        subscribe(&good_actor3_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&good_actor3_t::on_request);
+            p.subscribe_actor(&good_actor3_t::on_response);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<req2_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<req2_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -234,10 +249,11 @@ struct good_actor3_t : public r::actor_base_t {
         ec = msg.payload.ec;
         if (req_left) {
             --req_left;
-            request<req2_t>(address, 4).send(r::pt::seconds(1));
+            request<req2_t>(address, 4).send(rt::default_timeout);
         }
     }
 };
+#if 0
 
 struct request_forwarder_t : public r::actor_base_t {
     using traits2_t = r::request_traits_t<req2_t>;
@@ -342,21 +358,24 @@ struct intrusive_actor_t : public r::actor_base_t {
     }
 };
 
+#endif
 struct duplicating_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&duplicating_actor_t::on_request);
-        subscribe(&duplicating_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&duplicating_actor_t::on_request);
+            p.subscribe_actor(&duplicating_actor_t::on_response);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<request_sample_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept {
@@ -589,6 +608,7 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
+#if 0
 
 TEST_CASE("ref-counted response forwarding", "[actor]") {
     r::system_context_t system_context;
@@ -636,3 +656,4 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
+#endif
