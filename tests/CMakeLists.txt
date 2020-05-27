@@ -60,9 +60,9 @@ add_test(018-lambda-handlers "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/018-lambda-handl
 #target_link_libraries(019-link-unlink ${rotor_TEST_LIBS})
 #add_test(019-link-unlink "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/019-link-unlink")
 
-#add_executable(020-two-supervisors 020-two-supervisors.cpp)
-#target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})
-#add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervisors")
+add_executable(020-two-supervisors 020-two-supervisors.cpp)
+target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})
+add_test(020-two-supervisors "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/020-two-supervisors")
 
 #add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 #target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
