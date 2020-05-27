@@ -52,9 +52,9 @@ add_executable(017-req-res 017-req-res.cpp)
 target_link_libraries(017-req-res ${rotor_TEST_LIBS})
 add_test(017-req-res "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/017-req-res")
 
-#add_executable(018-lambda-handlers 018-lambda-handlers.cpp)
-#target_link_libraries(018-lambda-handlers ${rotor_TEST_LIBS})
-#add_test(018-lambda-handlers "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/018-lambda-handlers")
+add_executable(018-lambda-handlers 018-lambda-handlers.cpp)
+target_link_libraries(018-lambda-handlers ${rotor_TEST_LIBS})
+add_test(018-lambda-handlers "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/018-lambda-handlers")
 
 #add_executable(019-link-unlink 019-link-unlink.cpp)
 #target_link_libraries(019-link-unlink ${rotor_TEST_LIBS})

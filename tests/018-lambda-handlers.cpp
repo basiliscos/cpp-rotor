@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -17,14 +17,17 @@ struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     bool received = false;
 
-    void init_start() noexcept override {
-        using message_t = r::message_t<payload>;
-        subscribe(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            using message_t = r::message_t<payload>;
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         send<payload>(address);
     }
 };
