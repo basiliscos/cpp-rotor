@@ -68,9 +68,9 @@ add_executable(021-ping_pong-external 021-ping_pong-external.cpp)
 target_link_libraries(021-ping_pong-external ${rotor_TEST_LIBS})
 add_test(021-ping_pong-external "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/021-ping_pong-external")
 
-#add_executable(022-supervisor-tree 022-supervisor-tree.cpp)
-#target_link_libraries(022-supervisor-tree ${rotor_TEST_LIBS})
-#add_test(022-supervisor-tree "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/022-supervisor-tree")
+add_executable(022-supervisor-tree 022-supervisor-tree.cpp)
+target_link_libraries(022-supervisor-tree ${rotor_TEST_LIBS})
+add_test(022-supervisor-tree "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/022-supervisor-tree")
 
 #add_executable(023-supervisor-children 023-supervisor-children.cpp)
 #target_link_libraries(023-supervisor-children ${rotor_TEST_LIBS})

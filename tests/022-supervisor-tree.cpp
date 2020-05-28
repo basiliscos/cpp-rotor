@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -21,13 +21,14 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_state);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
+            p.subscribe_actor(&pinger_t::on_state);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request_status();
     }
 
@@ -58,10 +59,12 @@ struct pinger_t : public r::actor_base_t {
 struct ponger_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
+            p.subscribe_actor(&ponger_t::on_ping);
+        });
     }
+
 
     void on_ping(r::message_t<ping_t> &) noexcept {
         ping_received++;
@@ -116,8 +119,8 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     pinger->set_ponger_addr(ponger->get_address());
     sup_A2->do_process();
 
-    REQUIRE(sup_A2->get_children().size() == 1);
-    REQUIRE(sup_B2->get_children().size() == 0);
+    REQUIRE(sup_A2->get_children().size() == 1 + 1);
+    REQUIRE(sup_B2->get_children().size() == 1);
     REQUIRE(ping_sent == 1);
     REQUIRE(ping_received == 1);
 
