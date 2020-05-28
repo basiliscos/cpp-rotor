@@ -116,7 +116,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
-    REQUIRE(sup->init_invoked == 2);
+    REQUIRE(sup->init_invoked == 1);
     REQUIRE(sup->shutdown_started == 0);
     REQUIRE(sup->shutdown_conf_invoked == 0);
     REQUIRE(sup->active_timers.size() == 0);

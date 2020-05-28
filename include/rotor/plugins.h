@@ -9,8 +9,9 @@
 // actors plugins
 #include "plugin/address_maker.h"
 #include "plugin/init_shutdown.h"
-#include "plugin/starter.h"
 #include "plugin/lifetime.h"
+#include "plugin/prestarter.h"
+#include "plugin/starter.h"
 
 // supervisors plugins
 #include "plugin/child_manager.h"

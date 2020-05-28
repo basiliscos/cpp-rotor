@@ -71,6 +71,7 @@ struct supervisor_t : public actor_base_t {
         internal::locality_plugin_t,
         internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
+        internal::prestarter_plugin_t,
         internal::subscription_support_plugin_t,
         internal::child_manager_plugin_t,
         internal::starter_plugin_t
@@ -394,12 +395,12 @@ template <typename Handler> handler_ptr_t plugin_t::subscribe(Handler &&h, const
 namespace internal {
 
 
-template<typename Handler> void starter_plugin_t::subscribe_actor(Handler&& handler) noexcept {
+template<typename Handler> void subscriber_plugin_t::subscribe_actor(Handler&& handler) noexcept {
     auto addr = actor->get_address();
     subscribe_actor(std::forward<Handler>(handler), addr);
 }
 
-template<typename Handler> void starter_plugin_t::subscribe_actor(Handler&& handler, const address_ptr_t& addr) noexcept {
+template<typename Handler> void subscriber_plugin_t::subscribe_actor(Handler&& handler, const address_ptr_t& addr) noexcept {
     auto wrapped_handler = actor->subscribe(std::forward<Handler>(handler), addr);
     auto point = subscription_point_t{wrapped_handler, addr};
     tracked.emplace_back(point);

@@ -98,6 +98,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         internal::address_maker_plugin_t,
         internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
+        internal::prestarter_plugin_t,
         internal::starter_plugin_t
     >;
 
@@ -288,6 +289,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     inline const pt::time_duration &get_shutdown_timeout() noexcept { return shutdown_timeout; }
 
     void install_plugin(plugin_t& plugin, slot_t slot) noexcept;
+    void uninstall_plugin(plugin_t& plugin, slot_t slot) noexcept;
     void activate_plugins() noexcept;
     void commit_plugin_activation(plugin_t& plugin, bool success) noexcept;
 

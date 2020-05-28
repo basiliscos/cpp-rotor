@@ -39,8 +39,8 @@ struct observer_t : public r::actor_base_t {
     explicit observer_t (config_t& cfg): r::actor_base_t(cfg), observable{cfg.observable} {}
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        if (plugin.identity() == r::internal::prestarter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::prestarter_plugin_t&>(plugin);
             p.subscribe_actor(&observer_t::on_sample_initialize, observable);
             p.subscribe_actor(&observer_t::on_sample_start, observable);
             p.subscribe_actor(&observer_t::on_sample_shutdown, observable);

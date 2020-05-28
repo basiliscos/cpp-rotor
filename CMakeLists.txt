@@ -41,7 +41,9 @@ add_library(rotor
     src/rotor/plugin/lifetime.cpp
     src/rotor/plugin/locality.cpp
     src/rotor/plugin/plugin.cpp
+    src/rotor/plugin/prestarter.cpp
     src/rotor/plugin/starter.cpp
+    src/rotor/plugin/subscriber.cpp
     src/rotor/plugin/subscription_support.cpp
 )
 target_include_directories(rotor

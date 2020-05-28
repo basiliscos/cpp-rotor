@@ -20,14 +20,9 @@ void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor_);
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SUBSCRIPTION);
-    actor->configure(*this);
     subscribe(&starter_plugin_t::on_start);
 }
 
-void starter_plugin_t::deactivate() noexcept {
-    tracked.clear();
-    return plugin_t::deactivate();
-}
 
 
 processing_result_t starter_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
@@ -35,7 +30,7 @@ processing_result_t starter_plugin_t::handle_subscription(message::subscription_
     if (it != tracked.end()) {
         tracked.erase(it);
     }
-    if (tracked.empty()) {
+    if (configured && tracked.empty()) {
         actor->init_continue();
         return processing_result_t::FINISHED;
     }
@@ -43,6 +38,13 @@ processing_result_t starter_plugin_t::handle_subscription(message::subscription_
 }
 
 bool starter_plugin_t::handle_init(message::init_request_t* request) noexcept {
+    if (!configured) {
+        actor->configure(*this);
+        configured = true;
+        if (tracked.empty()) {
+            actor->uninstall_plugin(*this, slot_t::SUBSCRIPTION);
+        }
+    }
     return tracked.empty() && request;
 }
 

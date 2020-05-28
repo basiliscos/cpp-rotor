@@ -40,10 +40,22 @@ void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
     case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
     case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
     case slot_t::UNSUBSCRIPTION: dest = &unsubscription_plugins; break;
-    default: std::abort();
     }
-    if (dest) dest->emplace_back(&plugin);
+    dest->emplace_back(&plugin);
 }
+
+void actor_base_t::uninstall_plugin(plugin_t& plugin, slot_t slot) noexcept {
+    actor_config_t::plugins_t* dest = nullptr;
+    switch (slot) {
+    case slot_t::INIT: dest = &init_plugins; break;
+    case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
+    case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
+    case slot_t::UNSUBSCRIPTION: dest = &unsubscription_plugins; break;
+    }
+    auto it = std::find(dest->begin(), dest->end(), &plugin);
+    dest->erase(it);
+}
+
 
 void actor_base_t::activate_plugins() noexcept {
     for(auto plugin : plugins) {

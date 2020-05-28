@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -23,12 +23,12 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&pinger_t::on_pong);
+        }
     }
-
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override { r::actor_base_t::on_start(msg); }
 
     void on_pong(r::message_t<pong_t> &) noexcept { ++pong_received; }
 
@@ -43,9 +43,12 @@ struct pinger_t : public r::actor_base_t {
 struct pinger_autostart_t : public pinger_t {
     using pinger_t::pinger_t;
 
-    void init_start() noexcept override {
-        subscribe(&pinger_autostart_t::on_ponger_start, ponger_addr);
-        pinger_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        pinger_t::configure(plugin);
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&pinger_autostart_t::on_ponger_start, ponger_addr);
+        }
     }
 
     void on_ponger_start(r::message_t<r::payload::start_actor_t> &) noexcept { do_send_ping(); }
@@ -59,12 +62,13 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t& plugin) noexcept override {
+        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+            p.subscribe_actor(&ponger_t::on_ping);
+        }
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { std::cout << "on_start\n"; }
 
     void on_ping(r::message_t<ping_t> &) noexcept {
         ++ping_received;
