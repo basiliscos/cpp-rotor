@@ -54,10 +54,9 @@ struct sub_t : public r::actor_base_t {
     explicit sub_t (config_t& cfg): r::actor_base_t(cfg), pub_addr{cfg.pub_addr} {}
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             p.subscribe_actor(&sub_t::on_payload, pub_addr);
-        }
+        });
     }
 
     void on_payload(r::message_t<payload_t> &) noexcept { ++received; }

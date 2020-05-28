@@ -18,11 +18,10 @@ struct sample_actor_t : public r::actor_base_t {
     bool received = false;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            using message_t = r::message_t<payload>;
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        using message_t = r::message_t<payload>;
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             p.subscribe_actor(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
-        }
+        });
     }
 
 

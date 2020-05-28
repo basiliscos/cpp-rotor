@@ -23,10 +23,9 @@ struct statuses_observer_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
             p.subscribe_actor(&statuses_observer_t::on_state);
-        }
+        });
     }
 
     void on_start() noexcept override {

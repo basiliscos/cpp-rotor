@@ -65,11 +65,10 @@ struct good_actor_t : public r::actor_base_t {
 
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             p.subscribe_actor(&good_actor_t::on_request);
             p.subscribe_actor(&good_actor_t::on_response);
-        }
+        });
     }
 
     void on_start() noexcept override {
@@ -94,11 +93,10 @@ struct bad_actor_t : public r::actor_base_t {
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             p.subscribe_actor(&bad_actor_t::on_request);
             p.subscribe_actor(&bad_actor_t::on_response);
-        }
+        });
     }
 
 
@@ -131,11 +129,10 @@ struct bad_actor2_t : public r::actor_base_t {
     std::error_code ec;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             p.subscribe_actor(&bad_actor2_t::on_request);
             p.subscribe_actor(&bad_actor2_t::on_response);
-        }
+        });
     }
 
     void on_start() noexcept override {
@@ -164,11 +161,10 @@ struct good_supervisor_t : rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             p.subscribe_actor(&good_supervisor_t::on_request);
             p.subscribe_actor(&good_supervisor_t::on_response);
-        }
+        });
     }
 
     void on_start() noexcept override {
@@ -196,12 +192,11 @@ struct good_actor2_t : public r::actor_base_t {
     std::error_code ec;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             reply_addr = create_address();
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
-            p.subscribe_actor(&good_actor2_t::on_request);
             p.subscribe_actor(&good_actor2_t::on_response, reply_addr);
-        }
+            p.subscribe_actor(&good_actor2_t::on_request);
+        });
     }
 
     void on_start() noexcept override {
@@ -229,11 +224,10 @@ struct good_actor3_t : public r::actor_base_t {
     std::error_code ec;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
-            p.subscribe_actor(&good_actor3_t::on_request);
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
             p.subscribe_actor(&good_actor3_t::on_response);
-        }
+            p.subscribe_actor(&good_actor3_t::on_request);
+        });
     }
 
     void on_start() noexcept override {
@@ -268,14 +262,13 @@ struct request_forwarder_t : public r::actor_base_t {
     req_ptr_t req_ptr;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             back_addr = supervisor->create_address();
             p.subscribe_actor(&request_forwarder_t::on_request_front);
             p.subscribe_actor(&request_forwarder_t::on_response_front);
             p.subscribe_actor(&request_forwarder_t::on_request_back, back_addr);
             p.subscribe_actor(&request_forwarder_t::on_response_back, back_addr);
-        }
+        });
     }
 
     void shutdown_start() noexcept override {
@@ -321,14 +314,13 @@ struct intrusive_actor_t : public r::actor_base_t {
     req_ptr_t req_ptr;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
             back_addr = supervisor->create_address();
             p.subscribe_actor(&intrusive_actor_t::on_request_front);
             p.subscribe_actor(&intrusive_actor_t::on_response_front);
             p.subscribe_actor(&intrusive_actor_t::on_request_back, back_addr);
             p.subscribe_actor(&intrusive_actor_t::on_response_back, back_addr);
-        }
+        });
     }
 
 
@@ -370,11 +362,10 @@ struct duplicating_actor_t : public r::actor_base_t {
     std::error_code ec;
 
     void configure(r::plugin_t& plugin) noexcept override {
-        if (plugin.identity() == r::internal::starter_plugin_t::class_identity) {
-            auto& p = static_cast<r::internal::starter_plugin_t&>(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
             p.subscribe_actor(&duplicating_actor_t::on_request);
             p.subscribe_actor(&duplicating_actor_t::on_response);
-        }
+        });
     }
 
     void on_start() noexcept override {

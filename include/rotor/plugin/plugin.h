@@ -35,6 +35,14 @@ struct plugin_t {
     template<typename Handler> handler_ptr_t subscribe(Handler&& handler, const address_ptr_t& address) noexcept;
     template<typename Handler> handler_ptr_t subscribe(Handler&& handler) noexcept;
 
+    template<typename Plugin, typename Fn>
+    void with_casted(Fn&& fn) noexcept {
+        if (identity() == Plugin::class_identity) {
+            auto& final = static_cast<Plugin&>(*this);
+            fn(final);
+        }
+    }
+
     actor_base_t* actor;
     subscription_points_t own_subscriptions;
 };
