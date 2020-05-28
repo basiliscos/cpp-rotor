@@ -21,7 +21,10 @@ actor_base_t::actor_base_t(actor_config_t &cfg)
 }
 
 actor_base_t::~actor_base_t() {
-    assert(deactivating_plugins.empty() && "active plugins should not be present during actor destructor");
+    if (!deactivating_plugins.empty()) {
+        auto p = *deactivating_plugins.begin();
+        assert(!p && "a plugin was not deactivated");
+    }
     for(auto plugin: plugins) {
         delete plugin;
     }
@@ -74,13 +77,15 @@ void actor_base_t::commit_plugin_activation(plugin_t& plugin, bool success) noex
 void actor_base_t::deactivate_plugins() noexcept {
     for(auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
         auto& plugin = *--(it.base());
-        deactivating_plugins.insert(plugin->identity());
-        plugin->deactivate();
+        if (plugin->actor) { // may be it is already inactive
+            deactivating_plugins.insert(plugin->identity());
+            plugin->deactivate();
+        }
     }
 }
 
 void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
-    deactivating_plugins.erase(plugin.identity());
+    auto count = deactivating_plugins.erase(plugin.identity());
 }
 
 void actor_base_t::init_start() noexcept {

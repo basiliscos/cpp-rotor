@@ -18,9 +18,11 @@ void plugin_t::activate(actor_base_t* actor_) noexcept {
 
 
 void plugin_t::deactivate() noexcept {
-    own_subscriptions.clear();
-    actor->commit_plugin_deactivation(*this);
-    actor = nullptr;
+    if (actor) {
+        own_subscriptions.clear();
+        actor->commit_plugin_deactivation(*this);
+        actor = nullptr;
+    }
 }
 
 bool plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
