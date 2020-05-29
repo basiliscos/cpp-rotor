@@ -241,7 +241,7 @@ struct supervisor_t : public actor_base_t {
      */
     template <typename Actor> auto create_actor() {
         using builder_t = typename Actor::template config_builder_t<Actor>;
-        assert(manager && "children_manager_plugin_t should be already inited");
+        assert(manager && "child_manager_plugin_t should be already initialized");
         return builder_t([this](auto &actor) { manager->create_child(actor); }, this);
     }
 

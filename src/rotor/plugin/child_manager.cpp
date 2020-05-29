@@ -75,7 +75,6 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     auto it = initializing_actors.find(address);
     if (it != initializing_actors.end()) {
         initializing_actors.erase(it);
-        // actor->get_state() == state_t::INITIALIZING;
     }
     continue_init = !activated && initializing_actors.empty() && !ec;
     if (ec) {
