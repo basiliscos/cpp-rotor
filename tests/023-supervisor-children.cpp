@@ -151,7 +151,6 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
 }
-#if 0
 
 TEST_CASE("shutdown_self policy", "[supervisor]") {
     r::system_context_t system_context;
@@ -175,6 +174,7 @@ TEST_CASE("shutdown_self policy", "[supervisor]") {
     REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
+#if 0
 TEST_CASE("shutdown supervisor during actor start", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
