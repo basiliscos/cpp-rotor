@@ -18,7 +18,8 @@ const void* child_manager_plugin_t::identity() const noexcept {
 }
 
 void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
-    actor = actor_;
+    plugin_t::activate(actor_);
+    //actor = actor_;
     static_cast<supervisor_t&>(*actor_).manager = this;
     subscribe(&child_manager_plugin_t::on_create);
     subscribe(&child_manager_plugin_t::on_init);
@@ -43,8 +44,13 @@ void child_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.address);
     assert(it_actor != actors_map.end());
     actors_map.erase(it_actor);
-    if (actors_map.size() == 1 && actor->get_state() == state_t::SHUTTING_DOWN) {
-        actor->shutdown_continue();
+    if (actors_map.size() == 1) {
+        auto state = actor->get_state();
+        if (state == state_t::SHUTTING_DOWN) {
+            actor->shutdown_continue();
+        } else if (state == state_t::INITIALIZING) {
+            actor->init_continue();
+        }
     }
 }
 
@@ -53,7 +59,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
     child->do_initialize(sup.get_context());
     auto &timeout = child->get_init_timeout();
     sup.send<payload::create_actor_t>(sup.get_address(), child, timeout);
-    if (!activated) { // sup.state == state_t::INITIALIZING
+    if (sup.state == state_t::INITIALIZING) {
         initializing_actors.emplace(child->get_address());
         postponed_init = true;
     }
@@ -77,9 +83,9 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     if (it != initializing_actors.end()) {
         initializing_actors.erase(it);
     }
-    continue_init = !activated && initializing_actors.empty() && !ec;
+    continue_init = initializing_actors.empty() && !ec && address != actor->address;
     if (ec) {
-        auto shutdown_self = !activated && sup.policy == supervisor_policy_t::shutdown_self;
+        auto shutdown_self = actor->state == state_t::INITIALIZING && sup.policy == supervisor_policy_t::shutdown_self;
         if (shutdown_self) {
             continue_init = false;
             sup.do_shutdown();
@@ -89,12 +95,8 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     } else {
         sup.template send<payload::start_actor_t>(address, address);
     }
-    if (continue_init) {
-        activated = true;
-        if (postponed_init) {
-            actor->init_continue();
-        }
-        plugin_t::activate(actor);
+    if (continue_init && postponed_init) {
+        actor->init_continue();
     }
 }
 

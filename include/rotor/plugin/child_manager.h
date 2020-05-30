@@ -62,7 +62,6 @@ struct child_manager_plugin_t: public plugin_t {
     void unsubscribe_all(bool continue_shutdow) noexcept;
 
     bool postponed_init = false;
-    bool activated = false;
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
 

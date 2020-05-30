@@ -128,7 +128,6 @@ TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     sup->do_process();
 }
 
-#if 0
 TEST_CASE("shutdown_failed policy", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
@@ -152,6 +151,7 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
 }
+#if 0
 
 TEST_CASE("shutdown_self policy", "[supervisor]") {
     r::system_context_t system_context;
