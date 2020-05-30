@@ -34,7 +34,10 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
     activate_plugins();
 }
 
-void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor->get_address(), address); }
+void actor_base_t::do_shutdown() noexcept {
+    assert(state != state_t::NEW && state != state_t::UNKNOWN);
+    send<payload::shutdown_trigger_t>(supervisor->get_address(), address);
+}
 
 void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
     actor_config_t::plugins_t* dest = nullptr;
@@ -85,7 +88,7 @@ void actor_base_t::deactivate_plugins() noexcept {
 }
 
 void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
-    auto count = deactivating_plugins.erase(plugin.identity());
+    deactivating_plugins.erase(plugin.identity());
 }
 
 void actor_base_t::init_start() noexcept {
