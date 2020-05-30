@@ -30,20 +30,19 @@ struct hello_actor_t : public rt::actor_test_t {
     }
 };
 
-#if 0
 struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
 
-    virtual void init_start() noexcept override {
-        child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        auto timeout = r::pt::milliseconds{1};
-        child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    void configure(r::plugin_t& plugin) noexcept override {
+        plugin.with_casted<r::internal::child_manager_plugin_t>([this](auto&){
+            child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+
+        });
     }
 
     child_ptr_t child;
 };
-#endif
 
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {
     r::system_context_t system_context;
@@ -110,7 +109,6 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
     REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
-#if 0
 TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     r::system_context_t system_context;
 
@@ -130,6 +128,7 @@ TEST_CASE("supervisor create child during init phase", "[supervisor]") {
     sup->do_process();
 }
 
+#if 0
 TEST_CASE("shutdown_failed policy", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()

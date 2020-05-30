@@ -28,6 +28,7 @@ void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor->install_plugin(*this, slot_t::INIT);
     actor->install_plugin(*this, slot_t::SHUTDOWN);
     actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
+    actor->configure(*this);
 }
 
 
@@ -166,7 +167,6 @@ void child_manager_plugin_t::on_state_request(message::state_request_t& message)
     }
     actor->reply_to(message, target_state);
 }
-
 
 
 bool child_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
