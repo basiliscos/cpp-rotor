@@ -40,11 +40,11 @@ void child_manager_plugin_t::deactivate() noexcept {
     return plugin_t::deactivate();
 }
 
-void child_manager_plugin_t::remove_child(actor_base_t &child) noexcept {
+void child_manager_plugin_t::remove_child(actor_base_t &child, bool normal_flow) noexcept {
     auto it_actor = actors_map.find(child.address);
     assert(it_actor != actors_map.end());
     actors_map.erase(it_actor);
-    if (actors_map.size() == 1) {
+    if (normal_flow && actors_map.size() == 1) {
         auto state = actor->get_state();
         if (state == state_t::SHUTTING_DOWN) {
             actor->shutdown_continue();
@@ -143,10 +143,11 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto points = sup.address_mapping.destructive_get(*child_actor);
     if (!points.empty()) {
-        auto cb = [this, child_actor = child_actor, count = points.size()]() mutable {
-            --count;
-            if (count == 0) {
-                remove_child(*child_actor);
+        auto count = std::make_shared<std::atomic_int>(points.size());
+        auto cb = [this, child_actor = child_actor, count]() mutable {
+            int left= --(*count);
+            if (left == 0) {
+                remove_child(*child_actor, true);
             }
         };
         auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
@@ -154,7 +155,13 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
             sup.unsubscribe(point.handler, point.address, cb_ptr);
         }
     } else {
-        remove_child(*child_actor);
+        auto state = sup.get_state();
+        bool normal_flow = (state == state_t::OPERATIONAL) || (state == state_t::SHUTTING_DOWN)
+            || (state == state_t::INITIALIZING && sup.policy == supervisor_policy_t::shutdown_failed);
+        remove_child(*child_actor, normal_flow);
+        if (!normal_flow) {
+            sup.do_shutdown();
+        }
     }
 }
 

@@ -311,8 +311,10 @@ protected:
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
 
+#if 0
     /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
     virtual void remove_actor(actor_base_t &actor) noexcept;
+#endif
 
     /** \brief non-owning pointer to system context. */
     system_context_t *context;

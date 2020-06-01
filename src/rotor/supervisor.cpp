@@ -196,9 +196,11 @@ void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handle
     }
 }
 
+#if 0
 void supervisor_t::remove_actor(actor_base_t &actor) noexcept {
     manager->remove_child(actor);
 }
+#endif
 
 void supervisor_t::shutdown_finish() noexcept {
     address_mapping.destructive_get(*this);
