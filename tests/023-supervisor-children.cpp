@@ -257,6 +257,26 @@ TEST_CASE("actor shutdown during init", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
+TEST_CASE("two actors shutdown during init", "[supervisor]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act1 = sup->create_actor<fail_init_actor2_t>().timeout(rt::default_timeout).finish();
+    auto act2 = sup->create_actor<fail_init_actor2_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    REQUIRE(act1->get_state() == r::state_t::INITIALIZING);
+    REQUIRE(act2->get_state() == r::state_t::INITIALIZING);
+    REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
+
+    act1->do_shutdown();
+    act2->do_shutdown();
+    sup->do_process();
+    REQUIRE(act1->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+
 #if 0
 TEST_CASE("misconfigured actor", "[supervisor]") {
     rt::system_context_test_t system_context;
