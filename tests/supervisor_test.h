@@ -22,6 +22,7 @@ template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
     using timers_t = std::list<timer_id_t>;
+    using subscription_points_t = internal::lifetime_plugin_t::points_container_t;
 
     using config_t = supervisor_config_test_t;
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;

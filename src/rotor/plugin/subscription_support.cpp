@@ -40,6 +40,7 @@ void subscription_support_plugin_t::on_call(message::handler_call_t &message) no
 void subscription_support_plugin_t::on_unsubscription(message::commit_unsubscription_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto& point = message.payload.point;
+
     sup.commit_unsubscription(point.address, point.handler);
     external_subscriptions.remove(point);
 

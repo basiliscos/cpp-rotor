@@ -155,15 +155,7 @@ void actor_base_t::shutdown_continue() noexcept {
 
 void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr,
                                const payload::callback_ptr_t &callback) noexcept {
-
-    auto &dest = h->actor_ptr->address;
-    auto point = subscription_point_t{h, addr};
-    if (&addr->supervisor == this) {
-        send<payload::unsubscription_confirmation_t>(dest, point, callback);
-    } else {
-        assert(!callback);
-        send<payload::external_unsubscription_t>(dest, point);
-    }
+    lifetime->unsubscribe(h, addr, callback);
 }
 
 void actor_base_t::unsubscribe() noexcept {

@@ -188,6 +188,19 @@ void supervisor_t::on_call(message_t<payload::handler_call_t> &message) noexcept
 }
 #endif
 
+void supervisor_t::subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
+   subscription_point_t point{handler, addr};
+   bool local = &addr->supervisor == supervisor;
+   handler->actor_ptr->lifetime->presubscribe(point, local);
+   if (local) {
+       auto subs_info = subscription_map.try_emplace(addr, *this);
+       subs_info.first->second.subscribe(handler);
+       send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), point);
+   } else {
+       send<payload::external_subscription_t>(addr->supervisor.address, point);
+   }
+}
+
 void supervisor_t::commit_unsubscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
     auto &subscriptions = subscription_map.at(addr);
     auto left = subscriptions.unsubscribe(handler);
