@@ -147,7 +147,7 @@ TEST_CASE("actor litetimes", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
 }
 
 TEST_CASE("fail shutdown test", "[actor]") {
@@ -189,7 +189,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(sup->get_leader_queue().size() == 0);
     CHECK(sup->get_points().size() == 0);
-    CHECK(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
 }
 
 TEST_CASE("fail initialize test", "[actor]") {

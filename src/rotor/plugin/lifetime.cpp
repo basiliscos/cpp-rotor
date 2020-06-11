@@ -37,23 +37,10 @@ void lifetime_plugin_t::deactivate() noexcept  {
     // NOOP, do not unsubscribe too early.
 }
 
-bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t* message) noexcept {
+bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
     if (points.empty()) return true;
     unsubscribe();
     return false;
-}
-
-
-lifetime_plugin_t::iterator_t lifetime_plugin_t::find_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
-    auto it = points.rbegin();
-    while (it != points.rend()) {
-        if (it->address == addr && *it->handler == *handler) {
-            return --it.base();
-        } else {
-            ++it;
-        }
-    }
-    assert(0 && "no subscription found");
 }
 
 void lifetime_plugin_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t &callback) noexcept {
@@ -71,15 +58,9 @@ void lifetime_plugin_t::unsubscribe() noexcept {
     auto& sup = actor->get_supervisor();
     auto rit = points.rbegin();
     while (rit != points.rend()) {
-        if (rit->local) {
-            auto &addr = rit->address;
-            auto &handler = rit->handler;
-            sup.unsubscribe_actor(addr, handler);
-            ++rit;
-        } else {
-            auto it = points.erase(--rit.base());
-            rit = points_container_t::reverse_iterator(it);
-        }
+        auto& info = *rit;
+        sup.unsubscribe_actor(info->address, info->handler);
+        ++rit;
     }
 }
 
@@ -95,10 +76,7 @@ void lifetime_plugin_t::on_unsubscription_external(message::unsubscription_exter
     actor->on_unsubscription_external(msg);
 }
 
-processing_result_t lifetime_plugin_t::remove_subscription(const subscription_point_t& point) noexcept {
-    auto rit = std::find(points.rbegin(), points.rend(), point);
-    assert(rit != points.rend());
-    auto it = --rit.base();
+processing_result_t lifetime_plugin_t::remove_subscription(subscription_container_t::iterator it) noexcept {
     points.erase(it);
     if (points.empty()) {
         actor->shutdown_continue();
@@ -109,30 +87,44 @@ processing_result_t lifetime_plugin_t::remove_subscription(const subscription_po
     return processing_result_t::CONSUMED;
 }
 
-void lifetime_plugin_t::presubscribe(const subscription_point_t &point, bool local) noexcept {
-    points.emplace_back(subscription_point_with_state_t{{point.handler, point.address}, SUBSCRIBING, local});
+void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t& info) noexcept {
+    points.emplace_back(info);
 }
-
 
 processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
     auto& point = message.payload.point;
-    auto rit = std::find(points.rbegin(), points.rend(), point);
+    // printf("subscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    auto predicate = [&point](auto& info) {
+        return info->handler == point.handler && info->address == point.address;
+    };
+    auto rit = std::find_if(points.rbegin(), points.rend(), predicate);
     assert(rit != points.rend());
     auto it = --rit.base();
-    it->state = SUBSCRIBED;
+    auto& info = **it;
+    assert(info.state == subscription_info_t::state_t::SUBSCRIBING || info.internal_address);
+    if (!info.internal_address) info.state = subscription_info_t::state_t::SUBSCRIBED;
     return processing_result_t::CONSUMED;
 }
 
 processing_result_t lifetime_plugin_t::handle_unsubscription(message::unsubscription_t& message) noexcept {
     auto& point = message.payload.point;
-    actor->get_supervisor().commit_unsubscription(point.address, point.handler);
-    return remove_subscription(point);
+    // printf("unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    auto predicate = [&point](auto& info) { return info->handler == point.handler && info->address == point.address; };
+    auto rit = std::find_if(points.rbegin(), points.rend(), predicate);
+    assert(rit != points.rend());
+    auto it = --rit.base();
+    actor->get_supervisor().commit_unsubscription(*it);
+    return remove_subscription(it);
 }
 
 processing_result_t lifetime_plugin_t::handle_unsubscription_external(message::unsubscription_external_t& message) noexcept {
     auto& point = message.payload.point;
+    auto predicate = [&point](auto& info) { return info->handler == point.handler && info->address == point.address; };
+    auto rit = std::find_if(points.rbegin(), points.rend(), predicate);
+    assert(rit != points.rend());
+    auto it = --rit.base();
     auto sup_addr = point.address->supervisor.get_address();
     actor->send<payload::commit_unsubscription_t>(sup_addr, point);
-    return remove_subscription(point);
+    return remove_subscription(it);
 }
 

@@ -127,11 +127,11 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().size() == 0);
+    REQUIRE(sup1->get_subscription().empty());
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
+    REQUIRE(sup2->get_subscription().empty());
 }
 
 
@@ -163,11 +163,11 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().size() == 0);
+    REQUIRE(sup2->get_subscription().empty());
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
+    REQUIRE(sup2->get_subscription().empty());
 }
 
 TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]") {
@@ -198,9 +198,9 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().size() == 0);
+    REQUIRE(sup1->get_subscription().empty());
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
+    REQUIRE(sup2->get_subscription().empty());
 }

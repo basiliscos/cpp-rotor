@@ -22,7 +22,7 @@ struct subscription_support_plugin_t: public plugin_t {
     virtual void on_unsubscription(message::commit_unsubscription_t& message) noexcept;
     virtual void on_subscription_external(message::external_subscription_t& message) noexcept;
 
-    subscription_points_t external_subscriptions;
+    subscription_container_t foreign_points;
 };
 
 }

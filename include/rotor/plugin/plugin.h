@@ -6,7 +6,7 @@
 // Distributed under the MIT Software License
 //
 
-#include "../subscription_point.h"
+#include "../subscription.h"
 #include "rotor/messages.hpp"
 
 namespace rotor {

@@ -28,7 +28,7 @@ void subscription_support_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 void subscription_support_plugin_t::deactivate() noexcept {
-    if (external_subscriptions.empty()) plugin_t::deactivate();
+    if (foreign_points.empty()) plugin_t::deactivate();
 }
 
 void subscription_support_plugin_t::on_call(message::handler_call_t &message) noexcept {
@@ -37,22 +37,27 @@ void subscription_support_plugin_t::on_call(message::handler_call_t &message) no
     handler->call(orig_message);
 }
 
-void subscription_support_plugin_t::on_unsubscription(message::commit_unsubscription_t &message) noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
-    auto& point = message.payload.point;
-
-    sup.commit_unsubscription(point.address, point.handler);
-    external_subscriptions.remove(point);
-
-    if (external_subscriptions.empty() && actor->state == state_t::SHUTTING_DOWN) {
-        plugin_t::deactivate();
-    }
-}
-
 void subscription_support_plugin_t::on_subscription_external(message::external_subscription_t &message) noexcept {
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto& point = message.payload.point;
     assert(&point.address->supervisor == &sup);
-    sup.subscribe_actor(point.address, point.handler);
-    external_subscriptions.emplace_back(point);
+    auto info = sup.subscribe_actor(point.address, point.handler);
+    foreign_points.emplace_back(info);
 }
+
+
+void subscription_support_plugin_t::on_unsubscription(message::commit_unsubscription_t &message) noexcept {
+    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto& point = message.payload.point;
+
+    auto it = foreign_points.find(point);
+    auto& info = *it;
+
+    sup.commit_unsubscription(info);
+    foreign_points.erase(it);
+
+    if (foreign_points.empty() && actor->state == state_t::SHUTTING_DOWN) {
+        plugin_t::deactivate();
+    }
+}
+

@@ -391,7 +391,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    auto init_subs_count = sup->get_subscription().size();
+    //auto init_subs_count = sup->get_subscription().size();
     auto init_pts_count = sup->get_points().size();
 
     auto actor = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
@@ -407,7 +407,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
     std::size_t delta = 1; /* + shutdown confirmation triggered on self */
     REQUIRE(sup->get_points().size() == init_pts_count + delta);
-    REQUIRE(sup->get_subscription().size() == init_subs_count + delta);
+    //REQUIRE(sup->get_subscription().size() == init_subs_count + delta);
 
     sup->do_shutdown();
     sup->do_process();
@@ -415,7 +415,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -443,7 +443,7 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -484,7 +484,7 @@ TEST_CASE("request-response timeout", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->active_timers.size() == 0);
 }
 
@@ -506,7 +506,7 @@ TEST_CASE("response with custom error", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
 }
 
 TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") {
@@ -526,7 +526,7 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -550,7 +550,7 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -574,7 +574,7 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -598,7 +598,7 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -622,7 +622,7 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
@@ -645,7 +645,7 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    REQUIRE(sup->get_subscription().empty());
     REQUIRE(sup->get_children().size() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);

@@ -37,6 +37,7 @@ TEST_CASE("direct builder configuration", "[config_builder]") {
     sup->do_shutdown();
     sup->do_process();
     sup->do_process();
+    CHECK(sup->get_subscription().empty());
 }
 
 TEST_CASE("indirect builder configuration", "[config_builder]") {

@@ -22,7 +22,6 @@ template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
     using timers_t = std::list<timer_id_t>;
-    using subscription_points_t = internal::lifetime_plugin_t::points_container_t;
 
     using config_t = supervisor_config_test_t;
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
@@ -40,8 +39,8 @@ struct supervisor_test_t : public supervisor_t {
     state_t &get_state() noexcept { return state; }
     queue_t &get_leader_queue() { return get_leader().queue; }
     supervisor_test_t &get_leader() { return *static_cast<supervisor_test_t *>(locality_leader); }
-    subscription_points_t &get_points() noexcept;
-    subscription_map_t &get_subscription() noexcept { return subscription_map; }
+    subscription_container_t& get_points() noexcept;
+    subscription_t &get_subscription() noexcept { return subscription_map; }
     auto &get_children() noexcept { return manager->actors_map; }
     request_map_t &get_requests() noexcept { return request_map; }
 
