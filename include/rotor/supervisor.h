@@ -72,7 +72,7 @@ struct supervisor_t : public actor_base_t {
         internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
         internal::prestarter_plugin_t,
-        internal::subscription_support_plugin_t,
+        internal::foreigners_support_plugin_t,
         internal::child_manager_plugin_t,
         internal::starter_plugin_t
     >;
@@ -265,7 +265,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief root supervisor for the locality */
     supervisor_t *locality_leader;
 
-    internal::subscription_support_plugin_t* subscription_support;
+    internal::foreigners_support_plugin_t* subscription_support;
     internal::child_manager_plugin_t* manager;
 
     /** \brief reaction on child-actors termination */

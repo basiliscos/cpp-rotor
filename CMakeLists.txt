@@ -37,6 +37,7 @@ add_library(rotor
     src/rotor/system_context.cpp
     src/rotor/plugin/address_maker.cpp
     src/rotor/plugin/child_manager.cpp
+    src/rotor/plugin/foreigners_support.cpp
     src/rotor/plugin/init_shutdown.cpp
     src/rotor/plugin/lifetime.cpp
     src/rotor/plugin/locality.cpp
@@ -44,7 +45,6 @@ add_library(rotor
     src/rotor/plugin/prestarter.cpp
     src/rotor/plugin/starter.cpp
     src/rotor/plugin/subscriber.cpp
-    src/rotor/plugin/subscription_support.cpp
 )
 target_include_directories(rotor
     PUBLIC

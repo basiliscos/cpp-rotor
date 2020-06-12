@@ -10,7 +10,7 @@
 
 namespace rotor::internal {
 
-struct subscription_support_plugin_t: public plugin_t {
+struct foreigners_support_plugin_t: public plugin_t {
     using plugin_t::plugin_t;
 
     static const void* class_identity;

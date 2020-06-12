@@ -24,7 +24,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
         r::internal::locality_plugin_t,
         r::internal::lifetime_plugin_t,
         init_shutdown_plugin_t,                 /* use custom */
-        r::internal::subscription_support_plugin_t,
+        r::internal::foreigners_support_plugin_t,
         r::internal::child_manager_plugin_t,
         r::internal::starter_plugin_t
     >;
