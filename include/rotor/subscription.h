@@ -72,6 +72,7 @@ struct subscription_t {
     const joint_handlers_t* get_recipients(const message_base_t& message) const noexcept;
 
     bool empty() const noexcept;
+    size_t handlers_count() const noexcept { return mine_handlers.size() ;}
 
 private:
     using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
