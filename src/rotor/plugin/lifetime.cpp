@@ -94,12 +94,7 @@ void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t& info
 processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
     auto& point = message.payload.point;
     // printf("subscribed %p to %s\n", point.address.get(), point.handler->message_type);
-    auto predicate = [&point](auto& info) {
-        return info->handler == point.handler && info->address == point.address;
-    };
-    auto rit = std::find_if(points.rbegin(), points.rend(), predicate);
-    assert(rit != points.rend());
-    auto it = --rit.base();
+    auto it = points.find(point);
     auto& info = **it;
     assert(info.state == subscription_info_t::state_t::SUBSCRIBING || info.internal_address);
     if (!info.internal_address) info.state = subscription_info_t::state_t::SUBSCRIBED;
@@ -107,22 +102,15 @@ processing_result_t lifetime_plugin_t::handle_subscription(message::subscription
 }
 
 processing_result_t lifetime_plugin_t::handle_unsubscription(message::unsubscription_t& message) noexcept {
-    auto& point = message.payload.point;
     // printf("unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
-    auto predicate = [&point](auto& info) { return info->handler == point.handler && info->address == point.address; };
-    auto rit = std::find_if(points.rbegin(), points.rend(), predicate);
-    assert(rit != points.rend());
-    auto it = --rit.base();
+    auto it = points.find(message.payload.point);
     actor->get_supervisor().commit_unsubscription(*it);
     return remove_subscription(it);
 }
 
 processing_result_t lifetime_plugin_t::handle_unsubscription_external(message::unsubscription_external_t& message) noexcept {
     auto& point = message.payload.point;
-    auto predicate = [&point](auto& info) { return info->handler == point.handler && info->address == point.address; };
-    auto rit = std::find_if(points.rbegin(), points.rend(), predicate);
-    assert(rit != points.rend());
-    auto it = --rit.base();
+    auto it = points.find(point);
     auto sup_addr = point.address->supervisor.get_address();
     actor->send<payload::commit_unsubscription_t>(sup_addr, point);
     return remove_subscription(it);
