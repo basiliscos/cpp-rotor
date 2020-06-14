@@ -44,22 +44,26 @@ bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
 }
 
 void lifetime_plugin_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t &callback) noexcept {
+    using state_t = subscription_info_t::state_t;
     auto &dest = h->actor_ptr->address;
     auto point = subscription_point_t{h, addr};
-    if (&addr->supervisor == actor) {
-        actor->send<payload::unsubscription_confirmation_t>(dest, point, callback);
-    } else {
-        assert(!callback);
-        actor->send<payload::external_unsubscription_t>(dest, point);
+    auto& info = **points.find(point);
+    if (info.state != state_t::UNSUBSCRIBING) {
+        info.state = state_t::UNSUBSCRIBING;
+        if (info.internal_address) {
+            actor->send<payload::unsubscription_confirmation_t>(dest, point, callback);
+        } else {
+            assert(!callback);
+            actor->send<payload::external_unsubscription_t>(dest, point);
+        }
     }
 }
 
 void lifetime_plugin_t::unsubscribe() noexcept {
-    auto& sup = actor->get_supervisor();
     auto rit = points.rbegin();
     while (rit != points.rend()) {
         auto& info = *rit;
-        sup.unsubscribe_actor(info->address, info->handler);
+        unsubscribe(info->handler, info->address, {});
         ++rit;
     }
 }
@@ -77,10 +81,11 @@ void lifetime_plugin_t::on_unsubscription_external(message::unsubscription_exter
 }
 
 processing_result_t lifetime_plugin_t::remove_subscription(subscription_container_t::iterator it) noexcept {
+    printf("[-]removing subscription %s\n", (**it).handler->message_type);
     points.erase(it);
     if (points.empty()) {
         actor->shutdown_continue();
-        actor->lifetime = nullptr;
+        own_subscriptions.clear();
         plugin_t::deactivate();
         return processing_result_t::FINISHED;
     }
@@ -93,7 +98,7 @@ void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t& info
 
 processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
     auto& point = message.payload.point;
-    // printf("subscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
     auto it = points.find(point);
     auto& info = **it;
     assert(info.state == subscription_info_t::state_t::SUBSCRIBING || info.internal_address);
@@ -102,8 +107,9 @@ processing_result_t lifetime_plugin_t::handle_subscription(message::subscription
 }
 
 processing_result_t lifetime_plugin_t::handle_unsubscription(message::unsubscription_t& message) noexcept {
-    // printf("unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
-    auto it = points.find(message.payload.point);
+    auto& point = message.payload.point;
+    printf("[-]unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    auto it = points.find(point);
     actor->get_supervisor().commit_unsubscription(*it);
     return remove_subscription(it);
 }

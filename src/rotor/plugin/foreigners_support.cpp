@@ -28,7 +28,10 @@ void foreigners_support_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 void foreigners_support_plugin_t::deactivate() noexcept {
-    if (foreign_points.empty()) plugin_t::deactivate();
+    if (foreign_points.empty()) return plugin_t::deactivate();
+    for(auto& point : foreign_points) {
+        actor->unsubscribe(point->handler, point->address);
+    }
 }
 
 void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noexcept {

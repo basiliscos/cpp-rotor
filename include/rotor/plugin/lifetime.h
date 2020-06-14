@@ -19,7 +19,6 @@ struct lifetime_plugin_t: public plugin_t {
     void activate(actor_base_t* actor) noexcept override;
     void deactivate() noexcept override;
 
-    /* \brief unsubcribes all actor's handlers */
     void unsubscribe() noexcept;
 
     void initate_subscription(const subscription_info_ptr_t& info) noexcept;

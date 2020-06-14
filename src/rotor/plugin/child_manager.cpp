@@ -145,7 +145,7 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     auto points = sup.address_mapping.destructive_get(*child_actor);
     if (!points.empty()) {
         auto count = std::make_shared<std::atomic_int>(points.size());
-        auto cb = [this, child_actor = child_actor, count]() mutable {
+        auto cb = [this, child_actor = child_actor, count = std::move(count)]() mutable {
             int left= --(*count);
             if (left == 0) {
                 remove_child(*child_actor, true);

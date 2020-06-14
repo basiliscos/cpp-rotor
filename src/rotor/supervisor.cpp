@@ -68,14 +68,16 @@ void supervisor_t::do_process() noexcept {
 
 void supervisor_t::deliver_local(message_ptr_t &&message) noexcept {
     auto local_recipients = subscription_map.get_recipients(*message);
-    // external should be handled 1st, as the subscription might be deleted during internal handler processing.
-    for(auto handler: local_recipients->external) {
-        auto &sup = handler->actor_ptr->get_supervisor();
-        auto wrapped_message = make_message<payload::handler_call_t>(sup.address, message, handler);
-        sup.enqueue(std::move(wrapped_message));
-    }
-    for(auto handler: local_recipients->internal) {
-        handler->call(message);
+    if (local_recipients) {
+        // external should be handled 1st, as the subscription might be deleted during internal handler processing.
+        for(auto handler: local_recipients->external) {
+            auto &sup = handler->actor_ptr->get_supervisor();
+            auto wrapped_message = make_message<payload::handler_call_t>(sup.address, message, handler);
+            sup.enqueue(std::move(wrapped_message));
+        }
+        for(auto handler: local_recipients->internal) {
+            handler->call(message);
+        }
     }
 }
 

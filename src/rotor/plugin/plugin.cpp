@@ -19,9 +19,29 @@ void plugin_t::activate(actor_base_t* actor_) noexcept {
 
 void plugin_t::deactivate() noexcept {
     if (actor) {
-        own_subscriptions.clear();
-        actor->commit_plugin_deactivation(*this);
-        actor = nullptr;
+        if (own_subscriptions.empty()) {
+            actor->commit_plugin_deactivation(*this);
+            actor = nullptr;
+        } else {
+            auto count = std::make_shared<std::atomic_int>(own_subscriptions.size());
+            auto cb = [this,  count = std::move(count)]() mutable {
+                int left= --(*count);
+                if (left == 0) {
+                    actor->commit_plugin_deactivation(*this);
+                    actor = nullptr;
+                    own_subscriptions.clear();
+                }
+            };
+            auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
+            auto lifetime = actor->lifetime;
+            assert(lifetime);
+
+            auto& subs = own_subscriptions;
+            for(auto rit = subs.rbegin(); rit != subs.rend(); ++rit) {
+                auto& point = *rit;
+                lifetime->unsubscribe(point.handler, point.address, cb_ptr);
+            }
+        }
     }
 }
 
