@@ -16,21 +16,6 @@
 
 namespace rotor {
 
-struct subscription_info_t: public arc_base_t<subscription_info_t> {
-    enum state_t { SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING };
-
-    subscription_info_t(const handler_ptr_t& handler, const address_ptr_t& address,
-                        bool internal_address, bool internal_handler, state_t state) noexcept;
-    ~subscription_info_t();
-
-    handler_ptr_t handler;
-    address_ptr_t address;
-    bool internal_address;
-    bool internal_handler;
-    state_t state;
-};
-using subscription_info_ptr_t = intrusive_ptr_t<subscription_info_t>;
-
 
 /* \struct subscription_t
  *  \brief Holds and classifies message handlers on behalf of supervisor
@@ -65,7 +50,7 @@ struct subscription_t {
 
     subscription_t(supervisor_t &supervisor) noexcept;
 
-    subscription_info_ptr_t materialize(const handler_ptr_t& handler, const address_ptr_t& address) noexcept;
+    subscription_info_ptr_t materialize(const subscription_point_t& point) noexcept;
 
     void forget(const subscription_info_ptr_t& info) noexcept;
 
@@ -78,12 +63,8 @@ private:
     using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
     supervisor_t &supervisor;
     info_container_t internal_infos;
-    info_container_t external_infos;
+    //info_container_t external_infos;
     addressed_handlers_t mine_handlers;
-};
-
-struct subscription_container_t: public std::list<subscription_info_ptr_t> {
-      iterator find(const subscription_point_t& point) noexcept;
 };
 
 } // namespace rotor

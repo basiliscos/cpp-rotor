@@ -5,7 +5,7 @@
 //
 
 #include "rotor/plugin/plugin.h"
-#include "rotor/actor_base.h"
+#include "rotor/supervisor.h"
 
 using namespace rotor;
 
@@ -23,23 +23,12 @@ void plugin_t::deactivate() noexcept {
             actor->commit_plugin_deactivation(*this);
             actor = nullptr;
         } else {
-            auto count = std::make_shared<std::atomic_int>(own_subscriptions.size());
-            auto cb = [this,  count = std::move(count)]() mutable {
-                int left= --(*count);
-                if (left == 0) {
-                    actor->commit_plugin_deactivation(*this);
-                    actor = nullptr;
-                    own_subscriptions.clear();
-                }
-            };
-            auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
             auto lifetime = actor->lifetime;
             assert(lifetime);
 
             auto& subs = own_subscriptions;
             for(auto rit = subs.rbegin(); rit != subs.rend(); ++rit) {
-                auto& point = *rit;
-                lifetime->unsubscribe(point.handler, point.address, cb_ptr);
+                lifetime->unsubscribe(*rit);
             }
         }
     }
@@ -53,15 +42,36 @@ bool plugin_t::handle_init(message::init_request_t*) noexcept {
     return true;
 }
 
+void plugin_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
+    printf("[-] forgetting %s\n", info->handler->message_type);
+    actor->get_supervisor().commit_unsubscription(info);
+}
+
+bool plugin_t::forget_subscription(const subscription_point_t& point) noexcept {
+    auto& subs = own_subscriptions;
+    auto it = subs.find(point);
+    if (it != subs.end()) {
+        auto& info = *it;
+        assert(info->owner_tag == owner_tag_t::PLUGIN);
+        forget_subscription(info);
+        subs.erase(it);
+        if (subs.empty()) {
+            actor->commit_plugin_deactivation(*this);
+            if (actor->state == state_t::SHUTTING_DOWN) {
+                actor->shutdown_continue();
+            }
+            actor = nullptr;
+        }
+        return true;
+    }
+    return false;
+}
+
+
 processing_result_t plugin_t::handle_subscription(message::subscription_t&) noexcept {
     std::abort();
 }
 
-processing_result_t plugin_t::handle_unsubscription(message::unsubscription_t&) noexcept {
-    std::abort();
+bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool) noexcept {
+    return forget_subscription(point);
 }
-
-processing_result_t plugin_t::handle_unsubscription_external(message::unsubscription_external_t&) noexcept {
-    std::abort();
-}
-

@@ -34,13 +34,14 @@ void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 
 void child_manager_plugin_t::deactivate() noexcept {
+    auto &sup = static_cast<supervisor_t &>(*actor);
     assert(actors_map.size() == 1);
-    actors_map.clear();
+    //actors_map.clear();
     initializing_actors.clear();
-    return plugin_t::deactivate();
+    if (sup.address_mapping.empty()) plugin_t::deactivate();
 }
 
-void child_manager_plugin_t::remove_child(actor_base_t &child, bool normal_flow) noexcept {
+void child_manager_plugin_t::remove_child(const actor_base_t &child, bool normal_flow) noexcept {
     auto it_actor = actors_map.find(child.address);
     assert(it_actor != actors_map.end());
     actors_map.erase(it_actor);
@@ -142,19 +143,10 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     }
     // std::cout << "shutdown confirmed from " << (void*) source_addr.get() << " on " << (void*)actor->address.get() << "\n";
     auto& sup = static_cast<supervisor_t&>(*actor);
-    auto points = sup.address_mapping.destructive_get(*child_actor);
-    if (!points.empty()) {
-        auto count = std::make_shared<std::atomic_int>(points.size());
-        auto cb = [this, child_actor = child_actor, count = std::move(count)]() mutable {
-            int left= --(*count);
-            if (left == 0) {
-                remove_child(*child_actor, true);
-            }
-        };
-        auto cb_ptr = std::make_shared<payload::callback_t>(std::move(cb));
-        for (auto &point : points) {
-            sup.unsubscribe(point.handler, point.address, cb_ptr);
-        }
+    if (sup.address_mapping.has_subscriptions(*child_actor)) {
+        sup.address_mapping.each_subscription(*child_actor, [&](auto &info){
+            sup.lifetime->unsubscribe(info);
+        });
     } else {
         auto state = sup.get_state();
         bool normal_flow = (state == state_t::OPERATIONAL) || (state == state_t::SHUTTING_DOWN)
@@ -211,6 +203,23 @@ void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
 }
 
 
+bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t& point, bool external) noexcept {
+    if (point.owner_tag == owner_tag_t::SUPERVISOR) {
+        auto& sup = static_cast<supervisor_t&>(*actor);
+        sup.address_mapping.remove(point);
+        if (!sup.address_mapping.has_subscriptions(*point.owner_ptr)) {
+            remove_child(*point.owner_ptr, true);
+        }
+        if (actors_map.size() == 0) {
+            plugin_t::deactivate();
+        }
+        if (sup.address_mapping.empty()) plugin_t::deactivate();
+        return false; //handled by lifetime
+    }
+    else {
+        return plugin_t::handle_unsubscription(point, external);
+    }
+}
 
 /*
 should trigger

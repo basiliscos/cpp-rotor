@@ -11,7 +11,7 @@
 
 namespace rotor {
 
-enum class slot_t { INIT = 0, SHUTDOWN, SUBSCRIPTION, UNSUBSCRIPTION };
+enum class slot_t { INIT = 0, SHUTDOWN, SUBSCRIPTION};
 enum class processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
 struct plugin_t {
@@ -28,12 +28,14 @@ struct plugin_t {
     virtual bool handle_init(message::init_request_t* message) noexcept;
     virtual bool handle_shutdown(message::shutdown_request_t* message) noexcept;
 
-    virtual processing_result_t handle_subscription(message::subscription_t& message) noexcept;
-    virtual processing_result_t handle_unsubscription(message::unsubscription_t& message) noexcept;
-    virtual processing_result_t handle_unsubscription_external(message::unsubscription_external_t& message) noexcept;
+    virtual bool handle_unsubscription(const subscription_point_t& point, bool external) noexcept;
+    virtual bool forget_subscription(const subscription_point_t& point) noexcept;
+    virtual void forget_subscription(const subscription_info_ptr_t& info) noexcept;
 
-    template<typename Handler> handler_ptr_t subscribe(Handler&& handler, const address_ptr_t& address) noexcept;
-    template<typename Handler> handler_ptr_t subscribe(Handler&& handler) noexcept;
+    virtual processing_result_t handle_subscription(message::subscription_t& message) noexcept;
+
+    template<typename Handler> subscription_info_ptr_t subscribe(Handler&& handler, const address_ptr_t& address) noexcept;
+    template<typename Handler> subscription_info_ptr_t subscribe(Handler&& handler) noexcept;
 
     template<typename Plugin, typename Fn>
     void with_casted(Fn&& fn) noexcept {
@@ -44,7 +46,7 @@ struct plugin_t {
     }
 
     actor_base_t* actor;
-    subscription_points_t own_subscriptions;
+    subscription_container_t own_subscriptions;
 };
 
 }

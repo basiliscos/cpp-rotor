@@ -22,7 +22,7 @@ struct lifetime_plugin_t: public plugin_t {
     void unsubscribe() noexcept;
 
     void initate_subscription(const subscription_info_ptr_t& info) noexcept;
-    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t &callback) noexcept;
+    void unsubscribe(const subscription_info_ptr_t& info) noexcept;
 
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_container_t points;
@@ -32,12 +32,10 @@ struct lifetime_plugin_t: public plugin_t {
     virtual void on_unsubscription_external(message::unsubscription_external_t&) noexcept;
 
     processing_result_t handle_subscription(message::subscription_t& message) noexcept override;
-    processing_result_t handle_unsubscription(message::unsubscription_t& message) noexcept override;
-    processing_result_t handle_unsubscription_external(message::unsubscription_external_t& message) noexcept override;
+    bool handle_unsubscription(const subscription_point_t& point, bool external) noexcept override;
+    //bool handle_unsubscription_external(message::unsubscription_external_t& message) noexcept override;
 
     bool handle_shutdown(message::shutdown_request_t* message) noexcept override;
-
-    processing_result_t remove_subscription(subscription_container_t::iterator it) noexcept;
 };
 
 

@@ -178,23 +178,12 @@ struct commit_unsubscription_t {
     subscription_point_t point;
 };
 
-/** \struct unsubscription_confirmation_t
+/* \struct unsubscription_confirmation_t
  *  \brief Message with this payload is sent from a supervisor to an actor with
  *  confirmation that `handler` is no longer subscribed to `target_address`
  */
 struct unsubscription_confirmation_t {
     subscription_point_t point;
-
-    /** \brief the optional callback to be invoked once message is locally
-     *  delivered, i.e. when it is destroyed.
-     */
-    callback_ptr_t callback;
-
-    ~unsubscription_confirmation_t() {
-        if (callback) {
-            (*callback)();
-        }
-    }
 };
 
 /** \struct state_response_t

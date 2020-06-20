@@ -29,8 +29,9 @@ void foreigners_support_plugin_t::activate(actor_base_t* actor_) noexcept {
 
 void foreigners_support_plugin_t::deactivate() noexcept {
     if (foreign_points.empty()) return plugin_t::deactivate();
-    for(auto& point : foreign_points) {
-        actor->unsubscribe(point->handler, point->address);
+    auto lifetime = actor->lifetime;
+	for(auto& info: foreign_points) {
+        lifetime->unsubscribe(info);
     }
 }
 
@@ -44,7 +45,7 @@ void foreigners_support_plugin_t::on_subscription_external(message::external_sub
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto& point = message.payload.point;
     assert(&point.address->supervisor == &sup);
-    auto info = sup.subscribe_actor(point.address, point.handler);
+    auto info = sup.subscribe(point.handler, point.address, point.owner_ptr, owner_tag_t::FOREIGN);
     foreign_points.emplace_back(info);
 }
 

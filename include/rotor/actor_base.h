@@ -258,10 +258,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
-    template <typename Handler> handler_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
+    template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
 
     /** \brief subscribes actor's handler to process messages on the actor's "main" address */
-    template <typename Handler> handler_ptr_t subscribe(Handler &&h) noexcept;
+    template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h) noexcept;
 
     /** \brief unsubscribes actor's handler from process messages on the specified address */
     template <typename Handler, typename = is_handler<Handler>>
@@ -270,7 +270,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief unsubscribes actor's handler from processing messages on the actor's "main" address */
     template <typename Handler, typename = is_handler<Handler>> void unsubscribe(Handler &&h) noexcept;
 
-    /** \brief initiates handler unsubscription from the address
+    /* \brief initiates handler unsubscription from the address
      *
      * If the address is local, then unsubscription confirmation is sent immediately,
      * otherwise {@link payload::external_subscription_t} request is sent to the external
@@ -279,7 +279,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * The optional call can be providded to be called upon message destruction.
      *
      */
-    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t & = {}) noexcept;
+    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr) noexcept;
 
     /** \brief initiates handler unsubscription from the default actor address */
     inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
@@ -380,7 +380,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     actor_config_t::plugins_t init_plugins;
     actor_config_t::plugins_t shutdown_plugins;
     actor_config_t::plugins_t subscription_plugins;
-    actor_config_t::plugins_t unsubscription_plugins;
 
     friend struct actor_behavior_t;
     friend struct supervisor_t;

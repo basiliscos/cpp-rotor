@@ -7,10 +7,8 @@
 
 #include "rotor/supervisor.h"
 #include <assert.h>
-/*
 #include <iostream>
 #include <boost/core/demangle.hpp>
-*/
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
@@ -87,9 +85,10 @@ void supervisor_t::do_shutdown() noexcept {
 }
 
 
-subscription_info_ptr_t supervisor_t::subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept {
-   auto sub_info = subscription_map.materialize(handler, addr);
-   subscription_point_t point{handler, addr};
+subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
+                                                const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept {
+   subscription_point_t point(handler, addr, owner_ptr, owner_tag);
+   auto sub_info = subscription_map.materialize(point);
 
    if (sub_info->internal_address) {
        send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), point);
@@ -109,7 +108,7 @@ void supervisor_t::commit_unsubscription(const subscription_info_ptr_t& info) no
 }
 
 void supervisor_t::shutdown_finish() noexcept {
-    address_mapping.destructive_get(*this);
+    //address_mapping.clear(*this);
     actor_base_t::shutdown_finish();
 }
 

@@ -1,19 +1,19 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "arc.hpp"
-#include "subscription_point.h"
+#include "subscription.h"
 #include <unordered_map>
 #include <vector>
 
 namespace rotor {
 
-/** \struct address_mapping_t
+/* \struct address_mapping_t
  * \brief NAT mechanism for `rotor`
  *
  * It plays the similar role as https://en.wikipedia.org/wiki/Network_address_translation
@@ -26,10 +26,10 @@ namespace rotor {
  *
  */
 struct address_mapping_t {
-    /** \brief alias for vector of subscription points */
-    using points_t = std::vector<subscription_point_t>;
+    /* \brief alias for vector of subscription points */
+    //using points_t = std::vector<subscription_info_ptr_t>;
 
-    /** \brief associates temporal destination point with actor's message type
+    /* \brief associates temporal destination point with actor's message type
      *
      * An actor is able to process message type indetified by `message`. So,
      * the temporal subscription point (hander and temporal address) will
@@ -39,22 +39,29 @@ struct address_mapping_t {
      * supervisor's address.
      *
      */
-    void set(actor_base_t &actor, const void *message, const handler_ptr_t &handler,
-             const address_ptr_t &dest_addr) noexcept;
+    void set(actor_base_t &actor, const subscription_info_ptr_t& info) noexcept;
 
     /** \brief returns temporal destination address for the actor/message type */
-    address_ptr_t get_addr(actor_base_t &actor, const void *message) noexcept;
+    address_ptr_t get_mapped_address(actor_base_t &actor, const void *message) noexcept;
 
-    /** \brief returns all subscription points for the actor
-     *
-     * All subscription points are removed. This needed for clean-up, i.e. once
-     * an actor is removed, all related mappings for it should also be removed too.
-     *
-     */
-    points_t destructive_get(actor_base_t &actor) noexcept;
+    template<typename Fn>
+    void each_subscription(const actor_base_t &actor, Fn&& fn) const noexcept {
+        auto it_mappings = actor_map.find(static_cast<const void *>(&actor));
+        if (it_mappings == actor_map.end()) return;
+
+        for(auto it: it_mappings->second) {
+            fn(it.second);
+        }
+    }
+
+    bool has_subscriptions(const actor_base_t& actor) const noexcept;
+    bool empty() const noexcept { return actor_map.empty(); }
+    void remove(const subscription_point_t& point) noexcept;
+
+    //void clear(supervisor_t& sup) noexcept;
 
   private:
-    using point_map_t = std::unordered_map<const void *, subscription_point_t>;
+    using point_map_t = std::unordered_map<const void *, subscription_info_ptr_t>;
     using actor_map_t = std::unordered_map<const void *, point_map_t>;
     actor_map_t actor_map;
 };

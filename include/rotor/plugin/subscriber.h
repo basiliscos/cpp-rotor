@@ -17,7 +17,7 @@ struct subscriber_plugin_t: public plugin_t {
 
     void deactivate() noexcept override;
 
-    subscription_points_t tracked;
+    subscription_container_t tracked;
 };
 
 }

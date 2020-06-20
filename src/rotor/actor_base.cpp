@@ -45,7 +45,6 @@ void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
     case slot_t::INIT: dest = &init_plugins; break;
     case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
     case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
-    case slot_t::UNSUBSCRIPTION: dest = &unsubscription_plugins; break;
     }
     dest->emplace_back(&plugin);
 }
@@ -56,7 +55,6 @@ void actor_base_t::uninstall_plugin(plugin_t& plugin, slot_t slot) noexcept {
     case slot_t::INIT: dest = &init_plugins; break;
     case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
     case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
-    case slot_t::UNSUBSCRIPTION: dest = &unsubscription_plugins; break;
     }
     auto it = std::find(dest->begin(), dest->end(), &plugin);
     dest->erase(it);
@@ -153,9 +151,10 @@ void actor_base_t::shutdown_continue() noexcept {
     }
 }
 
-void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr,
-                               const payload::callback_ptr_t &callback) noexcept {
-    lifetime->unsubscribe(h, addr, callback);
+void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr) noexcept {
+    auto it = lifetime->points.find(subscription_point_t{h, addr});
+    assert(it != lifetime->points.end());
+    lifetime->unsubscribe(*it);
 }
 
 void actor_base_t::unsubscribe() noexcept {
@@ -168,11 +167,8 @@ static void poll(actor_config_t::plugins_t& plugins, Message& message, Fn&& fn) 
         auto it = --rit.base();
         auto plugin = *it;
         auto result = fn(plugin, message);
-        switch (result) {
-        case processing_result_t::IGNORED: ++rit; break;
-        case processing_result_t::CONSUMED: return;
-        case processing_result_t::FINISHED: it = plugins.erase(it); rit = std::reverse_iterator(it); break;
-        }
+        if (result) break;
+        ++rit;
     }
 }
 
@@ -183,9 +179,17 @@ void actor_base_t::on_subscription(message::subscription_t& message) noexcept {
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll(subscription_plugins, message, [](auto& plugin, auto& message) {
-        return plugin->handle_subscription(message);
-    });
+    for(auto rit = subscription_plugins.rbegin(); rit != subscription_plugins.rend(); ) {
+        auto& plugin = *rit;
+        auto result = plugin->handle_subscription(message);
+        switch (result) {
+        case processing_result_t::IGNORED: ++rit; continue;
+        case processing_result_t::CONSUMED: return;
+        case processing_result_t::FINISHED:
+            auto it =  subscription_plugins.erase(--rit.base());
+            rit = std::reverse_iterator(it);
+        }
+    }
 }
 
 void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcept {
@@ -195,8 +199,8 @@ void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcep
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll(unsubscription_plugins, message, [](auto& plugin, auto& message) {
-        return plugin->handle_unsubscription(message);
+    poll(plugins, message, [](auto& plugin, auto& message) {
+        return plugin->handle_unsubscription(message.payload.point, false);
     });
 }
 
@@ -207,14 +211,15 @@ void actor_base_t::on_unsubscription_external(message::unsubscription_external_t
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll(unsubscription_plugins, message, [](auto& plugin, auto& message) {
-        return plugin->handle_unsubscription_external(message);
+    poll(plugins, message, [](auto& plugin, auto& message) {
+        return plugin->handle_unsubscription(message.payload.point, true);
     });
 }
 
 address_ptr_t actor_base_t::create_address() noexcept {
     return address_maker->create_address();
 }
+
 
 
 /*

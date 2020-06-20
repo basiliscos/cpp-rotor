@@ -226,8 +226,8 @@ struct supervisor_t : public actor_base_t {
 
 
     /** \brief templated version of `subscribe_actor` */
-    template <typename Handler> void subscribe_actor(actor_base_t &actor, Handler &&handler) {
-        supervisor->subscribe_actor(actor.get_address(), wrap_handler(actor, std::move(handler)));
+    template <typename Handler> void subscribe(actor_base_t &actor, Handler &&handler) {
+        supervisor->subscribe(actor.get_address(), wrap_handler(actor, std::move(handler)));
     }
 
     /** \brief convenient templated version of `unsubscribe_actor */
@@ -283,7 +283,8 @@ struct supervisor_t : public actor_base_t {
      * request.
      *
      */
-    subscription_info_ptr_t subscribe_actor(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
+    subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
+                                      const actor_base_t* owner_ptr, owner_tag_t owner_tag) noexcept;
 
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
@@ -360,28 +361,26 @@ template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Hand
     return handler_ptr_t{handler_raw};
 }
 
-template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h) noexcept {
+template <typename Handler> subscription_info_ptr_t actor_base_t::subscribe(Handler &&h) noexcept {
     auto wrapped_handler = wrap_handler(*this, std::move(h));
-    supervisor->subscribe_actor(address, wrapped_handler);
-    return wrapped_handler;
+    return supervisor->subscribe(wrapped_handler, address, this, owner_tag_t::ANONYMOUS);
 }
 
-template <typename Handler> handler_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
+template <typename Handler> subscription_info_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*this, std::move(h));
-    supervisor->subscribe_actor(addr, wrapped_handler);
-    return wrapped_handler;
+    return supervisor->subscribe(wrapped_handler, addr, this, owner_tag_t::ANONYMOUS);
 }
 
-template <typename Handler> handler_ptr_t plugin_t::subscribe(Handler &&h) noexcept {
+template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler &&h) noexcept {
     return subscribe(std::forward<Handler>(h), actor->get_address());
 }
 
-template <typename Handler> handler_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
+template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
     using final_handler_t = handler_t<Handler>;
     handler_ptr_t wrapped_handler(new final_handler_t(*this, std::move(h)));
-    actor->get_supervisor().subscribe_actor(addr, wrapped_handler);
-    own_subscriptions.emplace_back(subscription_point_t{wrapped_handler, addr});
-    return wrapped_handler;
+    auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
+    own_subscriptions.emplace_back(info);
+    return info;
 }
 
 namespace internal {
@@ -393,10 +392,10 @@ template<typename Handler> void subscriber_plugin_t::subscribe_actor(Handler&& h
 }
 
 template<typename Handler> void subscriber_plugin_t::subscribe_actor(Handler&& handler, const address_ptr_t& addr) noexcept {
-    auto wrapped_handler = actor->subscribe(std::forward<Handler>(handler), addr);
-    auto point = subscription_point_t{wrapped_handler, addr};
-    tracked.emplace_back(point);
-    own_subscriptions.emplace_back(std::move(point));
+    auto wrapped_handler = wrap_handler(*actor, std::move(handler));
+    auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
+    tracked.emplace_back(info);
+    own_subscriptions.emplace_back(std::move(info));
 }
 
 }
@@ -417,7 +416,7 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
                                         const address_ptr_t &reply_to_, Args &&... args)
     : sup{sup_}, actor{actor_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
       do_install_handler{false} {
-    auto addr = sup.address_mapping.get_addr(actor_, response_message_t::message_type);
+    auto addr = sup.address_mapping.get_mapped_address(actor_, response_message_t::message_type);
     if (addr) {
         imaginary_address = addr;
     } else {
@@ -456,8 +455,9 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
         // and error-message already delivered or response is not expected.
         // just silently drop it anyway
     });
-    auto handler_ptr = sup.subscribe(handler, imaginary_address);
-    sup.address_mapping.set(actor, response_message_t::message_type, handler_ptr, imaginary_address);
+    auto wrapped_handler = wrap_handler(sup, std::move(handler));
+    auto info = sup.subscribe(wrapped_handler, imaginary_address, &actor, owner_tag_t::SUPERVISOR);
+    sup.address_mapping.set(actor, info);
 }
 
 /** \brief makes an reqest to the destination address with the message constructed from `args`
