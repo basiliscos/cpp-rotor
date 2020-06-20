@@ -72,6 +72,15 @@ processing_result_t plugin_t::handle_subscription(message::subscription_t&) noex
     std::abort();
 }
 
-bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool) noexcept {
+bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
+    if (external) {
+        auto act = actor; /* backup */
+        if (forget_subscription(point)) {
+            auto sup_addr = point.address->supervisor.get_address();
+            act->send<payload::commit_unsubscription_t>(sup_addr, point);
+            return true;
+        }
+        return false;
+    }
     return forget_subscription(point);
 }
