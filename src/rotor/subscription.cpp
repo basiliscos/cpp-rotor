@@ -27,9 +27,7 @@ subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &
     if (internal_address) {
         auto& info_list = internal_infos[address];
         info_list.emplace_back(info);
-    }
 
-    if (internal_address) {
         auto insert_result = mine_handlers.try_emplace({address.get(), handler->message_type});
         auto& joint_handlers = insert_result.first->second;
         auto& handlers = internal_handler ? joint_handlers.internal : joint_handlers.external;
@@ -65,17 +63,15 @@ void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {
         info_container.erase(infos_it);
     }
 
-    if (info->internal_handler) {
-        auto handler_ptr = info->handler.get();
-        auto it = mine_handlers.find({info->address.get(), handler_ptr->message_type});
-        auto& joint_handlers = it->second;
-        auto& handlers = info->internal_handler ? joint_handlers.internal : joint_handlers.external;
-        auto& misc_handlers = !info->internal_handler ? joint_handlers.internal : joint_handlers.external;
-        auto handler_it = std::find_if(handlers.begin(), handlers.end(), [&handler_ptr](auto& item) { return item == handler_ptr; } );
-        handlers.erase(handler_it);
-        if (handlers.empty() && misc_handlers.empty()) {
-            mine_handlers.erase(it);
-        }
+    auto handler_ptr = info->handler.get();
+    auto it = mine_handlers.find({info->address.get(), handler_ptr->message_type});
+    auto& joint_handlers = it->second;
+    auto& handlers = info->internal_handler ? joint_handlers.internal : joint_handlers.external;
+    auto& misc_handlers = !info->internal_handler ? joint_handlers.internal : joint_handlers.external;
+    auto handler_it = std::find_if(handlers.begin(), handlers.end(), [&handler_ptr](auto& item) { return item == handler_ptr; } );
+    handlers.erase(handler_it);
+    if (handlers.empty() && misc_handlers.empty()) {
+        mine_handlers.erase(it);
     }
 }
 

@@ -77,7 +77,6 @@ struct ponger_t : public r::actor_base_t {
     r::address_ptr_t pinger_addr;
 };
 
-#if 0
 TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[supervisor]") {
     r::system_context_t system_context;
 
@@ -136,7 +135,6 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
     REQUIRE(sup1->get_points().size() == 0);
     REQUIRE(sup1->get_subscription().empty());
 }
-#endif
 
 TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervisor]") {
     r::system_context_t system_context;
