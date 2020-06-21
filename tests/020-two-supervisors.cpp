@@ -51,7 +51,7 @@ struct my_supervisor_t : public rt::supervisor_test_t {
     std::uint32_t shutdown_finish_count = 0;
 };
 
-TEST_CASE("two supervisors, different localities", "[supervisor]") {
+TEST_CASE("two supervisors, different localities, shutdown 2nd", "[supervisor]") {
     r::system_context_t system_context;
 
     const char locality1[] = "abc";
@@ -131,6 +131,43 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup1->shutdown_start_count == 1);
     REQUIRE(sup1->shutdown_finish_count == 1);
+
+    REQUIRE(sup1->get_leader_queue().size() == 0);
+    REQUIRE(sup1->get_points().size() == 0);
+    REQUIRE(sup1->get_subscription().empty());
+
+    REQUIRE(sup2->get_leader_queue().size() == 0);
+    REQUIRE(sup2->get_points().size() == 0);
+    REQUIRE(sup2->get_subscription().empty());
+}
+
+TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]") {
+    r::system_context_t system_context;
+
+    const char locality1[] = "abc";
+    const char locality2[] = "def";
+    auto sup1 =
+        system_context.create_supervisor<my_supervisor_t>().locality(locality1).timeout(rt::default_timeout).finish();
+    auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality2).timeout(rt::default_timeout).finish();
+
+    REQUIRE(&sup2->get_supervisor() == sup2.get());
+    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
+
+    sup1->do_process();
+    sup2->do_process();
+
+    sup1->do_process();
+    sup2->do_process();
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+
+    sup1->do_shutdown();
+    while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+        sup1->do_process();
+        sup2->do_process();
+    }
+    CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUTTED_DOWN);
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
