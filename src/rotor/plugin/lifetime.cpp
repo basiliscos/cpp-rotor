@@ -37,7 +37,7 @@ void lifetime_plugin_t::deactivate() noexcept  {
 }
 
 bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
-    if (points.empty()) return true;
+    if (points.empty() && own_subscriptions.empty()) return true;
     unsubscribe();
     return false;
 }
@@ -70,7 +70,8 @@ void lifetime_plugin_t::unsubscribe() noexcept {
             rit = std::reverse_iterator(it);
         }
     }
-    if (points.empty()) {
+    /* wait only self to be deactivated */
+    if (points.empty() && actor->deactivating_plugins.size() == 1) {
         plugin_t::deactivate();
     }
 }
@@ -118,19 +119,3 @@ bool lifetime_plugin_t::handle_unsubscription(const subscription_point_t &point,
     }
     return result;
 }
-
-/*
-bool lifetime_plugin_t::handle_unsubscription_external(message::unsubscription_external_t& message) noexcept {
-    auto& point = message.payload.point;
-    auto it = points.find(point);
-    auto sup_addr = point.address->supervisor.get_address();
-    actor->send<payload::commit_unsubscription_t>(sup_addr, point);
-    points.erase(it);
-    bool result = plugin_t::handle_unsubscription_external(message);
-    if (points.empty()) {
-        actor->shutdown_continue();
-        plugin_t::deactivate();
-    }
-    return result;
-}
-*/

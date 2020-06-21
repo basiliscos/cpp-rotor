@@ -21,10 +21,7 @@ actor_base_t::actor_base_t(actor_config_t &cfg)
 }
 
 actor_base_t::~actor_base_t() {
-    if (!deactivating_plugins.empty()) {
-        auto p = *deactivating_plugins.begin();
-        assert(!p && "a plugin was not deactivated");
-    }
+    assert (deactivating_plugins.empty());
     for(auto plugin: plugins) {
         delete plugin;
     }
@@ -115,6 +112,11 @@ void actor_base_t::shutdown_finish() noexcept {
         shutdown_request.reset();
     }
 
+    //maybe delete plugins here?
+    if (!deactivating_plugins.empty()) {
+        auto p = *deactivating_plugins.begin();
+        assert(!p && "a plugin was not deactivated");
+    }
     state = state_t::SHUTTED_DOWN;
 }
 

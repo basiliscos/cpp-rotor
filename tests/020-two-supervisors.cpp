@@ -11,6 +11,9 @@
 namespace r = rotor;
 namespace rt = r::test;
 
+static size_t destroyed = 0;
+
+
 struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
@@ -36,6 +39,10 @@ struct my_supervisor_t : public rt::supervisor_test_t {
         rt::supervisor_test_t::shutdown_finish();
         shutdown_finish_count++;
         assert(state == r::state_t::SHUTTED_DOWN);
+    }
+
+    ~my_supervisor_t() {
+        ++destroyed;
     }
 
     std::uint32_t init_start_count = 0;
@@ -134,13 +141,13 @@ TEST_CASE("two supervisors, different localities", "[supervisor]") {
     REQUIRE(sup2->get_subscription().empty());
 }
 
-
 TEST_CASE("two supervisors, same locality", "[supervisor]") {
-    r::system_context_t system_context;
+    r::system_context_ptr_t system_context = new r::system_context_t();
 
+    auto mark = destroyed;
     const char locality[] = "locality";
     auto sup1 =
-        system_context.create_supervisor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
+        system_context->create_supervisor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
     auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
 
     REQUIRE(&sup2->get_supervisor() == sup2.get());
@@ -168,6 +175,11 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(sup2->get_subscription().empty());
+
+    system_context.reset();
+    sup1.reset();
+    sup2.reset();
+    REQUIRE(mark + 2 == destroyed);
 }
 
 TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]") {

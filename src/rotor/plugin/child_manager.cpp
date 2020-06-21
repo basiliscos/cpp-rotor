@@ -38,7 +38,10 @@ void child_manager_plugin_t::deactivate() noexcept {
     assert(actors_map.size() == 1);
     //actors_map.clear();
     initializing_actors.clear();
-    if (sup.address_mapping.empty()) plugin_t::deactivate();
+    if (sup.address_mapping.empty()) {
+        remove_child(sup, false);
+        plugin_t::deactivate();
+    }
 }
 
 void child_manager_plugin_t::remove_child(const actor_base_t &child, bool normal_flow) noexcept {

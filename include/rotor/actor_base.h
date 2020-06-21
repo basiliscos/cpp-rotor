@@ -382,6 +382,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     actor_config_t::plugins_t subscription_plugins;
 
     friend struct actor_behavior_t;
+    friend struct internal::lifetime_plugin_t;
     friend struct supervisor_t;
     template <typename T> friend struct request_builder_t;
     template<typename T, typename M> friend struct accessor_t;
