@@ -286,6 +286,8 @@ struct supervisor_t : public actor_base_t {
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t* owner_ptr, owner_tag_t owner_tag) noexcept;
 
+    using actor_base_t::subscribe;
+
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
 protected:

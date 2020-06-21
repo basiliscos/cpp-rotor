@@ -15,6 +15,14 @@ static std::uint32_t destroyed = 0;
 
 struct init_shutdown_plugin_t;
 
+namespace payload {
+    struct sample_payload_t {};
+}
+
+namespace message {
+    using sample_payload_t = r::message_t<payload::sample_payload_t>;
+}
+
 
 struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
@@ -103,6 +111,21 @@ struct sample_sup2_t : public rt::supervisor_test_t {
     }
 };
 
+struct sample_sup3_t : public rt::supervisor_test_t {
+    using sup_base_t = rt::supervisor_test_t;
+    using rt::supervisor_test_t::supervisor_test_t;
+    std::uint32_t received = 0;
+
+    void make_subscription() noexcept {
+        subscribe(&sample_sup3_t::on_sample);
+        send<payload::sample_payload_t>(address);
+    }
+
+    void on_sample(message::sample_payload_t&) noexcept {
+        ++received;
+    }
+};
+
 struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };
@@ -186,4 +209,19 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("custom subscription", "[supervisor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<sample_sup3_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->make_subscription();
+    sup->do_process();
+    CHECK(sup->received == 1);
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
