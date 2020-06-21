@@ -71,8 +71,9 @@ void lifetime_plugin_t::unsubscribe() noexcept {
         }
     }
     /* wait only self to be deactivated */
-    if (points.empty() && actor->deactivating_plugins.size() == 1) {
+    if (points.empty() && actor->ready_to_shutdown()) {
         plugin_t::deactivate();
+        actor->lifetime = nullptr;
     }
 }
 

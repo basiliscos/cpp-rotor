@@ -366,6 +366,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
   protected:
 
+    virtual bool ready_to_shutdown() noexcept;
+
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
     std::optional<pt::time_duration> unlink_timeout;

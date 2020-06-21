@@ -222,6 +222,10 @@ address_ptr_t actor_base_t::create_address() noexcept {
     return address_maker->create_address();
 }
 
+bool actor_base_t::ready_to_shutdown() noexcept {
+    /* just lifetime */
+    return deactivating_plugins.size() == 1;
+}
 
 
 /*
