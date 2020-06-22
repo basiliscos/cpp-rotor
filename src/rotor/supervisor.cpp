@@ -7,8 +7,6 @@
 
 #include "rotor/supervisor.h"
 #include <assert.h>
-#include <iostream>
-#include <boost/core/demangle.hpp>
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
@@ -39,43 +37,6 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     // do self-bootstrap
     if (!parent) {
         request<payload::initialize_actor_t>(address, address).send(shutdown_timeout);
-    }
-}
-
-void supervisor_t::do_process() noexcept {
-    auto effective_queue = &locality_leader->queue;
-    while (effective_queue->size()) {
-        auto message = effective_queue->front();
-        auto &dest = message->address;
-        effective_queue->pop_front();
-        auto &dest_sup = dest->supervisor;
-        auto internal = &dest_sup == this;
-/*
-        std::cout << "msg [" << (internal ? "i" : "e") << "] :" << boost::core::demangle((const char*)
-             message->type_index) << " for " << dest.get() << "\n";
-*/
-        if (internal) { /* subscriptions are handled by me */
-            deliver_local(std::move(message));
-        } else if (dest_sup.address->same_locality(*address)) {
-            dest_sup.deliver_local(std::move(message));
-        } else {
-            dest_sup.enqueue(std::move(message));
-        }
-    }
-}
-
-void supervisor_t::deliver_local(message_ptr_t &&message) noexcept {
-    auto local_recipients = subscription_map.get_recipients(*message);
-    if (local_recipients) {
-        // external should be handled 1st, as the subscription might be deleted during internal handler processing.
-        for(auto handler: local_recipients->external) {
-            auto &sup = handler->actor_ptr->get_supervisor();
-            auto wrapped_message = make_message<payload::handler_call_t>(sup.address, message, handler);
-            sup.enqueue(std::move(wrapped_message));
-        }
-        for(auto handler: local_recipients->internal) {
-            handler->call(message);
-        }
     }
 }
 

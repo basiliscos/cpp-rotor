@@ -95,7 +95,7 @@ void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t& info
 
 processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
     auto& point = message.payload.point;
-    printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    //printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
     auto it = points.find(point);
     auto& info = **it;
     assert(info.state == subscription_info_t::state_t::SUBSCRIBING || info.internal_address);
@@ -104,7 +104,7 @@ processing_result_t lifetime_plugin_t::handle_subscription(message::subscription
 }
 
 bool lifetime_plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
-    printf("[-]unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    //printf("[-]unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
     subscription_info_ptr_t info;
     bool result = false;
     if (point.owner_tag != owner_tag_t::PLUGIN) {

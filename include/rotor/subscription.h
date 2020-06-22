@@ -63,7 +63,6 @@ private:
     using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
     supervisor_t &supervisor;
     info_container_t internal_infos;
-    //info_container_t external_infos;
     addressed_handlers_t mine_handlers;
 };
 

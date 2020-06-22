@@ -67,8 +67,9 @@ struct custom_child_manager_t: public r::internal::child_manager_plugin_t {
 struct custom_supervisor_t: rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using plugins_list_t = std::tuple<
-        r::internal::locality_plugin_t,
         r::internal::address_maker_plugin_t,
+        r::internal::locality_plugin_t,
+        r::internal::delivery_plugin_t<r::internal::local_delivery_t>,
         r::internal::lifetime_plugin_t,
         r::internal::init_shutdown_plugin_t,
         r::internal::foreigners_support_plugin_t,

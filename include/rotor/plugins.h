@@ -15,6 +15,7 @@
 
 // supervisors plugins
 #include "plugin/child_manager.h"
+#include "plugin/delivery.h"
 #include "plugin/locality.h"
 #include "plugin/foreigners_support.h"
 

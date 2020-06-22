@@ -43,7 +43,7 @@ bool plugin_t::handle_init(message::init_request_t*) noexcept {
 }
 
 void plugin_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
-    printf("[-] forgetting %s\n", info->handler->message_type);
+    //printf("[-] forgetting %s\n", info->handler->message_type);
     actor->get_supervisor().commit_unsubscription(info);
 }
 
