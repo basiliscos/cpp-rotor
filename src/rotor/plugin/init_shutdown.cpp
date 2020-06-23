@@ -26,13 +26,12 @@ void init_shutdown_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 void init_shutdown_plugin_t::on_init(message::init_request_t& msg) noexcept {
-    /*
-    assert(actor->state == state_t::NEW);
-    actor->state = state_t::INITIALIZING;
-    */
-    actor->init_request.reset(&msg);
-    plugin_t::activate(actor);
-    actor->init_continue();
+    /* it could be shutdown, then ignore it */
+    if (actor->state == state_t::INITIALIZING) {
+        actor->init_request.reset(&msg);
+        plugin_t::activate(actor);
+        actor->init_continue();
+    }
 }
 
 void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t& msg) noexcept {

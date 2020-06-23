@@ -63,8 +63,6 @@ struct fail_init_actor3_t : public rt::actor_test_t {
     }
 };
 
-
-
 struct custom_init_plugin_t: r::plugin_t {
     static const void* class_identity;
 
@@ -270,8 +268,7 @@ TEST_CASE("actor shutdown on init_finish()", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
-#if 0
-TEST_CASE("actor shutdown on init_start()", "[supervisor]") {
+TEST_CASE("actor shutdown on init_start(), post", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_init_actor3_t>().timeout(rt::default_timeout).finish();
@@ -280,7 +277,6 @@ TEST_CASE("actor shutdown on init_start()", "[supervisor]") {
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
-#endif
 
 TEST_CASE("actor shutdown during init", "[supervisor]") {
     r::system_context_t system_context;
