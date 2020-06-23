@@ -72,8 +72,6 @@ struct custom_init_plugin_t: r::plugin_t {
 
 const void* custom_init_plugin_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin_t).name());
 
-
-
 struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
@@ -86,6 +84,24 @@ struct sample_supervisor_t : public rt::supervisor_test_t {
     }
 
     child_ptr_t child;
+};
+
+struct post_shutdown_actor_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void shutdown_start() noexcept override {
+        rt::actor_test_t::shutdown_start();
+        do_shutdown();
+    }
+};
+
+struct pre_shutdown_actor_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void shutdown_start() noexcept override {
+        do_shutdown();
+        rt::actor_test_t::shutdown_start();
+    }
 };
 
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {
@@ -276,20 +292,32 @@ TEST_CASE("two actors shutdown during init", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
-
-#if 0
-TEST_CASE("misconfigured actor", "[supervisor]") {
+TEST_CASE("double shutdown attempt (post)", "[supervisor]") {
     rt::system_context_test_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<post_shutdown_actor_t>().timeout(rt::default_timeout).finish();
 
-    auto act = sup->create_actor<hello_actor_t>().finish();
-
-    REQUIRE(!act);
-    REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
-    REQUIRE(sup->get_children().empty());
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
-#endif
+
+TEST_CASE("double shutdown attempt (pre)", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<pre_shutdown_actor_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
