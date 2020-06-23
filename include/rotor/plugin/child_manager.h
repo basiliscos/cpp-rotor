@@ -66,9 +66,6 @@ struct child_manager_plugin_t: public plugin_t {
     bool postponed_init = false;
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
-
-    /** \brief list of initializing actors (during supervisor inititalization) */
-    initializing_actors_t initializing_actors;
 };
 
 }

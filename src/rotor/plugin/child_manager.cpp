@@ -19,7 +19,6 @@ const void* child_manager_plugin_t::identity() const noexcept {
 
 void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     plugin_t::activate(actor_);
-    //actor = actor_;
     static_cast<supervisor_t&>(*actor_).manager = this;
     subscribe(&child_manager_plugin_t::on_create);
     subscribe(&child_manager_plugin_t::on_init);
@@ -37,7 +36,6 @@ void child_manager_plugin_t::deactivate() noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     assert(actors_map.size() == 1);
     //actors_map.clear();
-    initializing_actors.clear();
     if (sup.address_mapping.empty()) {
         remove_child(sup, false);
         plugin_t::deactivate();
@@ -63,8 +61,8 @@ void child_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
     child->do_initialize(sup.get_context());
     auto &timeout = child->get_init_timeout();
     sup.send<payload::create_actor_t>(sup.get_address(), child, timeout);
+    actors_map.emplace(child->get_address(), actor_state_t{child, false});
     if (sup.state == state_t::INITIALIZING) {
-        initializing_actors.emplace(child->get_address());
         postponed_init = true;
     }
 }
@@ -73,7 +71,7 @@ void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcep
     auto& sup = static_cast<supervisor_t&>(*actor);
     auto actor = message.payload.actor;
     auto actor_address = actor->get_address();
-    actors_map.emplace(actor_address, actor_state_t{std::move(actor), false});
+    assert(actors_map.count(actor_address) == 1);
     sup.template request<payload::initialize_actor_t>(actor_address, actor_address).send(message.payload.timeout);
 }
 
@@ -83,11 +81,12 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
 
     auto &sup = static_cast<supervisor_t &>(*actor);
     bool continue_init = false;
-    auto it = initializing_actors.find(address);
-    if (it != initializing_actors.end()) {
-        initializing_actors.erase(it);
-    }
-    continue_init = initializing_actors.empty() && !ec && address != actor->address;
+    auto init_predicate = [&](auto& it){
+        return it.first != actor->address &&
+               it.second.actor->state <= state_t::INITIALIZING;
+    };
+    bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
+    continue_init = !has_initing && !ec;
     if (ec) {
         auto shutdown_self = actor->state == state_t::INITIALIZING && sup.policy == supervisor_policy_t::shutdown_self;
         if (shutdown_self) {
@@ -99,7 +98,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     } else {
         sup.template send<payload::start_actor_t>(address, address);
     }
-    if (continue_init && postponed_init) {
+    if (continue_init && postponed_init && actor->state < state_t::INITIALIZED) {
         actor->init_continue();
     }
 }
@@ -175,7 +174,12 @@ void child_manager_plugin_t::on_state_request(message::state_request_t& message)
 
 
 bool child_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
-    return initializing_actors.empty();
+    auto init_predicate = [&](auto it){
+        return it.first != actor->address &&
+               it.second.actor->state <= state_t::INITIALIZING;
+    };
+    bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
+    return !has_initing;
 }
 
 bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
