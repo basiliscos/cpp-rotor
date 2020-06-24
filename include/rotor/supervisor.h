@@ -64,12 +64,20 @@ struct supervisor_t;
  */
 struct supervisor_t : public actor_base_t {
 
+    // clang-format off
+    using plugins_list_t = std::tuple<
+        internal::address_maker_plugin_t,
+        internal::locality_plugin_t,
+        internal::delivery_plugin_t<internal::default_local_delivery_t>,
+        internal::lifetime_plugin_t,
+        internal::init_shutdown_plugin_t,
+        internal::prestarter_plugin_t,
+        internal::foreigners_support_plugin_t,
+        internal::child_manager_plugin_t,
+        internal::starter_plugin_t>;
+    // clang-format on
+
     using config_t = supervisor_config_t;
-    using plugins_list_t =
-        std::tuple<internal::address_maker_plugin_t, internal::locality_plugin_t,
-                   internal::delivery_plugin_t<internal::default_local_delivery_t>, internal::lifetime_plugin_t,
-                   internal::init_shutdown_plugin_t, internal::prestarter_plugin_t,
-                   internal::foreigners_support_plugin_t, internal::child_manager_plugin_t, internal::starter_plugin_t>;
     template <typename Supervisor> using config_builder_t = supervisor_config_builder_t<Supervisor>;
 
     /** \brief constructs new supervisor with optional parent supervisor */
