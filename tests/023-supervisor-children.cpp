@@ -63,6 +63,15 @@ struct fail_init_actor3_t : public rt::actor_test_t {
     }
 };
 
+struct fail_init_actor4_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void init_start() noexcept override {
+        do_shutdown();
+        rt::actor_test_t::init_start();
+    }
+};
+
 struct custom_init_plugin_t: r::plugin_t {
     static const void* class_identity;
 
@@ -272,6 +281,16 @@ TEST_CASE("actor shutdown on init_start(), post", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_init_actor3_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("actor shutdown on init_start(), pre", "[supervisor]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_init_actor4_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);

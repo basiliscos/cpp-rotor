@@ -32,7 +32,6 @@ void actor_base_t::do_initialize(system_context_t *) noexcept {
 }
 
 void actor_base_t::do_shutdown() noexcept {
-    assert(state >= state_t::INITIALIZING);
     send<payload::shutdown_trigger_t>(supervisor->get_address(), address);
 }
 
