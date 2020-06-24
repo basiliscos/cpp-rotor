@@ -16,27 +16,21 @@ static std::uint32_t destroyed = 0;
 struct init_shutdown_plugin_t;
 
 namespace payload {
-    struct sample_payload_t {};
-}
+struct sample_payload_t {};
+} // namespace payload
 
 namespace message {
-    using sample_payload_t = r::message_t<payload::sample_payload_t>;
+using sample_payload_t = r::message_t<payload::sample_payload_t>;
 }
-
 
 struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
 
-    using plugins_list_t = std::tuple<
-        r::internal::address_maker_plugin_t,
-        r::internal::locality_plugin_t,
-        r::internal::delivery_plugin_t<r::internal::local_delivery_t>,
-        r::internal::lifetime_plugin_t,
-        init_shutdown_plugin_t,                 /* use custom */
-        r::internal::foreigners_support_plugin_t,
-        r::internal::child_manager_plugin_t,
-        r::internal::starter_plugin_t
-    >;
+    using plugins_list_t = std::tuple<r::internal::address_maker_plugin_t, r::internal::locality_plugin_t,
+                                      r::internal::delivery_plugin_t<r::internal::local_delivery_t>,
+                                      r::internal::lifetime_plugin_t, init_shutdown_plugin_t, /* use custom */
+                                      r::internal::foreigners_support_plugin_t, r::internal::child_manager_plugin_t,
+                                      r::internal::starter_plugin_t>;
 
     std::uint32_t initialized = 0;
     std::uint32_t init_invoked = 0;
@@ -58,30 +52,25 @@ struct sample_sup_t : public rt::supervisor_test_t {
         ++shutdown_finished;
         rt::supervisor_test_t::shutdown_finish();
     }
-
 };
 
-struct init_shutdown_plugin_t: r::internal::init_shutdown_plugin_t {
+struct init_shutdown_plugin_t : r::internal::init_shutdown_plugin_t {
     using parent_t = r::internal::init_shutdown_plugin_t;
 
-    void deactivate() noexcept override {
-        parent_t::deactivate();
-    }
+    void deactivate() noexcept override { parent_t::deactivate(); }
 
-    bool handle_shutdown(r::message::shutdown_request_t* message) noexcept override {
-        auto sup = static_cast<sample_sup_t*>(actor);
+    bool handle_shutdown(r::message::shutdown_request_t *message) noexcept override {
+        auto sup = static_cast<sample_sup_t *>(actor);
         sup->shutdown_started++;
         return parent_t::handle_shutdown(message);
     }
 
-    bool handle_init(r::message::init_request_t* message) noexcept override {
-        auto sup = static_cast<sample_sup_t*>(actor);
+    bool handle_init(r::message::init_request_t *message) noexcept override {
+        auto sup = static_cast<sample_sup_t *>(actor);
         sup->init_invoked++;
         return parent_t::handle_init(message);
     }
-
 };
-
 
 struct sample_sup2_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
@@ -122,9 +111,7 @@ struct sample_sup3_t : public rt::supervisor_test_t {
         send<payload::sample_payload_t>(address);
     }
 
-    void on_sample(message::sample_payload_t&) noexcept {
-        ++received;
-    }
+    void on_sample(message::sample_payload_t &) noexcept { ++received; }
 };
 
 struct sample_actor_t : public r::actor_base_t {
@@ -132,7 +119,7 @@ struct sample_actor_t : public r::actor_base_t {
 };
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
-    destroyed  = 0;
+    destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup_t>().timeout(rt::default_timeout).finish();
 
@@ -166,7 +153,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
 }
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
-    destroyed  = 0;
+    destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
 

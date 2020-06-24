@@ -25,8 +25,8 @@ struct actor_base_t;
 namespace pt = boost::posix_time;
 
 struct actor_config_t {
-    using plugins_t = std::deque<plugin_t*>;
-    using callback_t = std::function<void(actor_base_t&)>;
+    using plugins_t = std::deque<plugin_t *>;
+    using callback_t = std::function<void(actor_base_t &)>;
 
     plugins_t plugins;
     supervisor_t *supervisor;
@@ -42,7 +42,7 @@ struct actor_config_t {
 
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
     ~actor_config_t() {
-        for(auto it: plugins) {
+        for (auto it : plugins) {
             delete it;
         }
     }
@@ -70,30 +70,30 @@ template <typename Actor> struct actor_config_builder_t {
     actor_config_builder_t(install_action_t &&action_, system_context_t &system_context_)
         : install_action{std::move(action_)}, supervisor{nullptr}, system_context{system_context_}, config{nullptr} {}
 
-    builder_t &&timeout(const pt::time_duration &timeout) && noexcept {
+    builder_t &&timeout(const pt::time_duration &timeout) &&noexcept {
         config.init_timeout = config.shutdown_timeout = timeout;
         mask = (mask & (~INIT_TIMEOUT & ~SHUTDOWN_TIMEOUT));
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    builder_t &&init_timeout(const pt::time_duration &timeout) && noexcept {
+    builder_t &&init_timeout(const pt::time_duration &timeout) &&noexcept {
         config.init_timeout = timeout;
         mask = (mask & ~INIT_TIMEOUT);
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    builder_t &&shutdown_timeout(const pt::time_duration &timeout) && noexcept {
+    builder_t &&shutdown_timeout(const pt::time_duration &timeout) &&noexcept {
         config.shutdown_timeout = timeout;
         mask = (mask & ~SHUTDOWN_TIMEOUT);
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    builder_t &&unlink_timeout(const pt::time_duration &timeout) && noexcept {
+    builder_t &&unlink_timeout(const pt::time_duration &timeout) &&noexcept {
         config.unlink_timeout = timeout;
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    builder_t &&unlink_policy(const unlink_policy_t &policy) && noexcept {
+    builder_t &&unlink_policy(const unlink_policy_t &policy) &&noexcept {
         config.unlink_policy = policy;
         return std::move(*static_cast<builder_t *>(this));
     }
@@ -112,7 +112,7 @@ template <typename Actor> struct actor_config_builder_t {
     }
     actor_ptr_t finish() &&;
 
-private:
+  private:
     void instantiate_plugins() noexcept {
         if (!plugins_expanded) {
             using plugins_t = typename Actor::plugins_list_t;
@@ -121,19 +121,15 @@ private:
         }
     }
 
-    template<typename PluginList, std::size_t Index = 0>
-    void add_plugin() noexcept {
+    template <typename PluginList, std::size_t Index = 0> void add_plugin() noexcept {
         using Plugin = std::tuple_element_t<Index, PluginList>;
         instantiate_plugin<Plugin>();
-        if constexpr(Index + 1< std::tuple_size_v<PluginList>) {
+        if constexpr (Index + 1 < std::tuple_size_v<PluginList>) {
             add_plugin<PluginList, Index + 1>();
         }
     }
 
-    template<typename Plugin>
-    void instantiate_plugin() noexcept {
-        config.plugins.emplace_back(new Plugin());
-    }
+    template <typename Plugin> void instantiate_plugin() noexcept { config.plugins.emplace_back(new Plugin()); }
 };
 
 } // namespace rotor

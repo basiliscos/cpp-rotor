@@ -21,4 +21,4 @@ using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
-}
+} // namespace rotor

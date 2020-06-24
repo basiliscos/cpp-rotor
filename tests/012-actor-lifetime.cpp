@@ -38,11 +38,10 @@ struct sample_actor_t : public r::actor_base_t {
         r::actor_base_t::init_finish();
     }
 
-    void on_start() noexcept override{
+    void on_start() noexcept override {
         event_start = event_current++;
         r::actor_base_t::on_start();
     }
-
 
     void shutdown_start() noexcept override {
         event_shutdown_start = event_current++;
@@ -55,7 +54,7 @@ struct sample_actor_t : public r::actor_base_t {
     }
 };
 
-struct custom_child_manager_t: public r::internal::child_manager_plugin_t {
+struct custom_child_manager_t : public r::internal::child_manager_plugin_t {
     r::address_ptr_t fail_addr;
     std::error_code fail_ec;
     void on_shutdown_fail(r::actor_base_t &actor, const std::error_code &ec) noexcept {
@@ -64,57 +63,42 @@ struct custom_child_manager_t: public r::internal::child_manager_plugin_t {
     }
 };
 
-struct custom_supervisor_t: rt::supervisor_test_t {
+struct custom_supervisor_t : rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
-    using plugins_list_t = std::tuple<
-        r::internal::address_maker_plugin_t,
-        r::internal::locality_plugin_t,
-        r::internal::delivery_plugin_t<r::internal::local_delivery_t>,
-        r::internal::lifetime_plugin_t,
-        r::internal::init_shutdown_plugin_t,
-        r::internal::foreigners_support_plugin_t,
-        custom_child_manager_t,
-        r::internal::starter_plugin_t
-    >;
+    using plugins_list_t =
+        std::tuple<r::internal::address_maker_plugin_t, r::internal::locality_plugin_t,
+                   r::internal::delivery_plugin_t<r::internal::local_delivery_t>, r::internal::lifetime_plugin_t,
+                   r::internal::init_shutdown_plugin_t, r::internal::foreigners_support_plugin_t,
+                   custom_child_manager_t, r::internal::starter_plugin_t>;
 };
 
-struct fail_plugin_t: public r::plugin_t {
+struct fail_plugin_t : public r::plugin_t {
     static bool allow_init;
     bool allow_shutdown = true;
 
-    static const void* class_identity;
-    const void* identity() const noexcept override {
-        return class_identity;
-    }
+    static const void *class_identity;
+    const void *identity() const noexcept override { return class_identity; }
 
-    void activate(r::actor_base_t* actor_) noexcept override {
+    void activate(r::actor_base_t *actor_) noexcept override {
         actor_->install_plugin(*this, r::slot_t::INIT);
         actor_->install_plugin(*this, r::slot_t::SHUTDOWN);
         return r::plugin_t::activate(actor_);
     }
 
-    bool handle_init(r::message::init_request_t* ) noexcept override {
-        return allow_init;
-    }
+    bool handle_init(r::message::init_request_t *) noexcept override { return allow_init; }
 
-    bool handle_shutdown(r::message::shutdown_request_t* ) noexcept override {
-        return allow_shutdown;
-    }
+    bool handle_shutdown(r::message::shutdown_request_t *) noexcept override { return allow_shutdown; }
 };
 
 bool fail_plugin_t::allow_init = true;
 
-const void* fail_plugin_t::class_identity = static_cast<const void *>(typeid(fail_plugin_t).name());
+const void *fail_plugin_t::class_identity = static_cast<const void *>(typeid(fail_plugin_t).name());
 
-struct fail_actor_t: public rt::actor_test_t {
+struct fail_actor_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
-    using plugins_list_t = std::tuple<
-        r::internal::address_maker_plugin_t,
-        r::internal::lifetime_plugin_t,
-        r::internal::init_shutdown_plugin_t,
-        fail_plugin_t,
-        r::internal::starter_plugin_t
-    >;
+    using plugins_list_t =
+        std::tuple<r::internal::address_maker_plugin_t, r::internal::lifetime_plugin_t,
+                   r::internal::init_shutdown_plugin_t, fail_plugin_t, r::internal::starter_plugin_t>;
 };
 
 TEST_CASE("actor litetimes", "[actor]") {
@@ -157,7 +141,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
 
-    auto fail_plugin = static_cast<fail_plugin_t*>(act->get_plugin(fail_plugin_t::class_identity));
+    auto fail_plugin = static_cast<fail_plugin_t *>(act->get_plugin(fail_plugin_t::class_identity));
     fail_plugin->allow_init = true;
     fail_plugin->allow_shutdown = false;
 
@@ -174,7 +158,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(sup->get_children().size() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    auto cm_plugin = static_cast<custom_child_manager_t*>(sup->get_plugin(custom_child_manager_t::class_identity));
+    auto cm_plugin = static_cast<custom_child_manager_t *>(sup->get_plugin(custom_child_manager_t::class_identity));
 
     REQUIRE(cm_plugin->fail_addr == act->get_address());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));

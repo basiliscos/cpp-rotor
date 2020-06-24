@@ -10,15 +10,14 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-const void* foreigners_support_plugin_t::class_identity = static_cast<const void *>(typeid(foreigners_support_plugin_t).name());
+const void *foreigners_support_plugin_t::class_identity =
+    static_cast<const void *>(typeid(foreigners_support_plugin_t).name());
 
-const void* foreigners_support_plugin_t::identity() const noexcept {
-    return class_identity;
-}
+const void *foreigners_support_plugin_t::identity() const noexcept { return class_identity; }
 
-void foreigners_support_plugin_t::activate(actor_base_t* actor_) noexcept {
+void foreigners_support_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
-    auto& sup = static_cast<supervisor_t&>(*actor_);
+    auto &sup = static_cast<supervisor_t &>(*actor_);
 
     subscribe(&foreigners_support_plugin_t::on_call);
     subscribe(&foreigners_support_plugin_t::on_unsubscription);
@@ -28,9 +27,10 @@ void foreigners_support_plugin_t::activate(actor_base_t* actor_) noexcept {
 }
 
 void foreigners_support_plugin_t::deactivate() noexcept {
-    if (foreign_points.empty()) return plugin_t::deactivate();
+    if (foreign_points.empty())
+        return plugin_t::deactivate();
     auto lifetime = actor->lifetime;
-	for(auto& info: foreign_points) {
+    for (auto &info : foreign_points) {
         lifetime->unsubscribe(info);
     }
 }
@@ -42,20 +42,19 @@ void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noex
 }
 
 void foreigners_support_plugin_t::on_subscription_external(message::external_subscription_t &message) noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
-    auto& point = message.payload.point;
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    auto &point = message.payload.point;
     assert(&point.address->supervisor == &sup);
     auto info = sup.subscribe(point.handler, point.address, point.owner_ptr, owner_tag_t::FOREIGN);
     foreign_points.emplace_back(info);
 }
 
-
 void foreigners_support_plugin_t::on_unsubscription(message::commit_unsubscription_t &message) noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
-    auto& point = message.payload.point;
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    auto &point = message.payload.point;
 
     auto it = foreign_points.find(point);
-    auto& info = *it;
+    auto &info = *it;
 
     sup.commit_unsubscription(info);
     foreign_points.erase(it);
@@ -64,4 +63,3 @@ void foreigners_support_plugin_t::on_unsubscription(message::commit_unsubscripti
         plugin_t::deactivate();
     }
 }
-

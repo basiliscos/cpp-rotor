@@ -16,10 +16,9 @@ struct foo_t {};
 struct simpleton_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
-            p.subscribe_actor(&simpleton_actor_t::on_foo);
-        });
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&simpleton_actor_t::on_foo); });
     }
 
     void on_start() noexcept override {
@@ -36,18 +35,17 @@ struct simpleton_actor_t : public r::actor_base_t {
     std::uint32_t foo_count = 0;
 };
 
-struct observer_config_t: r::actor_config_t {
+struct observer_config_t : r::actor_config_t {
     r::address_ptr_t observable;
     using r::actor_config_t::actor_config_t;
 };
 
-template <typename Actor> struct observer_config_builder_t: r::actor_config_builder_t<Actor> {
+template <typename Actor> struct observer_config_builder_t : r::actor_config_builder_t<Actor> {
     using builder_t = typename Actor::template config_builder_t<Actor>;
     using parent_t = r::actor_config_builder_t<Actor>;
     using parent_t::parent_t;
 
-
-    builder_t&& observable(const r::address_ptr_t& addr) {
+    builder_t &&observable(const r::address_ptr_t &addr) {
         parent_t::config.observable = addr;
         return std::move(*static_cast<builder_t *>(this));
     }
@@ -55,17 +53,15 @@ template <typename Actor> struct observer_config_builder_t: r::actor_config_buil
     bool validate() noexcept override { return parent_t::config.observable && parent_t::validate(); }
 };
 
-
 struct foo_observer_t : public r::actor_base_t {
     using config_t = observer_config_t;
     template <typename Actor> using config_builder_t = observer_config_builder_t<Actor>;
 
-    explicit foo_observer_t(config_t& cfg): r::actor_base_t(cfg), simpleton_addr{cfg.observable} {}
+    explicit foo_observer_t(config_t &cfg) : r::actor_base_t(cfg), simpleton_addr{cfg.observable} {}
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
-            p.subscribe_actor(&foo_observer_t::on_foo, simpleton_addr);
-        });
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>(
+            [this](auto &p) { p.subscribe_actor(&foo_observer_t::on_foo, simpleton_addr); });
     }
 
     void on_foo(r::message_t<foo_t> &) noexcept {
@@ -82,10 +78,8 @@ TEST_CASE("obsrever", "[actor]") {
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto simpleton = sup->create_actor<simpleton_actor_t>().timeout(rt::default_timeout).finish();
-    auto observer = sup->create_actor<foo_observer_t>()
-            .observable(simpleton->get_address())
-            .timeout(rt::default_timeout)
-            .finish();
+    auto observer =
+        sup->create_actor<foo_observer_t>().observable(simpleton->get_address()).timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(simpleton->foo_count == 1);

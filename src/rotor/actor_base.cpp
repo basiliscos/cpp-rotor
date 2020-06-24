@@ -12,58 +12,65 @@
 using namespace rotor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
-    : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout},
-      unlink_timeout{cfg.unlink_timeout}, unlink_policy{cfg.unlink_policy}, state{state_t::NEW}, plugins{std::move(cfg.plugins)}
-      {
-    for(auto plugin : plugins) {
+    : init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW},
+      supervisor{cfg.supervisor}, unlink_timeout{cfg.unlink_timeout},
+      unlink_policy{cfg.unlink_policy}, plugins{std::move(cfg.plugins)} {
+    for (auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
     }
 }
 
 actor_base_t::~actor_base_t() {
-    assert (deactivating_plugins.empty());
-    for(auto plugin: plugins) {
+    assert(deactivating_plugins.empty());
+    for (auto plugin : plugins) {
         delete plugin;
     }
 }
 
-void actor_base_t::do_initialize(system_context_t *) noexcept {
-    activate_plugins();
-}
+void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins(); }
 
-void actor_base_t::do_shutdown() noexcept {
-    send<payload::shutdown_trigger_t>(supervisor->get_address(), address);
-}
+void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor->get_address(), address); }
 
-void actor_base_t::install_plugin(plugin_t& plugin, slot_t slot) noexcept {
-    actor_config_t::plugins_t* dest = nullptr;
+void actor_base_t::install_plugin(plugin_t &plugin, slot_t slot) noexcept {
+    actor_config_t::plugins_t *dest = nullptr;
     switch (slot) {
-    case slot_t::INIT: dest = &init_plugins; break;
-    case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
-    case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
+    case slot_t::INIT:
+        dest = &init_plugins;
+        break;
+    case slot_t::SHUTDOWN:
+        dest = &shutdown_plugins;
+        break;
+    case slot_t::SUBSCRIPTION:
+        dest = &subscription_plugins;
+        break;
     }
     dest->emplace_back(&plugin);
 }
 
-void actor_base_t::uninstall_plugin(plugin_t& plugin, slot_t slot) noexcept {
-    actor_config_t::plugins_t* dest = nullptr;
+void actor_base_t::uninstall_plugin(plugin_t &plugin, slot_t slot) noexcept {
+    actor_config_t::plugins_t *dest = nullptr;
     switch (slot) {
-    case slot_t::INIT: dest = &init_plugins; break;
-    case slot_t::SHUTDOWN: dest = &shutdown_plugins; break;
-    case slot_t::SUBSCRIPTION: dest = &subscription_plugins; break;
+    case slot_t::INIT:
+        dest = &init_plugins;
+        break;
+    case slot_t::SHUTDOWN:
+        dest = &shutdown_plugins;
+        break;
+    case slot_t::SUBSCRIPTION:
+        dest = &subscription_plugins;
+        break;
     }
     auto it = std::find(dest->begin(), dest->end(), &plugin);
     dest->erase(it);
 }
 
-
 void actor_base_t::activate_plugins() noexcept {
-    for(auto plugin : plugins) {
+    for (auto plugin : plugins) {
         plugin->activate(this);
     }
 }
 
-void actor_base_t::commit_plugin_activation(plugin_t& plugin, bool success) noexcept {
+void actor_base_t::commit_plugin_activation(plugin_t &plugin, bool success) noexcept {
     if (success) {
         activating_plugins.erase(plugin.identity());
     } else {
@@ -72,8 +79,8 @@ void actor_base_t::commit_plugin_activation(plugin_t& plugin, bool success) noex
 }
 
 void actor_base_t::deactivate_plugins() noexcept {
-    for(auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
-        auto& plugin = *--(it.base());
+    for (auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
+        auto &plugin = *--(it.base());
         if (plugin->actor) { // may be it is already inactive
             deactivating_plugins.insert(plugin->identity());
             plugin->deactivate();
@@ -81,13 +88,11 @@ void actor_base_t::deactivate_plugins() noexcept {
     }
 }
 
-void actor_base_t::commit_plugin_deactivation(plugin_t& plugin) noexcept {
+void actor_base_t::commit_plugin_deactivation(plugin_t &plugin) noexcept {
     deactivating_plugins.erase(plugin.identity());
 }
 
-void actor_base_t::init_start() noexcept {
-    state = state_t::INITIALIZING;
-}
+void actor_base_t::init_start() noexcept { state = state_t::INITIALIZING; }
 
 void actor_base_t::init_finish() noexcept {
     reply_to(*init_request);
@@ -95,13 +100,9 @@ void actor_base_t::init_finish() noexcept {
     state = state_t::INITIALIZED;
 }
 
-void actor_base_t::on_start() noexcept {
-    state = state_t::OPERATIONAL;
-}
+void actor_base_t::on_start() noexcept { state = state_t::OPERATIONAL; }
 
-void actor_base_t::shutdown_start() noexcept {
-    state = state_t::SHUTTING_DOWN;
-}
+void actor_base_t::shutdown_start() noexcept { state = state_t::SHUTTING_DOWN; }
 
 void actor_base_t::shutdown_finish() noexcept {
     // shutdown_request might be missing for root supervisor
@@ -111,9 +112,10 @@ void actor_base_t::shutdown_finish() noexcept {
         shutdown_request.reset();
     }
 
-    //maybe delete plugins here?
+    // maybe delete plugins here?
     if (!deactivating_plugins.empty()) {
         auto p = *deactivating_plugins.begin();
+        (void)p;
         assert(!p && "a plugin was not deactivated");
     }
     state = state_t::SHUTTED_DOWN;
@@ -122,7 +124,7 @@ void actor_base_t::shutdown_finish() noexcept {
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     while (!init_plugins.empty()) {
-        auto& plugin = init_plugins.front();
+        auto &plugin = init_plugins.front();
         if (plugin->handle_init(init_request.get())) {
             init_plugins.pop_front();
             continue;
@@ -134,13 +136,12 @@ void actor_base_t::init_continue() noexcept {
     }
 }
 
-void actor_base_t::configure(plugin_t&) noexcept { }
-
+void actor_base_t::configure(plugin_t &) noexcept {}
 
 void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
     while (!shutdown_plugins.empty()) {
-        auto& plugin = shutdown_plugins.back();
+        auto &plugin = shutdown_plugins.back();
         if (plugin->handle_shutdown(shutdown_request.get())) {
             shutdown_plugins.pop_back();
             continue;
@@ -158,74 +159,71 @@ void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr
     lifetime->unsubscribe(*it);
 }
 
-void actor_base_t::unsubscribe() noexcept {
-    lifetime->unsubscribe();
-}
+void actor_base_t::unsubscribe() noexcept { lifetime->unsubscribe(); }
 
 template <typename Fn, typename Message>
-static void poll(actor_config_t::plugins_t& plugins, Message& message, Fn&& fn) {
-    for(auto rit = plugins.rbegin(); rit != plugins.rend();) {
+static void poll(actor_config_t::plugins_t &plugins, Message &message, Fn &&fn) {
+    for (auto rit = plugins.rbegin(); rit != plugins.rend();) {
         auto it = --rit.base();
         auto plugin = *it;
         auto result = fn(plugin, message);
-        if (result) break;
+        if (result)
+            break;
         ++rit;
     }
 }
 
-void actor_base_t::on_subscription(message::subscription_t& message) noexcept {
+void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
     /*
     auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " subscribed to "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    for(auto rit = subscription_plugins.rbegin(); rit != subscription_plugins.rend(); ) {
-        auto& plugin = *rit;
+    for (auto rit = subscription_plugins.rbegin(); rit != subscription_plugins.rend();) {
+        auto &plugin = *rit;
         auto result = plugin->handle_subscription(message);
         switch (result) {
-        case processing_result_t::IGNORED: ++rit; continue;
-        case processing_result_t::CONSUMED: return;
+        case processing_result_t::IGNORED:
+            ++rit;
+            continue;
+        case processing_result_t::CONSUMED:
+            return;
         case processing_result_t::FINISHED:
-            auto it =  subscription_plugins.erase(--rit.base());
+            auto it = subscription_plugins.erase(--rit.base());
             rit = std::reverse_iterator(it);
         }
     }
 }
 
-void actor_base_t::on_unsubscription(message::unsubscription_t& message) noexcept {
+void actor_base_t::on_unsubscription(message::unsubscription_t &message) noexcept {
     /*
     auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[i] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll(plugins, message, [](auto& plugin, auto& message) {
-        return plugin->handle_unsubscription(message.payload.point, false);
-    });
+    poll(plugins, message,
+         [](auto &plugin, auto &message) { return plugin->handle_unsubscription(message.payload.point, false); });
 }
 
-void actor_base_t::on_unsubscription_external(message::unsubscription_external_t& message) noexcept {
+void actor_base_t::on_unsubscription_external(message::unsubscription_external_t &message) noexcept {
     /*
     auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " unsubscribed[e] from "
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    poll(plugins, message, [](auto& plugin, auto& message) {
-        return plugin->handle_unsubscription(message.payload.point, true);
-    });
+    poll(plugins, message,
+         [](auto &plugin, auto &message) { return plugin->handle_unsubscription(message.payload.point, true); });
 }
 
-address_ptr_t actor_base_t::create_address() noexcept {
-    return address_maker->create_address();
-}
+address_ptr_t actor_base_t::create_address() noexcept { return address_maker->create_address(); }
 
 bool actor_base_t::ready_to_shutdown() noexcept {
     /* just lifetime */
     return deactivating_plugins.size() == 1;
 }
-
 
 /*
 void actor_base_t::unlink_notify(const address_ptr_t &service_addr) noexcept {

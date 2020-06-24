@@ -4,15 +4,13 @@
 // Distributed under the MIT Software License
 //
 
-
 #include "rotor/supervisor.h"
 #include <assert.h>
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
-    : actor_base_t(config), parent{config.supervisor}, last_req_id{1},
-      /* shutdown_timeout{config.shutdown_timeout},*/ policy{config.policy}, manager{nullptr}, subscription_support{nullptr},
-      subscription_map(*this) {
+    : actor_base_t(config), parent{config.supervisor},
+      subscription_support{nullptr}, manager{nullptr}, policy{config.policy}, last_req_id{1}, subscription_map(*this) {
     if (!supervisor) {
         supervisor = this;
     }
@@ -45,31 +43,30 @@ void supervisor_t::do_shutdown() noexcept {
     send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
 }
 
-
 subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                                 const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept {
-   subscription_point_t point(handler, addr, owner_ptr, owner_tag);
-   auto sub_info = subscription_map.materialize(point);
+    subscription_point_t point(handler, addr, owner_ptr, owner_tag);
+    auto sub_info = subscription_map.materialize(point);
 
-   if (sub_info->internal_address) {
-       send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), point);
-   } else {
-       send<payload::external_subscription_t>(addr->supervisor.address, point);
-   }
+    if (sub_info->internal_address) {
+        send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), point);
+    } else {
+        send<payload::external_subscription_t>(addr->supervisor.address, point);
+    }
 
-   if (sub_info->internal_handler) {
-       handler->actor_ptr->lifetime->initate_subscription(sub_info);
-   }
+    if (sub_info->internal_handler) {
+        handler->actor_ptr->lifetime->initate_subscription(sub_info);
+    }
 
-   return sub_info;
+    return sub_info;
 }
 
-void supervisor_t::commit_unsubscription(const subscription_info_ptr_t& info) noexcept {
+void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) noexcept {
     subscription_map.forget(info);
 }
 
 void supervisor_t::shutdown_finish() noexcept {
-    //address_mapping.clear(*this);
+    // address_mapping.clear(*this);
     actor_base_t::shutdown_finish();
 }
 

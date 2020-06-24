@@ -63,9 +63,8 @@ struct good_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&good_actor_t::on_request);
             p.subscribe_actor(&good_actor_t::on_response);
         });
@@ -92,13 +91,12 @@ struct bad_actor_t : public r::actor_base_t {
     std::error_code ec;
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&bad_actor_t::on_request);
             p.subscribe_actor(&bad_actor_t::on_response);
         });
     }
-
 
     void shutdown_start() noexcept override {
         req_msg.reset();
@@ -121,15 +119,14 @@ struct bad_actor_t : public r::actor_base_t {
     }
 };
 
-
 struct bad_actor2_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
     std::error_code ec;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&bad_actor2_t::on_request);
             p.subscribe_actor(&bad_actor2_t::on_response);
         });
@@ -160,8 +157,8 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&good_supervisor_t::on_request);
             p.subscribe_actor(&good_supervisor_t::on_response);
         });
@@ -191,8 +188,8 @@ struct good_actor2_t : public r::actor_base_t {
     r::address_ptr_t reply_addr;
     std::error_code ec;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto &p) {
             reply_addr = create_address();
             p.subscribe_actor(&good_actor2_t::on_response, reply_addr);
             p.subscribe_actor(&good_actor2_t::on_request);
@@ -223,8 +220,8 @@ struct good_actor3_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&good_actor3_t::on_response);
             p.subscribe_actor(&good_actor3_t::on_request);
         });
@@ -261,8 +258,8 @@ struct request_forwarder_t : public r::actor_base_t {
     r::request_id_t back_req2_id = 0;
     req_ptr_t req_ptr;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto &p) {
             back_addr = supervisor->create_address();
             p.subscribe_actor(&request_forwarder_t::on_request_front);
             p.subscribe_actor(&request_forwarder_t::on_response_front);
@@ -313,8 +310,8 @@ struct intrusive_actor_t : public r::actor_base_t {
     r::address_ptr_t back_addr;
     req_ptr_t req_ptr;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto &p) {
             back_addr = supervisor->create_address();
             p.subscribe_actor(&intrusive_actor_t::on_request_front);
             p.subscribe_actor(&intrusive_actor_t::on_response_front);
@@ -322,8 +319,6 @@ struct intrusive_actor_t : public r::actor_base_t {
             p.subscribe_actor(&intrusive_actor_t::on_response_back, back_addr);
         });
     }
-
-
 
     void shutdown_start() noexcept override {
         req_ptr.reset();
@@ -361,8 +356,8 @@ struct duplicating_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&duplicating_actor_t::on_request);
             p.subscribe_actor(&duplicating_actor_t::on_response);
         });

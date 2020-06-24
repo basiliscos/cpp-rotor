@@ -10,16 +10,15 @@
 
 namespace rotor::internal {
 
-struct prestarter_plugin_t: public subscriber_plugin_t {
+struct prestarter_plugin_t : public subscriber_plugin_t {
 
-    static const void* class_identity;
-    const void* identity() const noexcept override;
+    static const void *class_identity;
+    const void *identity() const noexcept override;
 
-    void activate(actor_base_t* actor) noexcept override;
+    void activate(actor_base_t *actor) noexcept override;
 
-    bool handle_init(message::init_request_t*) noexcept override;
-    processing_result_t handle_subscription(message::subscription_t& message) noexcept override;
+    bool handle_init(message::init_request_t *) noexcept override;
+    processing_result_t handle_subscription(message::subscription_t &message) noexcept override;
 };
 
-
-}
+} // namespace rotor::internal

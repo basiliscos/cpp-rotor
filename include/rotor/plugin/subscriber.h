@@ -10,14 +10,14 @@
 
 namespace rotor::internal {
 
-struct subscriber_plugin_t: public plugin_t {
+struct subscriber_plugin_t : public plugin_t {
 
-    template<typename Handler> void subscribe_actor(Handler&& handler) noexcept;
-    template<typename Handler> void subscribe_actor(Handler&& handler, const address_ptr_t& addr) noexcept;
+    template <typename Handler> void subscribe_actor(Handler &&handler) noexcept;
+    template <typename Handler> void subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
 
     void deactivate() noexcept override;
 
     subscription_container_t tracked;
 };
 
-}
+} // namespace rotor::internal

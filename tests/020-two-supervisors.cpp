@@ -13,7 +13,6 @@ namespace rt = r::test;
 
 static size_t destroyed = 0;
 
-
 struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
@@ -41,9 +40,7 @@ struct my_supervisor_t : public rt::supervisor_test_t {
         assert(state == r::state_t::SHUTTED_DOWN);
     }
 
-    ~my_supervisor_t() {
-        ++destroyed;
-    }
+    ~my_supervisor_t() { ++destroyed; }
 
     std::uint32_t init_start_count = 0;
     std::uint32_t init_finish_count = 0;

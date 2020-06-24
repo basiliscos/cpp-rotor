@@ -186,11 +186,11 @@ struct forwarder_t<Actor, Handler, details::count::_1, void> : forwarder_base_t<
 /** construtor deduction guide for forwarder */
 template <typename Actor, typename Handler>
 forwarder_t(Actor &, Handler &&)
-    ->forwarder_t<Actor, Handler, typename details::callback_traits<Handler>::args_count, void>;
+    -> forwarder_t<Actor, Handler, typename details::callback_traits<Handler>::args_count, void>;
 
 template <typename Actor, typename Handler, typename ErrHandler>
 forwarder_t(Actor &, Handler &&, ErrHandler &&)
-    ->forwarder_t<Actor, Handler, typename details::callback_traits<Handler>::args_count, ErrHandler>;
+    -> forwarder_t<Actor, Handler, typename details::callback_traits<Handler>::args_count, ErrHandler>;
 
 } // namespace asio
 

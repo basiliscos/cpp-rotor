@@ -65,17 +65,11 @@ struct supervisor_t;
 struct supervisor_t : public actor_base_t {
 
     using config_t = supervisor_config_t;
-    using plugins_list_t = std::tuple<
-        internal::address_maker_plugin_t,
-        internal::locality_plugin_t,
-        internal::delivery_plugin_t<internal::default_local_delivery_t>,
-        internal::lifetime_plugin_t,
-        internal::init_shutdown_plugin_t,
-        internal::prestarter_plugin_t,
-        internal::foreigners_support_plugin_t,
-        internal::child_manager_plugin_t,
-        internal::starter_plugin_t
-    >;
+    using plugins_list_t =
+        std::tuple<internal::address_maker_plugin_t, internal::locality_plugin_t,
+                   internal::delivery_plugin_t<internal::default_local_delivery_t>, internal::lifetime_plugin_t,
+                   internal::init_shutdown_plugin_t, internal::prestarter_plugin_t,
+                   internal::foreigners_support_plugin_t, internal::child_manager_plugin_t, internal::starter_plugin_t>;
     template <typename Supervisor> using config_builder_t = supervisor_config_builder_t<Supervisor>;
 
     /** \brief constructs new supervisor with optional parent supervisor */
@@ -107,7 +101,6 @@ struct supervisor_t : public actor_base_t {
      *
      */
     inline void do_process() noexcept { delivery->process(); }
-
 
     /** \brief creates new {@link address_t} linked with the supervisor */
     virtual address_ptr_t make_address() noexcept;
@@ -213,7 +206,6 @@ struct supervisor_t : public actor_base_t {
      */
     inline void put(message_ptr_t message) { locality_leader->queue.emplace_back(std::move(message)); }
 
-
     /** \brief templated version of `subscribe_actor` */
     template <typename Handler> void subscribe(actor_base_t &actor, Handler &&handler) {
         supervisor->subscribe(actor.get_address(), wrap_handler(actor, std::move(handler)));
@@ -254,13 +246,12 @@ struct supervisor_t : public actor_base_t {
     /** \brief root supervisor for the locality */
     supervisor_t *locality_leader;
 
-    internal::foreigners_support_plugin_t* subscription_support;
-    internal::delivery_plugin_base_t* delivery;
-    internal::child_manager_plugin_t* manager;
+    internal::foreigners_support_plugin_t *subscription_support;
+    internal::delivery_plugin_base_t *delivery;
+    internal::child_manager_plugin_t *manager;
 
     /** \brief reaction on child-actors termination */
     supervisor_policy_t policy;
-
 
     /*
      * \brief subscribes an handler to an address.
@@ -274,15 +265,14 @@ struct supervisor_t : public actor_base_t {
      *
      */
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
-                                      const actor_base_t* owner_ptr, owner_tag_t owner_tag) noexcept;
+                                      const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
 
     using actor_base_t::subscribe;
 
     /** \brief per-actor and per-message request tracking support */
     address_mapping_t address_mapping;
 
-protected:
-
+  protected:
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
 
@@ -356,7 +346,8 @@ template <typename Handler> subscription_info_ptr_t actor_base_t::subscribe(Hand
     return supervisor->subscribe(wrapped_handler, address, this, owner_tag_t::ANONYMOUS);
 }
 
-template <typename Handler> subscription_info_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
+template <typename Handler>
+subscription_info_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*this, std::move(h));
     return supervisor->subscribe(wrapped_handler, addr, this, owner_tag_t::ANONYMOUS);
 }
@@ -365,7 +356,8 @@ template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler 
     return subscribe(std::forward<Handler>(h), actor->get_address());
 }
 
-template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
+template <typename Handler>
+subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
     using final_handler_t = handler_t<Handler>;
     handler_ptr_t wrapped_handler(new final_handler_t(*this, std::move(h)));
     auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
@@ -375,21 +367,20 @@ template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler 
 
 namespace internal {
 
-
-template<typename Handler> void subscriber_plugin_t::subscribe_actor(Handler&& handler) noexcept {
+template <typename Handler> void subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
     auto addr = actor->get_address();
     subscribe_actor(std::forward<Handler>(handler), addr);
 }
 
-template<typename Handler> void subscriber_plugin_t::subscribe_actor(Handler&& handler, const address_ptr_t& addr) noexcept {
+template <typename Handler>
+void subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
     auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     tracked.emplace_back(info);
     own_subscriptions.emplace_back(std::move(info));
 }
 
-template<typename LocalDelivery>
-void delivery_plugin_t<LocalDelivery>::process() noexcept {
+template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process() noexcept {
     while (queue->size()) {
         auto message = queue->front();
         auto &dest = message->address;
@@ -397,12 +388,12 @@ void delivery_plugin_t<LocalDelivery>::process() noexcept {
         auto &dest_sup = dest->supervisor;
         auto internal = &dest_sup == actor;
         if (internal) { /* subscriptions are handled by me */
-            auto* local_recipients = subscription_map->get_recipients(*message);
+            auto *local_recipients = subscription_map->get_recipients(*message);
             if (local_recipients) {
                 LocalDelivery::delivery(message, *local_recipients);
             }
         } else if (dest_sup.address->same_locality(*address)) {
-            auto* local_recipients = dest_sup.subscription_map.get_recipients(*message);
+            auto *local_recipients = dest_sup.subscription_map.get_recipients(*message);
             if (local_recipients) {
                 LocalDelivery::delivery(message, *local_recipients);
             }
@@ -412,9 +403,7 @@ void delivery_plugin_t<LocalDelivery>::process() noexcept {
     }
 }
 
-
 } // namespace internal
-
 
 template <typename Handler, typename Enabled> void actor_base_t::unsubscribe(Handler &&h) noexcept {
     supervisor->unsubscribe_actor(address, wrap_handler(*this, std::move(h)));
@@ -527,7 +516,7 @@ template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::
         auto ec = make_error_code(error_code_t::actor_misconfigured);
         system_context.on_error(ec);
     } else {
-        auto& cfg = static_cast<typename builder_t::config_t &>(config);
+        auto &cfg = static_cast<typename builder_t::config_t &>(config);
         auto actor = new Actor(cfg);
         actor_ptr.reset(actor);
         install_action(actor_ptr);

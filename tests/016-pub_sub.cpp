@@ -13,18 +13,17 @@ namespace rt = r::test;
 
 struct payload_t {};
 
-struct pub_config_t: r::actor_config_t {
+struct pub_config_t : r::actor_config_t {
     r::address_ptr_t pub_addr;
     using r::actor_config_t::actor_config_t;
 };
 
-template <typename Actor> struct pub_config_builder_t: r::actor_config_builder_t<Actor> {
+template <typename Actor> struct pub_config_builder_t : r::actor_config_builder_t<Actor> {
     using builder_t = typename Actor::template config_builder_t<Actor>;
     using parent_t = r::actor_config_builder_t<Actor>;
     using parent_t::parent_t;
 
-
-    builder_t&& pub_addr(const r::address_ptr_t& addr) {
+    builder_t &&pub_addr(const r::address_ptr_t &addr) {
         parent_t::config.pub_addr = addr;
         return std::move(*static_cast<builder_t *>(this));
     }
@@ -32,12 +31,11 @@ template <typename Actor> struct pub_config_builder_t: r::actor_config_builder_t
     bool validate() noexcept override { return parent_t::config.pub_addr && parent_t::validate(); }
 };
 
-
 struct pub_t : public r::actor_base_t {
     using config_t = pub_config_t;
     template <typename Actor> using config_builder_t = pub_config_builder_t<Actor>;
 
-    explicit pub_t (config_t& cfg): r::actor_base_t(cfg), pub_addr{cfg.pub_addr} {}
+    explicit pub_t(config_t &cfg) : r::actor_base_t(cfg), pub_addr{cfg.pub_addr} {}
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();
@@ -51,12 +49,11 @@ struct sub_t : public r::actor_base_t {
     using config_t = pub_config_t;
     template <typename Actor> using config_builder_t = pub_config_builder_t<Actor>;
 
-    explicit sub_t (config_t& cfg): r::actor_base_t(cfg), pub_addr{cfg.pub_addr} {}
+    explicit sub_t(config_t &cfg) : r::actor_base_t(cfg), pub_addr{cfg.pub_addr} {}
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
-            p.subscribe_actor(&sub_t::on_payload, pub_addr);
-        });
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>(
+            [this](auto &p) { p.subscribe_actor(&sub_t::on_payload, pub_addr); });
     }
 
     void on_payload(r::message_t<payload_t> &) noexcept { ++received; }

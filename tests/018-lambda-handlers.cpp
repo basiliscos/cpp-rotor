@@ -17,13 +17,12 @@ struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     bool received = false;
 
-    void configure(r::plugin_t& plugin) noexcept override {
+    void configure(r::plugin_t &plugin) noexcept override {
         using message_t = r::message_t<payload>;
-        plugin.with_casted<r::internal::starter_plugin_t>([this](auto& p){
+        plugin.with_casted<r::internal::starter_plugin_t>([this](auto &p) {
             p.subscribe_actor(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
         });
     }
-
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();

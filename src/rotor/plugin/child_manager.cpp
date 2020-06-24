@@ -11,15 +11,13 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-const void* child_manager_plugin_t::class_identity = static_cast<const void *>(typeid(child_manager_plugin_t).name());
+const void *child_manager_plugin_t::class_identity = static_cast<const void *>(typeid(child_manager_plugin_t).name());
 
-const void* child_manager_plugin_t::identity() const noexcept {
-    return class_identity;
-}
+const void *child_manager_plugin_t::identity() const noexcept { return class_identity; }
 
-void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
+void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor_);
-    static_cast<supervisor_t&>(*actor_).manager = this;
+    static_cast<supervisor_t &>(*actor_).manager = this;
     subscribe(&child_manager_plugin_t::on_create);
     subscribe(&child_manager_plugin_t::on_init);
     subscribe(&child_manager_plugin_t::on_shutdown_trigger);
@@ -31,11 +29,10 @@ void child_manager_plugin_t::activate(actor_base_t* actor_) noexcept {
     actor->configure(*this);
 }
 
-
 void child_manager_plugin_t::deactivate() noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     assert(actors_map.size() == 1);
-    //actors_map.clear();
+    // actors_map.clear();
     if (sup.address_mapping.empty()) {
         remove_child(sup, false);
         plugin_t::deactivate();
@@ -56,7 +53,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child, bool normal
     }
 }
 
-void child_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
+void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     child->do_initialize(sup.get_context());
     auto &timeout = child->get_init_timeout();
@@ -68,7 +65,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t& child) noexcept {
 }
 
 void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
+    auto &sup = static_cast<supervisor_t &>(*actor);
     auto actor = message.payload.actor;
     auto actor_address = actor->get_address();
     assert(actors_map.count(actor_address) == 1);
@@ -81,9 +78,8 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
 
     auto &sup = static_cast<supervisor_t &>(*actor);
     bool continue_init = false;
-    auto init_predicate = [&](auto& it){
-        return it.first != actor->address &&
-               it.second.actor->state <= state_t::INITIALIZING;
+    auto init_predicate = [&](auto &it) {
+        return it.first != actor->address && it.second.actor->state <= state_t::INITIALIZING;
     };
     bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
     continue_init = !has_initing && !ec;
@@ -103,9 +99,10 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     }
 }
 
-void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& message) noexcept {
-    if (actors_map.empty()) return; /* already finished / deactivated */
-    auto& sup = static_cast<supervisor_t&>(*actor);
+void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &message) noexcept {
+    if (actors_map.empty())
+        return; /* already finished / deactivated */
+    auto &sup = static_cast<supervisor_t &>(*actor);
     auto &source_addr = message.payload.actor_address;
     if (source_addr == sup.address) {
         if (sup.parent) {
@@ -113,7 +110,7 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& me
             sup.do_shutdown();
         } else {
             // do not do shutdown-request on self
-            //assert((actor->state != state_t::SHUTTING_DOWN) || (actor->state != state_t::SHUTTED_DOWN));
+            // assert((actor->state != state_t::SHUTTING_DOWN) || (actor->state != state_t::SHUTTED_DOWN));
             if (actor->state != state_t::SHUTTING_DOWN) {
                 actor->shutdown_start();
                 unsubscribe_all(true);
@@ -123,7 +120,7 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t& me
         auto &actor_state = actors_map.at(source_addr);
         if (!actor_state.shutdown_requesting) {
             actor_state.shutdown_requesting = true;
-            auto& timeout = actor->shutdown_timeout;
+            auto &timeout = actor->shutdown_timeout;
             sup.request<payload::shutdown_request_t>(source_addr, source_addr).send(timeout);
         }
     }
@@ -133,8 +130,7 @@ void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const std::er
     actor.get_supervisor().get_context()->on_error(ec);
 }
 
-
-void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& message) noexcept {
+void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &message) noexcept {
     auto &source_addr = message.payload.req->address;
     auto &actor_state = actors_map.at(source_addr);
     actor_state.shutdown_requesting = false;
@@ -143,16 +139,15 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     if (ec) {
         on_shutdown_fail(*child_actor, ec);
     }
-    // std::cout << "shutdown confirmed from " << (void*) source_addr.get() << " on " << (void*)actor->address.get() << "\n";
-    auto& sup = static_cast<supervisor_t&>(*actor);
+    // std::cout << "shutdown confirmed from " << (void*) source_addr.get() << " on " << (void*)actor->address.get() <<
+    // "\n";
+    auto &sup = static_cast<supervisor_t &>(*actor);
     if (sup.address_mapping.has_subscriptions(*child_actor)) {
-        sup.address_mapping.each_subscription(*child_actor, [&](auto &info){
-            sup.lifetime->unsubscribe(info);
-        });
+        sup.address_mapping.each_subscription(*child_actor, [&](auto &info) { sup.lifetime->unsubscribe(info); });
     } else {
         auto state = sup.get_state();
-        bool normal_flow = (state == state_t::OPERATIONAL) || (state == state_t::SHUTTING_DOWN)
-            || (state == state_t::INITIALIZING && sup.policy == supervisor_policy_t::shutdown_failed);
+        bool normal_flow = (state == state_t::OPERATIONAL) || (state == state_t::SHUTTING_DOWN) ||
+                           (state == state_t::INITIALIZING && sup.policy == supervisor_policy_t::shutdown_failed);
         remove_child(*child_actor, normal_flow);
         if (!normal_flow) {
             sup.do_shutdown();
@@ -160,7 +155,7 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t& m
     }
 }
 
-void child_manager_plugin_t::on_state_request(message::state_request_t& message) noexcept {
+void child_manager_plugin_t::on_state_request(message::state_request_t &message) noexcept {
     auto &addr = message.payload.request_payload.subject_addr;
     state_t target_state = state_t::UNKNOWN;
     auto it = actors_map.find(addr);
@@ -172,19 +167,17 @@ void child_manager_plugin_t::on_state_request(message::state_request_t& message)
     actor->reply_to(message, target_state);
 }
 
-
-bool child_manager_plugin_t::handle_init(message::init_request_t*) noexcept {
-    auto init_predicate = [&](auto it){
-        return it.first != actor->address &&
-               it.second.actor->state <= state_t::INITIALIZING;
+bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept {
+    auto init_predicate = [&](auto it) {
+        return it.first != actor->address && it.second.actor->state <= state_t::INITIALIZING;
     };
     bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
     return !has_initing;
 }
 
-bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
+bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     /* prevent double sending req, i.e. from parent and from self */
-    auto& self = actors_map.at(actor->address);
+    auto &self = actors_map.at(actor->address);
     self.shutdown_requesting = true;
     unsubscribe_all(false);
 
@@ -192,13 +185,13 @@ bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t*) noexc
 }
 
 void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
-    auto& sup = static_cast<supervisor_t&>(*actor);
-    for(auto& it: actors_map) {
-        auto& actor_state = it.second;
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    for (auto &it : actors_map) {
+        auto &actor_state = it.second;
         if (!actor_state.shutdown_requesting) {
-            auto& actor_addr = it.first;
+            auto &actor_addr = it.first;
             if ((actor_addr != sup.get_address()) || sup.parent) {
-                auto& timeout = actor->shutdown_timeout;
+                auto &timeout = actor->shutdown_timeout;
                 sup.request<payload::shutdown_request_t>(actor_addr, actor_addr).send(timeout);
             }
             actor_state.shutdown_requesting = true;
@@ -209,10 +202,9 @@ void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
     }
 }
 
-
-bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t& point, bool external) noexcept {
+bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
     if (point.owner_tag == owner_tag_t::SUPERVISOR) {
-        auto& sup = static_cast<supervisor_t&>(*actor);
+        auto &sup = static_cast<supervisor_t &>(*actor);
         sup.address_mapping.remove(point);
         if (!sup.address_mapping.has_subscriptions(*point.owner_ptr)) {
             remove_child(*point.owner_ptr, true);
@@ -220,10 +212,10 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t& p
         if (actors_map.size() == 0) {
             plugin_t::deactivate();
         }
-        if (sup.address_mapping.empty()) plugin_t::deactivate();
-        return false; //handled by lifetime
-    }
-    else {
+        if (sup.address_mapping.empty())
+            plugin_t::deactivate();
+        return false; // handled by lifetime
+    } else {
         return plugin_t::handle_unsubscription(point, external);
     }
 }

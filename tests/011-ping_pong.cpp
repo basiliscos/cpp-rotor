@@ -25,10 +25,8 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
-            p.subscribe_actor(&pinger_t::on_pong);
-        });
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
     void on_start() noexcept override {
@@ -36,7 +34,6 @@ struct pinger_t : public r::actor_base_t {
         ++ping_sent;
         send<ping_t>(ponger_addr);
     }
-
 
     void on_pong(r::message_t<pong_t> &) noexcept { ++pong_received; }
 
@@ -52,10 +49,8 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>([](auto& p){
-            p.subscribe_actor(&ponger_t::on_ping);
-        });
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
     void on_ping(r::message_t<ping_t> &) noexcept {
@@ -72,9 +67,7 @@ TEST_CASE("ping-pong", "[supervisor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto pinger = sup->create_actor<pinger_t>()
-            .timeout(rt::default_timeout)
-            .finish();
+    auto pinger = sup->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());

@@ -10,13 +10,11 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-const void* lifetime_plugin_t::class_identity = static_cast<const void *>(typeid(lifetime_plugin_t).name());
+const void *lifetime_plugin_t::class_identity = static_cast<const void *>(typeid(lifetime_plugin_t).name());
 
-const void* lifetime_plugin_t::identity() const noexcept {
-    return class_identity;
-}
+const void *lifetime_plugin_t::identity() const noexcept { return class_identity; }
 
-void lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
+void lifetime_plugin_t::activate(actor_base_t *actor_) noexcept {
     this->actor = actor_;
 
     actor->install_plugin(*this, slot_t::SHUTDOWN);
@@ -31,23 +29,23 @@ void lifetime_plugin_t::activate(actor_base_t* actor_) noexcept {
     return plugin_t::activate(actor_);
 }
 
-
-void lifetime_plugin_t::deactivate() noexcept  {
+void lifetime_plugin_t::deactivate() noexcept {
     // NOOP, do not unsubscribe too early.
 }
 
-bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
-    if (points.empty() && own_subscriptions.empty()) return true;
+bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+    if (points.empty() && own_subscriptions.empty())
+        return true;
     unsubscribe();
     return false;
 }
 
 void lifetime_plugin_t::unsubscribe(const subscription_info_ptr_t &info_ptr) noexcept {
     using state_t = subscription_info_t::state_t;
-    auto& info = *info_ptr;
-    auto& handler = info.handler;
+    auto &info = *info_ptr;
+    auto &handler = info.handler;
     auto &dest = handler->actor_ptr->address;
-    //auto point = subscription_point_t{handler, info.address};
+    // auto point = subscription_point_t{handler, info.address};
     if (info.state != state_t::UNSUBSCRIBING) {
         info.state = state_t::UNSUBSCRIBING;
         if (info.internal_address) {
@@ -59,9 +57,9 @@ void lifetime_plugin_t::unsubscribe(const subscription_info_ptr_t &info_ptr) noe
 }
 
 void lifetime_plugin_t::unsubscribe() noexcept {
-   auto rit = points.rbegin();
+    auto rit = points.rbegin();
     while (rit != points.rend()) {
-        auto& info = *rit;
+        auto &info = *rit;
         if (info->owner_tag != owner_tag_t::PLUGIN) {
             unsubscribe(info);
             ++rit;
@@ -77,34 +75,31 @@ void lifetime_plugin_t::unsubscribe() noexcept {
     }
 }
 
-void lifetime_plugin_t::on_subscription(message::subscription_t &msg) noexcept {
-    actor->on_subscription(msg);
-}
+void lifetime_plugin_t::on_subscription(message::subscription_t &msg) noexcept { actor->on_subscription(msg); }
 
-void lifetime_plugin_t::on_unsubscription(message::unsubscription_t &msg) noexcept {
-    actor->on_unsubscription(msg);
-}
+void lifetime_plugin_t::on_unsubscription(message::unsubscription_t &msg) noexcept { actor->on_unsubscription(msg); }
 
 void lifetime_plugin_t::on_unsubscription_external(message::unsubscription_external_t &msg) noexcept {
     actor->on_unsubscription_external(msg);
 }
 
-void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t& info) noexcept {
+void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t &info) noexcept {
     points.emplace_back(info);
 }
 
-processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
-    auto& point = message.payload.point;
-    //printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
+processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+    auto &point = message.payload.point;
+    // printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
     auto it = points.find(point);
-    auto& info = **it;
+    auto &info = **it;
     assert(info.state == subscription_info_t::state_t::SUBSCRIBING || info.internal_address);
-    if (!info.internal_address) info.state = subscription_info_t::state_t::SUBSCRIBED;
+    if (!info.internal_address)
+        info.state = subscription_info_t::state_t::SUBSCRIBED;
     return processing_result_t::CONSUMED;
 }
 
 bool lifetime_plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
-    //printf("[-]unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
+    // printf("[-]unsubscribed %p to %s\n", point.address.get(), point.handler->message_type);
     subscription_info_ptr_t info;
     bool result = false;
     if (point.owner_tag != owner_tag_t::PLUGIN) {

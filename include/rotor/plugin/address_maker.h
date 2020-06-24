@@ -10,16 +10,16 @@
 
 namespace rotor::internal {
 
-struct address_maker_plugin_t: public plugin_t {
+struct address_maker_plugin_t : public plugin_t {
     using plugin_t::plugin_t;
 
-    static const void* class_identity;
-    const void* identity() const noexcept override;
+    static const void *class_identity;
+    const void *identity() const noexcept override;
 
-    void activate(actor_base_t* actor) noexcept override;
+    void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
 
     virtual address_ptr_t create_address() noexcept;
 };
 
-}
+} // namespace rotor::internal

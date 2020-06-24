@@ -18,15 +18,13 @@ struct sample_actor_t : public rt::actor_test_t {
 
     virtual void init_finish() noexcept override {}
 
-     void confirm_init() noexcept { r::actor_base_t::init_finish(); }
+    void confirm_init() noexcept { r::actor_base_t::init_finish(); }
 };
 
 struct fail_init_actor_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
-    void init_finish() noexcept override {
-        supervisor->do_shutdown();
-    }
+    void init_finish() noexcept override { supervisor->do_shutdown(); }
 };
 
 struct fail_start_actor_t : public rt::actor_test_t {
@@ -43,16 +41,10 @@ struct custom_init_plugin_t;
 struct fail_init_actor2_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
-    using plugins_list_t = std::tuple<
-        r::internal::address_maker_plugin_t,
-        r::internal::lifetime_plugin_t,
-        r::internal::init_shutdown_plugin_t,
-        custom_init_plugin_t,
-        r::internal::prestarter_plugin_t,
-        r::internal::starter_plugin_t
-    >;
+    using plugins_list_t = std::tuple<r::internal::address_maker_plugin_t, r::internal::lifetime_plugin_t,
+                                      r::internal::init_shutdown_plugin_t, custom_init_plugin_t,
+                                      r::internal::prestarter_plugin_t, r::internal::starter_plugin_t>;
 };
-
 
 struct fail_init_actor3_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
@@ -81,33 +73,28 @@ struct fail_init_actor5_t : public rt::actor_test_t {
     }
 };
 
-struct custom_init_plugin_t: r::plugin_t {
-    static const void* class_identity;
+struct custom_init_plugin_t : r::plugin_t {
+    static const void *class_identity;
 
-    void activate(r::actor_base_t* actor) noexcept override {
+    void activate(r::actor_base_t *actor) noexcept override {
         r::plugin_t::activate(actor);
         actor->install_plugin(*this, r::slot_t::INIT);
     }
 
-    bool handle_init(r::message::init_request_t*) noexcept override {
-        return false;
-    }
+    bool handle_init(r::message::init_request_t *) noexcept override { return false; }
 
-    const void* identity() const noexcept override {
-        return class_identity;
-    }
+    const void *identity() const noexcept override { return class_identity; }
 };
 
-const void* custom_init_plugin_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin_t).name());
+const void *custom_init_plugin_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin_t).name());
 
 struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
 
-    void configure(r::plugin_t& plugin) noexcept override {
-        plugin.with_casted<r::internal::child_manager_plugin_t>([this](auto&){
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::child_manager_plugin_t>([this](auto &) {
             child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-
         });
     }
 

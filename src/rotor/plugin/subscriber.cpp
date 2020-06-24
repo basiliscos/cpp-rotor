@@ -8,4 +8,3 @@ void subscriber_plugin_t::deactivate() noexcept {
     tracked.clear();
     return plugin_t::deactivate();
 }
-

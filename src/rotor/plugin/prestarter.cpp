@@ -10,11 +10,9 @@
 using namespace rotor;
 using namespace rotor::internal;
 
-const void* prestarter_plugin_t::class_identity = static_cast<const void *>(typeid(prestarter_plugin_t).name());
+const void *prestarter_plugin_t::class_identity = static_cast<const void *>(typeid(prestarter_plugin_t).name());
 
-const void* prestarter_plugin_t::identity() const noexcept {
-    return class_identity;
-}
+const void *prestarter_plugin_t::identity() const noexcept { return class_identity; }
 
 void prestarter_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor_);
@@ -27,9 +25,9 @@ void prestarter_plugin_t::activate(actor_base_t *actor_) noexcept {
     }
 }
 
-processing_result_t prestarter_plugin_t::handle_subscription(message::subscription_t& message) noexcept {
-    auto& point = message.payload.point;
-    auto it = std::find_if(tracked.begin(), tracked.end(), [&](auto info){ return *info == point; } );
+processing_result_t prestarter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+    auto &point = message.payload.point;
+    auto it = std::find_if(tracked.begin(), tracked.end(), [&](auto info) { return *info == point; });
     if (it != tracked.end()) {
         tracked.erase(it);
     }
@@ -40,6 +38,4 @@ processing_result_t prestarter_plugin_t::handle_subscription(message::subscripti
     return processing_result_t::IGNORED;
 }
 
-bool prestarter_plugin_t::handle_init(message::init_request_t* request) noexcept {
-    return tracked.empty() && request;
-}
+bool prestarter_plugin_t::handle_init(message::init_request_t *request) noexcept { return tracked.empty() && request; }

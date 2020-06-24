@@ -56,7 +56,6 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
  */
 template <typename T> struct handler_traits {};
 
-
 /** \struct handler_traits<void (A::*)(M &) noexcept>
  *  \brief Helper class to extract final actor class and message type from pointer-to-member function
  */
@@ -73,17 +72,16 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
     using payload_t = typename M::payload_t;
 
     using backend_t = A;
-    static_assert (is_actor || is_plugin, "message handler should be either actor or plugin");
+    static_assert(is_actor || is_plugin, "message handler should be either actor or plugin");
 };
 
 template <typename M, typename H> struct handler_traits<lambda_holder_t<M, H>> {
     static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
-    static_assert (has_valid_message, "lambda does not process valid message");
+    static_assert(has_valid_message, "lambda does not process valid message");
     static auto const constexpr is_actor = false;
     static auto const constexpr is_plugin = false;
     static auto const constexpr is_lambda = true;
 };
-
 
 /** \struct handler_base_t
  *  \brief Base class for `rotor` handler, i.e concrete message type processing point
@@ -97,7 +95,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     const void *handler_type;
 
     /** \brief intrusive poiter to {@link actor_base_t} the actor of the handler */
-    //actor_base_t* actor_ptr;
+    // actor_base_t* actor_ptr;
     actor_ptr_t actor_ptr;
 
     /** \brief non-owning raw poiter to actor */
@@ -136,22 +134,17 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 namespace details {
 
 template <typename Handler>
-inline constexpr bool is_actor_handler_v
-    =  handler_traits<Handler>::is_actor
-    && !handler_traits<Handler>::is_plugin
-    && handler_traits<Handler>::has_valid_message
-    && !handler_traits<Handler>::is_lambda;
+inline constexpr bool is_actor_handler_v =
+    handler_traits<Handler>::is_actor && !handler_traits<Handler>::is_plugin &&
+    handler_traits<Handler>::has_valid_message && !handler_traits<Handler>::is_lambda;
+
+template <typename Handler> inline constexpr bool is_lambda_handler_v = handler_traits<Handler>::is_lambda;
 
 template <typename Handler>
-inline constexpr bool is_lambda_handler_v = handler_traits<Handler>::is_lambda;
-
-template <typename Handler>
-inline constexpr bool is_plugin_handler_v
-    =  handler_traits<Handler>::has_valid_message
-    && handler_traits<Handler>::is_plugin
-    && !handler_traits<Handler>::is_actor
-    && !handler_traits<Handler>::is_lambda;
-}
+inline constexpr bool is_plugin_handler_v =
+    handler_traits<Handler>::has_valid_message &&handler_traits<Handler>::is_plugin &&
+    !handler_traits<Handler>::is_actor && !handler_traits<Handler>::is_lambda;
+} // namespace details
 
 template <typename Handler, typename Enable = void> struct handler_t;
 
@@ -160,8 +153,7 @@ template <typename Handler, typename Enable = void> struct handler_t;
  *  \tparam Handler pointer-to-member function type
  */
 template <typename Handler>
-struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>>
-    : public handler_base_t {
+struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>> : public handler_base_t {
 
     /** \brief static pointer to unique pointer-to-member function name ( `typeid(Handler).name()` ) */
     static const void *handler_type;
@@ -177,7 +169,7 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
         using backend_t = typename traits::backend_t;
         if (message->type_index == final_message_t::message_type) {
             auto final_message = static_cast<final_message_t *>(message.get());
-            auto &final_obj = static_cast<backend_t&>(*actor_ptr);
+            auto &final_obj = static_cast<backend_t &>(*actor_ptr);
             (final_obj.*handler)(*final_message);
         }
     }
@@ -188,22 +180,20 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
 };
 
 template <typename Handler>
-const void *handler_t<
-    Handler,
-    std::enable_if_t<details::is_actor_handler_v<Handler>>>::handler_type =
+const void *handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>>::handler_type =
     static_cast<const void *>(typeid(Handler).name());
 
 // plugin handler
 template <typename Handler>
-struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>>
-    : public handler_base_t {
+struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>> : public handler_base_t {
     static const void *handler_type;
 
     plugin_t &plugin;
     Handler handler;
 
     explicit handler_t(plugin_t &plugin_, Handler &&handler_)
-        : handler_base_t{*plugin_.actor, final_message_t::message_type, handler_type}, plugin{plugin_}, handler{handler_} {}
+        : handler_base_t{*plugin_.actor, final_message_t::message_type, handler_type}, plugin{plugin_}, handler{
+                                                                                                            handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         using backend_t = typename traits::backend_t;
@@ -214,22 +204,19 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
         }
     }
 
-private:
-  using traits = handler_traits<Handler>;
-  using final_message_t = typename traits::message_t;
+  private:
+    using traits = handler_traits<Handler>;
+    using final_message_t = typename traits::message_t;
 };
 
 template <typename Handler>
-const void *handler_t<
-    Handler,
-    std::enable_if_t<details::is_plugin_handler_v<Handler>>>::handler_type =
+const void *handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>>::handler_type =
     static_cast<const void *>(typeid(Handler).name());
 
 // lambda handler
-template <typename Handler, typename M> struct handler_t<
-        lambda_holder_t<Handler, M>,
-        std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>
-    > : public handler_base_t {
+template <typename Handler, typename M>
+struct handler_t<lambda_holder_t<Handler, M>,
+                 std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>> : public handler_base_t {
     /** \brief alias type for lambda, which will actually process messages */
     using handler_backend_t = lambda_holder_t<Handler, M>;
 
@@ -257,8 +244,8 @@ template <typename Handler, typename M> struct handler_t<
 
 template <typename Handler, typename M>
 const void *handler_t<lambda_holder_t<Handler, M>,
-        std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>
-    >::handler_type = static_cast<const void *>(typeid(Handler).name());
+                      std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>>::handler_type =
+    static_cast<const void *>(typeid(Handler).name());
 
 } // namespace rotor
 
@@ -272,4 +259,3 @@ template <> struct hash<rotor::handler_ptr_t> {
     size_t operator()(const rotor::handler_ptr_t &handler) const noexcept { return handler->precalc_hash; }
 };
 } // namespace std
-

@@ -11,11 +11,10 @@ using namespace rotor;
 
 plugin_t::~plugin_t() {}
 
-void plugin_t::activate(actor_base_t* actor_) noexcept {
+void plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->commit_plugin_activation(*this, true);
 }
-
 
 void plugin_t::deactivate() noexcept {
     if (actor) {
@@ -26,32 +25,28 @@ void plugin_t::deactivate() noexcept {
             auto lifetime = actor->lifetime;
             assert(lifetime);
 
-            auto& subs = own_subscriptions;
-            for(auto rit = subs.rbegin(); rit != subs.rend(); ++rit) {
+            auto &subs = own_subscriptions;
+            for (auto rit = subs.rbegin(); rit != subs.rend(); ++rit) {
                 lifetime->unsubscribe(*rit);
             }
         }
     }
 }
 
-bool plugin_t::handle_shutdown(message::shutdown_request_t*) noexcept {
-    return true;
-}
+bool plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return true; }
 
-bool plugin_t::handle_init(message::init_request_t*) noexcept {
-    return true;
-}
+bool plugin_t::handle_init(message::init_request_t *) noexcept { return true; }
 
 void plugin_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
-    //printf("[-] forgetting %s\n", info->handler->message_type);
+    // printf("[-] forgetting %s\n", info->handler->message_type);
     actor->get_supervisor().commit_unsubscription(info);
 }
 
-bool plugin_t::forget_subscription(const subscription_point_t& point) noexcept {
-    auto& subs = own_subscriptions;
+bool plugin_t::forget_subscription(const subscription_point_t &point) noexcept {
+    auto &subs = own_subscriptions;
     auto it = subs.find(point);
     if (it != subs.end()) {
-        auto& info = *it;
+        auto &info = *it;
         assert(info->owner_tag == owner_tag_t::PLUGIN);
         forget_subscription(info);
         subs.erase(it);
@@ -67,10 +62,7 @@ bool plugin_t::forget_subscription(const subscription_point_t& point) noexcept {
     return false;
 }
 
-
-processing_result_t plugin_t::handle_subscription(message::subscription_t&) noexcept {
-    std::abort();
-}
+processing_result_t plugin_t::handle_subscription(message::subscription_t &) noexcept { std::abort(); }
 
 bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
     if (external) {

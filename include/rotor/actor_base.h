@@ -94,13 +94,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     using config_t = actor_config_t;
     template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
 
-    using plugins_list_t = std::tuple<
-        internal::address_maker_plugin_t,
-        internal::lifetime_plugin_t,
-        internal::init_shutdown_plugin_t,
-        internal::prestarter_plugin_t,
-        internal::starter_plugin_t
-    >;
+    using plugins_list_t =
+        std::tuple<internal::address_maker_plugin_t, internal::lifetime_plugin_t, internal::init_shutdown_plugin_t,
+                   internal::prestarter_plugin_t, internal::starter_plugin_t>;
 
     /** \brief constructs actor and links it's supervisor
      *
@@ -137,7 +133,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     virtual void unsubscribe() noexcept;
 
     virtual void on_start() noexcept;
-
 
 #if 0
     using linked_servers_t = std::unordered_set<address_ptr_t>;
@@ -288,17 +283,17 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     inline const pt::time_duration &get_shutdown_timeout() noexcept { return shutdown_timeout; }
 
-    void install_plugin(plugin_t& plugin, slot_t slot) noexcept;
-    void uninstall_plugin(plugin_t& plugin, slot_t slot) noexcept;
+    void install_plugin(plugin_t &plugin, slot_t slot) noexcept;
+    void uninstall_plugin(plugin_t &plugin, slot_t slot) noexcept;
     void activate_plugins() noexcept;
-    void commit_plugin_activation(plugin_t& plugin, bool success) noexcept;
+    void commit_plugin_activation(plugin_t &plugin, bool success) noexcept;
 
     void deactivate_plugins() noexcept;
-    void commit_plugin_deactivation(plugin_t& plugin) noexcept;
+    void commit_plugin_deactivation(plugin_t &plugin) noexcept;
 
-    void on_subscription(message::subscription_t& message) noexcept;
-    void on_unsubscription(message::unsubscription_t& message) noexcept;
-    void on_unsubscription_external(message::unsubscription_external_t& message) noexcept;
+    void on_subscription(message::subscription_t &message) noexcept;
+    void on_unsubscription(message::unsubscription_t &message) noexcept;
+    void on_unsubscription_external(message::unsubscription_external_t &message) noexcept;
 
     address_ptr_t create_address() noexcept;
 
@@ -349,23 +344,21 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief finializes initialization  */
     virtual void init_finish() noexcept;
 
-
-    virtual void configure(plugin_t& plugin) noexcept;
+    virtual void configure(plugin_t &plugin) noexcept;
 
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
 
-    //internal::subscription_plugin_t* subscription_plugin;
+    // internal::subscription_plugin_t* subscription_plugin;
 
     /** \brief current actor state */
     state_t state;
 
     /* non-owning pointers */
-    internal::address_maker_plugin_t* address_maker = nullptr;
-    internal::lifetime_plugin_t* lifetime = nullptr;
+    internal::address_maker_plugin_t *address_maker = nullptr;
+    internal::lifetime_plugin_t *lifetime = nullptr;
 
   protected:
-
     virtual bool ready_to_shutdown() noexcept;
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */
@@ -374,9 +367,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     unlink_policy_t unlink_policy;
 
     actor_config_t::plugins_t plugins;
-    std::set<const void*> activating_plugins;
-    std::set<const void*> deactivating_plugins;
-
+    std::set<const void *> activating_plugins;
+    std::set<const void *> deactivating_plugins;
 
     /* slots */
     actor_config_t::plugins_t init_plugins;
@@ -387,7 +379,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     friend struct internal::lifetime_plugin_t;
     friend struct supervisor_t;
     template <typename T> friend struct request_builder_t;
-    template<typename T, typename M> friend struct accessor_t;
+    template <typename T, typename M> friend struct accessor_t;
 };
 
 /** \brief intrusive pointer for actor*/

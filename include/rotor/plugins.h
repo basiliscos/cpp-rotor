@@ -18,5 +18,3 @@
 #include "plugin/delivery.h"
 #include "plugin/locality.h"
 #include "plugin/foreigners_support.h"
-
-

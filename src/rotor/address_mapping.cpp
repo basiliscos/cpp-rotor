@@ -31,13 +31,14 @@ address_ptr_t address_mapping_t::get_mapped_address(actor_base_t &actor, const v
     return it_subscription->second->address;
 }
 
-void address_mapping_t::remove(const subscription_point_t& point) noexcept {
+void address_mapping_t::remove(const subscription_point_t &point) noexcept {
     auto it_points = actor_map.find(point.owner_ptr);
-    if (it_points == actor_map.end()) return;
+    if (it_points == actor_map.end())
+        return;
 
-    auto& subs = it_points->second;
-    for(auto it = subs.begin(); it != subs.end(); ) {
-        auto& info = *it->second;
+    auto &subs = it_points->second;
+    for (auto it = subs.begin(); it != subs.end();) {
+        auto &info = *it->second;
         if (info.handler.get() == point.handler.get() && info.address == point.address) {
             subs.erase(it);
             break;
@@ -45,7 +46,9 @@ void address_mapping_t::remove(const subscription_point_t& point) noexcept {
             ++it;
         }
     }
-    if (subs.empty()) { actor_map.erase(it_points); }
+    if (subs.empty()) {
+        actor_map.erase(it_points);
+    }
 }
 
 /*

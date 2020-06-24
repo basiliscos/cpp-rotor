@@ -10,19 +10,19 @@
 
 namespace rotor::internal {
 
-struct foreigners_support_plugin_t: public plugin_t {
+struct foreigners_support_plugin_t : public plugin_t {
     using plugin_t::plugin_t;
 
-    static const void* class_identity;
-    const void* identity() const noexcept override;
-    void activate(actor_base_t* actor) noexcept override;
+    static const void *class_identity;
+    const void *identity() const noexcept override;
+    void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
 
-    virtual void on_call(message::handler_call_t& message) noexcept;
-    virtual void on_unsubscription(message::commit_unsubscription_t& message) noexcept;
-    virtual void on_subscription_external(message::external_subscription_t& message) noexcept;
+    virtual void on_call(message::handler_call_t &message) noexcept;
+    virtual void on_unsubscription(message::commit_unsubscription_t &message) noexcept;
+    virtual void on_subscription_external(message::external_subscription_t &message) noexcept;
 
     subscription_container_t foreign_points;
 };
 
-}
+} // namespace rotor::internal

@@ -27,7 +27,7 @@ namespace rotor {
  */
 struct address_mapping_t {
     /* \brief alias for vector of subscription points */
-    //using points_t = std::vector<subscription_info_ptr_t>;
+    // using points_t = std::vector<subscription_info_ptr_t>;
 
     /* \brief associates temporal destination point with actor's message type
      *
@@ -39,26 +39,26 @@ struct address_mapping_t {
      * supervisor's address.
      *
      */
-    void set(actor_base_t &actor, const subscription_info_ptr_t& info) noexcept;
+    void set(actor_base_t &actor, const subscription_info_ptr_t &info) noexcept;
 
     /** \brief returns temporal destination address for the actor/message type */
     address_ptr_t get_mapped_address(actor_base_t &actor, const void *message) noexcept;
 
-    template<typename Fn>
-    void each_subscription(const actor_base_t &actor, Fn&& fn) const noexcept {
+    template <typename Fn> void each_subscription(const actor_base_t &actor, Fn &&fn) const noexcept {
         auto it_mappings = actor_map.find(static_cast<const void *>(&actor));
-        if (it_mappings == actor_map.end()) return;
+        if (it_mappings == actor_map.end())
+            return;
 
-        for(auto it: it_mappings->second) {
+        for (auto it : it_mappings->second) {
             fn(it.second);
         }
     }
 
-    bool has_subscriptions(const actor_base_t& actor) const noexcept;
+    bool has_subscriptions(const actor_base_t &actor) const noexcept;
     bool empty() const noexcept { return actor_map.empty(); }
-    void remove(const subscription_point_t& point) noexcept;
+    void remove(const subscription_point_t &point) noexcept;
 
-    //void clear(supervisor_t& sup) noexcept;
+    // void clear(supervisor_t& sup) noexcept;
 
   private:
     using point_map_t = std::unordered_map<const void *, subscription_info_ptr_t>;
