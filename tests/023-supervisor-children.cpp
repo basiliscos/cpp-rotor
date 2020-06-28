@@ -93,9 +93,8 @@ struct sample_supervisor_t : public rt::supervisor_test_t {
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
 
     void configure(r::plugin_t &plugin) noexcept override {
-        plugin.with_casted<r::internal::child_manager_plugin_t>([this](auto &) {
-            child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        });
+        plugin.with_casted<r::internal::child_manager_plugin_t>(
+            [this](auto &) { child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish(); });
     }
 
     child_ptr_t child;
@@ -116,6 +115,20 @@ struct pre_shutdown_actor_t : public rt::actor_test_t {
     void shutdown_start() noexcept override {
         do_shutdown();
         rt::actor_test_t::shutdown_start();
+    }
+};
+
+struct managed_supervisor_t : public rt::supervisor_test_t {
+    using parent_t = rt::supervisor_test_t;
+    using actor_t = rt::actor_test_t;
+    using child_ptr_t = r::intrusive_ptr_t<actor_t>;
+    using parent_t::parent_t;
+
+    child_ptr_t child;
+
+    void do_initialize(r::system_context_t *ctx) noexcept override {
+        parent_t::do_initialize(ctx);
+        child = create_actor<actor_t>().timeout(rt::default_timeout).finish();
     }
 };
 
@@ -356,6 +369,21 @@ TEST_CASE("double shutdown attempt (pre)", "[supervisor]") {
     rt::system_context_test_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<pre_shutdown_actor_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("managed supervisor (autostart child)", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup = system_context.create_supervisor<managed_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->child;
 
     sup->do_process();
     CHECK(act->get_state() == r::state_t::OPERATIONAL);
