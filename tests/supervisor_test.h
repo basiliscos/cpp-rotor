@@ -51,6 +51,7 @@ struct supervisor_test_t : public supervisor_t {
     const void *locality;
     timers_t active_timers;
 };
+using  supervisor_test_ptr_t = rotor::intrusive_ptr_t<supervisor_test_t>;
 
 template <typename Supervisor> struct supervisor_test_config_builder_t : supervisor_config_builder_t<Supervisor> {
     using parent_t = supervisor_config_builder_t<Supervisor>;

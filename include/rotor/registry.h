@@ -1,6 +1,6 @@
 #pragma once
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -35,11 +35,7 @@ namespace rotor {
 struct registry_t : public actor_base_t {
     using actor_base_t::actor_base_t;
 
-    virtual ~registry_t() override;
-
-#if 0
-    virtual void init_start() noexcept override;
-#endif
+    void configure(plugin_t &plugin) noexcept override;
 
     /** \brief registers address on the service. Fails, if the name already exists */
     virtual void on_reg(message::registration_request_t &request) noexcept;

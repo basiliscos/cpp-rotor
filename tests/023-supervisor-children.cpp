@@ -36,13 +36,14 @@ struct fail_start_actor_t : public rt::actor_test_t {
     }
 };
 
-struct custom_init_plugin_t;
+struct custom_init_plugin1_t;
+struct custom_init_plugin2_t;
 
 struct fail_init_actor2_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
     using plugins_list_t = std::tuple<r::internal::address_maker_plugin_t, r::internal::lifetime_plugin_t,
-                                      r::internal::init_shutdown_plugin_t, custom_init_plugin_t,
+                                      r::internal::init_shutdown_plugin_t, custom_init_plugin1_t,
                                       r::internal::prestarter_plugin_t, r::internal::starter_plugin_t>;
 };
 
@@ -73,7 +74,17 @@ struct fail_init_actor5_t : public rt::actor_test_t {
     }
 };
 
-struct custom_init_plugin_t : r::plugin_t {
+struct fail_init_actor6_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    using plugins_list_t = std::tuple<r::internal::address_maker_plugin_t, r::internal::lifetime_plugin_t,
+                                      r::internal::init_shutdown_plugin_t, custom_init_plugin2_t,
+                                      r::internal::prestarter_plugin_t, r::internal::starter_plugin_t>;
+};
+
+
+
+struct custom_init_plugin1_t : r::plugin_t {
     static const void *class_identity;
 
     void activate(r::actor_base_t *actor) noexcept override {
@@ -86,7 +97,27 @@ struct custom_init_plugin_t : r::plugin_t {
     const void *identity() const noexcept override { return class_identity; }
 };
 
-const void *custom_init_plugin_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin_t).name());
+const void *custom_init_plugin1_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin1_t).name());
+
+struct custom_init_plugin2_t : r::plugin_t {
+    static const void *class_identity;
+
+    void activate(r::actor_base_t *actor) noexcept override {
+        r::plugin_t::activate(actor);
+        actor->install_plugin(*this, r::slot_t::INIT);
+    }
+
+    bool handle_init(r::message::init_request_t *message) noexcept override {
+        auto ec = r::make_error_code(r::error_code_t::actor_misconfigured);
+        actor->reply_with_error(*message, ec);
+        actor->init_request.reset();
+        return false;
+    }
+
+    const void *identity() const noexcept override { return class_identity; }
+};
+
+const void *custom_init_plugin2_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin2_t).name());
 
 struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
@@ -310,6 +341,16 @@ TEST_CASE("actor sends shutdown to sup during init_start()", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_init_actor5_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("actor replies with error to init", "[supervisor]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_init_actor6_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);

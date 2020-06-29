@@ -32,10 +32,17 @@ processing_result_t prestarter_plugin_t::handle_subscription(message::subscripti
         tracked.erase(it);
     }
     if (tracked.empty()) {
-        actor->init_continue();
+        if (continue_init) {
+            continue_init = false;
+            actor->init_continue();
+        }
         return processing_result_t::FINISHED;
     }
     return processing_result_t::IGNORED;
 }
 
-bool prestarter_plugin_t::handle_init(message::init_request_t *request) noexcept { return tracked.empty() && request; }
+bool prestarter_plugin_t::handle_init(message::init_request_t *) noexcept {
+    if (tracked.empty()) return true;
+    this->continue_init = true;
+    return false;
+}

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,17 +9,16 @@
 
 using namespace rotor;
 
-registry_t::~registry_t() {}
-
-#if 0
-void registry_t::init_start() noexcept {
-    subscribe(&registry_t::on_reg);
-    subscribe(&registry_t::on_dereg);
-    subscribe(&registry_t::on_dereg_service);
-    subscribe(&registry_t::on_discovery);
-    actor_base_t::init_start();
+void registry_t::configure(plugin_t &plugin) noexcept {
+    actor_base_t::configure(plugin);
+    plugin.with_casted<internal::prestarter_plugin_t>([](auto &p) {
+        p.subscribe_actor(&registry_t::on_reg);
+        p.subscribe_actor(&registry_t::on_dereg);
+        p.subscribe_actor(&registry_t::on_dereg_service);
+        p.subscribe_actor(&registry_t::on_discovery);
+    });
 }
-#endif
+
 
 void registry_t::on_reg(message::registration_request_t &request) noexcept {
     auto &name = request.payload.request_payload.service_name;

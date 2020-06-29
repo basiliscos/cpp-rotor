@@ -76,9 +76,9 @@ add_executable(023-supervisor-children 023-supervisor-children.cpp)
 target_link_libraries(023-supervisor-children ${rotor_TEST_LIBS})
 add_test(023-supervisor-children "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/023-supervisor-children")
 
-#add_executable(030-registry 030-registry.cpp)
-#target_link_libraries(030-registry ${rotor_TEST_LIBS})
-#add_test(030-registry "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/030-registry")
+add_executable(030-registry 030-registry.cpp)
+target_link_libraries(030-registry ${rotor_TEST_LIBS})
+add_test(030-registry "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/030-registry")
 
 if (BUILD_BOOST_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor::test rotor::asio)

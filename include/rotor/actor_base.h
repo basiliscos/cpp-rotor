@@ -100,6 +100,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
         internal::prestarter_plugin_t,
+        internal::registry_plugin_t,
         internal::starter_plugin_t>;
     // clang-format on
 
@@ -368,8 +369,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
+#if 0
     std::optional<pt::time_duration> unlink_timeout;
     unlink_policy_t unlink_policy;
+#endif
 
     actor_config_t::plugins_t plugins;
     std::set<const void *> activating_plugins;

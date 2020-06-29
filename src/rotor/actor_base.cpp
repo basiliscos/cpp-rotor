@@ -13,8 +13,12 @@ using namespace rotor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW},
-      supervisor{cfg.supervisor}, unlink_timeout{cfg.unlink_timeout},
-      unlink_policy{cfg.unlink_policy}, plugins{std::move(cfg.plugins)} {
+      supervisor{cfg.supervisor},
+#if 0
+      unlink_timeout{cfg.unlink_timeout},
+      unlink_policy{cfg.unlink_policy},
+#endif
+      plugins{std::move(cfg.plugins)} {
     for (auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
     }
@@ -123,6 +127,8 @@ void actor_base_t::shutdown_finish() noexcept {
 
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
+    if (!init_request) return;
+
     while (!init_plugins.empty()) {
         auto &plugin = init_plugins.front();
         if (plugin->handle_init(init_request.get())) {

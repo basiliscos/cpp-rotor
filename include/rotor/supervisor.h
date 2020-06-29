@@ -74,6 +74,7 @@ struct supervisor_t : public actor_base_t {
         internal::prestarter_plugin_t,
         internal::foreigners_support_plugin_t,
         internal::child_manager_plugin_t,
+        internal::registry_plugin_t,
         internal::starter_plugin_t>;
     // clang-format on
 
@@ -276,6 +277,8 @@ struct supervisor_t : public actor_base_t {
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
 
+    inline const address_ptr_t& get_registry() const noexcept { return registry_address; }
+
     using actor_base_t::subscribe;
 
     /** \brief per-actor and per-message request tracking support */
@@ -313,6 +316,11 @@ struct supervisor_t : public actor_base_t {
      *
      */
     subscription_t subscription_map;
+
+
+private:
+    bool create_registry;
+    address_ptr_t registry_address;
 
     template <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;

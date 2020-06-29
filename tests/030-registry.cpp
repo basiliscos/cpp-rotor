@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,6 +11,72 @@
 namespace r = rotor;
 namespace rt = r::test;
 
+struct sample_actor_t : public r::actor_base_t {
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { 
+        });
+    }
+    
+};
+
+TEST_CASE("supervisor related tests", "[registry][supervisor]") {
+    r::system_context_t system_context;
+    rt::supervisor_test_ptr_t sup;
+
+    SECTION("no registry on supervisor by default") {
+        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+        sup->do_process();
+        CHECK(!sup->get_registry());
+    }
+
+    SECTION("registry is created, when asked") {
+        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+        sup->do_process();
+        CHECK(sup->get_registry());
+    }
+
+    SECTION("registry is inherited") {
+        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+        auto sup2 = sup->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+
+        sup->do_process();
+
+        CHECK(sup->get_registry());
+        CHECK(sup2->get_registry());
+    }
+
+    SECTION("registry is set from different locality") {
+        const char locality1[] = "abc";
+        const char locality2[] = "def";
+        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(locality1).finish();
+        auto reg = sup->create_actor<r::registry_t>().timeout(rt::default_timeout).finish();
+
+        sup->do_process();
+        CHECK(!sup->get_registry());
+
+        auto sup2 = sup->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout)
+                .locality(locality2)
+                .registry_address(reg->get_address())
+                .finish();
+
+        while (!sup->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+            sup->do_process();
+            sup2->do_process();
+        }
+        CHECK(sup2->get_registry());
+
+        sup2->do_shutdown();
+        while (!sup->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+            sup->do_process();
+            sup2->do_process();
+        }
+
+    }
+    sup->do_shutdown();
+    sup->do_process();
+}
+
+#if 0
 struct sample_actor_t : public r::actor_base_t {
 
     using r::actor_base_t::actor_base_t;
@@ -151,3 +217,4 @@ TEST_CASE("common case for registry usage", "[registry]") {
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
+#endif

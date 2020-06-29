@@ -5,12 +5,15 @@
 //
 
 #include "rotor/supervisor.h"
+#include "rotor/registry.h"
 #include <assert.h>
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), parent{config.supervisor},
-      subscription_support{nullptr}, manager{nullptr}, policy{config.policy}, last_req_id{1}, subscription_map(*this) {
+      subscription_support{nullptr}, manager{nullptr}, policy{config.policy}, last_req_id{1}, subscription_map(*this),
+      create_registry(config.create_registry), registry_address(config.registry_address)
+{
     if (!supervisor) {
         supervisor = this;
     }
@@ -35,6 +38,15 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     // do self-bootstrap
     if (!parent) {
         request<payload::initialize_actor_t>(address, address).send(shutdown_timeout);
+    }
+    if (create_registry) {
+        auto actor = create_actor<registry_t>()
+                .init_timeout(init_timeout)
+                .shutdown_timeout(shutdown_timeout).finish();
+        registry_address = actor->get_address();
+    }
+    if (parent && !registry_address) {
+        registry_address = parent->registry_address;
     }
 }
 

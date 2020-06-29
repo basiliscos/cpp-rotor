@@ -11,6 +11,7 @@
 #include "plugin/init_shutdown.h"
 #include "plugin/lifetime.h"
 #include "plugin/prestarter.h"
+#include "plugin/registry.h"
 #include "plugin/starter.h"
 
 // supervisors plugins

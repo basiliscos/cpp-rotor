@@ -36,9 +36,11 @@ struct actor_config_t {
     /** \brief how much time is allowed to spend in shutdown for children actor */
     pt::time_duration shutdown_timeout;
 
+#if 0
     std::optional<pt::time_duration> unlink_timeout;
 
     unlink_policy_t unlink_policy = unlink_policy_t::ignore;
+#endif
 
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
     ~actor_config_t() {
@@ -88,6 +90,7 @@ template <typename Actor> struct actor_config_builder_t {
         return std::move(*static_cast<builder_t *>(this));
     }
 
+#if 0
     builder_t &&unlink_timeout(const pt::time_duration &timeout) &&noexcept {
         config.unlink_timeout = timeout;
         return std::move(*static_cast<builder_t *>(this));
@@ -97,17 +100,20 @@ template <typename Actor> struct actor_config_builder_t {
         config.unlink_policy = policy;
         return std::move(*static_cast<builder_t *>(this));
     }
+#endif
 
     virtual bool validate() noexcept {
         instantiate_plugins();
         if (mask) {
             return false;
         }
+        /*
         if (config.unlink_timeout) {
             if (*config.unlink_timeout > config.shutdown_timeout) {
                 return false;
             }
         }
+        */
         return true;
     }
     actor_ptr_t finish() &&;
