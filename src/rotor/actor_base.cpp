@@ -35,39 +35,6 @@ void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins
 
 void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor->get_address(), address); }
 
-void actor_base_t::install_plugin(plugin_t &plugin, slot_t slot) noexcept {
-    actor_config_t::plugins_t *dest = nullptr;
-    switch (slot) {
-    case slot_t::INIT:
-        dest = &init_plugins;
-        break;
-    case slot_t::SHUTDOWN:
-        dest = &shutdown_plugins;
-        break;
-    case slot_t::SUBSCRIPTION:
-        dest = &subscription_plugins;
-        break;
-    }
-    dest->emplace_back(&plugin);
-}
-
-void actor_base_t::uninstall_plugin(plugin_t &plugin, slot_t slot) noexcept {
-    actor_config_t::plugins_t *dest = nullptr;
-    switch (slot) {
-    case slot_t::INIT:
-        dest = &init_plugins;
-        break;
-    case slot_t::SHUTDOWN:
-        dest = &shutdown_plugins;
-        break;
-    case slot_t::SUBSCRIPTION:
-        dest = &subscription_plugins;
-        break;
-    }
-    auto it = std::find(dest->begin(), dest->end(), &plugin);
-    dest->erase(it);
-}
-
 void actor_base_t::activate_plugins() noexcept {
     for (auto plugin : plugins) {
         plugin->activate(this);
@@ -129,15 +96,20 @@ void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     if (!init_request) return;
 
-    while (!init_plugins.empty()) {
-        auto &plugin = init_plugins.front();
-        if (plugin->handle_init(init_request.get())) {
-            init_plugins.pop_front();
-            continue;
+    std::size_t in_progress = plugins.size();
+    for(size_t i = 0; i < plugins.size(); ++i) {
+        auto plugin = plugins[i];
+        if (plugin->get_reaction() & plugin_t::INIT) {
+            if (plugin->handle_init(init_request.get())) {
+                plugin->reaction_off(plugin_t::INIT);
+                --in_progress;
+                continue;
+            }
+            break;
         }
-        break;
+        --in_progress;
     }
-    if (init_plugins.empty()) {
+    if (in_progress == 0) {
         init_finish();
     }
 }
@@ -146,15 +118,21 @@ void actor_base_t::configure(plugin_t &) noexcept {}
 
 void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
-    while (!shutdown_plugins.empty()) {
-        auto &plugin = shutdown_plugins.back();
-        if (plugin->handle_shutdown(shutdown_request.get())) {
-            shutdown_plugins.pop_back();
-            continue;
+
+    std::size_t in_progress = plugins.size();
+    for(size_t i = plugins.size(); i > 0; --i) {
+        auto plugin = plugins[i - 1];
+        if (plugin->get_reaction() & plugin_t::SHUTDOWN) {
+            if (plugin->handle_shutdown(shutdown_request.get())) {
+                plugin->reaction_off(plugin_t::SHUTDOWN);
+                --in_progress;
+                continue;
+            }
+            break;
         }
-        break;
+        --in_progress;
     }
-    if (shutdown_plugins.empty()) {
+    if (in_progress == 0) {
         shutdown_finish();
     }
 }
@@ -186,18 +164,16 @@ void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    for (auto rit = subscription_plugins.rbegin(); rit != subscription_plugins.rend();) {
-        auto &plugin = *rit;
-        auto result = plugin->handle_subscription(message);
-        switch (result) {
-        case processing_result_t::IGNORED:
-            ++rit;
-            continue;
-        case processing_result_t::CONSUMED:
-            return;
-        case processing_result_t::FINISHED:
-            auto it = subscription_plugins.erase(--rit.base());
-            rit = std::reverse_iterator(it);
+    for(size_t i = plugins.size(); i > 0; --i) {
+        auto plugin = plugins[i - 1];
+        if (plugin->get_reaction() & plugin_t::SUBSCRIPTION) {
+            auto result = plugin->handle_subscription(message);
+            switch (result) {
+            case processing_result_t::IGNORED: continue;
+            case processing_result_t::CONSUMED: return;
+            case processing_result_t::FINISHED:
+                plugin->reaction_off(plugin_t::SUBSCRIPTION);
+            }
         }
     }
 }

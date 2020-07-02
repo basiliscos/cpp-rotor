@@ -37,7 +37,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     actor_base_t::do_initialize(ctx);
     // do self-bootstrap
     if (!parent) {
-        request<payload::initialize_actor_t>(address, address).send(shutdown_timeout);
+        request<payload::initialize_actor_t>(address, address).send(init_timeout);
     }
     if (create_registry) {
         auto actor = create_actor<registry_t>()

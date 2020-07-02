@@ -16,12 +16,12 @@ const void *prestarter_plugin_t::identity() const noexcept { return class_identi
 
 void prestarter_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_t::activate(actor_);
-    actor->install_plugin(*this, slot_t::INIT);
-    actor->install_plugin(*this, slot_t::SUBSCRIPTION);
+    reaction_on(reaction_t::INIT);
+    reaction_on(reaction_t::SUBSCRIPTION);
     actor->configure(*this);
     if (tracked.empty()) {
-        actor->uninstall_plugin(*this, slot_t::INIT);
-        actor->uninstall_plugin(*this, slot_t::SUBSCRIPTION);
+        reaction_off(reaction_t::INIT);
+        reaction_off(reaction_t::SUBSCRIPTION);
     }
 }
 

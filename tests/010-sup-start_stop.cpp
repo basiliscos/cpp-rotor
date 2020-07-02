@@ -152,6 +152,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     REQUIRE(destroyed == 1);
 }
 
+#if 0
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -213,3 +214,4 @@ TEST_CASE("custom subscription", "[supervisor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
+#endif

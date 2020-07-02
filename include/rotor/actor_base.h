@@ -289,8 +289,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     inline const pt::time_duration &get_shutdown_timeout() noexcept { return shutdown_timeout; }
 
-    void install_plugin(plugin_t &plugin, slot_t slot) noexcept;
-    void uninstall_plugin(plugin_t &plugin, slot_t slot) noexcept;
     void activate_plugins() noexcept;
     void commit_plugin_activation(plugin_t &plugin, bool success) noexcept;
 
@@ -377,11 +375,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     actor_config_t::plugins_t plugins;
     std::set<const void *> activating_plugins;
     std::set<const void *> deactivating_plugins;
-
-    /* slots */
-    actor_config_t::plugins_t init_plugins;
-    actor_config_t::plugins_t shutdown_plugins;
-    actor_config_t::plugins_t subscription_plugins;
 
     friend struct actor_behavior_t;
     friend struct internal::lifetime_plugin_t;

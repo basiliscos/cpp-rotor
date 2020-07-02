@@ -19,8 +19,8 @@ void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&registry_plugin_t::on_registration);
     subscribe(&registry_plugin_t::on_discovery);
 
-    actor->install_plugin(*this, slot_t::INIT);
-    actor->install_plugin(*this, slot_t::SHUTDOWN);
+    reaction_on(reaction_t::INIT);
+    reaction_on(reaction_t::SHUTDOWN);
 }
 
 bool registry_plugin_t::register_name(const std::string& name, const address_ptr_t& address) noexcept {

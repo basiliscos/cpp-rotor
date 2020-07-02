@@ -17,8 +17,8 @@ const void *lifetime_plugin_t::identity() const noexcept { return class_identity
 void lifetime_plugin_t::activate(actor_base_t *actor_) noexcept {
     this->actor = actor_;
 
-    actor->install_plugin(*this, slot_t::SHUTDOWN);
-    actor->install_plugin(*this, slot_t::SUBSCRIPTION);
+    reaction_on(reaction_t::INIT);
+    reaction_on(reaction_t::SHUTDOWN);
 
     actor->lifetime = this;
     // order is important

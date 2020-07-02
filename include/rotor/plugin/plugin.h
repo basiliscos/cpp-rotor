@@ -11,10 +11,16 @@
 
 namespace rotor {
 
-enum class slot_t { INIT = 0, SHUTDOWN, SUBSCRIPTION };
+
 enum class processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
 struct plugin_t {
+
+    enum reaction_t {
+        INIT         = 1 << 0,
+        SHUTDOWN     = 1 << 1,
+        SUBSCRIPTION = 1 << 2,
+    };
 
     plugin_t() = default;
     plugin_t(const plugin_t &) = delete;
@@ -47,6 +53,12 @@ struct plugin_t {
 
     actor_base_t *actor;
     subscription_container_t own_subscriptions;
+
+    std::size_t get_reaction() const noexcept { return reaction; }
+    void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
+    void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
+private:
+    std::size_t reaction = 0;
 };
 
 } // namespace rotor

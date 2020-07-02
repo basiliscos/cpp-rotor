@@ -23,8 +23,8 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&child_manager_plugin_t::on_shutdown_trigger);
     subscribe(&child_manager_plugin_t::on_shutdown_confirm);
     subscribe(&child_manager_plugin_t::on_state_request);
-    actor->install_plugin(*this, slot_t::INIT);
-    actor->install_plugin(*this, slot_t::SHUTDOWN);
+    reaction_on(reaction_t::INIT);
+    reaction_on(reaction_t::SHUTDOWN);
     actors_map.emplace(actor->get_address(), actor_state_t{actor, false});
     actor->configure(*this);
 }

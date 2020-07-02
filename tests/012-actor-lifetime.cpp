@@ -80,8 +80,8 @@ struct fail_plugin_t : public r::plugin_t {
     const void *identity() const noexcept override { return class_identity; }
 
     void activate(r::actor_base_t *actor_) noexcept override {
-        actor_->install_plugin(*this, r::slot_t::INIT);
-        actor_->install_plugin(*this, r::slot_t::SHUTDOWN);
+        reaction_on(reaction_t::INIT);
+        reaction_on(reaction_t::SHUTDOWN);
         return r::plugin_t::activate(actor_);
     }
 

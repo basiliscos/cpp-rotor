@@ -89,7 +89,7 @@ struct custom_init_plugin1_t : r::plugin_t {
 
     void activate(r::actor_base_t *actor) noexcept override {
         r::plugin_t::activate(actor);
-        actor->install_plugin(*this, r::slot_t::INIT);
+        reaction_on(reaction_t::INIT);
     }
 
     bool handle_init(r::message::init_request_t *) noexcept override { return false; }
@@ -104,7 +104,7 @@ struct custom_init_plugin2_t : r::plugin_t {
 
     void activate(r::actor_base_t *actor) noexcept override {
         r::plugin_t::activate(actor);
-        actor->install_plugin(*this, r::slot_t::INIT);
+        reaction_on(reaction_t::INIT);
     }
 
     bool handle_init(r::message::init_request_t *message) noexcept override {
