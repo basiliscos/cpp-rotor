@@ -23,19 +23,22 @@ void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor->install_plugin(*this, slot_t::SHUTDOWN);
 }
 
-void registry_plugin_t::register_name(const std::string& name, const address_ptr_t& address) noexcept {
+bool registry_plugin_t::register_name(const std::string& name, const address_ptr_t& address) noexcept {
+    if (register_map.count(name)) return false;
     auto registry_addr = actor->get_supervisor().get_registry();
     assert(registry_addr);
     actor->request<payload::registration_request_t>(registry_addr, name, address).send(actor->init_timeout);
     register_map.emplace(name, state_t::REGISTERING);
+    return true;
 }
 
-void registry_plugin_t::discover_name(const std::string& name, address_ptr_t& address) noexcept {
-    assert(address);
+bool registry_plugin_t::discover_name(const std::string& name, address_ptr_t& address) noexcept {
+    if (discovery_map.count(name)) return false;
     assert(discovery_map.count(name) == 0);
     auto registry_addr = actor->get_supervisor().get_registry();
     actor->request<payload::discovery_request_t>(registry_addr, name).send(actor->init_timeout);
     discovery_map.emplace(name, &address);
+    return true;
 }
 
 void registry_plugin_t::on_registration(message::registration_response_t &message) noexcept {
@@ -80,13 +83,16 @@ void registry_plugin_t::continue_init(const std::error_code& ec) noexcept {
 }
 
 
-
 bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
-    bool no_registering = std::none_of(register_map.begin(), register_map.end(), [](auto it){
-        return it.second == state_t::REGISTERING;
-    });
+    if (!configured) {
+        actor->configure(*this);
+        configured = true;
+    }
+    auto in_progress_predicate = [](auto it){ return it.second == state_t::REGISTERING; };
+    bool no_registering = std::none_of(register_map.begin(), register_map.end(), in_progress_predicate);
     return discovery_map.empty() && no_registering;
 }
+
 
 bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     if (register_map.empty()) return true;
@@ -97,5 +103,6 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept 
             it.second = state_t::UNREGISTERING;
         }
     }
-    return false;
+    return true;
 }
+

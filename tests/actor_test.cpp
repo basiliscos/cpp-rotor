@@ -3,6 +3,10 @@
 using namespace rotor::test;
 using namespace rotor;
 
+actor_test_t::~actor_test_t(){
+    printf("~actor_test_t, %p(%p)\n", this, address.get());
+}
+
 plugin_t* actor_test_t::get_plugin(const void* identity) const noexcept {
     return get_plugin(plugins, identity);
 }
@@ -12,4 +16,9 @@ plugin_t* actor_test_t::get_plugin(const actor_config_t::plugins_t& plugins, con
         if (plugin->identity() == identity) { return plugin; }
     }
     std::abort();
+}
+
+void actor_test_t::configure(plugin_t &plugin) noexcept {
+    actor_base_t::configure(plugin);
+    if (configurer) configurer(*this, plugin);
 }

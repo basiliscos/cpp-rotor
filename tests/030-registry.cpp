@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "actor_test.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -33,6 +34,7 @@ struct manual_actor_t : public r::actor_base_t {
     registration_reply_t registration_reply;
 
     void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
         plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&manual_actor_t::on_discovery);
             p.subscribe_actor(&manual_actor_t::on_registration_reply);
@@ -58,6 +60,12 @@ struct manual_actor_t : public r::actor_base_t {
     void on_registration_reply(r::message::registration_response_t &reply) noexcept {
         registration_reply.reset(&reply);
     }
+};
+
+struct sample_actor_t : rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    r::address_ptr_t service_addr;
 };
 
 TEST_CASE("supervisor related tests", "[registry][supervisor]") {
@@ -117,7 +125,7 @@ TEST_CASE("supervisor related tests", "[registry][supervisor]") {
     sup->do_process();
 }
 
-TEST_CASE("registry actor", "[registry][supervisor]") {
+TEST_CASE("registry actor (server)", "[registry][supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
     auto act = sup->create_actor<manual_actor_t>().timeout(rt::default_timeout).finish();
@@ -190,4 +198,41 @@ TEST_CASE("registry actor", "[registry][supervisor]") {
 
     sup->do_shutdown();
     sup->do_process();
+}
+
+TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+
+    SECTION("discovery non-existing name => fail to init") {
+        auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        act->configurer = [&](auto&, r::plugin_t& plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>([&act](auto &p) {
+                p.discover_name("non-existing-service", act->service_addr);
+            });
+        };
+
+        sup->do_process();
+        REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    }
+
+    SECTION("double name registration => fail") {
+        auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        printf("act1 = %p(%p), act2 = %p(%p)\n", act1.get(), act1->get_address().get(), act2.get(), act2->get_address().get());
+        auto configurer = [](auto& actor, r::plugin_t& plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
+                p.register_name("service-name", actor.get_address());
+            });
+        };
+        act1->configurer = configurer;
+        act2->configurer = configurer;
+
+        sup->do_process();
+        CHECK(act1->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act1->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    }
+
+
 }
