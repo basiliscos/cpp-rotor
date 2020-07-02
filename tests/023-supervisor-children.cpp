@@ -82,8 +82,6 @@ struct fail_init_actor6_t : public rt::actor_test_t {
                                       r::internal::prestarter_plugin_t, r::internal::starter_plugin_t>;
 };
 
-
-
 struct custom_init_plugin1_t : r::plugin_t {
     static const void *class_identity;
 

@@ -42,7 +42,8 @@ processing_result_t prestarter_plugin_t::handle_subscription(message::subscripti
 }
 
 bool prestarter_plugin_t::handle_init(message::init_request_t *) noexcept {
-    if (tracked.empty()) return true;
+    if (tracked.empty())
+        return true;
     this->continue_init = true;
     return false;
 }

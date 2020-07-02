@@ -11,14 +11,13 @@
 
 namespace rotor {
 
-
 enum class processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
 struct plugin_t {
 
     enum reaction_t {
-        INIT         = 1 << 0,
-        SHUTDOWN     = 1 << 1,
+        INIT = 1 << 0,
+        SHUTDOWN = 1 << 1,
         SUBSCRIPTION = 1 << 2,
     };
 
@@ -57,7 +56,8 @@ struct plugin_t {
     std::size_t get_reaction() const noexcept { return reaction; }
     void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
     void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
-private:
+
+  private:
     std::size_t reaction = 0;
 };
 

@@ -12,8 +12,7 @@ using namespace rotor;
 supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), parent{config.supervisor},
       subscription_support{nullptr}, manager{nullptr}, policy{config.policy}, last_req_id{1}, subscription_map(*this),
-      create_registry(config.create_registry), registry_address(config.registry_address)
-{
+      create_registry(config.create_registry), registry_address(config.registry_address) {
     if (!supervisor) {
         supervisor = this;
     }
@@ -40,9 +39,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
         request<payload::initialize_actor_t>(address, address).send(init_timeout);
     }
     if (create_registry) {
-        auto actor = create_actor<registry_t>()
-                .init_timeout(init_timeout)
-                .shutdown_timeout(shutdown_timeout).finish();
+        auto actor = create_actor<registry_t>().init_timeout(init_timeout).shutdown_timeout(shutdown_timeout).finish();
         registry_address = actor->get_address();
     }
     if (parent && !registry_address) {

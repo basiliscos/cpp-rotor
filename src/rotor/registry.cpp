@@ -19,7 +19,6 @@ void registry_t::configure(plugin_t &plugin) noexcept {
     });
 }
 
-
 void registry_t::on_reg(message::registration_request_t &request) noexcept {
     auto &name = request.payload.request_payload.service_name;
     if (registered_map.find(name) != registered_map.end()) {

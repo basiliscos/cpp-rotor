@@ -94,10 +94,11 @@ void actor_base_t::shutdown_finish() noexcept {
 
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
-    if (!init_request) return;
+    if (!init_request)
+        return;
 
     std::size_t in_progress = plugins.size();
-    for(size_t i = 0; i < plugins.size(); ++i) {
+    for (size_t i = 0; i < plugins.size(); ++i) {
         auto plugin = plugins[i];
         if (plugin->get_reaction() & plugin_t::INIT) {
             if (plugin->handle_init(init_request.get())) {
@@ -120,7 +121,7 @@ void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
 
     std::size_t in_progress = plugins.size();
-    for(size_t i = plugins.size(); i > 0; --i) {
+    for (size_t i = plugins.size(); i > 0; --i) {
         auto plugin = plugins[i - 1];
         if (plugin->get_reaction() & plugin_t::SHUTDOWN) {
             if (plugin->handle_shutdown(shutdown_request.get())) {
@@ -164,13 +165,15 @@ void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
               << boost::core::demangle((const char*)point.handler->message_type)
               << " at " << (void*)point.address.get() << "\n";
     */
-    for(size_t i = plugins.size(); i > 0; --i) {
+    for (size_t i = plugins.size(); i > 0; --i) {
         auto plugin = plugins[i - 1];
         if (plugin->get_reaction() & plugin_t::SUBSCRIPTION) {
             auto result = plugin->handle_subscription(message);
             switch (result) {
-            case processing_result_t::IGNORED: continue;
-            case processing_result_t::CONSUMED: return;
+            case processing_result_t::IGNORED:
+                continue;
+            case processing_result_t::CONSUMED:
+                return;
             case processing_result_t::FINISHED:
                 plugin->reaction_off(plugin_t::SUBSCRIPTION);
             }
