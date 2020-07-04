@@ -35,10 +35,7 @@ struct actor_config_t {
 
     /** \brief how much time is allowed to spend in shutdown for children actor */
     pt::time_duration shutdown_timeout;
-
 #if 0
-    std::optional<pt::time_duration> unlink_timeout;
-
     unlink_policy_t unlink_policy = unlink_policy_t::ignore;
 #endif
 
@@ -91,11 +88,6 @@ template <typename Actor> struct actor_config_builder_t {
     }
 
 #if 0
-    builder_t &&unlink_timeout(const pt::time_duration &timeout) &&noexcept {
-        config.unlink_timeout = timeout;
-        return std::move(*static_cast<builder_t *>(this));
-    }
-
     builder_t &&unlink_policy(const unlink_policy_t &policy) &&noexcept {
         config.unlink_policy = policy;
         return std::move(*static_cast<builder_t *>(this));

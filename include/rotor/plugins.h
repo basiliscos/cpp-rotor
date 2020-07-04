@@ -10,6 +10,8 @@
 #include "plugin/address_maker.h"
 #include "plugin/init_shutdown.h"
 #include "plugin/lifetime.h"
+#include "plugin/link_client.h"
+#include "plugin/link_server.h"
 #include "plugin/prestarter.h"
 #include "plugin/registry.h"
 #include "plugin/starter.h"

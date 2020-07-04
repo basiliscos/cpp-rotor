@@ -15,7 +15,7 @@ const void *registry_plugin_t::class_identity = static_cast<const void *>(typeid
 const void *registry_plugin_t::identity() const noexcept { return class_identity; }
 
 void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
-    actor = actor_;
+    plugin_t::activate(actor_);
     subscribe(&registry_plugin_t::on_registration);
     subscribe(&registry_plugin_t::on_discovery);
 

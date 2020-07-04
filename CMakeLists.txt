@@ -41,6 +41,8 @@ add_library(rotor
     src/rotor/plugin/foreigners_support.cpp
     src/rotor/plugin/init_shutdown.cpp
     src/rotor/plugin/lifetime.cpp
+    src/rotor/plugin/link_client.cpp
+    src/rotor/plugin/link_server.cpp
     src/rotor/plugin/locality.cpp
     src/rotor/plugin/plugin.cpp
     src/rotor/plugin/prestarter.cpp
