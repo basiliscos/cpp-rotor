@@ -20,18 +20,18 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
-    bool acquired = false;
+    bool invoked = false;
     act_c->configurer = [&](auto&, r::plugin_t& plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
             p.link(act_s->get_address(), [&](auto& ec) mutable {
                 REQUIRE(!ec);
-                acquired = true;
+                invoked = true;
             });
         });
     };
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(acquired);
+    REQUIRE(invoked);
 
     SECTION("simultaneous shutdown") {
         sup->do_shutdown();
@@ -55,6 +55,34 @@ TEST_CASE("client/server, common workflow", "[actor]") {
         sup->do_shutdown();
         sup->do_process();
     }
+}
+
+TEST_CASE("link not possible (timeout) => shutdown", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto some_addr = sup->make_address();
+
+    bool invoked = false;
+    act_c->configurer = [&](auto&, r::plugin_t& plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
+            p.link(some_addr, [&](auto& ec) mutable {
+                REQUIRE(ec);
+                invoked = true;
+            });
+        });
+    };
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
+
+    REQUIRE(sup->active_timers.size() == 3);
+    auto timer_id = *(sup->active_timers.rbegin());
+    sup->on_timer_trigger(timer_id);
+
+    sup->do_process();
+    REQUIRE(invoked);
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
 #if 0
