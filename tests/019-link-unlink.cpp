@@ -102,61 +102,52 @@ TEST_CASE("link not possible => supervisor is shutted down", "[actor]") {
     REQUIRE(act_s->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
+#endif
 
-TEST_CASE("unlink failure ignored", "[actor]") {
+TEST_CASE("unlink failure", "[actor]") {
     rt::system_context_test_t system_context;
 
     const char l1[] = "abc";
     const char l2[] = "def";
 
-    auto sup1 =
-        system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
     auto sup2 = sup1->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
-    auto act_s = sup1->create_actor<rt::actor_test_t>()
-                     .timeout(rt::default_timeout)
-                     .unlink_timeout(rt::default_timeout)
-                     .finish();
+
+    auto act_s = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
-    auto server_addr = act_s->get_address();
-    act_c->link_request(server_addr, rt::default_timeout);
-
-    sup1->do_process();
-    sup2->do_process();
-    sup1->do_process();
-    sup2->do_process();
-    sup1->do_process();
-    sup2->do_process();
-
+    act_c->configurer = [&](auto&, r::plugin_t& plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
+            p.link(act_s->get_address(), [&](auto&) { });
+        });
+    };
+    while(!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()){
+        sup1->do_process();
+        sup2->do_process();
+    }
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(act_s->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(act_c->get_state() == r::state_t::OPERATIONAL);
 
     act_s->do_shutdown();
     sup1->do_process();
     REQUIRE(sup1->active_timers.size() == 2);
+
     auto unlink_req = sup1->get_timer(1);
     sup1->on_timer_trigger(unlink_req);
     sup1->do_process();
-    REQUIRE(act_s->get_state() == r::state_t::SHUTTED_DOWN);
 
-    sup2->do_process();
-    sup1->do_process();
-    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(act_c->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(system_context.ec == r::error_code_t::request_timeout);
+    REQUIRE(act_s->get_state() == r::state_t::SHUTTING_DOWN);
+    act_s->force_cleanup();
 
     sup1->do_shutdown();
-    sup1->do_process();
-    sup2->do_process();
-    sup1->do_process();
-    REQUIRE(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+    while(!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()){
+        sup1->do_process();
+        sup2->do_process();
+    }
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(!system_context.ec);
 }
 
+#if 0
 TEST_CASE("unlink failure escalated/reported", "[actor]") {
     rt::system_context_test_t system_context;
 
