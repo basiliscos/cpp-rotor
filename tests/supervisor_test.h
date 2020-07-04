@@ -27,6 +27,7 @@ struct supervisor_test_t : public supervisor_t {
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
 
     supervisor_test_t(supervisor_config_test_t &config_);
+    ~supervisor_test_t();
 
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;

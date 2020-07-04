@@ -15,6 +15,10 @@ using namespace rotor;
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
     : supervisor_t{config_}, locality{config_.locality} {}
 
+supervisor_test_t::~supervisor_test_t() {
+    printf("~supervisor_test_t, %p(%p)\n", this, address.get());
+}
+
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
 void supervisor_test_t::start_timer(const pt::time_duration &, timer_id_t timer_id) noexcept {

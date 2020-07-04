@@ -22,3 +22,11 @@ void actor_test_t::configure(plugin_t &plugin) noexcept {
     actor_base_t::configure(plugin);
     if (configurer) configurer(*this, plugin);
 }
+
+
+void actor_test_t::force_cleanup() noexcept {
+    for(auto plugin: plugins ) {
+       plugin->own_subscriptions.clear();
+    }
+    lifetime->points.clear();
+}

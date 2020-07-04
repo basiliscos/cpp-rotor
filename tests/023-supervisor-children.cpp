@@ -117,6 +117,27 @@ struct custom_init_plugin2_t : r::plugin_t {
 
 const void *custom_init_plugin2_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin2_t).name());
 
+struct custom_shutdown_plugin_t : r::plugin_t {
+    static const void *class_identity;
+
+    void activate(r::actor_base_t *actor) noexcept override {
+        r::plugin_t::activate(actor);
+        reaction_on(reaction_t::SHUTDOWN);
+    }
+
+    bool handle_shutdown(r::message::shutdown_request_t *message) noexcept override {
+        auto ec = r::make_error_code(r::error_code_t::actor_misconfigured);
+        actor->reply_with_error(*message, ec);
+        actor->init_request.reset();
+        return false;
+    }
+
+    const void *identity() const noexcept override { return class_identity; }
+};
+
+const void *custom_shutdown_plugin_t::class_identity =
+    static_cast<const void *>(typeid(custom_shutdown_plugin_t).name());
+
 struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
@@ -159,6 +180,20 @@ struct managed_supervisor_t : public rt::supervisor_test_t {
         parent_t::do_initialize(ctx);
         child = create_actor<actor_t>().timeout(rt::default_timeout).finish();
     }
+};
+
+struct fail_shutdown_actor1_t : rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void shutdown_finish() noexcept override {}
+};
+
+struct fail_shutdown_actor2_t : rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    using plugins_list_t = std::tuple<r::internal::address_maker_plugin_t, r::internal::lifetime_plugin_t,
+                                      r::internal::init_shutdown_plugin_t, r::internal::prestarter_plugin_t,
+                                      custom_shutdown_plugin_t, r::internal::starter_plugin_t>;
 };
 
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {
@@ -431,5 +466,46 @@ TEST_CASE("managed supervisor (autostart child)", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("failed to shutdown actor (1)", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_shutdown_actor1_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    CHECK(sup->active_timers.size() == 1);
+    sup->on_timer_trigger(*sup->active_timers.begin());
+    sup->do_process();
+
+    REQUIRE(system_context.ec == r::error_code_t::request_timeout);
+
+    CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("failed to shutdown actor (2)", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_shutdown_actor2_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(system_context.ec == r::error_code_t::actor_misconfigured);
+    act->force_cleanup();
+
+    CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
