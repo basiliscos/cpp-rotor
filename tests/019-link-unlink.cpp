@@ -21,9 +21,9 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
     bool invoked = false;
-    act_c->configurer = [&](auto&, r::plugin_t& plugin) {
+    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(act_s->get_address(), [&](auto& ec) mutable {
+            p.link(act_s->get_address(), [&](auto &ec) mutable {
                 REQUIRE(!ec);
                 invoked = true;
             });
@@ -65,9 +65,9 @@ TEST_CASE("link not possible (timeout) => shutdown", "[actor]") {
     auto some_addr = sup->make_address();
 
     bool invoked = false;
-    act_c->configurer = [&](auto&, r::plugin_t& plugin) {
+    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(some_addr, [&](auto& ec) mutable {
+            p.link(some_addr, [&](auto &ec) mutable {
                 REQUIRE(ec);
                 invoked = true;
             });
@@ -110,18 +110,18 @@ TEST_CASE("unlink", "[actor]") {
     const char l1[] = "abc";
     const char l2[] = "def";
 
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup1 =
+        system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
     auto sup2 = sup1->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
 
     auto act_s = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
-    act_c->configurer = [&](auto&, r::plugin_t& plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(act_s->get_address(), [&](auto&) { });
-        });
+    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>(
+            [&](auto &p) { p.link(act_s->get_address(), [&](auto &) {}); });
     };
-    while(!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()){
+    while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
         sup1->do_process();
         sup2->do_process();
     }
@@ -162,7 +162,7 @@ TEST_CASE("unlink", "[actor]") {
     }
 
     sup1->do_shutdown();
-    while(!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()){
+    while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
         sup1->do_process();
         sup2->do_process();
     }
