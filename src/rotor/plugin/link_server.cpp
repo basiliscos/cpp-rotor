@@ -30,7 +30,7 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
         return;
     }
 
-    auto& client_addr = message.payload.request_payload.client_addr;
+    auto &client_addr = message.payload.request_payload.client_addr;
     if (linked_clients.find(client_addr) != linked_clients.end()) {
         auto ec = make_error_code(error_code_t::already_linked);
         actor->reply_with_error(message, ec);
@@ -42,22 +42,18 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
 }
 
 void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) noexcept {
-    auto& client = message.payload.client_addr;
+    auto &client = message.payload.client_addr;
     auto it = linked_clients.find(client);
 
     // ok, might be some race
-    if (it == linked_clients.end()) return;
+    if (it == linked_clients.end())
+        return;
     linked_clients.erase(it);
 
     if (actor->state == state_t::SHUTTING_DOWN && actor->shutdown_request)
         actor->shutdown_continue();
 }
 
+void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {}
 
-void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {
-
-}
-
-bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
-    return linked_clients.empty();
-}
+bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return linked_clients.empty(); }

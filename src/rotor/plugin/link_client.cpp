@@ -23,16 +23,15 @@ void link_client_plugin_t::activate(actor_base_t *actor_) noexcept {
     reaction_on(reaction_t::SHUTDOWN);
 }
 
-void link_client_plugin_t::link(address_ptr_t& address) noexcept {
+void link_client_plugin_t::link(address_ptr_t &address) noexcept {
     assert(servers_map.count(address) == 0);
     servers_map.emplace(address, state_t::LINKING);
-    auto& source_addr = actor->address;
+    auto &source_addr = actor->address;
     actor->request<payload::link_request_t>(address, source_addr).send(actor->init_timeout);
 }
 
-
 void link_client_plugin_t::on_link_response(message::link_response_t &message) noexcept {
-    auto& address = message.payload.req->address;
+    auto &address = message.payload.req->address;
     auto &ec = message.payload.ec;
     auto it = servers_map.find(address);
     assert(it != servers_map.end());
@@ -53,11 +52,11 @@ void link_client_plugin_t::on_link_response(message::link_response_t &message) n
     }
 }
 
-
-void link_client_plugin_t::forget_link(message::unlink_request_t& message) noexcept {
-    auto& server_addr = message.payload.request_payload.server_addr;
+void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexcept {
+    auto &server_addr = message.payload.request_payload.server_addr;
     auto it = servers_map.find(server_addr);
-    if (it == servers_map.end()) return;
+    if (it == servers_map.end())
+        return;
 
     actor->reply_to(message, actor->get_address());
     servers_map.erase(it);
@@ -66,12 +65,12 @@ void link_client_plugin_t::forget_link(message::unlink_request_t& message) noexc
     }
 }
 
-void link_client_plugin_t::on_unlink_request(message::unlink_request_t& message) noexcept {
+void link_client_plugin_t::on_unlink_request(message::unlink_request_t &message) noexcept {
     /* handled by actor somehow */
-    if (unlink_reaction && unlink_reaction(message)) return;
+    if (unlink_reaction && unlink_reaction(message))
+        return;
     forget_link(message);
 }
-
 
 bool link_client_plugin_t::handle_init(message::init_request_t *) noexcept {
     if (!configured) {
@@ -87,8 +86,8 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *) noexce
     if (servers_map.empty())
         return true;
 
-    auto& source_addr = actor->address;
-    for(auto it = servers_map.begin(); it != servers_map.end(); ) {
+    auto &source_addr = actor->address;
+    for (auto it = servers_map.begin(); it != servers_map.end();) {
         if (it->second == state_t::OPERATIONAL) {
             actor->send<payload::unlink_notify_t>(it->first, source_addr);
             it = servers_map.erase(it);
