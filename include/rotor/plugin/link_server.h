@@ -14,7 +14,6 @@
 namespace rotor::internal {
 
 struct link_server_plugin_t : public plugin_t {
-    using linked_clients_t = std::unordered_set<address_ptr_t>;
 
     using plugin_t::plugin_t;
     static const void *class_identity;
@@ -29,6 +28,8 @@ struct link_server_plugin_t : public plugin_t {
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
 
   protected:
+    enum class link_state_t { OPERATIONAL, UNLINKING };
+    using linked_clients_t = std::unordered_map<address_ptr_t, link_state_t>;
     linked_clients_t linked_clients;
 };
 

@@ -37,7 +37,7 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
         return;
     }
 
-    linked_clients.emplace(client_addr);
+    linked_clients.emplace(client_addr, link_state_t::OPERATIONAL);
     actor->reply_to(message);
 }
 
@@ -54,6 +54,32 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
         actor->shutdown_continue();
 }
 
-void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {}
+void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {
+    auto &ec = message.payload.ec;
+    if (ec) {
+        actor->reply_with_error(*actor->shutdown_request, ec);
+        return;
+    }
 
-bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return linked_clients.empty(); }
+    auto &client = message.payload.res.client_addr;
+    auto it = linked_clients.find(client);
+
+    // ok, might be some race
+    if (it == linked_clients.end())
+        return;
+    linked_clients.erase(it);
+
+    if (actor->state == state_t::SHUTTING_DOWN && actor->shutdown_request)
+        actor->shutdown_continue();
+}
+
+bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+    for (auto it : linked_clients) {
+        if (it.second == link_state_t::OPERATIONAL) {
+            auto &self = actor->address;
+            auto &timeout = actor->shutdown_timeout;
+            actor->request<payload::unlink_request_t>(it.first, self).send(timeout);
+        }
+    }
+    return linked_clients.empty();
+}

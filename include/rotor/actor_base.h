@@ -100,6 +100,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         internal::lifetime_plugin_t,
         internal::init_shutdown_plugin_t,
         internal::prestarter_plugin_t,
+        internal::link_server_plugin_t,
+        internal::link_client_plugin_t,
         internal::registry_plugin_t,
         internal::starter_plugin_t>;
     // clang-format on
