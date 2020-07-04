@@ -4,7 +4,7 @@ using namespace rotor::test;
 using namespace rotor;
 
 actor_test_t::~actor_test_t(){
-    printf("~actor_test_t, %p(%p)\n", this, address.get());
+    printf("~actor_test_t, %p(%p)\n", (void*)this, (void*)address.get());
 }
 
 plugin_t* actor_test_t::get_plugin(const void* identity) const noexcept {

@@ -247,7 +247,8 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
     SECTION("double name registration => fail") {
         auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        printf("act1 = %p(%p), act2 = %p(%p)\n", act1.get(), act1->get_address().get(), act2.get(), act2->get_address().get());
+        printf("act1 = %p(%p), act2 = %p(%p)\n", (void*)act1.get(), (void*)act1->get_address().get(),
+               (void*)act2.get(), (void*)act2->get_address().get());
         auto configurer = [](auto& actor, r::plugin_t& plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
                 p.register_name("service-name", actor.get_address());
