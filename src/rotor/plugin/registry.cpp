@@ -28,8 +28,13 @@ bool registry_plugin_t::register_name(const std::string &name, const address_ptr
         return false;
     auto registry_addr = actor->get_supervisor().get_registry();
     assert(registry_addr);
-    actor->request<payload::registration_request_t>(registry_addr, name, address).send(actor->init_timeout);
-    register_map.emplace(name, state_t::REGISTERING);
+
+    assert(!(plugin_state & LINKED));
+    if (!(plugin_state & LINKING)) {
+        link();
+    }
+
+    register_map.emplace(name, register_info_t{address, state_t::REGISTERING});
     return true;
 }
 
@@ -37,8 +42,12 @@ bool registry_plugin_t::discover_name(const std::string &name, address_ptr_t &ad
     if (discovery_map.count(name))
         return false;
     assert(discovery_map.count(name) == 0);
-    auto registry_addr = actor->get_supervisor().get_registry();
-    actor->request<payload::discovery_request_t>(registry_addr, name).send(actor->init_timeout);
+
+    assert(!(plugin_state & LINKED));
+    if (!(plugin_state & LINKING)) {
+        link();
+    }
+
     discovery_map.emplace(name, &address);
     return true;
 }
@@ -51,9 +60,12 @@ void registry_plugin_t::on_registration(message::registration_response_t &messag
     if (ec) {
         register_map.erase(it);
     } else {
-        it->second = state_t::OPERATIONAL;
+        it->second.state = state_t::OPERATIONAL;
     }
-    continue_init(ec);
+
+    if (!has_registering() || ec) {
+        continue_init(ec);
+    }
 }
 
 void registry_plugin_t::on_discovery(message::discovery_response_t &message) noexcept {
@@ -65,7 +77,10 @@ void registry_plugin_t::on_discovery(message::discovery_response_t &message) noe
         *(it->second) = message.payload.res.service_addr;
     }
     discovery_map.erase(it);
-    continue_init(ec);
+
+    if (discovery_map.empty() || ec) {
+        continue_init(ec);
+    }
 }
 
 void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
@@ -83,14 +98,40 @@ void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
     }
 }
 
-bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
-    if (!configured) {
-        actor->configure(*this);
-        configured = true;
+void registry_plugin_t::link() noexcept {
+    plugin_state = plugin_state | LINKING;
+    for (auto plugin : actor->plugins) {
+        if (plugin->identity() == link_client_plugin_t::class_identity) {
+            auto p = static_cast<link_client_plugin_t *>(plugin);
+            auto registry_addr = actor->get_supervisor().get_registry();
+            p->link(registry_addr, [this](auto &ec) { on_link(ec); });
+        }
     }
-    auto in_progress_predicate = [](auto it) { return it.second == state_t::REGISTERING; };
-    bool no_registering = std::none_of(register_map.begin(), register_map.end(), in_progress_predicate);
-    return discovery_map.empty() && no_registering;
+}
+
+void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
+    plugin_state = plugin_state | LINKED;
+    plugin_state = plugin_state & ~LINKING;
+    if (!ec) {
+        auto registry_addr = actor->get_supervisor().get_registry();
+        auto timeout = actor->init_timeout;
+        for (auto &it : register_map) {
+            actor->request<payload::registration_request_t>(registry_addr, it.first, it.second.address).send(timeout);
+        }
+        for (auto &it : discovery_map) {
+            actor->request<payload::discovery_request_t>(registry_addr, it.first).send(timeout);
+        }
+    } else {
+        // no-op as linked_client plugin should already reply with error to init-request
+    }
+}
+
+bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
+    if (!(plugin_state & CONFIGURED)) {
+        actor->configure(*this);
+        plugin_state = plugin_state | CONFIGURED;
+    }
+    return discovery_map.empty() && !has_registering();
 }
 
 bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
@@ -98,10 +139,15 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept 
         return true;
     auto registry_addr = actor->get_supervisor().get_registry();
     for (auto it : register_map) {
-        if (it.second == state_t::OPERATIONAL) {
+        if (it.second.state == state_t::OPERATIONAL) {
             actor->send<payload::deregistration_service_t>(registry_addr, it.first);
-            it.second = state_t::UNREGISTERING;
+            it.second.state = state_t::UNREGISTERING;
         }
     }
     return true;
+}
+
+bool registry_plugin_t::has_registering() noexcept {
+    auto in_progress_predicate = [](auto it) { return it.second.state == state_t::REGISTERING; };
+    return !std::none_of(register_map.begin(), register_map.end(), in_progress_predicate);
 }

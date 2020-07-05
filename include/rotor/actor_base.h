@@ -364,6 +364,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     internal::address_maker_plugin_t *address_maker = nullptr;
     internal::lifetime_plugin_t *lifetime = nullptr;
 
+    actor_config_t::plugins_t plugins;
+
   protected:
     virtual bool ready_to_shutdown() noexcept;
 
@@ -374,7 +376,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     unlink_policy_t unlink_policy;
 #endif
 
-    actor_config_t::plugins_t plugins;
     std::set<const void *> activating_plugins;
     std::set<const void *> deactivating_plugins;
 
