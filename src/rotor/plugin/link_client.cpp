@@ -27,6 +27,7 @@ void link_client_plugin_t::link(const address_ptr_t &address, const link_callbac
     assert(servers_map.count(address) == 0);
     servers_map.emplace(address, server_record_t{callback, link_state_t::LINKING});
     auto &source_addr = actor->address;
+    reaction_on(reaction_t::INIT);
     actor->request<payload::link_request_t>(address, source_addr).send(actor->init_timeout);
 }
 

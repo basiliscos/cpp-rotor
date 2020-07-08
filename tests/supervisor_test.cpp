@@ -5,7 +5,6 @@
 //
 
 #include "supervisor_test.h"
-#include "actor_test.h"
 #include "catch.hpp"
 #include "cassert"
 
@@ -49,8 +48,6 @@ subscription_container_t &supervisor_test_t::get_points() noexcept {
     std::abort();
 }
 
-//void supervisor_test_t::start() noexcept {INFO("supervisor_test_t::start()")}
-
 supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
     auto it = active_timers.begin();
     for (std::size_t i = 0; i < index; ++i) {
@@ -58,13 +55,6 @@ supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcep
     }
     return *it;
 }
-
-plugin_t* supervisor_test_t::get_plugin(const void* identity) const noexcept {
-    return actor_test_t::get_plugin(plugins, identity);
-}
-
-
-//void supervisor_test_t::shutdown() noexcept { INFO("supervisor_test_t::shutdown()") }
 
 void supervisor_test_t::enqueue(message_ptr_t message) noexcept { get_leader().queue.emplace_back(std::move(message)); }
 

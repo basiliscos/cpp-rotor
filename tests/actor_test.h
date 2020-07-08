@@ -24,8 +24,6 @@ struct actor_test_t: public actor_base_t {
 
     void configure(plugin_t &plugin) noexcept override;
     auto& get_plugins() const noexcept { return plugins;}
-    plugin_t* get_plugin(const void* identity) const noexcept;
-    static plugin_t* get_plugin(const actor_config_t::plugins_t&, const void* identity) noexcept;
     auto get_activating_plugins() noexcept { return this->activating_plugins; }
     auto get_deactivating_plugins() noexcept { return this->deactivating_plugins; }
 

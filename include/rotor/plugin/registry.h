@@ -7,6 +7,7 @@
 //
 
 #include "plugin.h"
+#include "link_client.h"
 #include <string>
 #include <unordered_map>
 
@@ -14,6 +15,27 @@ namespace rotor::internal {
 
 struct registry_plugin_t : public plugin_t {
     using plugin_t::plugin_t;
+
+    struct discovery_task_t {
+        using link_callback_t = link_client_plugin_t::link_callback_t;
+
+        registry_plugin_t &plugin;
+        address_ptr_t *address;
+        std::string service_name;
+        bool link_on_discovery = false;
+        link_callback_t callback;
+
+        discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_)
+            : plugin{plugin_}, address(address_), service_name{service_name_} {}
+        operator bool() const noexcept { return address; }
+
+        void link(const link_callback_t callback_ = {}) noexcept {
+            link_on_discovery = true;
+            callback = callback_;
+        }
+        void on_discovery(const std::error_code &ec) noexcept;
+        void continue_init(const std::error_code &ec) noexcept;
+    };
 
     static const void *class_identity;
     const void *identity() const noexcept override;
@@ -24,19 +46,19 @@ struct registry_plugin_t : public plugin_t {
     virtual void on_discovery(message::discovery_response_t &) noexcept;
 
     virtual bool register_name(const std::string &name, const address_ptr_t &address) noexcept;
-    virtual bool discover_name(const std::string &name, address_ptr_t &address) noexcept;
+    virtual discovery_task_t &discover_name(const std::string &name, address_ptr_t &address) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
   protected:
-    enum class state_t { REGISTERING, OPERATIONAL, UNREGISTERING };
+    enum class state_t { REGISTERING, LINKING, OPERATIONAL, UNREGISTERING };
     struct register_info_t {
         address_ptr_t address;
         state_t state;
     };
     using register_map_t = std::unordered_map<std::string, register_info_t>;
-    using discovery_map_t = std::unordered_map<std::string, address_ptr_t *>;
+    using discovery_map_t = std::unordered_map<std::string, discovery_task_t>;
 
     enum plugin_state_t : std::uint32_t {
         CONFIGURED = 1 << 0,

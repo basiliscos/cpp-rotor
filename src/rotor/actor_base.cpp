@@ -273,3 +273,12 @@ void actor_base_t::on_unlink_response(message::unlink_response_t &msg) noexcept 
 }
 
 */
+
+plugin_t *actor_base_t::get_plugin(const void *identity) const noexcept {
+    for (auto plugin : plugins) {
+        if (plugin->identity() == identity) {
+            return plugin;
+        }
+    }
+    return nullptr;
+}

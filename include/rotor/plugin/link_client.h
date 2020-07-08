@@ -23,7 +23,7 @@ struct link_client_plugin_t : public plugin_t {
     const void *identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
-    virtual void link(const address_ptr_t &address, const link_callback_t &callback) noexcept;
+    virtual void link(const address_ptr_t &address, const link_callback_t &callback = {}) noexcept;
 
     virtual void on_link_response(message::link_response_t &message) noexcept;
     virtual void on_unlink_request(message::unlink_request_t &message) noexcept;

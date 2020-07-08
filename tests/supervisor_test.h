@@ -32,8 +32,6 @@ struct supervisor_test_t : public supervisor_t {
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
     timer_id_t get_timer(std::size_t index) noexcept;
-    //virtual void start() noexcept override;
-    //virtual void shutdown() noexcept override;
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;
     virtual address_ptr_t make_address() noexcept override;
 
@@ -45,7 +43,6 @@ struct supervisor_test_t : public supervisor_t {
     auto &get_children() noexcept { return manager->actors_map; }
     request_map_t &get_requests() noexcept { return request_map; }
 
-    plugin_t* get_plugin(const void* identity) const noexcept;
     auto get_activating_plugins() noexcept { return this->activating_plugins; }
     auto get_deactivating_plugins() noexcept { return this->deactivating_plugins; }
 

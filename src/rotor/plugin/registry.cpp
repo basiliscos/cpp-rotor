@@ -38,18 +38,19 @@ bool registry_plugin_t::register_name(const std::string &name, const address_ptr
     return true;
 }
 
-bool registry_plugin_t::discover_name(const std::string &name, address_ptr_t &address) noexcept {
-    if (discovery_map.count(name))
-        return false;
-    assert(discovery_map.count(name) == 0);
+registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std::string &name,
+                                                                      address_ptr_t &address) noexcept {
+    auto it = discovery_map.find("name");
+    if (it != discovery_map.end())
+        return it->second;
 
     assert(!(plugin_state & LINKED));
     if (!(plugin_state & LINKING)) {
         link();
     }
 
-    discovery_map.emplace(name, &address);
-    return true;
+    auto r = discovery_map.emplace(name, discovery_task_t(*this, &address, name));
+    return r.first->second;
 }
 
 void registry_plugin_t::on_registration(message::registration_response_t &message) noexcept {
@@ -74,13 +75,9 @@ void registry_plugin_t::on_discovery(message::discovery_response_t &message) noe
     auto it = discovery_map.find(service);
     assert(it != discovery_map.end());
     if (!ec) {
-        *(it->second) = message.payload.res.service_addr;
+        *it->second.address = message.payload.res.service_addr;
     }
-    discovery_map.erase(it);
-
-    if (discovery_map.empty() || ec) {
-        continue_init(ec);
-    }
+    it->second.on_discovery(ec);
 }
 
 void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
@@ -100,13 +97,9 @@ void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
 
 void registry_plugin_t::link() noexcept {
     plugin_state = plugin_state | LINKING;
-    for (auto plugin : actor->plugins) {
-        if (plugin->identity() == link_client_plugin_t::class_identity) {
-            auto p = static_cast<link_client_plugin_t *>(plugin);
-            auto registry_addr = actor->get_supervisor().get_registry();
-            p->link(registry_addr, [this](auto &ec) { on_link(ec); });
-        }
-    }
+    auto p = static_cast<link_client_plugin_t *>(actor->get_plugin(link_client_plugin_t::class_identity));
+    auto registry_addr = actor->get_supervisor().get_registry();
+    p->link(registry_addr, [this](auto &ec) { on_link(ec); });
 }
 
 void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
@@ -150,4 +143,27 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept 
 bool registry_plugin_t::has_registering() noexcept {
     auto in_progress_predicate = [](auto it) { return it.second.state == state_t::REGISTERING; };
     return !std::none_of(register_map.begin(), register_map.end(), in_progress_predicate);
+}
+
+void registry_plugin_t::discovery_task_t::on_discovery(const std::error_code &ec) noexcept {
+    if (!ec && callback) {
+        auto &link_plugin = (link_client_plugin_t &)*plugin.actor->get_plugin(link_client_plugin_t::class_identity);
+        link_plugin.link(*address, [this](auto &ec) {
+            callback(ec);
+            continue_init(ec);
+        });
+        return;
+    }
+    continue_init(ec);
+}
+
+void registry_plugin_t::discovery_task_t::continue_init(const std::error_code &ec) noexcept {
+    auto &plugin = this->plugin;
+    auto &dm = plugin.discovery_map;
+    auto it = dm.find(service_name);
+    assert(it != dm.end());
+    dm.erase(it);
+    if (dm.empty() || ec) {
+        plugin.continue_init(ec);
+    }
 }
