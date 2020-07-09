@@ -9,7 +9,6 @@
 #include "address.hpp"
 #include "actor_config.h"
 #include "messages.hpp"
-#include "behavior.h"
 #include "state.h"
 #include "handler.hpp"
 #include <unordered_map>
@@ -142,76 +141,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     virtual void on_start() noexcept;
 
-#if 0
-    using linked_servers_t = std::unordered_set<address_ptr_t>;
-    using linked_clients_t = std::unordered_set<details::linkage_t>;
-
-
-    /** \brief returns actor's subscription points */
-    inline subscription_points_t &get_subscription_points() noexcept { return points; }
-
-    /** \brief records init request and may be triggers actor initialization
-     *
-     * After recoding the init request message, it invokes `init_start` method,
-     * which triggers initialization sequece (configured by
-     * {@link actor_behavior_t} ).
-     *
-     */
-    virtual void on_initialize(message::init_request_t &) noexcept;
-
-    /** \brief start confirmation from supervisor
-     *
-     * Sets internal actor state to `OPERATIONAL`, if the actors stare
-     * is already `INITIALIZED`
-     *
-     */
-    virtual void on_start(message_t<payload::start_actor_t> &) noexcept;
-
-    /** \brief records shutdown request and may be triggers actor shutdown
-     *
-     * After recording the shutdown request it invokes the `shutdown_start`
-     * method, which triggers shutdown actions sequence (configured by
-     * {@link actor_behavior_t} ).
-     */
-    virtual void on_shutdown(message::shutdown_request_t &) noexcept;
-
-    /** \brief initiates actor's shutdown
-     *
-     * If there is a supervisor, the message is forwarded to it to
-     * send shutdown request.
-     *
-     */
-    virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept;
-
-    /** \brief records subsciption point */
-    virtual void on_subscription(message_t<payload::subscription_confirmation_t> &) noexcept;
-
-    /** \brief forgets the subscription point
-     *
-     * If there is no more subscription points, the on_unsubscription event is
-     * triggerred on {@link actor_behavior_t}.
-     *
-     */
-    virtual void on_unsubscription(message_t<payload::unsubscription_confirmation_t> &) noexcept;
-
-    /** \brief forgets the subscription point for external address
-     *
-     * The {@link payload::commit_unsubscription_t} is sent to the external {@link supervisor_t}
-     *  after removing the subscription .
-     *
-     * If there is no more subscription points, the on_unsubscription event is
-     * triggerred on {@link actor_behavior_t}.
-     *
-     */
-    virtual void on_external_unsubscription(message_t<payload::external_unsubscription_t> &) noexcept;
-
-    virtual void on_link_request(message::link_request_t &) noexcept;
-    virtual void on_link_response(message::link_response_t &) noexcept;
-    virtual void on_unlink_request(message::unlink_request_t &) noexcept;
-    virtual void on_unlink_response(message::unlink_response_t &) noexcept;
-    virtual void on_unlink_notify(message::unlink_notify_t &) noexcept;
-#endif
-
     /** \brief sends message to the destination address
      *
      * Internally it just constructs new message in supervisor's outbound queue.
@@ -229,12 +158,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename R, typename... Args>
     request_builder_t<typename request_wrapper_t<R>::request_t> request(const address_ptr_t &dest_addr,
                                                                         Args &&... args);
-
-    /*
-    virtual timer_id_t link_request(const address_ptr_t &service_addr, const pt::time_duration &timeout) noexcept;
-    void unlink_notify(const address_ptr_t &service_addr) noexcept;
-    virtual bool unlink_request(const address_ptr_t &service_addr, const address_ptr_t &client_addr) noexcept;
-    */
 
     /** \brief returns request builder for destination address using the specified address for reply
      *
@@ -371,10 +294,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
-#if 0
-    std::optional<pt::time_duration> unlink_timeout;
-    unlink_policy_t unlink_policy;
-#endif
 
     actor_config_t::plugins_t plugins;
 

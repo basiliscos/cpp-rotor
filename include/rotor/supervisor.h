@@ -119,42 +119,6 @@ struct supervisor_t : public actor_base_t {
      *  handler pair
      */
     virtual void commit_unsubscription(const subscription_info_ptr_t &info) noexcept;
-#if 0
-
-    /** \brief records just created actor and starts its initialization
-     *
-     * The initialization rquest is sent to the just created actor. If the
-     * actor will not confirm initialization within timeout (specified in the message payload),
-     * the actor will be asked for shut down.
-     */
-    virtual void on_create(message_t<payload::create_actor_t> &msg) noexcept;
-
-    /** \brief sends {@link payload::start_actor_t} to the initialized actor  */
-    virtual void on_initialize_confirm(message::init_response_t &msg) noexcept;
-
-    virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept override;
-
-    /** \brief forgets just shutted down actor
-     *
-     * Internal structures related to the actor are released.
-     *
-     */
-    virtual void on_shutdown_confirm(message::shutdown_response_t &msg) noexcept;
-
-    /** \brief subscribes external handler to local address */
-    virtual void on_external_subs(message_t<payload::external_subscription_t> &message) noexcept;
-
-    /** \brief message interface for `commit_unsubscription` */
-    virtual void on_commit_unsubscription(message_t<payload::commit_unsubscription_t> &message) noexcept;
-
-    /** \brief delivers a message to local handler, which was originally send to external address
-     *
-     * The handler is subscribed to the external address, that's why the message was forwarded
-     * from external supervisor to the local supervisor to process the call (invoke the local handler).
-     *
-     */
-    virtual void on_call(message_t<payload::handler_call_t> &message) noexcept;
-#endif
 
     /** \brief starts non-recurring timer, identified by `timer_id`
      *
@@ -175,19 +139,6 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_timer_trigger(timer_id_t timer_id);
 
-#if 0
-    /** \brief thread-safe version of `do_process`
-     *
-     * Starts supervisor to processing messages queue in safe thread/loop
-     * context. Once it becomes empty, the method returns
-     */
-    virtual void start() noexcept = 0;
-
-    /** \brief thread-safe version of `do_shutdown`, i.e. send shutdown request
-     * let it be processed by the supervisor */
-    virtual void shutdown() noexcept = 0;
-
-#endif
     virtual void do_shutdown() noexcept override;
 
     virtual void shutdown_finish() noexcept override;
@@ -292,11 +243,6 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
-
-#if 0
-    /** \brief removes actor from supervisor. It is assumed, that actor it shutted down. */
-    virtual void remove_actor(actor_base_t &actor) noexcept;
-#endif
 
     /** \brief non-owning pointer to system context. */
     system_context_t *context;
