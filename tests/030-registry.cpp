@@ -25,7 +25,6 @@ struct manual_actor_t : public r::actor_base_t {
         r::internal::starter_plugin_t>;
     // clang-format on
 
-
     using discovery_reply_t = r::intrusive_ptr_t<r::message::discovery_response_t>;
     using registration_reply_t = r::intrusive_ptr_t<r::message::registration_response_t>;
 
@@ -79,13 +78,19 @@ TEST_CASE("supervisor related tests", "[registry][supervisor]") {
     }
 
     SECTION("registry is created, when asked") {
-        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+        sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                  .timeout(rt::default_timeout)
+                  .create_registry(true)
+                  .finish();
         sup->do_process();
         CHECK(sup->get_registry());
     }
 
     SECTION("registry is inherited") {
-        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+        sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                  .timeout(rt::default_timeout)
+                  .create_registry(true)
+                  .finish();
         auto sup2 = sup->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
 
         sup->do_process();
@@ -97,16 +102,20 @@ TEST_CASE("supervisor related tests", "[registry][supervisor]") {
     SECTION("registry is set from different locality") {
         const char locality1[] = "abc";
         const char locality2[] = "def";
-        sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(locality1).finish();
+        sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                  .timeout(rt::default_timeout)
+                  .locality(locality1)
+                  .finish();
         auto reg = sup->create_actor<r::registry_t>().timeout(rt::default_timeout).finish();
 
         sup->do_process();
         CHECK(!sup->get_registry());
 
-        auto sup2 = sup->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout)
-                .locality(locality2)
-                .registry_address(reg->get_address())
-                .finish();
+        auto sup2 = sup->create_actor<rt::supervisor_test_t>()
+                        .timeout(rt::default_timeout)
+                        .locality(locality2)
+                        .registry_address(reg->get_address())
+                        .finish();
 
         while (!sup->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
             sup->do_process();
@@ -119,7 +128,6 @@ TEST_CASE("supervisor related tests", "[registry][supervisor]") {
             sup->do_process();
             sup2->do_process();
         }
-
     }
     sup->do_shutdown();
     sup->do_process();
@@ -127,7 +135,10 @@ TEST_CASE("supervisor related tests", "[registry][supervisor]") {
 
 TEST_CASE("registry actor (server)", "[registry][supervisor]") {
     r::system_context_t system_context;
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                   .timeout(rt::default_timeout)
+                   .create_registry(true)
+                   .finish();
     auto act = sup->create_actor<manual_actor_t>().timeout(rt::default_timeout).finish();
     act->registry_addr = sup->get_registry();
     sup->do_process();
@@ -202,24 +213,25 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
 
 TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
     r::system_context_t system_context;
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                   .timeout(rt::default_timeout)
+                   .create_registry(true)
+                   .finish();
 
     SECTION("common case (just discover)") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_s->configurer = [&](auto& actor, r::plugin_t& plugin) {
-            plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
-                p.register_name("service-name", actor.get_address());
-            });
+        act_s->configurer = [&](auto &actor, r::plugin_t &plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>(
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
 
         sup->do_process();
         REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_c->configurer = [&](auto&, r::plugin_t& plugin) {
-            plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
-                p.discover_name("service-name", act_c->service_addr);
-            });
+        act_c->configurer = [&](auto &, r::plugin_t &plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>(
+                [&](auto &p) { p.discover_name("service-name", act_c->service_addr); });
         };
         sup->do_process();
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
@@ -234,10 +246,9 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
     SECTION("common case (discover & link)") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_s->configurer = [&](auto& actor, r::plugin_t& plugin) {
-            plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
-                p.register_name("service-name", actor.get_address());
-            });
+        act_s->configurer = [&](auto &actor, r::plugin_t &plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>(
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
 
         sup->do_process();
@@ -245,10 +256,10 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         bool linked = false;
-        act_c->configurer = [&](auto&, r::plugin_t& plugin) {
+        act_c->configurer = [&](auto &, r::plugin_t &plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
-                p.discover_name("service-name", act_c->service_addr).link([&](auto& ec){
-                    assert(!ec);
+                p.discover_name("service-name", act_c->service_addr).link([&](auto &ec) {
+                    REQUIRE(!ec);
                     linked = true;
                 });
             });
@@ -266,10 +277,9 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
     SECTION("discovery non-existing name => fail to init") {
         auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act->configurer = [&](auto&, r::plugin_t& plugin) {
-            plugin.with_casted<r::internal::registry_plugin_t>([&act](auto &p) {
-                p.discover_name("non-existing-service", act->service_addr);
-            });
+        act->configurer = [&](auto &, r::plugin_t &plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>(
+                [&act](auto &p) { p.discover_name("non-existing-service", act->service_addr); });
         };
 
         sup->do_process();
@@ -279,12 +289,11 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
     SECTION("double name registration => fail") {
         auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        printf("act1 = %p(%p), act2 = %p(%p)\n", (void*)act1.get(), (void*)act1->get_address().get(),
-               (void*)act2.get(), (void*)act2->get_address().get());
-        auto configurer = [](auto& actor, r::plugin_t& plugin) {
-            plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
-                p.register_name("service-name", actor.get_address());
-            });
+        printf("act1 = %p(%p), act2 = %p(%p)\n", (void *)act1.get(), (void *)act1->get_address().get(),
+               (void *)act2.get(), (void *)act2->get_address().get());
+        auto configurer = [](auto &actor, r::plugin_t &plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>(
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
         act1->configurer = configurer;
         act2->configurer = configurer;
