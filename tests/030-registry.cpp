@@ -204,7 +204,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).create_registry(true).finish();
 
-    SECTION("common case") {
+    SECTION("common case (just discover)") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         act_s->configurer = [&](auto& actor, r::plugin_t& plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
@@ -219,6 +219,38 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         act_c->configurer = [&](auto&, r::plugin_t& plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
                 p.discover_name("service-name", act_c->service_addr);
+            });
+        };
+        sup->do_process();
+        CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+        CHECK(act_c->service_addr == act_s->get_address());
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act_s->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    }
+
+    SECTION("common case (discover & link)") {
+        auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        act_s->configurer = [&](auto& actor, r::plugin_t& plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>([&actor](auto &p) {
+                p.register_name("service-name", actor.get_address());
+            });
+        };
+
+        sup->do_process();
+        REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+        auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        bool linked = false;
+        act_c->configurer = [&](auto&, r::plugin_t& plugin) {
+            plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
+                p.discover_name("service-name", act_c->service_addr).link([&](auto& ec){
+                    assert(!ec);
+                    linked = true;
+                });
             });
         };
         sup->do_process();
@@ -262,6 +294,4 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         CHECK(act2->get_state() == r::state_t::SHUTTED_DOWN);
         CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     }
-
-
 }
