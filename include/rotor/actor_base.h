@@ -18,34 +18,6 @@
 
 namespace rotor {
 
-namespace details {
-
-struct linkage_t {
-    address_ptr_t server_addr;
-    address_ptr_t client_addr;
-
-    inline bool operator==(const linkage_t &other) const noexcept {
-        return (client_addr == other.client_addr) && (server_addr == other.server_addr);
-    }
-};
-
-} // namespace details
-} // namespace rotor
-
-namespace std {
-
-template <> struct hash<rotor::details::linkage_t> {
-    inline size_t operator()(const rotor::details::linkage_t &linkage) const noexcept {
-        using hash_t = std::hash<rotor::address_ptr_t>;
-        auto h1 = hash_t{}(linkage.client_addr);
-        auto h2 = hash_t{}(linkage.server_addr);
-        return h1 ^ (h2 << 16);
-    }
-};
-} // namespace std
-
-namespace rotor {
-
 struct supervisor_t;
 struct system_context_t;
 struct handler_base_t;

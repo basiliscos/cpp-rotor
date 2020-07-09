@@ -10,7 +10,7 @@
 
 using namespace rotor;
 
-subscription_info_t::~subscription_info_t(){}
+subscription_info_t::~subscription_info_t() {}
 
 subscription_t::subscription_t(supervisor_t &sup_) noexcept : supervisor{sup_} {}
 
