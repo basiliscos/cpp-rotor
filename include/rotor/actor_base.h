@@ -22,7 +22,6 @@ struct supervisor_t;
 struct system_context_t;
 struct handler_base_t;
 struct plugin_t;
-enum class slot_t;
 
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
@@ -267,7 +266,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
 
-    actor_config_t::plugins_t plugins;
+    plugin_storage_ptr_t plugins_storage;
+    plugins_t plugins;
 
     std::set<const void *> activating_plugins;
     std::set<const void *> deactivating_plugins;

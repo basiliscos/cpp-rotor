@@ -11,6 +11,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <tuple>
 #include <functional>
+#include <memory>
 #include "arc.hpp"
 #include "plugins.h"
 #include "policy.h"
@@ -24,11 +25,37 @@ struct actor_base_t;
 
 namespace pt = boost::posix_time;
 
-struct actor_config_t {
-    using plugins_t = std::deque<plugin_t *>;
-    using callback_t = std::function<void(actor_base_t &)>;
+using plugins_t = std::deque<plugin_t *>;
 
-    plugins_t plugins;
+struct plugin_storage_base_t {
+    virtual ~plugin_storage_base_t() {}
+    virtual plugins_t get_plugins() noexcept = 0;
+};
+
+using plugin_storage_ptr_t = std::unique_ptr<plugin_storage_base_t>;
+
+template <typename PluginList> struct plugin_storage_t : plugin_storage_base_t {
+    plugins_t get_plugins() noexcept override {
+        plugins_t plugins;
+        add_plugin(plugins);
+        return plugins;
+    }
+
+  private:
+    PluginList plugin_list;
+
+    template <size_t Index = 0> void add_plugin(plugins_t &plugins) noexcept {
+        plugins.emplace_back(&std::get<Index>(plugin_list));
+        if constexpr (Index + 1 < std::tuple_size_v<PluginList>) {
+            add_plugin<Index + 1>(plugins);
+        }
+    }
+};
+
+struct actor_config_t {
+    using plugins_constructor_t = std::function<plugin_storage_ptr_t()>;
+
+    plugins_constructor_t plugins_constructor;
     supervisor_t *supervisor;
 
     pt::time_duration init_timeout;
@@ -37,11 +64,6 @@ struct actor_config_t {
     pt::time_duration shutdown_timeout;
 
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
-    ~actor_config_t() {
-        for (auto it : plugins) {
-            delete it;
-        }
-    }
 };
 
 template <typename Actor> struct actor_config_builder_t {
@@ -64,7 +86,9 @@ template <typename Actor> struct actor_config_builder_t {
 
     actor_config_builder_t(install_action_t &&action_, supervisor_t *supervisor_);
     actor_config_builder_t(install_action_t &&action_, system_context_t &system_context_)
-        : install_action{std::move(action_)}, supervisor{nullptr}, system_context{system_context_}, config{nullptr} {}
+        : install_action{std::move(action_)}, supervisor{nullptr}, system_context{system_context_}, config{nullptr} {
+        init_ctor();
+    }
 
     builder_t &&timeout(const pt::time_duration &timeout) &&noexcept {
         config.init_timeout = config.shutdown_timeout = timeout;
@@ -84,33 +108,17 @@ template <typename Actor> struct actor_config_builder_t {
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    virtual bool validate() noexcept {
-        instantiate_plugins();
-        if (mask) {
-            return false;
-        }
-        return true;
-    }
+    virtual bool validate() noexcept { return mask ? false : true; }
     actor_ptr_t finish() &&;
 
   private:
-    void instantiate_plugins() noexcept {
-        if (!plugins_expanded) {
-            using plugins_t = typename Actor::plugins_list_t;
-            add_plugin<plugins_t>();
-            plugins_expanded = true;
-        }
+    void init_ctor() noexcept {
+        config.plugins_constructor = []() -> plugin_storage_ptr_t {
+            using plugins_list_t = typename Actor::plugins_list_t;
+            using storage_t = plugin_storage_t<plugins_list_t>;
+            return std::make_unique<storage_t>();
+        };
     }
-
-    template <typename PluginList, std::size_t Index = 0> void add_plugin() noexcept {
-        using Plugin = std::tuple_element_t<Index, PluginList>;
-        instantiate_plugin<Plugin>();
-        if constexpr (Index + 1 < std::tuple_size_v<PluginList>) {
-            add_plugin<PluginList, Index + 1>();
-        }
-    }
-
-    template <typename Plugin> void instantiate_plugin() noexcept { config.plugins.emplace_back(new Plugin()); }
 };
 
 } // namespace rotor

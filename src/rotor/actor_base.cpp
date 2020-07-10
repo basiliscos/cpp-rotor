@@ -12,19 +12,16 @@
 using namespace rotor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
-    : init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW},
-      supervisor{cfg.supervisor}, plugins{std::move(cfg.plugins)} {
+    : init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW}, supervisor{
+                                                                                                       cfg.supervisor} {
+    plugins_storage = cfg.plugins_constructor();
+    plugins = plugins_storage->get_plugins();
     for (auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
     }
 }
 
-actor_base_t::~actor_base_t() {
-    assert(deactivating_plugins.empty());
-    for (auto plugin : plugins) {
-        delete plugin;
-    }
-}
+actor_base_t::~actor_base_t() { assert(deactivating_plugins.empty()); }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins(); }
 
@@ -141,8 +138,7 @@ void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr
 
 void actor_base_t::unsubscribe() noexcept { lifetime->unsubscribe(); }
 
-template <typename Fn, typename Message>
-static void poll(actor_config_t::plugins_t &plugins, Message &message, Fn &&fn) {
+template <typename Fn, typename Message> static void poll(plugins_t &plugins, Message &message, Fn &&fn) {
     for (auto rit = plugins.rbegin(); rit != plugins.rend();) {
         auto it = --rit.base();
         auto plugin = *it;
