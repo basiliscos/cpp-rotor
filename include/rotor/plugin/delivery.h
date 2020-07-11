@@ -44,6 +44,7 @@ struct delivery_plugin_base_t : public plugin_t {
     virtual void process() noexcept = 0;
     void activate(actor_base_t *actor) noexcept override;
 
+  protected:
     messages_queue_t *queue = nullptr;
     address_t *address = nullptr;
 
