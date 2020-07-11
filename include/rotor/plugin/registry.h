@@ -19,22 +19,26 @@ struct registry_plugin_t : public plugin_t {
     struct discovery_task_t {
         using link_callback_t = link_client_plugin_t::link_callback_t;
 
+        void link(const link_callback_t callback_ = {}) noexcept {
+            link_on_discovery = true;
+            callback = callback_;
+        }
+
+      private:
+        discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_)
+            : plugin{plugin_}, address(address_), service_name{service_name_} {}
+        operator bool() const noexcept { return address; }
+
+        void on_discovery(const std::error_code &ec) noexcept;
+        void continue_init(const std::error_code &ec) noexcept;
+
         registry_plugin_t &plugin;
         address_ptr_t *address;
         std::string service_name;
         bool link_on_discovery = false;
         link_callback_t callback;
 
-        discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_)
-            : plugin{plugin_}, address(address_), service_name{service_name_} {}
-        operator bool() const noexcept { return address; }
-
-        void link(const link_callback_t callback_ = {}) noexcept {
-            link_on_discovery = true;
-            callback = callback_;
-        }
-        void on_discovery(const std::error_code &ec) noexcept;
-        void continue_init(const std::error_code &ec) noexcept;
+        friend struct registry_plugin_t;
     };
 
     static const void *class_identity;
