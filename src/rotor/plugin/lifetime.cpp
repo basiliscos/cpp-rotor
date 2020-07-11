@@ -34,7 +34,7 @@ void lifetime_plugin_t::deactivate() noexcept {
 }
 
 bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
-    if (points.empty() && own_subscriptions.empty())
+    if (points.empty() && get_subscriptions().empty())
         return true;
     unsubscribe();
     return false;

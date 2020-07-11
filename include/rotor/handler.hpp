@@ -192,8 +192,8 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
     Handler handler;
 
     explicit handler_t(plugin_t &plugin_, Handler &&handler_)
-        : handler_base_t{*plugin_.actor, final_message_t::message_type, handler_type}, plugin{plugin_}, handler{
-                                                                                                            handler_} {}
+        : handler_base_t{*plugin_.get_actor(), final_message_t::message_type, handler_type}, plugin{plugin_},
+          handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         using backend_t = typename traits::backend_t;

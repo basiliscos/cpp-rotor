@@ -339,7 +339,7 @@ void subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
     auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     tracked.emplace_back(info);
-    own_subscriptions.emplace_back(std::move(info));
+    get_subscriptions().emplace_back(std::move(info));
 }
 
 template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process() noexcept {

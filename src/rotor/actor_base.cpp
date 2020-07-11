@@ -44,7 +44,7 @@ void actor_base_t::commit_plugin_activation(plugin_t &plugin, bool success) noex
 void actor_base_t::deactivate_plugins() noexcept {
     for (auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
         auto &plugin = *--(it.base());
-        if (plugin->actor) { // may be it is already inactive
+        if (plugin->get_actor()) { // may be it is already inactive
             deactivating_plugins.insert(plugin->identity());
             plugin->deactivate();
         }

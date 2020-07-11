@@ -49,14 +49,17 @@ struct plugin_t {
         }
     }
 
-    actor_base_t *actor;
-    subscription_container_t own_subscriptions;
-
     std::size_t get_reaction() const noexcept { return reaction; }
+    actor_base_t *get_actor() const noexcept { return actor; }
     void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
     void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
+    subscription_container_t &get_subscriptions() noexcept { return own_subscriptions; }
+
+  protected:
+    actor_base_t *actor;
 
   private:
+    subscription_container_t own_subscriptions;
     std::size_t reaction = 0;
 };
 
