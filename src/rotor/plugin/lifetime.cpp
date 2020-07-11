@@ -56,6 +56,12 @@ void lifetime_plugin_t::unsubscribe(const subscription_info_ptr_t &info_ptr) noe
     }
 }
 
+void lifetime_plugin_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr) noexcept {
+    auto it = points.find(subscription_point_t{h, addr});
+    assert(it != points.end());
+    unsubscribe(*it);
+}
+
 void lifetime_plugin_t::unsubscribe() noexcept {
     auto rit = points.rbegin();
     while (rit != points.rend()) {

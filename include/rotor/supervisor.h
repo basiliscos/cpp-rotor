@@ -175,7 +175,7 @@ struct supervisor_t : public actor_base_t {
     /** \brief convenient templated version of `unsubscribe_actor */
     template <typename Handler> inline void unsubscribe_actor(const address_ptr_t &addr, Handler &&handler) noexcept {
         handler_ptr_t wrapped_handler(std::forward<Handler>(handler));
-        unsubscribe(wrapped_handler, addr);
+        lifetime->unsubscribe(wrapped_handler, addr);
     }
 
     /* \brief creates actor, records it in internal structures and returns

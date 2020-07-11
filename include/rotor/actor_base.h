@@ -176,10 +176,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * The optional call can be providded to be called upon message destruction.
      *
      */
-    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr) noexcept;
 
     /** \brief initiates handler unsubscription from the default actor address */
-    inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
+    inline void unsubscribe(const handler_ptr_t &h) noexcept { lifetime->unsubscribe(h, address); }
 
     inline const pt::time_duration &get_init_timeout() noexcept { return init_timeout; }
 

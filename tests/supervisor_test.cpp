@@ -39,13 +39,8 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
 
 
 subscription_container_t &supervisor_test_t::get_points() noexcept {
-    for(auto p: plugins) {
-        if (p->identity() == internal::lifetime_plugin_t::class_identity) {
-            auto plugin = static_cast<internal::lifetime_plugin_t*>(p);
-            return plugin->points;
-        }
-    }
-    std::abort();
+    auto plugin = get_plugin(internal::lifetime_plugin_t::class_identity);
+    return static_cast<internal::lifetime_plugin_t*>(plugin)->get_points();
 }
 
 supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {

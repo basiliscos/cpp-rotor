@@ -130,12 +130,6 @@ void actor_base_t::shutdown_continue() noexcept {
     }
 }
 
-void actor_base_t::unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr) noexcept {
-    auto it = lifetime->points.find(subscription_point_t{h, addr});
-    assert(it != lifetime->points.end());
-    lifetime->unsubscribe(*it);
-}
-
 void actor_base_t::unsubscribe() noexcept { lifetime->unsubscribe(); }
 
 template <typename Fn, typename Message> static void poll(plugins_t &plugins, Message &message, Fn &&fn) {
