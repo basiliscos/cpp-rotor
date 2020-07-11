@@ -14,21 +14,6 @@ namespace rotor::internal {
 struct child_manager_plugin_t : public plugin_t {
     using plugin_t::plugin_t;
 
-    /** \brief child actror housekeeping structure */
-    struct actor_state_t {
-        /** \brief intrusive pointer to actor */
-        actor_ptr_t actor;
-
-        /** \brief whethe the shutdown request is already sent */
-        bool shutdown_requesting;
-    };
-
-    /** \brief (local) address-to-child_actor map type */
-    using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
-
-    /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
-    using initializing_actors_t = std::unordered_set<address_ptr_t>;
-
     static const void *class_identity;
     const void *identity() const noexcept override;
 
@@ -62,9 +47,26 @@ struct child_manager_plugin_t : public plugin_t {
 
     void unsubscribe_all(bool continue_shutdow) noexcept;
 
+    template <typename T> auto &access() noexcept;
+
+  private:
+    struct actor_state_t {
+        /** \brief intrusive pointer to actor */
+        actor_ptr_t actor;
+
+        /** \brief whethe the shutdown request is already sent */
+        bool shutdown_requesting;
+    };
+
+    using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
+
+    /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
+    using initializing_actors_t = std::unordered_set<address_ptr_t>;
+
     bool postponed_init = false;
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
+    actors_map_t &get_actors_map() noexcept { return actors_map; }
 };
 
 } // namespace rotor::internal

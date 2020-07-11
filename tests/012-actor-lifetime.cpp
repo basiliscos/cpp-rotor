@@ -155,7 +155,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     sup->on_timer_trigger(*sup->active_timers.begin());
     sup->do_process();
 
-    REQUIRE(sup->get_children().size() == 1);
+    REQUIRE(sup->get_children_count() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
     auto cm_plugin = static_cast<custom_child_manager_t *>(sup->get_plugin(custom_child_manager_t::class_identity));
@@ -168,7 +168,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
 
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
@@ -187,13 +187,13 @@ TEST_CASE("fail initialize test", "[actor]") {
     auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    REQUIRE(sup->get_children().size() == 2); // sup + actor
+    REQUIRE(sup->get_children_count() == 2); // sup + actor
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup->active_timers.size() == 1);
 
     sup->on_timer_trigger(*sup->active_timers.begin());
     sup->do_process();
-    REQUIRE(sup->get_children().size() == 1); // just sup
+    REQUIRE(sup->get_children_count() == 1); // just sup
 
     sup->do_shutdown();
     sup->do_process();
@@ -215,7 +215,7 @@ TEST_CASE("double shutdown test (actor)", "[actor]") {
     CHECK(act->event_shutdown_finish == 5);
     CHECK(act->event_shutdown_start == 4);
 
-    REQUIRE(sup->get_children().size() == 1); // just sup
+    REQUIRE(sup->get_children_count() == 1); // just sup
 
     sup->do_shutdown();
     sup->do_process();
@@ -233,6 +233,6 @@ TEST_CASE("double shutdown test (supervisor)", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }

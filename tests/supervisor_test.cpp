@@ -11,6 +11,11 @@
 using namespace rotor::test;
 using namespace rotor;
 
+struct actors_map_access_t {};
+
+template<>
+auto& internal::child_manager_plugin_t::access<actors_map_access_t>() noexcept { return actors_map; }
+
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
     : supervisor_t{config_}, locality{config_.locality} {}
 
@@ -55,3 +60,6 @@ void supervisor_test_t::enqueue(message_ptr_t message) noexcept { get_leader().q
 
 pt::time_duration rotor::test::default_timeout{pt::milliseconds{1}};
 
+size_t supervisor_test_t::get_children_count() noexcept {
+    return manager->access<actors_map_access_t>().size();
+}

@@ -40,7 +40,7 @@ struct supervisor_test_t : public supervisor_t {
     supervisor_test_t &get_leader() { return *static_cast<supervisor_test_t *>(locality_leader); }
     subscription_container_t& get_points() noexcept;
     subscription_t &get_subscription() noexcept { return subscription_map; }
-    auto &get_children() noexcept { return manager->actors_map; }
+    size_t get_children_count() noexcept;
     request_map_t &get_requests() noexcept { return request_map; }
 
     auto get_activating_plugins() noexcept { return this->activating_plugins; }
@@ -63,3 +63,4 @@ template <typename Supervisor> struct supervisor_test_config_builder_t : supervi
 
 } // namespace test
 } // namespace rotor
+

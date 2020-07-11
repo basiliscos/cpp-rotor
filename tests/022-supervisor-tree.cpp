@@ -114,8 +114,8 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     pinger->set_ponger_addr(ponger->get_address());
     sup_A2->do_process();
 
-    REQUIRE(sup_A2->get_children().size() == 1 + 1);
-    REQUIRE(sup_B2->get_children().size() == 1);
+    REQUIRE(sup_A2->get_children_count() == 1 + 1);
+    REQUIRE(sup_B2->get_children_count() == 1);
     REQUIRE(ping_sent == 1);
     REQUIRE(ping_received == 1);
 

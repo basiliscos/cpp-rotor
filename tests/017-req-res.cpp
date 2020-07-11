@@ -411,7 +411,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -439,7 +439,7 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -522,7 +522,7 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -546,7 +546,7 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -570,7 +570,7 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -594,7 +594,7 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -618,7 +618,7 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -641,7 +641,7 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(sup->get_subscription().empty());
-    REQUIRE(sup->get_children().size() == 0);
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
