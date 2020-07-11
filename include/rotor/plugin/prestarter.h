@@ -11,6 +11,7 @@
 namespace rotor::internal {
 
 struct prestarter_plugin_t : public subscriber_plugin_t {
+    using subscriber_plugin_t::subscriber_plugin_t;
 
     static const void *class_identity;
     const void *identity() const noexcept override;
