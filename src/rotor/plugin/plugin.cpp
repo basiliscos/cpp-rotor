@@ -63,7 +63,9 @@ bool plugin_t::forget_subscription(const subscription_point_t &point) noexcept {
     return false;
 }
 
-processing_result_t plugin_t::handle_subscription(message::subscription_t &) noexcept { std::abort(); }
+plugin_t::processing_result_t plugin_t::handle_subscription(message::subscription_t &) noexcept {
+    return processing_result_t::IGNORED;
+}
 
 bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
     if (external) {

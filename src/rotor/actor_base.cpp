@@ -150,6 +150,7 @@ template <typename Fn, typename Message> static void poll(plugins_t &plugins, Me
 }
 
 void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
+    using P = plugin_t::processing_result_t;
     /*
     auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " subscribed to "
@@ -161,11 +162,11 @@ void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
         if (plugin->get_reaction() & plugin_t::SUBSCRIPTION) {
             auto result = plugin->handle_subscription(message);
             switch (result) {
-            case processing_result_t::IGNORED:
+            case P::IGNORED:
                 continue;
-            case processing_result_t::CONSUMED:
+            case P::CONSUMED:
                 return;
-            case processing_result_t::FINISHED:
+            case P::FINISHED:
                 plugin->reaction_off(plugin_t::SUBSCRIPTION);
             }
         }

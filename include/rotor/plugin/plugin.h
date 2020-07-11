@@ -11,9 +11,8 @@
 
 namespace rotor {
 
-enum class processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
-
 struct plugin_t {
+    enum processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
     enum reaction_t {
         INIT = 1 << 0,

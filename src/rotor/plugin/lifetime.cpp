@@ -87,7 +87,7 @@ void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t &info
     points.emplace_back(info);
 }
 
-processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+plugin_t::processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     // printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
     auto it = points.find(point);

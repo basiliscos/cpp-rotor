@@ -21,7 +21,7 @@ void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&starter_plugin_t::on_start);
 }
 
-processing_result_t starter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+plugin_t::processing_result_t starter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     auto it = std::find_if(tracked.begin(), tracked.end(), [&](auto info) { return *info == point; });
     if (it != tracked.end()) {
