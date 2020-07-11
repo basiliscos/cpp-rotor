@@ -50,10 +50,10 @@ struct plugin_t {
     }
 
     std::size_t get_reaction() const noexcept { return reaction; }
-    actor_base_t *get_actor() const noexcept { return actor; }
     void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
     void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
-    subscription_container_t &get_subscriptions() noexcept { return own_subscriptions; }
+
+    template <typename T> auto &access() noexcept;
 
   protected:
     actor_base_t *actor;

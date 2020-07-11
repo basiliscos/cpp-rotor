@@ -31,7 +31,9 @@ struct link_client_plugin_t : public plugin_t {
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
-  protected:
+    template <typename T> auto &access() noexcept;
+
+  private:
     enum class link_state_t { LINKING, OPERATIONAL, UNLINKING };
     struct server_record_t {
         link_callback_t callback;
@@ -39,7 +41,7 @@ struct link_client_plugin_t : public plugin_t {
     };
     using servers_map_t = std::unordered_map<address_ptr_t, server_record_t>;
 
-    virtual void forget_link(message::unlink_request_t &message) noexcept;
+    void forget_link(message::unlink_request_t &message) noexcept;
     servers_map_t servers_map;
     unlink_reaction_t unlink_reaction;
     bool configured = false;

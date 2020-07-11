@@ -16,6 +16,9 @@ struct actors_map_access_t {};
 template<>
 auto& internal::child_manager_plugin_t::access<actors_map_access_t>() noexcept { return actors_map; }
 
+template<>
+auto& internal::lifetime_plugin_t::access<supervisor_test_t>() noexcept { return points; }
+
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
     : supervisor_t{config_}, locality{config_.locality} {}
 
@@ -45,7 +48,7 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
 
 subscription_container_t &supervisor_test_t::get_points() noexcept {
     auto plugin = get_plugin(internal::lifetime_plugin_t::class_identity);
-    return static_cast<internal::lifetime_plugin_t*>(plugin)->get_points();
+    return static_cast<internal::lifetime_plugin_t*>(plugin)->access<supervisor_test_t>();
 }
 
 supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {

@@ -55,7 +55,9 @@ struct registry_plugin_t : public plugin_t {
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
-  protected:
+    template <typename T> auto &access() noexcept;
+
+  private:
     enum class state_t { REGISTERING, LINKING, OPERATIONAL, UNREGISTERING };
     struct register_info_t {
         address_ptr_t address;

@@ -14,6 +14,9 @@ const void *lifetime_plugin_t::class_identity = static_cast<const void *>(typeid
 
 const void *lifetime_plugin_t::identity() const noexcept { return class_identity; }
 
+struct plugin_subscriptions_t {};
+template <> auto &plugin_t::access<plugin_subscriptions_t>() noexcept { return own_subscriptions; }
+
 void lifetime_plugin_t::activate(actor_base_t *actor_) noexcept {
     this->actor = actor_;
 
@@ -34,7 +37,7 @@ void lifetime_plugin_t::deactivate() noexcept {
 }
 
 bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
-    if (points.empty() && get_subscriptions().empty())
+    if (points.empty() && plugin_t::access<plugin_subscriptions_t>().empty())
         return true;
     unsubscribe();
     return false;

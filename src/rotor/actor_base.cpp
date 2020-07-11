@@ -11,6 +11,8 @@
 
 using namespace rotor;
 
+template <> auto &plugin_t::access<actor_base_t>() noexcept { return actor; }
+
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : init_timeout{cfg.init_timeout}, shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW}, supervisor{
                                                                                                        cfg.supervisor} {
@@ -44,7 +46,7 @@ void actor_base_t::commit_plugin_activation(plugin_t &plugin, bool success) noex
 void actor_base_t::deactivate_plugins() noexcept {
     for (auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
         auto &plugin = *--(it.base());
-        if (plugin->get_actor()) { // may be it is already inactive
+        if (plugin->access<actor_base_t>()) { // may be it is already inactive
             deactivating_plugins.insert(plugin->identity());
             plugin->deactivate();
         }

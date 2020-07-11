@@ -327,6 +327,8 @@ subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &ad
     return info;
 }
 
+template <> inline auto &plugin_t::access<internal::subscriber_plugin_t>() noexcept { return own_subscriptions; }
+
 namespace internal {
 
 template <typename Handler> void subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
@@ -339,7 +341,7 @@ void subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
     auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     tracked.emplace_back(info);
-    get_subscriptions().emplace_back(std::move(info));
+    access<subscriber_plugin_t>().emplace_back(std::move(info));
 }
 
 template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process() noexcept {

@@ -33,7 +33,8 @@ struct lifetime_plugin_t : public plugin_t {
     bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept override;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
-    subscription_container_t &get_points() noexcept { return points; }
+
+    template <typename T> auto &access() noexcept;
 
   private:
     /** \brief recorded subscription points (i.e. handler/address pairs) */

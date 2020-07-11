@@ -27,7 +27,9 @@ struct link_server_plugin_t : public plugin_t {
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
 
-  protected:
+    template <typename T> auto &access() noexcept;
+
+  private:
     enum class link_state_t { OPERATIONAL, UNLINKING };
     using linked_clients_t = std::unordered_map<address_ptr_t, link_state_t>;
     linked_clients_t linked_clients;

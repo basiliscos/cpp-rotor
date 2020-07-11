@@ -129,6 +129,8 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     virtual inline ~handler_base_t() {}
 };
 
+template <> inline auto &plugin_t::access<handler_base_t>() noexcept { return actor; }
+
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 namespace details {
@@ -192,8 +194,8 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
     Handler handler;
 
     explicit handler_t(plugin_t &plugin_, Handler &&handler_)
-        : handler_base_t{*plugin_.get_actor(), final_message_t::message_type, handler_type}, plugin{plugin_},
-          handler{handler_} {}
+        : handler_base_t{*plugin_.access<handler_base_t>(), final_message_t::message_type, handler_type},
+          plugin{plugin_}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         using backend_t = typename traits::backend_t;

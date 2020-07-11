@@ -23,6 +23,7 @@ struct starter_plugin_t : public subscriber_plugin_t {
 
     void on_start(message::start_trigger_t &message) noexcept;
 
+  private:
     bool configured = false;
 };
 
