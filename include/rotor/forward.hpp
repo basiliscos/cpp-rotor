@@ -9,10 +9,12 @@
 
 namespace rotor {
 
+struct address_t;
 struct actor_base_t;
 struct handler_base_t;
+struct plugin_t;
 struct supervisor_t;
-struct address_t;
+struct system_context_t;
 
 using address_ptr_t = intrusive_ptr_t<address_t>;
 

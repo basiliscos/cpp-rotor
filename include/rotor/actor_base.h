@@ -11,17 +11,10 @@
 #include "messages.hpp"
 #include "state.h"
 #include "handler.hpp"
-#include <unordered_map>
-#include <unordered_set>
+#include "forward.hpp"
 #include <set>
-#include <list>
 
 namespace rotor {
-
-struct supervisor_t;
-struct system_context_t;
-struct handler_base_t;
-struct plugin_t;
 
 /** \brief intrusive pointer for handler */
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
