@@ -45,7 +45,7 @@ struct child_manager_plugin_t : public plugin_t {
 
     bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept override;
 
-    void unsubscribe_all(bool continue_shutdow) noexcept;
+    void unsubscribe_all(bool continue_shutdown) noexcept;
 
     template <typename T> auto &access() noexcept;
 

@@ -180,10 +180,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief initiates handler unsubscription from the default actor address */
     inline void unsubscribe(const handler_ptr_t &h) noexcept { lifetime->unsubscribe(h, address); }
 
-    inline const pt::time_duration &get_init_timeout() noexcept { return init_timeout; }
-
-    inline const pt::time_duration &get_shutdown_timeout() noexcept { return shutdown_timeout; }
-
     void activate_plugins() noexcept;
     void commit_plugin_activation(plugin_t &plugin, bool success) noexcept;
 

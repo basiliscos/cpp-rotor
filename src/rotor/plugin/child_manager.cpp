@@ -15,6 +15,7 @@ namespace {
 namespace to {
 struct address {};
 struct state {};
+struct init_timeout {};
 struct shutdown_timeout {};
 struct lifetime {};
 } // namespace to
@@ -23,6 +24,7 @@ struct lifetime {};
 template <> auto &actor_base_t::access<to::address>() const noexcept { return address; }
 template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
+template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
 template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
 
@@ -71,7 +73,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child, bool normal
 void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     child->do_initialize(sup.get_context());
-    auto &timeout = child->get_init_timeout();
+    auto &timeout = child->access<to::init_timeout>();
     sup.send<payload::create_actor_t>(sup.get_address(), child, timeout);
     actors_map.emplace(child->get_address(), actor_state_t{child, false});
     if (sup.access<to::state>() == state_t::INITIALIZING) {
