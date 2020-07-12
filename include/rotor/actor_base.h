@@ -247,8 +247,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
 
-    // internal::subscription_plugin_t* subscription_plugin;
-
     /** \brief current actor state */
     state_t state;
 
@@ -267,8 +265,5 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename T> friend struct request_builder_t;
     template <typename T, typename M> friend struct accessor_t;
 };
-
-/** \brief intrusive pointer for actor*/
-using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
 
 } // namespace rotor

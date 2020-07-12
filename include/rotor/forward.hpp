@@ -18,6 +18,7 @@ struct system_context_t;
 
 using address_ptr_t = intrusive_ptr_t<address_t>;
 
+/** \brief intrusive pointer for actor*/
 using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
 
 /** \brief intrusive pointer for handler */
