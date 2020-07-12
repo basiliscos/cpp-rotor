@@ -9,6 +9,7 @@
 #include "actor_test.h"
 #include "supervisor_test.h"
 #include "system_context_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -19,11 +20,12 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto &addr_s = act_s->access<rt::to::address>();
 
     bool invoked = false;
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(act_s->get_address(), [&](auto &ec) mutable {
+            p.link(addr_s, [&](auto &ec) mutable {
                 REQUIRE(!ec);
                 invoked = true;
             });
@@ -116,10 +118,10 @@ TEST_CASE("unlink", "[actor]") {
 
     auto act_s = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto &addr_s = act_s->access<rt::to::address>();
 
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>(
-            [&](auto &p) { p.link(act_s->get_address(), [&](auto &) {}); });
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, [&](auto &) {}); });
     };
     while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
         sup1->do_process();

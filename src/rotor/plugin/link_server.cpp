@@ -38,7 +38,7 @@ void link_server_plugin_t::activate(actor_base_t *actor_) noexcept {
 }
 
 void link_server_plugin_t::on_link_request(message::link_request_t &message) noexcept {
-    if (actor->get_state() >= state_t::SHUTTING_DOWN) {
+    if (actor->access<to::state>() >= state_t::SHUTTING_DOWN) {
         auto ec = make_error_code(error_code_t::actor_not_linkable);
         actor->reply_with_error(message, ec);
         return;

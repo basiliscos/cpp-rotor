@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -31,9 +32,8 @@ struct pinger_t : public r::actor_base_t {
     }
 
     void request_status() noexcept {
-        auto reply_addr = get_address();
-        request<r::payload::state_request_t>(ponger_addr->supervisor.get_address(), ponger_addr)
-            .send(r::pt::seconds{1});
+        auto &sup_addr = static_cast<r::actor_base_t &>(ponger_addr->supervisor).access<rt::to::address>();
+        request<r::payload::state_request_t>(sup_addr, ponger_addr).send(r::pt::seconds{1});
         ++attempts;
     }
 
@@ -111,7 +111,7 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     auto pinger = sup_A2->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
     auto ponger = sup_B2->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
-    pinger->set_ponger_addr(ponger->get_address());
+    pinger->set_ponger_addr(ponger->access<rt::to::address>());
     sup_A2->do_process();
 
     REQUIRE(sup_A2->get_children_count() == 1 + 1);

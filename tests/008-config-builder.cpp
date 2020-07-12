@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,7 @@
 #include "supervisor_test.h"
 #include "actor_test.h"
 #include "system_context_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = rotor::test;

@@ -10,9 +10,8 @@
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
-    : actor_base_t(config), parent{config.supervisor},
-      subscription_support{nullptr}, manager{nullptr}, policy{config.policy}, last_req_id{1}, subscription_map(*this),
-      create_registry(config.create_registry), registry_address(config.registry_address) {
+    : actor_base_t(config), last_req_id{1}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
+      create_registry(config.create_registry), registry_address(config.registry_address), policy{config.policy} {
     if (!supervisor) {
         supervisor = this;
     }
@@ -40,7 +39,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     }
     if (create_registry) {
         auto actor = create_actor<registry_t>().init_timeout(init_timeout).shutdown_timeout(shutdown_timeout).finish();
-        registry_address = actor->get_address();
+        registry_address = actor->address;
     }
     if (parent && !registry_address) {
         registry_address = parent->registry_address;
@@ -49,7 +48,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
 
 void supervisor_t::do_shutdown() noexcept {
     auto upstream_sup = parent ? parent : this;
-    send<payload::shutdown_trigger_t>(upstream_sup->get_address(), address);
+    send<payload::shutdown_trigger_t>(upstream_sup->address, address);
 }
 
 subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
@@ -58,7 +57,7 @@ subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, co
     auto sub_info = subscription_map.materialize(point);
 
     if (sub_info->internal_address) {
-        send<payload::subscription_confirmation_t>(handler->actor_ptr->get_address(), point);
+        send<payload::subscription_confirmation_t>(handler->actor_ptr->address, point);
     } else {
         send<payload::external_subscription_t>(addr->supervisor.address, point);
     }

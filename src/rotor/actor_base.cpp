@@ -27,7 +27,7 @@ actor_base_t::~actor_base_t() { assert(deactivating_plugins.empty()); }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins(); }
 
-void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor->get_address(), address); }
+void actor_base_t::do_shutdown() noexcept { send<payload::shutdown_trigger_t>(supervisor->address, address); }
 
 void actor_base_t::activate_plugins() noexcept {
     for (auto plugin : plugins) {

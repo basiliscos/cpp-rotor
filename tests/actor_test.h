@@ -27,6 +27,8 @@ struct actor_test_t: public actor_base_t {
     auto get_activating_plugins() noexcept { return this->activating_plugins; }
     auto get_deactivating_plugins() noexcept { return this->deactivating_plugins; }
 
+    auto& get_state() noexcept { return state; }
+
     void force_cleanup() noexcept;
 };
 

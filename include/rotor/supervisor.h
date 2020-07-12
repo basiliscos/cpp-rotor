@@ -152,9 +152,6 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
-    /** \brief returns pointer to parent supervisor, may be NULL */
-    inline supervisor_t *get_parent_supervisor() noexcept { return parent; }
-
     /** \brief puts a message into internal supevisor queue for further processing
      *
      * This is thread-unsafe method. The `enqueue` method should be used to put
@@ -165,7 +162,7 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief templated version of `subscribe_actor` */
     template <typename Handler> void subscribe(actor_base_t &actor, Handler &&handler) {
-        supervisor->subscribe(actor.get_address(), wrap_handler(actor, std::move(handler)));
+        supervisor->subscribe(actor.address, wrap_handler(actor, std::move(handler)));
     }
 
     /** \brief convenient templated version of `unsubscribe_actor */
@@ -183,9 +180,6 @@ struct supervisor_t : public actor_base_t {
         return builder_t([this](auto &actor) { manager->create_child(actor); }, this);
     }
 
-    /** \brief returns system context */
-    inline system_context_t *get_context() noexcept { return context; }
-
     /** \brief convenient method for request building
      *
      * The built request isn't sent immediately, but only after invoking `send(timeout)`
@@ -196,20 +190,6 @@ struct supervisor_t : public actor_base_t {
                                     Args &&... args) noexcept {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
-
-    /** \brief non-owning pointer to parent supervisor, `NULL` for root supervisor */
-    supervisor_t *parent;
-
-    /** \brief root supervisor for the locality */
-    supervisor_t *locality_leader;
-
-    internal::foreigners_support_plugin_t *subscription_support;
-    internal::delivery_plugin_base_t *delivery;
-    internal::child_manager_plugin_t *manager;
-
-    /** \brief reaction on child-actors termination */
-    supervisor_policy_t policy;
-
     /*
      * \brief subscribes an handler to an address.
      *
@@ -224,12 +204,10 @@ struct supervisor_t : public actor_base_t {
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
 
-    inline const address_ptr_t &get_registry() const noexcept { return registry_address; }
-
     using actor_base_t::subscribe;
 
-    /** \brief per-actor and per-message request tracking support */
-    address_mapping_t address_mapping;
+    template <typename T> auto &access() noexcept;
+    using actor_base_t::access;
 
   protected:
     /** \brief creates new address with respect to supervisor locality mark */
@@ -259,9 +237,24 @@ struct supervisor_t : public actor_base_t {
      */
     subscription_t subscription_map;
 
+    /** \brief non-owning pointer to parent supervisor, `NULL` for root supervisor */
+    supervisor_t *parent;
+
+    // internal::foreigners_support_plugin_t *subscription_support;
+    internal::delivery_plugin_base_t *delivery;
+    internal::child_manager_plugin_t *manager;
+
   private:
     bool create_registry;
     address_ptr_t registry_address;
+
+    /** \brief root supervisor for the locality */
+    supervisor_t *locality_leader;
+
+    supervisor_policy_t policy;
+
+    /** \brief per-actor and per-message request tracking support */
+    address_mapping_t address_mapping;
 
     template <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;
@@ -311,31 +304,35 @@ subscription_info_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t
 }
 
 template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler &&h) noexcept {
-    return subscribe(std::forward<Handler>(h), actor->get_address());
+    return subscribe(std::forward<Handler>(h), actor->address);
 }
 
 template <typename Handler>
 subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
     using final_handler_t = handler_t<Handler>;
     handler_ptr_t wrapped_handler(new final_handler_t(*this, std::move(h)));
-    auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
+    auto info = actor->supervisor->subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     own_subscriptions.emplace_back(info);
     return info;
 }
 
 template <> inline auto &plugin_t::access<internal::subscriber_plugin_t>() noexcept { return own_subscriptions; }
+template <> inline auto &actor_base_t::access<internal::subscriber_plugin_t::to::address>() noexcept { return address; }
+template <> inline auto &actor_base_t::access<internal::subscriber_plugin_t::to::supervisor>() noexcept {
+    return supervisor;
+}
 
 namespace internal {
 
 template <typename Handler> void subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
-    auto addr = actor->get_address();
-    subscribe_actor(std::forward<Handler>(handler), addr);
+    auto &address = actor->access<to::address>();
+    subscribe_actor(std::forward<Handler>(handler), address);
 }
 
 template <typename Handler>
 void subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
-    auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
+    auto info = actor->access<to::supervisor>()->subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     tracked.emplace_back(info);
     access<subscriber_plugin_t>().emplace_back(std::move(info));
 }
@@ -468,7 +465,7 @@ void actor_base_t::reply_with_error(Request &message, const std::error_code &ec)
 template <typename Actor>
 actor_config_builder_t<Actor>::actor_config_builder_t(install_action_t &&action_, supervisor_t *supervisor_)
     : install_action{std::move(action_)}, supervisor{supervisor_},
-      system_context{*supervisor_->get_context()}, config{supervisor_} {
+      system_context{*supervisor_->context}, config{supervisor_} {
     init_ctor();
 }
 

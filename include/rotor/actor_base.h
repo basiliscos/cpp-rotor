@@ -86,15 +86,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /** \brief returns actor's "main" address (intrusive pointer) */
-    inline address_ptr_t get_address() const noexcept { return address; }
-
-    /** \brief returns actor's supervisor */
-    inline supervisor_t &get_supervisor() const noexcept { return *supervisor; }
-
-    /** \brief returns actor's state */
-    inline state_t &get_state() noexcept { return state; }
-
     /** \brief convenient method to send actor's supervisor shutdown trigger message */
     virtual void do_shutdown() noexcept;
 
@@ -259,7 +250,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     std::set<const void *> activating_plugins;
     std::set<const void *> deactivating_plugins;
 
-    friend struct actor_behavior_t;
+    friend struct plugin_t;
     friend struct internal::lifetime_plugin_t;
     friend struct supervisor_t;
     template <typename T> friend struct request_builder_t;

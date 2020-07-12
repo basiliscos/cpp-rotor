@@ -13,21 +13,25 @@ using namespace rotor::internal;
 namespace {
 namespace to {
 struct address {};
+struct parent {};
+struct locality_leader {};
 } // namespace to
 } // namespace
 
 template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
+template <> auto &supervisor_t::access<to::parent>() noexcept { return parent; }
+template <> auto &supervisor_t::access<to::locality_leader>() noexcept { return locality_leader; }
 
 const void *locality_plugin_t::class_identity = static_cast<const void *>(typeid(locality_plugin_t).name());
 
 const void *locality_plugin_t::identity() const noexcept { return class_identity; }
 
 void locality_plugin_t::activate(actor_base_t *actor_) noexcept {
+    auto &address = actor_->access<to::address>();
     auto &sup = static_cast<supervisor_t &>(*actor_);
-    auto &address = sup.access<to::address>();
-    auto parent = sup.parent;
-    bool use_other = parent && parent->access<to::address>()->same_locality(*address);
-    auto locality_leader = use_other ? parent->locality_leader : &sup;
-    sup.locality_leader = locality_leader;
+    auto &parent = sup.access<to::parent>();
+    bool use_other = parent && static_cast<actor_base_t *>(parent)->access<to::address>()->same_locality(*address);
+    auto locality_leader = use_other ? parent->access<to::locality_leader>() : &sup;
+    sup.access<to::locality_leader>() = locality_leader;
     return plugin_t::activate(actor_);
 }

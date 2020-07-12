@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = rotor::test;
@@ -123,7 +124,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup_t>().timeout(rt::default_timeout).finish();
 
-    REQUIRE(&sup->get_supervisor() == sup.get());
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::supervisor>() == sup.get());
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
@@ -157,7 +158,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
 
-    REQUIRE(&sup->get_supervisor() == sup.get());
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::supervisor>() == sup.get());
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
@@ -191,12 +192,12 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     sup->do_process();
 
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
-    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act->access<rt::to::state>() == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
 }
 
 TEST_CASE("custom subscription", "[supervisor]") {

@@ -7,17 +7,10 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
-
-namespace {
-namespace to {
-struct mine_handlers {};
-} // namespace to
-} // namespace
-
-template <> auto &rotor::subscription_t::access<to::mine_handlers>() noexcept { return mine_handlers; }
 
 struct response_sample_t {
     int value;
@@ -394,7 +387,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    auto init_subs_count = sup->get_subscription().access<to::mine_handlers>().size();
+    auto init_subs_count = sup->get_subscription().access<rt::to::mine_handlers>().size();
     auto init_pts_count = sup->get_points().size();
 
     auto actor = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
@@ -410,7 +403,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
     std::size_t delta = 1; /* + shutdown confirmation triggered on self */
     REQUIRE(sup->get_points().size() == init_pts_count + delta);
-    REQUIRE(sup->get_subscription().access<to::mine_handlers>().size() == init_subs_count + delta);
+    REQUIRE(sup->get_subscription().access<rt::to::mine_handlers>().size() == init_subs_count + delta);
 
     sup->do_shutdown();
     sup->do_process();

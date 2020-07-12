@@ -15,6 +15,7 @@ namespace to {
 struct address {};
 struct init_request {};
 struct init_timeout {};
+struct state {};
 struct shutdown_request {};
 } // namespace to
 } // namespace
@@ -22,6 +23,7 @@ struct shutdown_request {};
 template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
+template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
 
 const void *link_client_plugin_t::class_identity = static_cast<const void *>(typeid(link_client_plugin_t).name());
@@ -79,10 +81,10 @@ void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexc
     if (it == servers_map.end())
         return;
 
-    actor->reply_to(message, actor->get_address());
+    actor->reply_to(message, actor->access<to::address>());
     servers_map.erase(it);
 
-    if (actor->get_state() == rotor::state_t::SHUTTING_DOWN) {
+    if (actor->access<to::state>() == rotor::state_t::SHUTTING_DOWN) {
         if (actor->access<to::shutdown_request>()) {
             actor->shutdown_continue();
         }

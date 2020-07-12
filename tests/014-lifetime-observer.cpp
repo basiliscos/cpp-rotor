@@ -8,6 +8,7 @@
 #include "rotor.hpp"
 #include "actor_test.h"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -59,8 +60,8 @@ TEST_CASE("lifetime observer, same locality", "[actor]") {
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto sample_actor = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-    auto observer =
-        sup->create_actor<observer_t>().observable(sample_actor->get_address()).timeout(rt::default_timeout).finish();
+    auto &address = sample_actor->access<rt::to::address>();
+    auto observer = sup->create_actor<observer_t>().observable(address).timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(observer->event == 3);
@@ -88,22 +89,22 @@ TEST_CASE("lifetime observer, different localities", "[actor]") {
                     .finish();
     auto sup2 = sup1->create_actor<rt::supervisor_test_t>().locality(locality2).timeout(rt::default_timeout).finish();
     auto sample_actor = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-    auto observer =
-        sup1->create_actor<observer_t>().observable(sample_actor->get_address()).timeout(rt::default_timeout).finish();
+    auto &address = sample_actor->access<rt::to::address>();
+    auto observer = sup1->create_actor<observer_t>().observable(address).timeout(rt::default_timeout).finish();
 
     sup1->do_process();
     CHECK(observer->event == 0);
-    CHECK(observer->get_state() == r::state_t::INITIALIZING);
+    CHECK(observer->access<rt::to::state>() == r::state_t::INITIALIZING);
 
     sup1->do_process();
     sup2->do_process();
     CHECK(sample_actor->get_state() == r::state_t::OPERATIONAL);
-    CHECK(observer->get_state() == r::state_t::INITIALIZING);
+    CHECK(observer->access<rt::to::state>() == r::state_t::INITIALIZING);
 
     sup1->do_process();
     sup2->do_process();
 
-    CHECK(observer->get_state() == r::state_t::OPERATIONAL);
+    CHECK(observer->access<rt::to::state>() == r::state_t::OPERATIONAL);
     CHECK(observer->event == 3);
 
     sample_actor->do_shutdown();

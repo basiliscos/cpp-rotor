@@ -5,28 +5,12 @@
 //
 
 #include "supervisor_test.h"
+#include "access.h"
 #include "catch.hpp"
 #include "cassert"
 
 using namespace rotor::test;
 using namespace rotor;
-
-namespace {
-namespace to {
-struct internal_infos {};
-struct mine_handlers {};
-struct actors_map {};
-struct points {};
-
-} // namespace to
-} // namespace
-
-template <> auto &rotor::subscription_t::access<to::internal_infos>() noexcept { return internal_infos; }
-template <> auto &rotor::subscription_t::access<to::mine_handlers>() noexcept { return mine_handlers; }
-
-template <> auto &internal::child_manager_plugin_t::access<to::actors_map>() noexcept { return actors_map; }
-
-template <> auto &internal::lifetime_plugin_t::access<to::points>() noexcept { return points; }
 
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
     : supervisor_t{config_}, locality{config_.locality} {}
@@ -71,10 +55,6 @@ pt::time_duration rotor::test::default_timeout{pt::milliseconds{1}};
 
 size_t supervisor_test_t::get_children_count() noexcept { return manager->access<to::actors_map>().size(); }
 
-namespace rotor::test {
-
-bool empty(rotor::subscription_t &subs) noexcept {
-    return subs.access<to::internal_infos>().empty() && subs.access<to::mine_handlers>().empty();
+supervisor_test_t &supervisor_test_t::get_leader() {
+    return *static_cast<supervisor_test_t *>(access<to::locality_leader>());
 }
-
-} // namespace rotor::test

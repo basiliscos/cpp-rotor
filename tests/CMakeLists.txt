@@ -1,4 +1,5 @@
 add_library(rotor_test_lib
+    access.cpp
     actor_test.cpp
     supervisor_test.cpp
     test-main.cpp

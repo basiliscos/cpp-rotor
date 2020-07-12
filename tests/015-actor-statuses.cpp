@@ -8,6 +8,7 @@
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "actor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -29,7 +30,7 @@ struct statuses_observer_t : public r::actor_base_t {
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();
-        auto sup_addr = supervisor->get_address();
+        auto &sup_addr = static_cast<r::actor_base_t *>(supervisor)->access<rt::to::address>();
         request<r::payload::state_request_t>(sup_addr, sup_addr).send(r::pt::seconds{1});
         request<r::payload::state_request_t>(sup_addr, dummy_addr).send(r::pt::seconds{1});
         request<r::payload::state_request_t>(sup_addr, observable_addr).send(r::pt::seconds{1});
@@ -37,16 +38,17 @@ struct statuses_observer_t : public r::actor_base_t {
     }
 
     void request_sup_state() noexcept {
-        auto sup_addr = supervisor->get_address();
+        auto &sup_addr = static_cast<r::actor_base_t *>(supervisor)->access<rt::to::address>();
         request<r::payload::state_request_t>(sup_addr, sup_addr).send(r::pt::seconds{1});
     }
 
     void on_state(r::message::state_response_t &msg) noexcept {
         auto &addr = msg.payload.req->payload.request_payload.subject_addr;
+        auto &sup_addr = static_cast<r::actor_base_t *>(supervisor)->access<rt::to::address>();
         auto &state = msg.payload.res.state;
-        if (addr == supervisor->get_address()) {
+        if (addr == sup_addr) {
             supervisor_status = state;
-        } else if (addr == get_address()) {
+        } else if (addr == address) {
             self_status = state;
         } else if (addr == dummy_addr) {
             dummy_status = state;
@@ -62,7 +64,7 @@ TEST_CASE("statuses observer", "[actor]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto observer = sup->create_actor<statuses_observer_t>().timeout(rt::default_timeout).finish();
     auto sample_actor = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-    observer->observable_addr = sample_actor->get_address();
+    observer->observable_addr = sample_actor->access<rt::to::address>();
     observer->dummy_addr = sup->create_address();
 
     sup->do_process();

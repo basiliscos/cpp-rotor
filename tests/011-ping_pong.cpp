@@ -6,6 +6,7 @@
 
 #include "catch.hpp"
 #include "rotor.hpp"
+#include "access.h"
 #include "supervisor_test.h"
 
 namespace r = rotor;
@@ -70,8 +71,8 @@ TEST_CASE("ping-pong", "[supervisor]") {
     auto pinger = sup->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
-    pinger->set_ponger_addr(ponger->get_address());
-    ponger->set_pinger_addr(pinger->get_address());
+    pinger->set_ponger_addr(ponger->access<rt::to::address>());
+    ponger->set_pinger_addr(pinger->access<rt::to::address>());
 
     sup->do_process();
     REQUIRE(pinger->ping_sent == 1);

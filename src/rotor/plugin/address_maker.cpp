@@ -16,12 +16,13 @@ namespace {
 namespace to {
 struct address_maker {};
 struct address {};
+struct supervisor {};
 } // namespace to
 } // namespace
 
 template <> auto &actor_base_t::access<to::address_maker>() noexcept { return address_maker; }
-
 template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
+template <> auto &actor_base_t::access<to::supervisor>() noexcept { return supervisor; }
 
 const void *address_maker_plugin_t::class_identity = static_cast<const void *>(typeid(address_maker_plugin_t).name());
 
@@ -43,4 +44,6 @@ void address_maker_plugin_t::deactivate() noexcept {
     return plugin_t::deactivate();
 }
 
-address_ptr_t address_maker_plugin_t::create_address() noexcept { return actor->get_supervisor().make_address(); }
+address_ptr_t address_maker_plugin_t::create_address() noexcept {
+    return actor->access<to::supervisor>()->make_address();
+}

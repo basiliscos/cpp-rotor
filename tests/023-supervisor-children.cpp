@@ -15,11 +15,13 @@ namespace rt = r::test;
 
 namespace {
 namespace to {
+struct address {};
 struct init_request {};
 struct shutdown_request {};
 } // namespace to
 } // namespace
 
+template <> auto &r::actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &r::actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &r::actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
 

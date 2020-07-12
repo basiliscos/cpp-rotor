@@ -27,12 +27,10 @@ const void *foreigners_support_plugin_t::identity() const noexcept { return clas
 
 void foreigners_support_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
-    auto &sup = static_cast<supervisor_t &>(*actor_);
 
     subscribe(&foreigners_support_plugin_t::on_call);
     subscribe(&foreigners_support_plugin_t::on_unsubscription);
     subscribe(&foreigners_support_plugin_t::on_subscription_external);
-    sup.subscription_support = this;
     return plugin_t::activate(actor_);
 }
 

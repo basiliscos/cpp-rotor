@@ -18,6 +18,11 @@ struct subscriber_plugin_t : public plugin_t {
 
     void deactivate() noexcept override;
 
+    struct to {
+        struct address {};
+        struct supervisor {};
+    };
+
   protected:
     subscription_container_t tracked;
     bool continue_init = false;

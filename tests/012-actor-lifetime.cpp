@@ -8,19 +8,10 @@
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "actor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
-
-namespace {
-namespace to {
-struct get_plugin {};
-} // namespace to
-} // namespace
-
-template <> auto r::actor_base_t::access<to::get_plugin, const void *>(const void *identity) noexcept {
-    return get_plugin(identity);
-}
 
 static std::uint32_t destroyed = 0;
 
@@ -68,7 +59,7 @@ struct custom_child_manager_t : public r::internal::child_manager_plugin_t {
     r::address_ptr_t fail_addr;
     std::error_code fail_ec;
     void on_shutdown_fail(r::actor_base_t &actor, const std::error_code &ec) noexcept {
-        fail_addr = actor.get_address();
+        fail_addr = actor.access<rt::to::address>();
         fail_ec = ec;
     }
 };
@@ -121,7 +112,6 @@ TEST_CASE("actor litetimes", "[actor]") {
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::OPERATIONAL);
 
-    auto actor_addr = act->get_address();
     act->do_shutdown();
     sup->do_process();
     CHECK(act->event_current == 6);
@@ -151,7 +141,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
 
-    auto fail_plugin = static_cast<fail_plugin_t *>(act->access<to::get_plugin>(fail_plugin_t::class_identity));
+    auto fail_plugin = static_cast<fail_plugin_t *>(act->access<rt::to::get_plugin>(fail_plugin_t::class_identity));
     fail_plugin->allow_init = true;
     fail_plugin->allow_shutdown = false;
 
@@ -168,10 +158,10 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(sup->get_children_count() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    auto cm_plugin =
-        static_cast<custom_child_manager_t *>(sup->access<to::get_plugin>(custom_child_manager_t::class_identity));
+    auto plugin = sup->access<rt::to::get_plugin>(custom_child_manager_t::class_identity);
+    auto cm_plugin = static_cast<custom_child_manager_t *>(plugin);
 
-    REQUIRE(cm_plugin->fail_addr == act->get_address());
+    REQUIRE(cm_plugin->fail_addr == act->access<rt::to::address>());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
 
     fail_plugin->allow_shutdown = true;

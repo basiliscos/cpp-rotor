@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -57,8 +58,8 @@ TEST_CASE("two supervisors, different localities, shutdown 2nd", "[supervisor]")
         system_context.create_supervisor<my_supervisor_t>().locality(locality1).timeout(rt::default_timeout).finish();
     auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality2).timeout(rt::default_timeout).finish();
 
-    REQUIRE(&sup2->get_supervisor() == sup2.get());
-    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
+    REQUIRE(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::supervisor>() == sup2.get());
+    REQUIRE(sup2->access<rt::to::parent_supervisor>() == sup1.get());
 
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::INITIALIZING);
@@ -147,8 +148,8 @@ TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]")
         system_context.create_supervisor<my_supervisor_t>().locality(locality1).timeout(rt::default_timeout).finish();
     auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality2).timeout(rt::default_timeout).finish();
 
-    REQUIRE(&sup2->get_supervisor() == sup2.get());
-    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
+    REQUIRE(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::supervisor>() == sup2.get());
+    REQUIRE(sup2->access<rt::to::parent_supervisor>() == sup1.get());
 
     sup1->do_process();
     sup2->do_process();
@@ -184,8 +185,8 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
         system_context->create_supervisor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
     auto sup2 = sup1->create_actor<my_supervisor_t>().locality(locality).timeout(rt::default_timeout).finish();
 
-    REQUIRE(&sup2->get_supervisor() == sup2.get());
-    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
+    REQUIRE(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::supervisor>() == sup2.get());
+    REQUIRE(sup2->access<rt::to::parent_supervisor>() == sup1.get());
 
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
@@ -224,15 +225,16 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
         system_context.create_supervisor<my_supervisor_t>().timeout(rt::default_timeout).locality(locality).finish();
     auto sup2 = sup1->create_actor<my_supervisor_t>().timeout(rt::default_timeout).locality(locality).finish();
 
-    REQUIRE(&sup2->get_supervisor() == sup2.get());
-    REQUIRE(sup2->get_parent_supervisor() == sup1.get());
+    REQUIRE(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::supervisor>() == sup2.get());
+    REQUIRE(sup2->access<rt::to::parent_supervisor>() == sup1.get());
 
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
 
     // for better coverage
-    sup2->template send<r::payload::shutdown_trigger_t>(sup2->get_address(), sup2->get_address());
+    auto &address = static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::address>();
+    sup2->send<r::payload::shutdown_trigger_t>(address, address);
     sup1->do_process();
 
     REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);

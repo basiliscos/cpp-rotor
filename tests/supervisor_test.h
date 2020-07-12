@@ -18,8 +18,6 @@ struct supervisor_config_test_t : public supervisor_config_t {
     const void *locality = nullptr;
 };
 
-bool empty(rotor::subscription_t &subs) noexcept;
-
 template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
@@ -39,7 +37,7 @@ struct supervisor_test_t : public supervisor_t {
 
     state_t &get_state() noexcept { return state; }
     messages_queue_t &get_leader_queue() { return get_leader().queue; }
-    supervisor_test_t &get_leader() { return *static_cast<supervisor_test_t *>(locality_leader); }
+    supervisor_test_t &get_leader();
     subscription_container_t &get_points() noexcept;
     subscription_t &get_subscription() noexcept { return subscription_map; }
     size_t get_children_count() noexcept;

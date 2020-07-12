@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -78,8 +79,9 @@ TEST_CASE("obsrever", "[actor]") {
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto simpleton = sup->create_actor<simpleton_actor_t>().timeout(rt::default_timeout).finish();
+    auto &simpleton_addr = simpleton->access<rt::to::address>();
     auto observer =
-        sup->create_actor<foo_observer_t>().observable(simpleton->get_address()).timeout(rt::default_timeout).finish();
+        sup->create_actor<foo_observer_t>().observable(simpleton_addr).timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(simpleton->foo_count == 1);
