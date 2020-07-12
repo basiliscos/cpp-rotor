@@ -142,7 +142,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().empty());
+    CHECK(rt::empty(sup->get_subscription()));
 
     REQUIRE(destroyed == 0);
     delete system_context;

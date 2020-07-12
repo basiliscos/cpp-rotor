@@ -11,20 +11,27 @@
 using namespace rotor::test;
 using namespace rotor;
 
-struct actors_map_access_t {};
+namespace {
+namespace to {
+struct internal_infos {};
+struct mine_handlers {};
+struct actors_map {};
+struct points {};
 
-template<>
-auto& internal::child_manager_plugin_t::access<actors_map_access_t>() noexcept { return actors_map; }
+} // namespace to
+} // namespace
 
-template<>
-auto& internal::lifetime_plugin_t::access<supervisor_test_t>() noexcept { return points; }
+template <> auto &rotor::subscription_t::access<to::internal_infos>() noexcept { return internal_infos; }
+template <> auto &rotor::subscription_t::access<to::mine_handlers>() noexcept { return mine_handlers; }
+
+template <> auto &internal::child_manager_plugin_t::access<to::actors_map>() noexcept { return actors_map; }
+
+template <> auto &internal::lifetime_plugin_t::access<to::points>() noexcept { return points; }
 
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
     : supervisor_t{config_}, locality{config_.locality} {}
 
-supervisor_test_t::~supervisor_test_t() {
-    printf("~supervisor_test_t, %p(%p)\n", (void*)this, (void*)address.get());
-}
+supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n", (void *)this, (void *)address.get()); }
 
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
@@ -45,10 +52,9 @@ void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
     assert(0 && "should not happen");
 }
 
-
 subscription_container_t &supervisor_test_t::get_points() noexcept {
     auto plugin = get_plugin(internal::lifetime_plugin_t::class_identity);
-    return static_cast<internal::lifetime_plugin_t*>(plugin)->access<supervisor_test_t>();
+    return static_cast<internal::lifetime_plugin_t *>(plugin)->access<to::points>();
 }
 
 supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
@@ -63,6 +69,12 @@ void supervisor_test_t::enqueue(message_ptr_t message) noexcept { get_leader().q
 
 pt::time_duration rotor::test::default_timeout{pt::milliseconds{1}};
 
-size_t supervisor_test_t::get_children_count() noexcept {
-    return manager->access<actors_map_access_t>().size();
+size_t supervisor_test_t::get_children_count() noexcept { return manager->access<to::actors_map>().size(); }
+
+namespace rotor::test {
+
+bool empty(rotor::subscription_t &subs) noexcept {
+    return subs.access<to::internal_infos>().empty() && subs.access<to::mine_handlers>().empty();
 }
+
+} // namespace rotor::test

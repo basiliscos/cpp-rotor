@@ -84,7 +84,7 @@ TEST_CASE("ping-pong", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().empty());
+    CHECK(rt::empty(sup->get_subscription()));
 
     pinger.reset();
     ponger.reset();

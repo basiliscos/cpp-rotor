@@ -18,6 +18,8 @@ struct supervisor_config_test_t : public supervisor_config_t {
     const void *locality = nullptr;
 };
 
+bool empty(rotor::subscription_t &subs) noexcept;
+
 template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
@@ -38,7 +40,7 @@ struct supervisor_test_t : public supervisor_t {
     state_t &get_state() noexcept { return state; }
     messages_queue_t &get_leader_queue() { return get_leader().queue; }
     supervisor_test_t &get_leader() { return *static_cast<supervisor_test_t *>(locality_leader); }
-    subscription_container_t& get_points() noexcept;
+    subscription_container_t &get_points() noexcept;
     subscription_t &get_subscription() noexcept { return subscription_map; }
     size_t get_children_count() noexcept;
     request_map_t &get_requests() noexcept { return request_map; }
@@ -49,7 +51,7 @@ struct supervisor_test_t : public supervisor_t {
     const void *locality;
     timers_t active_timers;
 };
-using  supervisor_test_ptr_t = rotor::intrusive_ptr_t<supervisor_test_t>;
+using supervisor_test_ptr_t = rotor::intrusive_ptr_t<supervisor_test_t>;
 
 template <typename Supervisor> struct supervisor_test_config_builder_t : supervisor_config_builder_t<Supervisor> {
     using parent_t = supervisor_config_builder_t<Supervisor>;
@@ -63,4 +65,3 @@ template <typename Supervisor> struct supervisor_test_config_builder_t : supervi
 
 } // namespace test
 } // namespace rotor
-

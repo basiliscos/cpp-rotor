@@ -131,11 +131,11 @@ TEST_CASE("two supervisors, different localities, shutdown 2nd", "[supervisor]")
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().empty());
+    REQUIRE(rt::empty(sup1->get_subscription()));
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().empty());
+    REQUIRE(rt::empty(sup2->get_subscription()));
 }
 
 TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]") {
@@ -168,11 +168,11 @@ TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]")
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().empty());
+    REQUIRE(rt::empty(sup1->get_subscription()));
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().empty());
+    REQUIRE(rt::empty(sup2->get_subscription()));
 }
 
 TEST_CASE("two supervisors, same locality", "[supervisor]") {
@@ -204,11 +204,11 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().empty());
+    REQUIRE(rt::empty(sup1->get_subscription()));
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().empty());
+    REQUIRE(rt::empty(sup2->get_subscription()));
 
     system_context.reset();
     sup1.reset();
@@ -244,9 +244,9 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().empty());
+    REQUIRE(rt::empty(sup1->get_subscription()));
 
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().empty());
+    REQUIRE(rt::empty(sup2->get_subscription()));
 }

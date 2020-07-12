@@ -30,6 +30,17 @@ struct subscription_t {
         handlers_t external;
     };
 
+    subscription_t(supervisor_t &supervisor) noexcept;
+
+    subscription_info_ptr_t materialize(const subscription_point_t &point) noexcept;
+
+    void forget(const subscription_info_ptr_t &info) noexcept;
+
+    const joint_handlers_t *get_recipients(const message_base_t &message) const noexcept;
+
+    template <typename T> auto &access() noexcept;
+
+  private:
     struct subscrption_key_t {
         address_t *address;
         message_type_t message_type;
@@ -46,18 +57,6 @@ struct subscription_t {
 
     using addressed_handlers_t = std::unordered_map<subscrption_key_t, joint_handlers_t, subscrption_key_hash_t>;
 
-    subscription_t(supervisor_t &supervisor) noexcept;
-
-    subscription_info_ptr_t materialize(const subscription_point_t &point) noexcept;
-
-    void forget(const subscription_info_ptr_t &info) noexcept;
-
-    const joint_handlers_t *get_recipients(const message_base_t &message) const noexcept;
-
-    bool empty() const noexcept;
-    size_t handlers_count() const noexcept { return mine_handlers.size(); }
-
-  private:
     using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
     supervisor_t &supervisor;
     info_container_t internal_infos;

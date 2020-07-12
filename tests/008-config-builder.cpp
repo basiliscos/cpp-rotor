@@ -37,7 +37,7 @@ TEST_CASE("direct builder configuration", "[config_builder]") {
     sup->do_shutdown();
     sup->do_process();
     sup->do_process();
-    CHECK(sup->get_subscription().empty());
+    CHECK(rt::empty(sup->get_subscription()));
 }
 
 TEST_CASE("indirect builder configuration", "[config_builder]") {
@@ -66,16 +66,6 @@ TEST_CASE("validation", "[config_builder]") {
         REQUIRE(!act);
         REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
     }
-
-#if 0
-    SECTION("unlink_timeout > shutdown_timeout") {
-        r::pt::time_duration t1 = r::pt::milliseconds{1};
-        r::pt::time_duration t2 = r::pt::milliseconds{2};
-        auto act = sup->create_actor<r::actor_base_t>().timeout(t1).unlink_timeout(t2).finish();
-        REQUIRE(!act);
-        REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
-    }
-#endif
 
     sup->do_process();
     sup->do_shutdown();
