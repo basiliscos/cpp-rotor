@@ -152,7 +152,6 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     REQUIRE(destroyed == 1);
 }
 
-#if 0
 TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -175,7 +174,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().empty());
+    CHECK(rt::empty(sup->get_subscription()));
 
     REQUIRE(destroyed == 0);
     delete system_context;
@@ -214,4 +213,3 @@ TEST_CASE("custom subscription", "[supervisor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
-#endif
