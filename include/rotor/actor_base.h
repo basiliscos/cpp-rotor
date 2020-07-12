@@ -196,16 +196,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     address_ptr_t create_address() noexcept;
 
-    // ex-protected
-    /** \brief suspended init request message */
-    intrusive_ptr_t<message::init_request_t> init_request;
-
-    /** \brief suspended shutdown request message */
-    intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
-
-    /** \brief actor address */
-    address_ptr_t address;
-
     /** \brief finalize shutdown, release aquired resources
      *
      * This is the last action in the shutdown sequence.
@@ -245,6 +235,29 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     virtual void configure(plugin_t &plugin) noexcept;
 
+    template <typename T> auto &access() noexcept;
+    template <typename T, typename... Args> auto access(Args... args) noexcept;
+    template <typename T> auto &access() const noexcept;
+    template <typename T, typename... Args> auto access(Args... args) const noexcept;
+
+  protected:
+    virtual bool ready_to_shutdown() noexcept;
+
+    /** \brief suspended init request message */
+    intrusive_ptr_t<message::init_request_t> init_request;
+
+    /** \brief suspended shutdown request message */
+    intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
+
+    /** \brief actor address */
+    address_ptr_t address;
+
+    /** \brief non-owning pointer to actor's execution / infrastructure context */
+    supervisor_t *supervisor;
+
+    plugin_storage_ptr_t plugins_storage;
+    plugins_t plugins;
+
     pt::time_duration init_timeout;
     pt::time_duration shutdown_timeout;
 
@@ -258,15 +271,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     internal::lifetime_plugin_t *lifetime = nullptr;
 
     plugin_t *get_plugin(const void *identity) const noexcept;
-
-  protected:
-    virtual bool ready_to_shutdown() noexcept;
-
-    /** \brief non-owning pointer to actor's execution / infrastructure context */
-    supervisor_t *supervisor;
-
-    plugin_storage_ptr_t plugins_storage;
-    plugins_t plugins;
 
     std::set<const void *> activating_plugins;
     std::set<const void *> deactivating_plugins;

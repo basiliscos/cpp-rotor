@@ -9,6 +9,16 @@
 
 using namespace rotor;
 
+namespace {
+namespace to {
+struct lifetime {};
+struct state {};
+} // namespace to
+} // namespace
+
+template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
+template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
+
 plugin_t::~plugin_t() {}
 
 void plugin_t::activate(actor_base_t *actor_) noexcept {
@@ -23,7 +33,7 @@ void plugin_t::deactivate() noexcept {
             actor = nullptr;
             reaction = 0;
         } else {
-            auto lifetime = actor->lifetime;
+            auto lifetime = actor->access<to::lifetime>();
             assert(lifetime);
 
             auto &subs = own_subscriptions;
@@ -53,7 +63,7 @@ bool plugin_t::forget_subscription(const subscription_point_t &point) noexcept {
         subs.erase(it);
         if (subs.empty()) {
             actor->commit_plugin_deactivation(*this);
-            if (actor->state == state_t::SHUTTING_DOWN) {
+            if (actor->access<to::state>() == state_t::SHUTTING_DOWN) {
                 actor->shutdown_continue();
             }
             actor = nullptr;

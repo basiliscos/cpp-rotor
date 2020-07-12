@@ -15,6 +15,14 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+namespace {
+namespace to {
+struct address {};
+} // namespace to
+} // namespace
+
+template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
+
 delivery_plugin_base_t::~delivery_plugin_base_t() {}
 
 void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
@@ -30,7 +38,7 @@ void local_delivery_t::delivery(message_ptr_t &message,
                                 const subscription_t::joint_handlers_t &local_recipients) noexcept {
     for (auto handler : local_recipients.external) {
         auto &sup = handler->actor_ptr->get_supervisor();
-        auto wrapped_message = make_message<payload::handler_call_t>(sup.address, message, handler);
+        auto wrapped_message = make_message<payload::handler_call_t>(sup.access<to::address>(), message, handler);
         sup.enqueue(std::move(wrapped_message));
     }
     for (auto handler : local_recipients.internal) {

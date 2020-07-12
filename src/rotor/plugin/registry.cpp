@@ -10,6 +10,20 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+namespace {
+namespace to {
+struct init_request {};
+struct init_timeout {};
+struct get_plugin {};
+} // namespace to
+} // namespace
+
+template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
+template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
+template <> auto actor_base_t::access<to::get_plugin, const void *>(const void *identity) noexcept {
+    return get_plugin(identity);
+}
+
 const void *registry_plugin_t::class_identity = static_cast<const void *>(typeid(registry_plugin_t).name());
 
 const void *registry_plugin_t::identity() const noexcept { return class_identity; }
@@ -81,15 +95,16 @@ void registry_plugin_t::on_discovery(message::discovery_response_t &message) noe
 }
 
 void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
+    auto &init_request = actor->access<to::init_request>();
     if (ec) {
-        if (actor->init_request) {
-            actor->reply_with_error(*actor->init_request, ec);
-            actor->init_request.reset();
+        if (init_request) {
+            actor->reply_with_error(*init_request, ec);
+            init_request.reset();
         } else {
             actor->do_shutdown();
         }
     } else {
-        if (actor->init_request) {
+        if (init_request) {
             actor->init_continue();
         }
     }
@@ -97,7 +112,8 @@ void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
 
 void registry_plugin_t::link() noexcept {
     plugin_state = plugin_state | LINKING;
-    auto p = static_cast<link_client_plugin_t *>(actor->get_plugin(link_client_plugin_t::class_identity));
+    auto plugin = actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
+    auto p = static_cast<link_client_plugin_t *>(plugin);
     auto registry_addr = actor->get_supervisor().get_registry();
     p->link(registry_addr, [this](auto &ec) { on_link(ec); });
 }
@@ -107,7 +123,7 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
     plugin_state = plugin_state & ~LINKING;
     if (!ec) {
         auto registry_addr = actor->get_supervisor().get_registry();
-        auto timeout = actor->init_timeout;
+        auto timeout = actor->access<to::init_timeout>();
         for (auto &it : register_map) {
             actor->request<payload::registration_request_t>(registry_addr, it.first, it.second.address).send(timeout);
         }
@@ -147,7 +163,8 @@ bool registry_plugin_t::has_registering() noexcept {
 
 void registry_plugin_t::discovery_task_t::on_discovery(const std::error_code &ec) noexcept {
     if (!ec && callback) {
-        auto &link_plugin = (link_client_plugin_t &)*plugin.actor->get_plugin(link_client_plugin_t::class_identity);
+        auto p = plugin.actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
+        auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
         link_plugin.link(*address, [this](auto &ec) {
             callback(ec);
             continue_init(ec);

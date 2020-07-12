@@ -12,6 +12,16 @@
 namespace r = rotor;
 namespace rt = r::test;
 
+namespace {
+namespace to {
+struct get_plugin {};
+} // namespace to
+} // namespace
+
+template <> auto r::actor_base_t::access<to::get_plugin, const void *>(const void *identity) noexcept {
+    return get_plugin(identity);
+}
+
 static std::uint32_t destroyed = 0;
 
 struct sample_actor_t : public r::actor_base_t {
@@ -141,7 +151,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
 
-    auto fail_plugin = static_cast<fail_plugin_t *>(act->get_plugin(fail_plugin_t::class_identity));
+    auto fail_plugin = static_cast<fail_plugin_t *>(act->access<to::get_plugin>(fail_plugin_t::class_identity));
     fail_plugin->allow_init = true;
     fail_plugin->allow_shutdown = false;
 
@@ -158,7 +168,8 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(sup->get_children_count() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    auto cm_plugin = static_cast<custom_child_manager_t *>(sup->get_plugin(custom_child_manager_t::class_identity));
+    auto cm_plugin =
+        static_cast<custom_child_manager_t *>(sup->access<to::get_plugin>(custom_child_manager_t::class_identity));
 
     REQUIRE(cm_plugin->fail_addr == act->get_address());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));

@@ -13,6 +13,16 @@
 namespace r = rotor;
 namespace rt = r::test;
 
+namespace {
+namespace to {
+struct init_request {};
+struct shutdown_request {};
+} // namespace to
+} // namespace
+
+template <> auto &r::actor_base_t::access<to::init_request>() noexcept { return init_request; }
+template <> auto &r::actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
+
 struct sample_actor_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
@@ -108,7 +118,7 @@ struct custom_init_plugin2_t : r::plugin_t {
     bool handle_init(r::message::init_request_t *message) noexcept override {
         auto ec = r::make_error_code(r::error_code_t::actor_misconfigured);
         actor->reply_with_error(*message, ec);
-        actor->init_request.reset();
+        actor->access<to::init_request>().reset();
         return false;
     }
 
@@ -128,7 +138,7 @@ struct custom_shutdown_plugin_t : r::plugin_t {
     bool handle_shutdown(r::message::shutdown_request_t *message) noexcept override {
         auto ec = r::make_error_code(r::error_code_t::actor_misconfigured);
         actor->reply_with_error(*message, ec);
-        actor->init_request.reset();
+        actor->access<to::shutdown_request>().reset();
         return false;
     }
 

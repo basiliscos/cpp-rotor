@@ -66,7 +66,6 @@ struct child_manager_plugin_t : public plugin_t {
     bool postponed_init = false;
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
-    actors_map_t &get_actors_map() noexcept { return actors_map; }
 };
 
 } // namespace rotor::internal

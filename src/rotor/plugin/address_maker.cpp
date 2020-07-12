@@ -12,6 +12,17 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+namespace {
+namespace to {
+struct address_maker {};
+struct address {};
+} // namespace to
+} // namespace
+
+template <> auto &actor_base_t::access<to::address_maker>() noexcept { return address_maker; }
+
+template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
+
 const void *address_maker_plugin_t::class_identity = static_cast<const void *>(typeid(address_maker_plugin_t).name());
 
 const void *address_maker_plugin_t::identity() const noexcept { return class_identity; }
@@ -19,16 +30,16 @@ const void *address_maker_plugin_t::identity() const noexcept { return class_ide
 void address_maker_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
 
-    if (!actor_->address) {
-        actor_->address = create_address();
+    if (!actor->access<to::address>()) {
+        actor->access<to::address>() = create_address();
     }
-    actor->address_maker = this;
+    actor->access<to::address_maker>() = this;
     plugin_t::activate(actor_);
     actor->init_start();
 }
 
 void address_maker_plugin_t::deactivate() noexcept {
-    actor->address_maker = nullptr;
+    actor->access<to::address_maker>() = nullptr;
     return plugin_t::deactivate();
 }
 

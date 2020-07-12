@@ -10,6 +10,16 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+namespace {
+namespace to {
+struct lifetime {};
+struct state {};
+} // namespace to
+} // namespace
+
+template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
+template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
+
 const void *foreigners_support_plugin_t::class_identity =
     static_cast<const void *>(typeid(foreigners_support_plugin_t).name());
 
@@ -29,7 +39,7 @@ void foreigners_support_plugin_t::activate(actor_base_t *actor_) noexcept {
 void foreigners_support_plugin_t::deactivate() noexcept {
     if (foreign_points.empty())
         return plugin_t::deactivate();
-    auto lifetime = actor->lifetime;
+    auto lifetime = actor->access<to::lifetime>();
     for (auto &info : foreign_points) {
         lifetime->unsubscribe(info);
     }
@@ -59,7 +69,7 @@ void foreigners_support_plugin_t::on_unsubscription(message::commit_unsubscripti
     sup.commit_unsubscription(info);
     foreign_points.erase(it);
 
-    if (foreign_points.empty() && actor->state == state_t::SHUTTING_DOWN) {
+    if (foreign_points.empty() && actor->access<to::state>() == state_t::SHUTTING_DOWN) {
         plugin_t::deactivate();
     }
 }

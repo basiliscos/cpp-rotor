@@ -10,6 +10,20 @@
 using namespace rotor;
 using namespace rotor::internal;
 
+namespace {
+namespace to {
+struct address {};
+struct init_request {};
+struct init_timeout {};
+struct shutdown_request {};
+} // namespace to
+} // namespace
+
+template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
+template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
+template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
+template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
+
 const void *link_client_plugin_t::class_identity = static_cast<const void *>(typeid(link_client_plugin_t).name());
 
 const void *link_client_plugin_t::identity() const noexcept { return class_identity; }
@@ -26,9 +40,10 @@ void link_client_plugin_t::activate(actor_base_t *actor_) noexcept {
 void link_client_plugin_t::link(const address_ptr_t &address, const link_callback_t &callback) noexcept {
     assert(servers_map.count(address) == 0);
     servers_map.emplace(address, server_record_t{callback, link_state_t::LINKING});
-    auto &source_addr = actor->address;
+    auto &source_addr = actor->access<to::address>();
     reaction_on(reaction_t::INIT);
-    actor->request<payload::link_request_t>(address, source_addr).send(actor->init_timeout);
+    auto &timeout = actor->access<to::init_timeout>();
+    actor->request<payload::link_request_t>(address, source_addr).send(timeout);
 }
 
 void link_client_plugin_t::on_link_response(message::link_response_t &message) noexcept {
@@ -43,15 +58,16 @@ void link_client_plugin_t::on_link_response(message::link_response_t &message) n
 
     if (ec) {
         servers_map.erase(it);
-        if (actor->init_request) {
-            actor->reply_with_error(*actor->init_request, ec);
-            actor->init_request.reset();
+        auto &init_request = actor->access<to::init_request>();
+        if (init_request) {
+            actor->reply_with_error(*init_request, ec);
+            actor->access<to::init_request>().reset();
         } else {
             actor->do_shutdown();
         }
     } else {
         it->second.state = link_state_t::OPERATIONAL;
-        if (actor->init_request) {
+        if (actor->access<to::init_request>()) {
             actor->init_continue();
         }
     }
@@ -67,7 +83,7 @@ void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexc
     servers_map.erase(it);
 
     if (actor->get_state() == rotor::state_t::SHUTTING_DOWN) {
-        if (actor->shutdown_request) {
+        if (actor->access<to::shutdown_request>()) {
             actor->shutdown_continue();
         }
     } else {
@@ -96,7 +112,7 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *) noexce
     if (servers_map.empty())
         return true;
 
-    auto &source_addr = actor->address;
+    auto &source_addr = actor->access<to::address>();
     for (auto it = servers_map.begin(); it != servers_map.end();) {
         if (it->second.state == link_state_t::OPERATIONAL) {
             actor->send<payload::unlink_notify_t>(it->first, source_addr);
