@@ -18,7 +18,7 @@ void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t:
 
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 
-void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, std::uint32_t timer_id) noexcept {
+void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
     auto timer = std::make_unique<timer_t>(timer_id, get_asio_context().get_io_context());
     timer->expires_from_now(timeout);
 
@@ -44,7 +44,7 @@ void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, std
     timers_map.emplace(timer_id, std::move(timer));
 }
 
-void supervisor_asio_t::cancel_timer(std::uint32_t timer_id) noexcept {
+void supervisor_asio_t::cancel_timer(request_id_t timer_id) noexcept {
     auto &timer = timers_map.at(timer_id);
     boost::system::error_code ec;
     timer->cancel(ec);
@@ -54,7 +54,7 @@ void supervisor_asio_t::cancel_timer(std::uint32_t timer_id) noexcept {
     timers_map.erase(timer_id);
 }
 
-void supervisor_asio_t::on_timer_error(std::uint32_t, const boost::system::error_code &ec) noexcept {
+void supervisor_asio_t::on_timer_error(request_id_t, const boost::system::error_code &ec) noexcept {
     if (ec != asio::error::operation_aborted) {
         get_asio_context().on_error(ec);
     }

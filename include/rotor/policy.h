@@ -8,11 +8,6 @@
 
 namespace rotor {
 
-enum class unlink_policy_t {
-    ignore,
-    escalate,
-};
-
 /** \brief how to behave on child actor initialization failures */
 enum class supervisor_policy_t {
     /** \brief shutdown supervisor (and all its actors) if a child-actor

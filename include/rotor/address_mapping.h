@@ -58,8 +58,6 @@ struct address_mapping_t {
     bool empty() const noexcept { return actor_map.empty(); }
     void remove(const subscription_point_t &point) noexcept;
 
-    // void clear(supervisor_t& sup) noexcept;
-
   private:
     using point_map_t = std::unordered_map<const void *, subscription_info_ptr_t>;
     using actor_map_t = std::unordered_map<const void *, point_map_t>;

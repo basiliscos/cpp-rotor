@@ -68,7 +68,7 @@ struct supervisor_asio_t : public supervisor_t {
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
     /** \brief timer id to timer pointer mapping type */
-    using timers_map_t = std::unordered_map<std::uint32_t, timer_ptr_t>;
+    using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
     /** \brief constructs new supervisor from parent supervisor, intrusive
      * pointer to system context and supervisor config and

@@ -87,7 +87,7 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
     template <typename... Args>
-    wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, Args &&... args)
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, Args &&... args)
         : request_base_t{id_, reply_to_}, request_payload{std::forward<Args>(args)...} {}
 
     /** \brief original, user-supplied payload */
@@ -113,13 +113,13 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
      * The differnt `request-id` and `reply_to` address argruments are supplied
      * to make it possible cheaply forward requests.
      */
-    wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, const request_t &request_)
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const request_t &request_)
         : request_base_t{id_, reply_to_}, request_payload{request_} {}
 
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
     template <typename... Args, typename E = std::enable_if_t<std::is_constructible_v<raw_request_t, Args...>>>
-    wrapped_request_t(std::uint32_t id_, const address_ptr_t &reply_to_, Args &&... args)
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, Args &&... args)
         : request_base_t{id_, reply_to_}, request_payload{new raw_request_t{std::forward<Args>(args)...}} {}
 
     /** \brief intrusive pointer to user-supplied payload */
@@ -351,7 +351,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
      * The request id of the dispatched request is returned
      *
      */
-    std::uint32_t send(pt::time_duration send) noexcept;
+    request_id_t send(pt::time_duration send) noexcept;
 
   private:
     using traits_t = request_traits_t<T>;
@@ -363,7 +363,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
 
     supervisor_t &sup;
     actor_base_t &actor;
-    std::uint32_t request_id;
+    request_id_t request_id;
     const address_ptr_t &destination;
     const address_ptr_t &reply_to;
     bool do_install_handler;

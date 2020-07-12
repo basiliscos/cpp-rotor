@@ -397,7 +397,7 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
     req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});
 }
 
-template <typename T> std::uint32_t request_builder_t<T>::send(pt::time_duration timeout) noexcept {
+template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration timeout) noexcept {
     if (do_install_handler) {
         install_handler();
     }

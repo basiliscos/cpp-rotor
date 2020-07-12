@@ -15,13 +15,9 @@
 #include "arc.hpp"
 #include "plugins.h"
 #include "policy.h"
+#include "forward.hpp"
 
 namespace rotor {
-
-struct supervisor_t;
-struct system_context_t;
-struct plugin_t;
-struct actor_base_t;
 
 namespace pt = boost::posix_time;
 
