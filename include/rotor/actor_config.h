@@ -6,9 +6,7 @@
 // Distributed under the MIT Software License
 //
 
-#include <optional>
 #include <deque>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <tuple>
 #include <functional>
 #include <memory>
@@ -18,8 +16,6 @@
 #include "forward.hpp"
 
 namespace rotor {
-
-namespace pt = boost::posix_time;
 
 using plugins_t = std::deque<plugin_t *>;
 

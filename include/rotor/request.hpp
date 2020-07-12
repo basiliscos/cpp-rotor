@@ -10,11 +10,8 @@
 #include "message.h"
 #include "error_code.h"
 #include <unordered_map>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace rotor {
-
-namespace pt = boost::posix_time;
 
 /** \brief unique (per supervisor) request id type */
 using request_id_t = std::uint32_t;

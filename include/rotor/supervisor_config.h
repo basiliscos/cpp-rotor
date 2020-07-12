@@ -6,13 +6,10 @@
 // Distributed under the MIT Software License
 //
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include "policy.h"
 #include "actor_config.h"
 
 namespace rotor {
-
-namespace pt = boost::posix_time;
 
 /** \struct supervisor_config_t
  *  \brief base supervisor config, which holds shutdowm timeout value

@@ -21,10 +21,6 @@
 
 namespace rotor {
 
-namespace pt = boost::posix_time;
-
-struct supervisor_t;
-
 /** \struct supervisor_t
  *  \brief supervisor is responsible for managing actors (workers) lifetime
  *
