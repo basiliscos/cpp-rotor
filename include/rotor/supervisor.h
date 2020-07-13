@@ -331,6 +331,8 @@ template <typename Handler>
 void subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
     auto info = actor->access<to::supervisor>()->subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
+    assert(std::count_if(tracked.begin(), tracked.end(), [&](auto &it) { return *it == *info; }) == 0 &&
+           "already subscribed");
     tracked.emplace_back(info);
     access<subscriber_plugin_t>().emplace_back(std::move(info));
 }

@@ -83,9 +83,3 @@ void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {
         mine_handlers.erase(it);
     }
 }
-
-subscription_container_t::iterator subscription_container_t::find(const subscription_point_t &point) noexcept {
-    auto predicate = [&point](auto &info) { return info->handler == point.handler && info->address == point.address; };
-    auto rit = std::find_if(rbegin(), rend(), predicate);
-    return --rit.base();
-}

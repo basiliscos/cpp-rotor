@@ -33,6 +33,7 @@ add_library(rotor
     src/rotor/error_code.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp
+    src/rotor/subscription_point.cpp
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
     src/rotor/plugin/address_maker.cpp

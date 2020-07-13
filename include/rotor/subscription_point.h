@@ -40,9 +40,7 @@ struct subscription_point_t {
     subscription_point_t(const subscription_point_t &) = default;
     subscription_point_t(subscription_point_t &&) = default;
 
-    inline bool operator==(const subscription_point_t &other) const noexcept {
-        return address == other.address && handler == other.handler;
-    }
+    bool operator==(const subscription_point_t &other) const noexcept;
 };
 
 struct subscription_info_t : public arc_base_t<subscription_info_t>, subscription_point_t {
@@ -55,7 +53,7 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
     ~subscription_info_t();
 
     inline bool operator==(const subscription_point_t &point) const noexcept {
-        return (subscription_point_t)(*this) == point;
+        return (subscription_point_t &)(*this) == point;
     }
 
     bool internal_address;
