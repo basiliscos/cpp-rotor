@@ -15,7 +15,6 @@
 #include "supervisor_config.h"
 #include "address_mapping.h"
 
-#include <chrono>
 #include <functional>
 #include <unordered_map>
 
@@ -207,7 +206,6 @@ struct supervisor_t : public actor_base_t {
     using actor_base_t::subscribe;
 
     template <typename T> auto &access() noexcept;
-    using actor_base_t::access;
 
   protected:
     /** \brief creates new address with respect to supervisor locality mark */

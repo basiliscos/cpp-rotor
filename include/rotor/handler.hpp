@@ -1,25 +1,21 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "actor_base.h"
 #include "message.h"
+#include "forward.hpp"
 #include <functional>
 #include <memory>
 #include <typeindex>
 #include <typeinfo>
 #include <type_traits>
-//#include <iostream>
 
 namespace rotor {
-
-struct actor_base_t;
-struct supervisor_t;
-struct plugin_t;
 
 /** \struct lambda_holder_t
  *

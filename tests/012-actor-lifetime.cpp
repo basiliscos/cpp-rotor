@@ -158,7 +158,8 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(sup->get_children_count() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    auto plugin = sup->access<rt::to::get_plugin>(custom_child_manager_t::class_identity);
+    auto plugin =
+        static_cast<r::actor_base_t &>(*sup).access<rt::to::get_plugin>(custom_child_manager_t::class_identity);
     auto cm_plugin = static_cast<custom_child_manager_t *>(plugin);
 
     REQUIRE(cm_plugin->fail_addr == act->access<rt::to::address>());

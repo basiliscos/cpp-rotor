@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,7 @@
 #include "address.hpp"
 #include "message.h"
 #include "error_code.h"
+#include "forward.hpp"
 #include <unordered_map>
 
 namespace rotor {
