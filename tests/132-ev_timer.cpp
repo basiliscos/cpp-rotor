@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -8,10 +8,12 @@
 #include "rotor.hpp"
 #include "rotor/ev.hpp"
 #include <ev.h>
+#include "access.h"
 
 namespace r = rotor;
 namespace re = rotor::ev;
 namespace pt = boost::posix_time;
+namespace rt = r::test;
 
 struct sample_res_t {};
 struct sample_req_t {
@@ -24,13 +26,14 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&bad_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&bad_actor_t::on_response); });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request<traits_t::request::type>(address).send(r::pt::milliseconds(1));
     }
 
@@ -55,5 +58,5 @@ TEST_CASE("timer", "[supervisor][ev]") {
     ev_run(loop);
 
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
 }

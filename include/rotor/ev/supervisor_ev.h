@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -53,7 +53,7 @@ struct supervisor_ev_t : public supervisor_t {
      * the `parent` supervisor can be `null`
      *
      */
-    supervisor_ev_t(const supervisor_config_ev_t &config);
+    supervisor_ev_t(supervisor_config_ev_t &config);
     virtual void do_initialize(system_context_t *ctx) noexcept override;
     ~supervisor_ev_t();
 
@@ -112,7 +112,7 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief inbound messages queue, i.e.the structure to hold messages
      * received from other supervisors / threads
      */
-    queue_t inbound;
+    messages_queue_t inbound;
 
     /** \brief timer_id to timer map */
     timers_map_t timers_map;

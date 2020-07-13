@@ -134,6 +134,17 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void on_timer_trigger(timer_id_t timer_id);
 
+    /** \brief thread-safe version of `do_process`
+     *
+     * Starts supervisor to processing messages queue in safe thread/loop
+     * context. Once it becomes empty, the method returns
+     */
+    virtual void start() noexcept = 0;
+
+    /** \brief thread-safe version of `do_shutdown`, i.e. send shutdown request
+     * let it be processed by the supervisor */
+    virtual void shutdown() noexcept = 0;
+
     virtual void do_shutdown() noexcept override;
 
     virtual void shutdown_finish() noexcept override;
@@ -206,6 +217,7 @@ struct supervisor_t : public actor_base_t {
     using actor_base_t::subscribe;
 
     template <typename T> auto &access() noexcept;
+    template <typename T, typename... Args> auto access(Args... args) noexcept;
 
   protected:
     /** \brief creates new address with respect to supervisor locality mark */

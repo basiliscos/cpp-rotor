@@ -1,14 +1,25 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include <algorithm>
 #include "rotor/ev/supervisor_ev.h"
-#include <iostream>
+
+namespace rotor {
+namespace to {
+struct address {};
+struct locality_leader {};
+} // namespace to
+
+template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
+template <> auto &supervisor_t::access<to::locality_leader>() noexcept { return locality_leader; }
+
+} // namespace rotor
 
 using namespace rotor::ev;
+
+supervisor_ev_t *cast_leader(rotor::supervisor_t *sup) noexcept { return static_cast<supervisor_ev_t *>(sup); }
 
 void supervisor_ev_t::async_cb(struct ev_loop *, ev_async *w, int revents) noexcept {
     assert(revents & EV_ASYNC);
@@ -26,7 +37,7 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     sup->do_process();
 }
 
-supervisor_ev_t::supervisor_ev_t(const supervisor_config_ev_t &config_)
+supervisor_ev_t::supervisor_ev_t(supervisor_config_ev_t &config_)
     : supervisor_t{config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
     ev_async_init(&async_watcher, async_cb);
 }
@@ -40,7 +51,7 @@ void supervisor_ev_t::do_initialize(system_context_t *ctx) noexcept {
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
     bool ok{false};
     try {
-        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+        auto leader = cast_leader(access<to::locality_leader>());
         auto &inbound = leader->inbound;
         std::lock_guard<std::mutex> lock(leader->inbound_mutex);
         if (!leader->pending) {
@@ -61,7 +72,7 @@ void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
 void supervisor_ev_t::start() noexcept {
     bool ok{false};
     try {
-        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+        auto leader = cast_leader(access<to::locality_leader>());
         std::lock_guard<std::mutex> lock(leader->inbound_mutex);
         if (!leader->pending) {
             leader->pending = true;
@@ -83,7 +94,8 @@ void supervisor_ev_t::shutdown_finish() noexcept {
 }
 
 void supervisor_ev_t::shutdown() noexcept {
-    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(supervisor->get_address(), address));
+    auto &sup_addr = static_cast<actor_base_t *>(supervisor)->access<to::address>();
+    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address));
 }
 
 void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {
@@ -115,7 +127,7 @@ void supervisor_ev_t::on_timer_trigger(timer_id_t timer_id) noexcept {
 void supervisor_ev_t::on_async() noexcept {
     bool ok{false};
     try {
-        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+        auto leader = cast_leader(access<to::locality_leader>());
         auto &inbound = leader->inbound;
         auto &queue = leader->queue;
         std::lock_guard<std::mutex> lock(leader->inbound_mutex);

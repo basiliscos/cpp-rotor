@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -7,43 +7,31 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "rotor/ev.hpp"
+#include "access.h"
 #include <ev.h>
 
 namespace r = rotor;
 namespace re = rotor::ev;
+namespace rt = r::test;
 
 static std::uint32_t destroyed = 0;
-
-struct supervisor_test_behavior_t : public r::supervisor_behavior_t {
-    using r::supervisor_behavior_t::supervisor_behavior_t;
-
-    void on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept override;
-};
 
 struct supervisor_ev_test_t : public re::supervisor_ev_t {
     using re::supervisor_ev_t::supervisor_ev_t;
 
     ~supervisor_ev_test_t() { destroyed += 4; }
 
-    virtual r::actor_behavior_t *create_behavior() noexcept override { return new supervisor_test_behavior_t(*this); }
-
-    r::state_t &get_state() noexcept { return state; }
-    queue_t &get_leader_queue() { return get_leader().queue; }
-    supervisor_ev_test_t &get_leader() { return *static_cast<supervisor_ev_test_t *>(locality_leader); }
-    queue_t &get_inbound_queue() noexcept { return inbound; }
-    subscription_points_t &get_points() noexcept { return points; }
-    subscription_map_t &get_subscription() noexcept { return subscription_map; }
+    auto &get_leader_queue() { return access<rt::to::locality_leader>()->access<rt::to::queue>(); }
+    auto &get_subscription() noexcept { return subscription_map; }
 };
-
-void supervisor_test_behavior_t::on_shutdown_fail(const r::address_ptr_t &address, const std::error_code &ec) noexcept {
-    r::supervisor_behavior_t::on_shutdown_fail(address, ec);
-    auto loop = static_cast<supervisor_ev_test_t &>(actor).get_loop();
-    ev_break(loop);
-}
 
 struct system_context_ev_test_t : public re::system_context_ev_t {
     std::error_code code;
-    void on_error(const std::error_code &ec) noexcept override { code = ec; }
+    void on_error(const std::error_code &ec) noexcept override {
+        code = ec;
+        auto loop = static_cast<re::supervisor_ev_t *>(get_supervisor().get())->get_loop();
+        ev_break(loop);
+    }
 };
 
 struct ping_t {};
@@ -59,13 +47,13 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         send<ping_t>(ponger_addr);
         ++ping_sent;
     }
@@ -86,9 +74,8 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {
@@ -100,15 +87,10 @@ struct ponger_t : public r::actor_base_t {
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
-    bool allow_shutdown = false;
 
-    virtual void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { supervisor->do_shutdown(); }
+    void on_start() noexcept override { supervisor->do_shutdown(); }
 
-    void shutdown_start() noexcept override {
-        if (allow_shutdown) {
-            r::actor_base_t::shutdown_start();
-        }
-    }
+    void shutdown_finish() noexcept override {}
 };
 
 TEST_CASE("ping/pong", "[supervisor][ev]") {
@@ -123,8 +105,8 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
 
     auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
-    pinger->set_ponger_addr(ponger->get_address());
-    ponger->set_pinger_addr(pinger->get_address());
+    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->access<rt::to::address>());
+    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->access<rt::to::address>());
 
     sup->start();
     ev_run(loop);
@@ -137,10 +119,9 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     pinger.reset();
     ponger.reset();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
-    REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
 
     sup.reset();
     system_context.reset();
@@ -190,10 +171,9 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
 
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
 
-    actor->allow_shutdown = true;
+    // actor->force_cleanup();
     sup->shutdown();
     ev_run(loop);
 
-    sup.reset();
     system_context.reset();
 }
