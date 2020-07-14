@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,7 +9,7 @@
 
 using namespace rotor::asio;
 
-supervisor_asio_t::supervisor_asio_t(const supervisor_config_asio_t &config_)
+supervisor_asio_t::supervisor_asio_t(supervisor_config_asio_t &config_)
     : supervisor_t{config_}, strand{config_.strand} {}
 
 rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(strand.get()); }

@@ -76,7 +76,7 @@ struct supervisor_asio_t : public supervisor_t {
      * the `parent` supervisor can be null
      *
      */
-    supervisor_asio_t(const supervisor_config_asio_t &config);
+    supervisor_asio_t(supervisor_config_asio_t &config);
 
     virtual address_ptr_t make_address() noexcept override;
 
@@ -110,6 +110,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
+  protected:
     /** \brief timer id to timer pointer mapping */
     timers_map_t timers_map;
 

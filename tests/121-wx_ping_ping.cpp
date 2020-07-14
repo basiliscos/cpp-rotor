@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -10,7 +10,7 @@
 #include "supervisor_wx_test.h"
 #include <wx/evtloop.h>
 #include <wx/apptrait.h>
-#include <iostream>
+#include "access.h"
 
 IMPLEMENT_APP_NO_MAIN(rotor::test::RotorApp)
 
@@ -33,13 +33,13 @@ struct pinger_t : public r::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         send<ping_t>(ponger_addr);
         ++ping_sent;
     }
@@ -63,9 +63,8 @@ struct ponger_t : public r::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {
@@ -91,8 +90,8 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
 
     auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
-    pinger->set_ponger_addr(ponger->get_address());
-    ponger->set_pinger_addr(pinger->get_address());
+    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->access<rt::to::address>());
+    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->access<rt::to::address>());
 
     sup->start();
     loop->Run();
@@ -106,10 +105,9 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     ponger.reset();
     REQUIRE(destroyed == 4);
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
-    REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
 
     delete app;
 }

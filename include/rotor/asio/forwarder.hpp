@@ -11,7 +11,18 @@
 #include <boost/asio.hpp>
 #include <tuple>
 
+namespace rotor::asio {
+
+namespace {
+namespace to {
+struct supervisor {};
+} // namespace to
+} // namespace
+} // namespace rotor::asio
+
 namespace rotor {
+
+template <> inline auto &actor_base_t::access<asio::to::supervisor>() noexcept { return supervisor; }
 
 namespace asio {
 
@@ -99,17 +110,19 @@ struct forwarder_t<Actor, Handler, details::count::_0, ErrHandler> : forwarder_b
      */
     template <typename T = void> inline void operator()(const boost::system::error_code &ec) noexcept {
         using typed_sup_t = typename base_t::typed_sup_t;
-        auto &sup = static_cast<typed_sup_t &>(base_t::typed_actor->get_supervisor());
+        auto &typed_actor = base_t::typed_actor;
+        auto &sup_ptr = static_cast<actor_base_t *>(typed_actor.get())->access<to::supervisor>();
+        auto sup = static_cast<typed_sup_t *>(sup_ptr);
         auto &strand = get_strand(sup);
         if (ec) {
             asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::err_handler), ec = ec]() {
                 ((*actor).*handler)(ec);
-                actor->get_supervisor().do_process();
+                static_cast<actor_base_t *>(actor.get())->access<to::supervisor>()->do_process();
             });
         } else {
             asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::handler)]() {
                 ((*actor).*handler)();
-                actor->get_supervisor().do_process();
+                static_cast<actor_base_t *>(actor.get())->access<to::supervisor>()->do_process();
             });
         }
     }
@@ -125,18 +138,20 @@ struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> : forwarder_b
      */
     template <typename T> inline void operator()(const boost::system::error_code &ec, T arg) noexcept {
         using typed_sup_t = typename base_t::typed_sup_t;
-        auto &sup = static_cast<typed_sup_t &>(base_t::typed_actor->get_supervisor());
+        auto &typed_actor = base_t::typed_actor;
+        auto &sup_ptr = static_cast<actor_base_t *>(typed_actor.get())->access<to::supervisor>();
+        auto sup = static_cast<typed_sup_t *>(sup_ptr);
         auto &strand = get_strand(sup);
         if (ec) {
             asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::err_handler), ec = ec]() {
                 ((*actor).*handler)(ec);
-                actor->get_supervisor().do_process();
+                static_cast<actor_base_t *>(actor.get())->access<to::supervisor>()->do_process();
             });
         } else {
             asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::handler),
                                  arg = std::move(arg)]() mutable {
                 ((*actor).*handler)(std::move(arg));
-                actor->get_supervisor().do_process();
+                static_cast<actor_base_t *>(actor.get())->access<to::supervisor>()->do_process();
             });
         }
     }
@@ -152,12 +167,13 @@ struct forwarder_t<Actor, Handler, details::count::_0, void> : forwarder_base_t<
      */
     template <typename T = void> inline void operator()() noexcept {
         using typed_sup_t = typename base_t::typed_sup_t;
-
-        auto &sup = static_cast<typed_sup_t &>(base_t::typed_actor->get_supervisor());
-        auto &strand = get_strand(sup);
+        auto &typed_actor = base_t::typed_actor;
+        auto &sup_ptr = static_cast<actor_base_t *>(typed_actor.get())->access<to::supervisor>();
+        auto sup = static_cast<typed_sup_t *>(sup_ptr);
+        auto &strand = get_strand(*sup);
         asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::handler)]() {
             ((*actor).*handler)();
-            actor->get_supervisor().do_process();
+            static_cast<actor_base_t *>(actor.get())->access<to::supervisor>()->do_process();
         });
     }
 };
@@ -173,12 +189,14 @@ struct forwarder_t<Actor, Handler, details::count::_1, void> : forwarder_base_t<
      */
     template <typename T> inline void operator()(T arg) noexcept {
         using typed_sup_t = typename base_t::typed_sup_t;
-        auto &sup = static_cast<typed_sup_t &>(base_t::typed_actor->get_supervisor());
-        auto &strand = get_strand(sup);
+        auto &typed_actor = base_t::typed_actor;
+        auto &sup_ptr = static_cast<actor_base_t *>(typed_actor.get())->access<to::supervisor>();
+        auto sup = static_cast<typed_sup_t *>(sup_ptr);
+        auto &strand = get_strand(*sup);
         asio::defer(strand, [actor = base_t::ttyped_actor, handler = std::move(base_t::handler),
                              arg = std::move(arg)]() mutable {
             ((*actor).*handler)(std::move(arg));
-            actor->get_supervisor().do_process();
+            static_cast<actor_base_t *>(actor.get())->access<to::supervisor>()->do_process();
         });
     }
 };

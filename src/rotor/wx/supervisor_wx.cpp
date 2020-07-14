@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,8 +15,7 @@ supervisor_wx_t::timer_t::timer_t(timer_id_t timer_id_, supervisor_ptr_t &&sup_)
 
 void supervisor_wx_t::timer_t::Notify() noexcept { sup->on_timer_trigger(timer_id); }
 
-supervisor_wx_t::supervisor_wx_t(const supervisor_config_wx_t &config_)
-    : supervisor_t{config_}, handler{config_.handler} {}
+supervisor_wx_t::supervisor_wx_t(supervisor_config_wx_t &config_) : supervisor_t{config_}, handler{config_.handler} {}
 
 void supervisor_wx_t::start() noexcept {
     supervisor_ptr_t self{this};

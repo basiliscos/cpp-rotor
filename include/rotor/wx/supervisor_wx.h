@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -40,6 +40,27 @@ namespace wx {
  */
 struct supervisor_wx_t : public supervisor_t {
 
+    using config_t = supervisor_config_wx_t;
+    template <typename Supervisor> using config_builder_t = supervisor_config_wx_builder_t<Supervisor>;
+
+    /* \brief constructs new supervisor from parent supervisor and supervisor config
+     *
+     * the `parent` supervisor can be `null`
+     *
+     */
+    supervisor_wx_t(supervisor_config_wx_t &config);
+
+    virtual void start() noexcept override;
+    virtual void shutdown() noexcept override;
+    virtual void enqueue(message_ptr_t message) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
+    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
+
+    /** \brief returns pointer to the wx system context */
+    inline system_context_wx_t *get_context() noexcept { return static_cast<system_context_wx_t *>(context); }
+
+  protected:
     /** \struct timer_t
      *  \brief timer structure, adoped for wx-supervisor needs.
      */
@@ -60,27 +81,6 @@ struct supervisor_wx_t : public supervisor_t {
         virtual void Notify() noexcept override;
     };
 
-    using config_t = supervisor_config_wx_t;
-    template <typename Supervisor> using config_builder_t = supervisor_config_wx_builder_t<Supervisor>;
-
-    /* \brief constructs new supervisor from parent supervisor and supervisor config
-     *
-     * the `parent` supervisor can be `null`
-     *
-     */
-    supervisor_wx_t(const supervisor_config_wx_t &config);
-
-    virtual void start() noexcept override;
-    virtual void shutdown() noexcept override;
-    virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
-    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
-    virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
-
-    /** \brief returns pointer to the wx system context */
-    inline system_context_wx_t *get_context() noexcept { return static_cast<system_context_wx_t *>(context); }
-
-  protected:
     /** \brief unique pointer to timer */
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
