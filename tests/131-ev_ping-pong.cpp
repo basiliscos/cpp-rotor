@@ -129,32 +129,6 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     REQUIRE(destroyed == 1 + 2 + 4);
 }
 
-TEST_CASE("error : create root supervisor twice", "[supervisor][ev]") {
-    auto *loop = ev_loop_new(0);
-    auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
-    auto timeout = r::pt::milliseconds{10};
-    auto sup1 = system_context->create_supervisor<supervisor_ev_test_t>()
-                    .loop(loop)
-                    .loop_ownership(true)
-                    .timeout(timeout)
-                    .finish();
-    REQUIRE(system_context->code.value() == 0);
-
-    auto sup2 = system_context->create_supervisor<supervisor_ev_test_t>()
-                    .loop(loop)
-                    .loop_ownership(false)
-                    .timeout(timeout)
-                    .finish();
-    REQUIRE(!sup2);
-    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::supervisor_defined));
-
-    sup1->shutdown();
-    ev_run(loop);
-
-    sup1.reset();
-    system_context.reset();
-}
-
 TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};

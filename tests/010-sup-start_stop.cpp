@@ -214,3 +214,11 @@ TEST_CASE("custom subscription", "[supervisor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
+
+TEST_CASE("shutdown immediately", "[supervisor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<sample_sup3_t>().timeout(rt::default_timeout).finish();
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}

@@ -60,9 +60,9 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
 
 void child_manager_plugin_t::deactivate() noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
-    assert(actors_map.size() == 1);
     if (sup.access<to::address_mapping>().empty()) {
-        remove_child(sup);
+        if (actors_map.size() == 1)
+            remove_child(sup);
         plugin_t::deactivate();
     }
 }
@@ -95,7 +95,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     if (shutdown_self) {
         if (state != state_t::SHUTTING_DOWN) {
             actor->do_shutdown();
-        } else if (actors_map.size() == 1) {
+        } else if (actors_map.size() <= 1) {
             actor->shutdown_continue();
         }
     }
@@ -137,9 +137,9 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
     continue_init = !has_initing && !ec;
     if (ec) {
-        auto &state = actor->access<to::state>();
+        auto &self_state = actor->access<to::state>();
         auto &policy = sup.access<to::policy>();
-        auto shutdown_self = state == state_t::INITIALIZING && policy == supervisor_policy_t::shutdown_self;
+        auto shutdown_self = self_state == state_t::INITIALIZING && policy == supervisor_policy_t::shutdown_self;
         if (shutdown_self) {
             continue_init = false;
             sup.do_shutdown();
@@ -148,8 +148,13 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             sup.template request<payload::shutdown_request_t>(address, address).send(timeout);
         }
     } else {
-        sup.template send<payload::start_actor_t>(address, address);
-        actors_map.at(address).strated = true;
+        auto it_actor = actors_map.find(address);
+        /* the if is needed for the very rare case when supervisor was immediately shutted down
+           right after creation */
+        if (it_actor != actors_map.end()) {
+            sup.template send<payload::start_actor_t>(address, address);
+            it_actor->second.strated = true;
+        }
     }
     if (continue_init && postponed_init && actor->access<to::state>() < state_t::INITIALIZED) {
         actor->init_continue();
