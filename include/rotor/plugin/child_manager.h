@@ -21,7 +21,7 @@ struct child_manager_plugin_t : public plugin_t {
     void deactivate() noexcept override;
 
     virtual void create_child(const actor_ptr_t &actor) noexcept;
-    virtual void remove_child(const actor_base_t &actor, bool normal_flow) noexcept;
+    virtual void remove_child(const actor_base_t &actor) noexcept;
     virtual void on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept;
 
     virtual void on_create(message::create_actor_t &message) noexcept;
@@ -54,6 +54,7 @@ struct child_manager_plugin_t : public plugin_t {
         /** \brief intrusive pointer to actor */
         actor_ptr_t actor;
 
+        bool strated;
         /** \brief whethe the shutdown request is already sent */
         bool shutdown_requesting;
     };

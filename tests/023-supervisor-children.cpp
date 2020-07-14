@@ -309,11 +309,8 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     sup->do_process();
 
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
-
-    sup->do_shutdown();
-    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
 TEST_CASE("shutdown_self policy", "[supervisor]") {

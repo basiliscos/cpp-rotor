@@ -116,7 +116,7 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *) noexce
 
     auto &source_addr = actor->access<to::address>();
     for (auto it = servers_map.begin(); it != servers_map.end();) {
-        if (it->second.state == link_state_t::OPERATIONAL) {
+        if (it->second.state != link_state_t::UNLINKING) {
             actor->send<payload::unlink_notify_t>(it->first, source_addr);
             it = servers_map.erase(it);
         } else {

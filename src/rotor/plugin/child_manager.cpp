@@ -54,7 +54,7 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&child_manager_plugin_t::on_state_request);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SHUTDOWN);
-    actors_map.emplace(actor->access<to::address>(), actor_state_t{actor, false});
+    actors_map.emplace(actor->access<to::address>(), actor_state_t{actor, false, false});
     actor->configure(*this);
 }
 
@@ -62,22 +62,46 @@ void child_manager_plugin_t::deactivate() noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     assert(actors_map.size() == 1);
     if (sup.access<to::address_mapping>().empty()) {
-        remove_child(sup, false);
+        remove_child(sup);
         plugin_t::deactivate();
     }
 }
 
-void child_manager_plugin_t::remove_child(const actor_base_t &child, bool normal_flow) noexcept {
+void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.access<to::address>());
     assert(it_actor != actors_map.end());
+    bool child_started = it_actor->second.strated;
     actors_map.erase(it_actor);
-    if (normal_flow && actors_map.size() == 1) {
-        auto &state = actor->access<to::state>();
-        if (state == state_t::SHUTTING_DOWN) {
-            actor->shutdown_continue();
-        } else if (state == state_t::INITIALIZING) {
-            actor->init_continue();
+    auto &state = actor->access<to::state>();
+
+    bool shutdown_self = false;
+    bool init_self = false;
+    if (state == state_t::INITIALIZING) {
+        if (!child_started) {
+            auto &policy = static_cast<supervisor_t *>(actor)->access<to::policy>();
+            if (policy == supervisor_policy_t::shutdown_failed) {
+                actor->do_shutdown();
+            } else {
+                shutdown_self = true;
+            }
+        } else {
+            init_self = true;
         }
+    }
+    if (state == state_t::SHUTTING_DOWN) {
+        shutdown_self = true;
+    }
+
+    if (shutdown_self) {
+        if (state != state_t::SHUTTING_DOWN) {
+            actor->do_shutdown();
+        } else if (actors_map.size() == 1) {
+            actor->shutdown_continue();
+        }
+    }
+
+    if (init_self && (state == state_t::INITIALIZING)) {
+        actor->init_continue();
     }
 }
 
@@ -86,7 +110,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     child->do_initialize(sup.access<to::system_context>());
     auto &timeout = child->access<to::init_timeout>();
     sup.send<payload::create_actor_t>(actor->access<to::address>(), child, timeout);
-    actors_map.emplace(child->access<to::address>(), actor_state_t{child, false});
+    actors_map.emplace(child->access<to::address>(), actor_state_t{child, false, false});
     if (static_cast<actor_base_t &>(sup).access<to::state>() == state_t::INITIALIZING) {
         postponed_init = true;
     }
@@ -125,6 +149,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
         }
     } else {
         sup.template send<payload::start_actor_t>(address, address);
+        actors_map.at(address).strated = true;
     }
     if (continue_init && postponed_init && actor->access<to::state>() < state_t::INITIALIZED) {
         actor->init_continue();
@@ -179,14 +204,7 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &m
         auto action = [&](auto &info) { static_cast<actor_base_t &>(sup).access<to::lifetime>()->unsubscribe(info); };
         address_mapping.each_subscription(*child_actor, action);
     } else {
-        auto &state = static_cast<actor_base_t &>(sup).access<to::state>();
-        auto &policy = sup.access<to::policy>();
-        bool normal_flow = (state == state_t::OPERATIONAL) || (state == state_t::SHUTTING_DOWN) ||
-                           (state == state_t::INITIALIZING && policy == supervisor_policy_t::shutdown_failed);
-        remove_child(*child_actor, normal_flow);
-        if (!normal_flow) {
-            sup.do_shutdown();
-        }
+        remove_child(*child_actor);
     }
 }
 
@@ -247,7 +265,7 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &p
         auto &address_mapping = sup.access<to::address_mapping>();
         address_mapping.remove(point);
         if (!address_mapping.has_subscriptions(*point.owner_ptr)) {
-            remove_child(*point.owner_ptr, true);
+            remove_child(*point.owner_ptr);
         }
         if (actors_map.size() == 0) {
             plugin_t::deactivate();

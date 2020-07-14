@@ -170,3 +170,37 @@ TEST_CASE("unlink", "[actor]") {
     }
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
 }
+
+TEST_CASE("auto-unlink on shutdown", "[actor]") {
+    rt::system_context_test_t ctx1;
+    rt::system_context_test_t ctx2;
+
+    const char l1[] = "abc";
+    const char l2[] = "def";
+
+    auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
+
+    auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto &addr_s = act_s->access<rt::to::address>();
+
+    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, [&](auto &) {}); });
+    };
+
+    sup1->do_process();
+    REQUIRE(act_c->get_state() == r::state_t::INITIALIZING);
+    act_c->do_shutdown();
+
+    sup1->do_process();
+    REQUIRE(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+
+    sup2->do_process();
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+
+    sup2->do_shutdown();
+    sup2->do_process();
+    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+}
