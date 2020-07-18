@@ -44,9 +44,8 @@ struct server_actor : public rotor::actor_base_t {
 
     void configure(rotor::plugin_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
-            p.subscribe_actor(&server_actor::on_request);
-        });
+        plugin.with_casted<rotor::internal::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&server_actor::on_request); });
     }
 
     void on_request(message::request_t &req) noexcept {
@@ -62,7 +61,6 @@ struct server_actor : public rotor::actor_base_t {
     }
 };
 
-
 struct client_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
@@ -72,9 +70,8 @@ struct client_actor : public rotor::actor_base_t {
 
     void configure(rotor::plugin_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
-            p.subscribe_actor(&client_actor::on_response);
-        });
+        plugin.with_casted<rotor::internal::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&client_actor::on_response); });
     }
 
     void on_response(message::response_t &res) noexcept {
@@ -100,9 +97,6 @@ struct address {};
 namespace rotor {
 template <> inline auto &actor_base_t::access<to::address>() noexcept { return address; }
 } // namespace rotor
-
-
-
 
 int main() {
     asio::io_context io_context;

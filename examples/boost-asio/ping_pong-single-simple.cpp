@@ -102,7 +102,6 @@ namespace rotor {
 template <> inline auto &actor_base_t::access<to::address>() noexcept { return address; }
 } // namespace rotor
 
-
 int main(int argc, char **argv) {
 
     asio::io_context io_context{1};
