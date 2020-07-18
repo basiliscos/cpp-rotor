@@ -110,20 +110,6 @@ struct ponger_t : public r::actor_base_t {
     r::address_ptr_t pinger_addr;
 };
 
-struct holding_supervisor_t : public ra::supervisor_asio_t {
-    using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
-
-    explicit holding_supervisor_t(config_t &cfg)
-        : ra::supervisor_asio_t{cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
-    guard_t guard;
-
-    void shutdown_finish() noexcept override {
-        ra::supervisor_asio_t::shutdown_finish();
-        guard.reset();
-        std::cout << "holding_supervisor_t::shutdown_finish\n";
-    }
-};
-
 namespace to {
 struct address {};
 } // namespace to
@@ -147,8 +133,16 @@ int main(int argc, char **argv) {
         auto strand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
         auto strand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
         auto timeout = boost::posix_time::milliseconds{10};
-        auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>().strand(strand1).timeout(timeout).finish();
-        auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>().strand(strand2).timeout(timeout).finish();
+        auto sup1 = sys_ctx1->create_supervisor<ra::supervisor_asio_t>()
+                        .strand(strand1)
+                        .timeout(timeout)
+                        .guard_context(true)
+                        .finish();
+        auto sup2 = sys_ctx2->create_supervisor<ra::supervisor_asio_t>()
+                        .strand(strand2)
+                        .timeout(timeout)
+                        .guard_context(true)
+                        .finish();
 
         auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
         auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();

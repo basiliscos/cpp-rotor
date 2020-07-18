@@ -27,20 +27,21 @@ struct supervisor_config_t : actor_config_t {
 };
 
 template <typename Supervisor> struct supervisor_config_builder_t : actor_config_builder_t<Supervisor> {
+    using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
     using parent_t = actor_config_builder_t<Supervisor>;
     using parent_t::parent_t;
 
-    supervisor_config_builder_t &&policy(supervisor_policy_t policy_) &&noexcept {
+    builder_t &&policy(supervisor_policy_t policy_) &&noexcept {
         parent_t::config.policy = policy_;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
-    supervisor_config_builder_t &&create_registry(bool value) &&noexcept {
+    builder_t &&create_registry(bool value) &&noexcept {
         parent_t::config.create_registry = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
-    supervisor_config_builder_t &&registry_address(const address_ptr_t &value) &&noexcept {
+    builder_t &&registry_address(const address_ptr_t &value) &&noexcept {
         parent_t::config.registry_address = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }

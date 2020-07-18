@@ -85,6 +85,7 @@ struct supervisor_asio_t : public supervisor_t {
     virtual void enqueue(message_ptr_t message) noexcept override;
     virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
     virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    virtual void shutdown_finish() noexcept override;
 
     /** \brief callback when an error happen on the timer, identified by timer_id */
     virtual void on_timer_error(timer_id_t timer_id, const sys::error_code &ec) noexcept;
@@ -111,11 +112,16 @@ struct supervisor_asio_t : public supervisor_t {
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
   protected:
+    using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
+    using guard_ptr_t = std::unique_ptr<guard_t>;
+
     /** \brief timer id to timer pointer mapping */
     timers_map_t timers_map;
 
     /** \brief config for the supervisor */
     supervisor_config_asio_t::strand_ptr_t strand;
+
+    guard_ptr_t guard;
 };
 
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor) {

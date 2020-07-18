@@ -6,7 +6,6 @@
 
 #include "catch.hpp"
 #include "rotor.hpp"
-#include "rotor/asio.hpp"
 #include "rotor/wx.hpp"
 #include "supervisor_wx_test.h"
 #include <wx/evtloop.h>
@@ -18,7 +17,6 @@ IMPLEMENT_APP_NO_MAIN(rotor::test::RotorApp)
 namespace r = rotor;
 namespace rx = rotor::wx;
 namespace rt = r::test;
-namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 
 struct sample_res_t {};

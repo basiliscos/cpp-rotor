@@ -89,20 +89,8 @@ struct ponger_t : public rt::actor_test_t {
     r::address_ptr_t pinger_addr;
 };
 
-struct holding_supervisor_t : public rt::supervisor_asio_test_t {
-    using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
-
-    explicit holding_supervisor_t(ra::supervisor_config_asio_t &cfg)
-        : rt::supervisor_asio_test_t{cfg}, guard{asio::make_work_guard(cfg.strand->context())} {}
-    guard_t guard;
-
-    void shutdown_finish() noexcept override {
-        rt::supervisor_asio_test_t::shutdown_finish();
-        guard.reset();
-    }
-};
-
 TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
+    using sup_t = rt::supervisor_asio_test_t;
     asio::io_context io_ctx1;
     asio::io_context io_ctx2;
 
@@ -111,8 +99,8 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
     auto sys_ctx2 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx2)};
     auto strand1 = std::make_shared<asio::io_context::strand>(io_ctx1);
     auto strand2 = std::make_shared<asio::io_context::strand>(io_ctx2);
-    auto sup1 = sys_ctx1->create_supervisor<holding_supervisor_t>().strand(strand1).timeout(timeout).finish();
-    auto sup2 = sys_ctx2->create_supervisor<holding_supervisor_t>().strand(strand2).timeout(timeout).finish();
+    auto sup1 = sys_ctx1->create_supervisor<sup_t>().strand(strand1).timeout(timeout).guard_context(true).finish();
+    auto sup2 = sys_ctx2->create_supervisor<sup_t>().strand(strand2).timeout(timeout).guard_context(true).finish();
 
     auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();

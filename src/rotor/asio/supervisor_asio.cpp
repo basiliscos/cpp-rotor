@@ -10,7 +10,11 @@
 using namespace rotor::asio;
 
 supervisor_asio_t::supervisor_asio_t(supervisor_config_asio_t &config_)
-    : supervisor_t{config_}, strand{config_.strand} {}
+    : supervisor_t{config_}, strand{config_.strand} {
+    if (config_.guard_context) {
+        guard = std::make_unique<guard_t>(asio::make_work_guard(strand->context()));
+    }
+}
 
 rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(strand.get()); }
 
@@ -70,4 +74,10 @@ void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
         sup.put(std::move(message));
         sup.do_process();
     });
+}
+
+void supervisor_asio_t::shutdown_finish() noexcept {
+    if (guard)
+        guard.reset();
+    supervisor_t::shutdown_finish();
 }
