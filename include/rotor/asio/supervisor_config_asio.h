@@ -42,12 +42,12 @@ template <typename Supervisor> struct supervisor_config_asio_builder_t : supervi
     builder_t &&strand(strand_ptr_t &strand) && {
         parent_t::config.strand = strand;
         parent_t::mask = (parent_t::mask & ~STRAND);
-        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+        return std::move(*static_cast<builder_t *>(this));
     }
 
     builder_t &&guard_context(bool value) && {
         parent_t::config.guard_context = value;
-        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+        return std::move(*static_cast<builder_t *>(this));
     }
 };
 
