@@ -63,7 +63,6 @@ struct pinger_t : public rotor::actor_base_t {
         if (!ctx.pings_left) {
             std::cout << "success: " << ctx.pings_success << ", errors: " << ctx.pings_error << "\n";
             // optional cleanup
-            unsubscribe(&pinger_t::on_pong, reply_addr);
             request_map.erase(msg.address);
             supervisor->do_shutdown();
         }

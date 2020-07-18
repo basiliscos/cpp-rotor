@@ -32,60 +32,19 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_registry_addr(const rotor::address_ptr_t &addr) { registry_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_discovery);
-        subscribe(&pinger_t::on_status);
-        subscribe(&pinger_t::on_pong);
-        request<rotor::payload::discovery_request_t>(registry_addr, ponger_name).send(timeout);
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
+        plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) {
+            p.discover_name(ponger_name, ponger_addr).link([&](auto &ec) {
+                std::cout << "discovered & linked with ponger : " << (!ec ? "yes" : "no") << "\n";
+            });
+        });
     }
 
-    void on_discovery(rotor::message::discovery_response_t &msg) noexcept {
-        auto &ec = msg.payload.ec;
-        if (ec) {
-            std::cout << "ponger address wasn't found: " << ec.message() << "\n";
-            if (attempts) {
-                --attempts;
-                std::cout << "lets try to discover ponger address again (" << attempts << " attempts left)\n";
-                request<rotor::payload::discovery_request_t>(registry_addr, ponger_name).send(timeout);
-            } else {
-                supervisor->do_shutdown();
-            }
-            return;
-        }
-        unsubscribe(&pinger_t::on_discovery); // optional
-        std::cout << "ponger address was succesfully discovered\n";
-        ponger_addr = msg.payload.res.service_addr;
-        auto ponger_sup_addr = ponger_addr->supervisor.get_address();
-        request<rotor::payload::state_request_t>(ponger_sup_addr, ponger_addr).send(timeout);
-    }
-
-    void on_status(rotor::message::state_response_t &msg) noexcept {
-        auto &ec = msg.payload.ec;
-        if (ec) {
-            std::cout << "ponger state cannot be determined: " << ec.message() << "\n";
-            supervisor->do_shutdown();
-            return;
-        }
-        auto state = msg.payload.res.state;
-        if (state == rotor::state_t::OPERATIONAL) {
-            std::cout << "ponger state is operational, continue pinger init\n";
-            rotor::actor_base_t::init_start();
-        } else {
-            std::cout << "ponger state " << static_cast<int>(state) << " isnt operational\n";
-            if (attempts) {
-                --attempts;
-                std::cout << "lets try to check the state again (" << attempts << " attempts left)\n";
-                auto ponger_sup_addr = ponger_addr->supervisor.get_address();
-                request<rotor::payload::state_request_t>(ponger_sup_addr, ponger_addr).send(timeout);
-            } else {
-                supervisor->do_shutdown();
-            }
-        }
-    }
-
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         std::cout << "lets send ping\n";
-        rotor::actor_base_t::on_start(msg);
         request<payload::ping_t>(ponger_addr).send(timeout);
     }
 
@@ -105,25 +64,10 @@ struct ponger_t : public rotor::actor_base_t {
 
     void set_registry_addr(const rotor::address_ptr_t &addr) { registry_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        subscribe(&ponger_t::on_registration);
-        request<rotor::payload::registration_request_t>(registry_addr, ponger_name, address).send(timeout);
-    }
-
-    void shutdown_start() noexcept override {
-        send<rotor::payload::deregistration_notify_t>(registry_addr, address);
-        rotor::actor_base_t::shutdown_start();
-    }
-
-    void on_registration(rotor::message::registration_response_t &msg) noexcept {
-        auto &ec = msg.payload.ec;
-        if (ec) {
-            std::cout << "ponger registration failure: " << ec.message() << "\n";
-            return;
-        }
-        std::cout << "ponger has been registered, resume initialization \n";
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
+        plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) { p.register_name(ponger_name, address); });
     }
 
     void on_ping(message::ping_t &req) noexcept {
@@ -144,13 +88,12 @@ int main() {
                        .loop(loop)
                        .loop_ownership(true) /* let supervisor takes ownership on the loop */
                        .timeout(timeout)
+                       .create_registry(true)
                        .finish();
         auto registry = sup->create_actor<rotor::registry_t>().timeout(timeout).finish();
-        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
         auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
+        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
 
-        ponger->set_registry_addr(registry->get_address());
-        pinger->set_registry_addr(registry->get_address());
         sup->start();
         ev_run(loop);
 
