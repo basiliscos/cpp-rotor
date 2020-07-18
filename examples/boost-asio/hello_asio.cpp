@@ -14,7 +14,7 @@ struct server_actor : public rotor::actor_base_t {
     void on_start() noexcept override {
         rotor::actor_base_t::on_start();
         std::cout << "hello world\n";
-        supervisor->do_shutdown();
+        supervisor->shutdown();
     }
 };
 
@@ -30,5 +30,6 @@ int main() {
 
     sup->start();
     io_context.run();
+
     return 0;
 }

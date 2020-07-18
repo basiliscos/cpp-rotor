@@ -109,7 +109,6 @@ struct forwarder_t<Actor, Handler, details::count::_0, ErrHandler> : forwarder_b
      * two different methods of the actor
      */
     template <typename T = void> inline void operator()(const boost::system::error_code &ec) noexcept {
-        using typed_sup_t = typename base_t::typed_sup_t;
         auto &typed_actor = base_t::typed_actor;
         auto &sup = static_cast<supervisor_asio_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
@@ -136,7 +135,6 @@ struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> : forwarder_b
      * two different methods of the actor
      */
     template <typename T> inline void operator()(const boost::system::error_code &ec, T arg) noexcept {
-        using typed_sup_t = typename base_t::typed_sup_t;
         auto &typed_actor = base_t::typed_actor;
         auto &sup = static_cast<supervisor_asio_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
@@ -164,7 +162,6 @@ struct forwarder_t<Actor, Handler, details::count::_0, void> : forwarder_base_t<
      * two different methods of the actor
      */
     template <typename T = void> inline void operator()() noexcept {
-        using typed_sup_t = typename base_t::typed_sup_t;
         auto &typed_actor = base_t::typed_actor;
         auto &sup = static_cast<supervisor_asio_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
@@ -185,7 +182,6 @@ struct forwarder_t<Actor, Handler, details::count::_1, void> : forwarder_base_t<
      * actor's member method.
      */
     template <typename T> inline void operator()(T arg) noexcept {
-        using typed_sup_t = typename base_t::typed_sup_t;
         auto &typed_actor = base_t::typed_actor;
         auto &sup = static_cast<supervisor_asio_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);

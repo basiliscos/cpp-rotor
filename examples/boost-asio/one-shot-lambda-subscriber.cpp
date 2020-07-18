@@ -82,11 +82,15 @@ struct ponger_t : public rotor::actor_base_t {
             auto lambda = rotor::lambda<message::ping_t>([&](auto &msg) {
                 std::cout << "pong\n";
                 unsubscribe(pong_handler);
-                // pong_handler.reset(); // otherwise it will be memory leak
                 reply_to(msg);
             });
             pong_handler = p.subscribe_actor(std::move(lambda));
         });
+    }
+
+    void shutdown_finish() noexcept override {
+        rotor::actor_base_t::shutdown_finish();
+        pong_handler.reset(); // otherwise it will be memory leak
     }
 
   private:
