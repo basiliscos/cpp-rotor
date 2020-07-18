@@ -13,8 +13,8 @@ namespace rotor::internal {
 struct subscriber_plugin_t : public plugin_t {
     using plugin_t::plugin_t;
 
-    template <typename Handler> void subscribe_actor(Handler &&handler) noexcept;
-    template <typename Handler> void subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
+    template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler) noexcept;
+    template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
 
     void deactivate() noexcept override;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,13 +42,14 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
-        std::cout << "ping\n";
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
+        std::cout << "ping (1)\n";
         auto timeout = rotor::pt::milliseconds{1};
         request<payload::ping_t>(ponger_addr).send(timeout);
     }
@@ -59,7 +60,7 @@ struct pinger_t : public rotor::actor_base_t {
             std::cout << "pong error: " << ec.message() << "\n";
             supervisor->do_shutdown();
         } else {
-            std::cout << "ping\n";
+            std::cout << "ping (2)\n";
             auto timeout = rotor::pt::milliseconds{1};
             request<payload::ping_t>(ponger_addr).send(timeout);
         }
@@ -75,15 +76,17 @@ struct ponger_t : public rotor::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        auto lambda = rotor::lambda<message::ping_t>([this](auto &msg) {
-            std::cout << "pong\n";
-            unsubscribe(pong_handler);
-            pong_handler.reset(); // otherwise it will be memory leak
-            reply_to(msg);
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([&](auto &p) {
+            auto lambda = rotor::lambda<message::ping_t>([&](auto &msg) {
+                std::cout << "pong\n";
+                unsubscribe(pong_handler);
+                // pong_handler.reset(); // otherwise it will be memory leak
+                reply_to(msg);
+            });
+            pong_handler = p.subscribe_actor(std::move(lambda));
         });
-        pong_handler = subscribe(std::move(lambda));
-        rotor::actor_base_t::init_start();
     }
 
   private:
