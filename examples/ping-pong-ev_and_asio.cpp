@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -48,13 +48,16 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        std::cout << "pinger_t::on_initialize\n";
-        subscribe(&pinger_t::on_pong);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
+            std::cout << "pinger_t::configure, subscribing on_pong\n";
+            p.subscribe_actor(&pinger_t::on_pong);
+        });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         std::cout << "pings start (" << pings_left << ")\n";
         start = std::chrono::high_resolution_clock::now();
         send_ping();
@@ -91,15 +94,16 @@ struct pinger_t : public rotor::actor_base_t {
 };
 
 struct ponger_t : public rotor::actor_base_t {
-
     using rotor::actor_base_t::actor_base_t;
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        std::cout << "ponger_t::on_initialize\n";
-        subscribe(&ponger_t::on_ping);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
+            std::cout << "ponger_t::configure, subscribing on_ping\n";
+            p.subscribe_actor(&ponger_t::on_ping);
+        });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept { send<pong_t>(pinger_addr); }

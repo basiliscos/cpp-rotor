@@ -94,7 +94,6 @@ struct ponger_t : public rotor::actor_base_t {
 };
 
 int main() {
-
     asio::io_context io_context{1};
     try {
 
