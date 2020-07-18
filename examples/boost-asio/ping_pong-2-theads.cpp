@@ -73,6 +73,7 @@ struct pinger_t : public r::actor_base_t {
         }
     }
 
+    // we need of this to let somebody shutdown everything
     void shutdown_finish() noexcept override {
         r::actor_base_t::shutdown_finish();
         supervisor->shutdown();
@@ -84,7 +85,6 @@ struct pinger_t : public r::actor_base_t {
 };
 
 struct ponger_t : public r::actor_base_t {
-
     using r::actor_base_t::actor_base_t;
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
