@@ -11,16 +11,12 @@ using namespace rotor;
 
 namespace {
 namespace to {
-struct address {};
 struct lifetime {};
-struct supervisor {};
 struct state {};
 } // namespace to
 } // namespace
 
-template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
-template <> auto &actor_base_t::access<to::supervisor>() noexcept { return supervisor; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 
 plugin_t::~plugin_t() {}
@@ -54,7 +50,7 @@ bool plugin_t::handle_init(message::init_request_t *) noexcept { return true; }
 
 void plugin_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
     // printf("[-] forgetting %s\n", info->handler->message_type);
-    actor->access<to::supervisor>()->commit_unsubscription(info);
+    actor->get_supervisor().commit_unsubscription(info);
 }
 
 bool plugin_t::forget_subscription(const subscription_point_t &point) noexcept {
@@ -85,7 +81,7 @@ bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool ext
     if (external) {
         auto act = actor; /* backup */
         if (forget_subscription(point)) {
-            auto &sup_addr = static_cast<actor_base_t &>(point.address->supervisor).access<to::address>();
+            auto &sup_addr = static_cast<actor_base_t &>(point.address->supervisor).get_address();
             act->send<payload::commit_unsubscription_t>(sup_addr, point);
             return true;
         }

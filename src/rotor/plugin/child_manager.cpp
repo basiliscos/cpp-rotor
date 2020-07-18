@@ -13,12 +13,10 @@ using namespace rotor::internal;
 
 namespace {
 namespace to {
-struct address {};
 struct state {};
 struct init_timeout {};
 struct shutdown_timeout {};
 struct lifetime {};
-struct supervisor {};
 struct manager {};
 struct address_mapping {};
 struct system_context {};
@@ -27,13 +25,10 @@ struct parent {};
 } // namespace to
 } // namespace
 
-template <> auto &actor_base_t::access<to::address>() const noexcept { return address; }
-template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
 template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
-template <> auto &actor_base_t::access<to::supervisor>() noexcept { return supervisor; }
 template <> auto &supervisor_t::access<to::manager>() noexcept { return manager; }
 template <> auto &supervisor_t::access<to::address_mapping>() noexcept { return address_mapping; }
 template <> auto &supervisor_t::access<to::system_context>() noexcept { return context; }
@@ -54,7 +49,7 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&child_manager_plugin_t::on_state_request);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SHUTDOWN);
-    actors_map.emplace(actor->access<to::address>(), actor_state_t{actor, false, false});
+    actors_map.emplace(actor->get_address(), actor_state_t{actor, false, false});
     actor->configure(*this);
 }
 
@@ -68,7 +63,7 @@ void child_manager_plugin_t::deactivate() noexcept {
 }
 
 void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
-    auto it_actor = actors_map.find(child.access<to::address>());
+    auto it_actor = actors_map.find(child.get_address());
     assert(it_actor != actors_map.end());
     bool child_started = it_actor->second.strated;
     actors_map.erase(it_actor);
@@ -109,8 +104,8 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     child->do_initialize(sup.access<to::system_context>());
     auto &timeout = child->access<to::init_timeout>();
-    sup.send<payload::create_actor_t>(actor->access<to::address>(), child, timeout);
-    actors_map.emplace(child->access<to::address>(), actor_state_t{child, false, false});
+    sup.send<payload::create_actor_t>(actor->get_address(), child, timeout);
+    actors_map.emplace(child->get_address(), actor_state_t{child, false, false});
     if (static_cast<actor_base_t &>(sup).access<to::state>() == state_t::INITIALIZING) {
         postponed_init = true;
     }
@@ -119,7 +114,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
 void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     auto &actor = message.payload.actor;
-    auto &actor_address = actor->access<to::address>();
+    auto &actor_address = actor->get_address();
     assert(actors_map.count(actor_address) == 1);
     sup.template request<payload::initialize_actor_t>(actor_address, actor_address).send(message.payload.timeout);
 }
@@ -132,7 +127,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     bool continue_init = false;
     auto init_predicate = [&](auto &it) {
         auto &state = it.second.actor->template access<to::state>();
-        return it.first != actor->access<to::address>() && state <= state_t::INITIALIZING;
+        return it.first != actor->get_address() && state <= state_t::INITIALIZING;
     };
     bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
     continue_init = !has_initing && !ec;
@@ -166,7 +161,7 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
         return; /* already finished / deactivated */
     auto &sup = static_cast<supervisor_t &>(*actor);
     auto &source_addr = message.payload.actor_address;
-    if (source_addr == static_cast<actor_base_t &>(sup).access<to::address>()) {
+    if (source_addr == static_cast<actor_base_t &>(sup).get_address()) {
         if (sup.access<to::parent>()) {
             // will be routed via shutdown request
             sup.do_shutdown();
@@ -189,7 +184,7 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
 }
 
 void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept {
-    actor.access<to::supervisor>()->access<to::system_context>()->on_error(ec);
+    actor.get_supervisor().access<to::system_context>()->on_error(ec);
 }
 
 void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &message) noexcept {
@@ -227,7 +222,7 @@ void child_manager_plugin_t::on_state_request(message::state_request_t &message)
 
 bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept {
     auto init_predicate = [&](auto it) {
-        auto &address = actor->access<to::address>();
+        auto &address = actor->get_address();
         auto &state = it.second.actor->template access<to::state>();
         return it.first != address && state <= state_t::INITIALIZING;
     };
@@ -237,7 +232,7 @@ bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept {
 
 bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     /* prevent double sending req, i.e. from parent and from self */
-    auto &self = actors_map.at(actor->access<to::address>());
+    auto &self = actors_map.at(actor->get_address());
     self.shutdown_requesting = true;
     unsubscribe_all(false);
 
@@ -250,7 +245,7 @@ void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
         auto &actor_state = it.second;
         if (!actor_state.shutdown_requesting) {
             auto &actor_addr = it.first;
-            auto &address = static_cast<actor_base_t &>(sup).access<to::address>();
+            auto &address = static_cast<actor_base_t &>(sup).get_address();
             auto &parent = sup.access<to::parent>();
             if ((actor_addr != address) || parent) {
                 auto &timeout = actor->access<to::shutdown_timeout>();

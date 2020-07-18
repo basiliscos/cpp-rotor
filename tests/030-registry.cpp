@@ -115,7 +115,7 @@ TEST_CASE("supervisor related tests", "[registry][supervisor]") {
         auto sup2 = sup->create_actor<rt::supervisor_test_t>()
                         .timeout(rt::default_timeout)
                         .locality(locality2)
-                        .registry_address(reg->access<rt::to::address>())
+                        .registry_address(reg->get_address())
                         .finish();
 
         while (!sup->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
@@ -176,7 +176,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         sup->do_process();
         REQUIRE((bool)act->discovery_reply);
         REQUIRE(!act->discovery_reply->payload.ec);
-        REQUIRE(act->discovery_reply->payload.res.service_addr.get() == act->access<rt::to::address>().get());
+        REQUIRE(act->discovery_reply->payload.res.service_addr.get() == act->get_address().get());
 
         act->register_name("s2");
         sup->do_process();
@@ -187,7 +187,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         sup->do_process();
         REQUIRE((bool)act->discovery_reply);
         REQUIRE(!act->discovery_reply->payload.ec);
-        REQUIRE(act->discovery_reply->payload.res.service_addr.get() == act->access<rt::to::address>().get());
+        REQUIRE(act->discovery_reply->payload.res.service_addr.get() == act->get_address().get());
 
         act->register_name("s3");
         sup->do_process();
@@ -223,7 +223,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         act_s->configurer = [&](auto &actor, r::plugin_t &plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>(
-                [&actor](auto &p) { p.register_name("service-name", actor.template access<rt::to::address>()); });
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
 
         sup->do_process();
@@ -236,7 +236,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         };
         sup->do_process();
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
-        CHECK(act_c->service_addr == act_s->access<rt::to::address>());
+        CHECK(act_c->service_addr == act_s->get_address());
 
         sup->do_shutdown();
         sup->do_process();
@@ -249,7 +249,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         act_s->configurer = [&](auto &actor, r::plugin_t &plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>(
-                [&actor](auto &p) { p.register_name("service-name", actor.template access<rt::to::address>()); });
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
 
         sup->do_process();
@@ -267,7 +267,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         };
         sup->do_process();
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
-        CHECK(act_c->service_addr == act_s->access<rt::to::address>());
+        CHECK(act_c->service_addr == act_s->get_address());
 
         sup->do_shutdown();
         sup->do_process();
@@ -290,11 +290,11 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
     SECTION("double name registration => fail") {
         auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        printf("act1 = %p(%p), act2 = %p(%p)\n", (void *)act1.get(), (void *)act1->access<rt::to::address>().get(),
-               (void *)act2.get(), (void *)act2->access<rt::to::address>().get());
+        printf("act1 = %p(%p), act2 = %p(%p)\n", (void *)act1.get(), (void *)act1->get_address().get(),
+               (void *)act2.get(), (void *)act2->get_address().get());
         auto configurer = [](auto &actor, r::plugin_t &plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>(
-                [&actor](auto &p) { p.register_name("service-name", actor.template access<rt::to::address>()); });
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
         act1->configurer = configurer;
         act2->configurer = configurer;

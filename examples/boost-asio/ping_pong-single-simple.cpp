@@ -94,14 +94,6 @@ struct ponger_t : public rotor::actor_base_t {
     rotor::address_ptr_t pinger_addr;
 };
 
-namespace to {
-struct address {};
-} // namespace to
-
-namespace rotor {
-template <> inline auto &actor_base_t::access<to::address>() noexcept { return address; }
-} // namespace rotor
-
 int main(int argc, char **argv) {
 
     asio::io_context io_context{1};
@@ -120,8 +112,8 @@ int main(int argc, char **argv) {
         auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
         auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_pings(count);
-        pinger->set_ponger_addr(ponger->access<to::address>());
-        ponger->set_pinger_addr(pinger->access<to::address>());
+        pinger->set_ponger_addr(ponger->get_address());
+        ponger->set_pinger_addr(pinger->get_address());
 
         supervisor->start();
         io_context.run();

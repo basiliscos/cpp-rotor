@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -124,7 +124,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup_t>().timeout(rt::default_timeout).finish();
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::supervisor>() == sup.get());
+    REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();
@@ -158,7 +158,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     r::system_context_t *system_context = new r::system_context_t{};
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::supervisor>() == sup.get());
+    REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
 
     sup->do_process();

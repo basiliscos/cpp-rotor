@@ -13,10 +13,8 @@ namespace rotor::test {
 
 namespace {
 namespace to {
-struct address {};
 struct get_plugin {};
 struct state {};
-struct supervisor {};
 struct internal_infos {};
 struct mine_handlers {};
 struct actors_map {};
@@ -36,9 +34,7 @@ bool empty(rotor::subscription_t &subs) noexcept;
 
 namespace rotor {
 
-template <> inline auto &actor_base_t::access<test::to::address>() noexcept { return address; }
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
-template <> inline auto &actor_base_t::access<test::to::supervisor>() noexcept { return supervisor; }
 
 template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const void *>(const void *identity) noexcept {
     return get_plugin(identity);

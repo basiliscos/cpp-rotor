@@ -98,14 +98,6 @@ struct ponger_t : public rotor::actor_base_t {
     }
 };
 
-namespace to {
-struct address {};
-} // namespace to
-
-namespace rotor {
-template <> inline auto &actor_base_t::access<to::address>() noexcept { return address; }
-} // namespace rotor
-
 int main() {
     try {
         auto *loop = ev_loop_new(0);
@@ -121,8 +113,8 @@ int main() {
         auto ponger1 = sup->create_actor<ponger_t>().timeout(timeout).finish();
         auto ponger2 = sup->create_actor<ponger_t>().timeout(timeout).finish();
 
-        pinger->set_ponger_addr1(ponger1->access<to::address>());
-        pinger->set_ponger_addr2(ponger2->access<to::address>());
+        pinger->set_ponger_addr1(ponger1->get_address());
+        pinger->set_ponger_addr2(ponger2->get_address());
 
         sup->start();
         ev_run(loop);

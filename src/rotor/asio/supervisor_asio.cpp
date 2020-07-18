@@ -23,7 +23,7 @@ void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t:
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 
 void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
-    auto timer = std::make_unique<timer_t>(timer_id, get_asio_context().get_io_context());
+    auto timer = std::make_unique<timer_t>(timer_id, strand->context());
     timer->expires_from_now(timeout);
 
     intrusive_ptr_t<supervisor_asio_t> self(this);
@@ -53,14 +53,14 @@ void supervisor_asio_t::cancel_timer(request_id_t timer_id) noexcept {
     boost::system::error_code ec;
     timer->cancel(ec);
     if (ec) {
-        get_asio_context().on_error(ec);
+        context->on_error(ec);
     }
     timers_map.erase(timer_id);
 }
 
 void supervisor_asio_t::on_timer_error(request_id_t, const boost::system::error_code &ec) noexcept {
     if (ec != asio::error::operation_aborted) {
-        get_asio_context().on_error(ec);
+        context->on_error(ec);
     }
 }
 

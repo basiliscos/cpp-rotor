@@ -20,7 +20,7 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-    auto &addr_s = act_s->access<rt::to::address>();
+    auto &addr_s = act_s->get_address();
 
     bool invoked = false;
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
@@ -118,7 +118,7 @@ TEST_CASE("unlink", "[actor]") {
 
     auto act_s = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-    auto &addr_s = act_s->access<rt::to::address>();
+    auto &addr_s = act_s->get_address();
 
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, [&](auto &) {}); });
@@ -183,7 +183,7 @@ TEST_CASE("auto-unlink on shutdown", "[actor]") {
 
     auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-    auto &addr_s = act_s->access<rt::to::address>();
+    auto &addr_s = act_s->get_address();
 
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, [&](auto &) {}); });

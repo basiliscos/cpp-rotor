@@ -79,7 +79,7 @@ TEST_CASE("obsrever", "[actor]") {
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto simpleton = sup->create_actor<simpleton_actor_t>().timeout(rt::default_timeout).finish();
-    auto &simpleton_addr = simpleton->access<rt::to::address>();
+    auto &simpleton_addr = simpleton->get_address();
     auto observer =
         sup->create_actor<foo_observer_t>().observable(simpleton_addr).timeout(rt::default_timeout).finish();
     sup->do_process();

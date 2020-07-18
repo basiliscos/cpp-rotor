@@ -254,12 +254,12 @@ struct supervisor_t : public actor_base_t {
     internal::delivery_plugin_base_t *delivery;
     internal::child_manager_plugin_t *manager;
 
+    /** \brief root supervisor for the locality */
+    supervisor_t *locality_leader;
+
   private:
     bool create_registry;
     address_ptr_t registry_address;
-
-    /** \brief root supervisor for the locality */
-    supervisor_t *locality_leader;
 
     supervisor_policy_t policy;
 
@@ -327,22 +327,18 @@ subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &ad
 }
 
 template <> inline auto &plugin_t::access<internal::subscriber_plugin_t>() noexcept { return own_subscriptions; }
-template <> inline auto &actor_base_t::access<internal::subscriber_plugin_t::to::address>() noexcept { return address; }
-template <> inline auto &actor_base_t::access<internal::subscriber_plugin_t::to::supervisor>() noexcept {
-    return supervisor;
-}
 
 namespace internal {
 
 template <typename Handler> void subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
-    auto &address = actor->access<to::address>();
+    auto &address = actor->get_address();
     subscribe_actor(std::forward<Handler>(handler), address);
 }
 
 template <typename Handler>
 void subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
-    auto info = actor->access<to::supervisor>()->subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
+    auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     assert(std::count_if(tracked.begin(), tracked.end(), [&](auto &it) { return *it == *info; }) == 0 &&
            "already subscribed");
     tracked.emplace_back(info);

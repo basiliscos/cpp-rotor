@@ -86,8 +86,8 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
     auto pinger = sup1->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
     auto ponger = sup2->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
-    pinger->set_ponger_addr(ponger->access<rt::to::address>());
-    ponger->set_pinger_addr(pinger->access<rt::to::address>());
+    pinger->set_ponger_addr(ponger->get_address());
+    ponger->set_pinger_addr(pinger->get_address());
 
     sup1->do_process();
     sup2->do_process();
@@ -145,8 +145,8 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
     auto pinger = sup1->create_actor<pinger_autostart_t>().timeout(rt::default_timeout).finish();
     auto ponger = sup2->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
-    pinger->set_ponger_addr(ponger->access<rt::to::address>());
-    ponger->set_pinger_addr(pinger->access<rt::to::address>());
+    pinger->set_ponger_addr(ponger->get_address());
+    ponger->set_pinger_addr(pinger->get_address());
 
     sup1->do_process();
     sup2->do_process();

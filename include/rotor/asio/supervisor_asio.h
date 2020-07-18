@@ -101,12 +101,14 @@ struct supervisor_asio_t : public supervisor_t {
         return forwarder_t{*this, std::move(handler)};
     }
 
+#if 0
     /** \brief retunrns an reference to boos::asio systerm context
      *
      * It might be useful to get `boost::asio::io_context&`, i.e. to create socket.
      *
      */
     inline system_context_asio_t &get_asio_context() noexcept { return static_cast<system_context_asio_t &>(*context); }
+#endif
 
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }

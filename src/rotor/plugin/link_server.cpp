@@ -12,14 +12,12 @@ using namespace rotor::internal;
 
 namespace {
 namespace to {
-struct address {};
 struct state {};
 struct shutdown_request {};
 struct shutdown_timeout {};
 } // namespace to
 } // namespace
 
-template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
@@ -94,7 +92,7 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
 bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     for (auto it : linked_clients) {
         if (it.second == link_state_t::OPERATIONAL) {
-            auto &self = actor->access<to::address>();
+            auto &self = actor->get_address();
             auto &timeout = actor->access<to::shutdown_timeout>();
             actor->request<payload::unlink_request_t>(it.first, self).send(timeout);
         }

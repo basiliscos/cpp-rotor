@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -71,8 +71,8 @@ TEST_CASE("ping-pong", "[supervisor]") {
     auto pinger = sup->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
-    pinger->set_ponger_addr(ponger->access<rt::to::address>());
-    ponger->set_pinger_addr(pinger->access<rt::to::address>());
+    pinger->set_ponger_addr(ponger->get_address());
+    ponger->set_pinger_addr(pinger->get_address());
 
     sup->do_process();
     REQUIRE(pinger->ping_sent == 1);

@@ -107,12 +107,12 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
 
     std::cout << "sup1: " << sup1.get() << ", sup2: " << sup2.get() << "\n";
     std::cout << "pinger: " << pinger.get() << ", ponger: " << ponger.get() << "\n";
-    auto &pinger_addr = static_cast<r::actor_base_t *>(pinger.get())->access<rt::to::address>();
-    auto &ponger_addr = static_cast<r::actor_base_t *>(ponger.get())->access<rt::to::address>();
+    auto &pinger_addr = static_cast<r::actor_base_t *>(pinger.get())->get_address();
+    auto &ponger_addr = static_cast<r::actor_base_t *>(ponger.get())->get_address();
     std::cout << "pinger addr: " << pinger_addr.get() << ", ponger addr: " << ponger_addr.get() << "\n";
 
-    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->access<rt::to::address>());
-    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->access<rt::to::address>());
+    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->get_address());
+    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->get_address());
 
     sup1->start();
     sup2->start();

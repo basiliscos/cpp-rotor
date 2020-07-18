@@ -12,7 +12,6 @@ using namespace rotor::internal;
 
 namespace {
 namespace to {
-struct address {};
 struct init_request {};
 struct init_timeout {};
 struct state {};
@@ -20,7 +19,6 @@ struct shutdown_request {};
 } // namespace to
 } // namespace
 
-template <> auto &actor_base_t::access<to::address>() noexcept { return address; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
@@ -42,7 +40,7 @@ void link_client_plugin_t::activate(actor_base_t *actor_) noexcept {
 void link_client_plugin_t::link(const address_ptr_t &address, const link_callback_t &callback) noexcept {
     assert(servers_map.count(address) == 0);
     servers_map.emplace(address, server_record_t{callback, link_state_t::LINKING});
-    auto &source_addr = actor->access<to::address>();
+    auto &source_addr = actor->get_address();
     reaction_on(reaction_t::INIT);
     auto &timeout = actor->access<to::init_timeout>();
     actor->request<payload::link_request_t>(address, source_addr).send(timeout);
@@ -81,7 +79,7 @@ void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexc
     if (it == servers_map.end())
         return;
 
-    actor->reply_to(message, actor->access<to::address>());
+    actor->reply_to(message, actor->get_address());
     servers_map.erase(it);
 
     if (actor->access<to::state>() == rotor::state_t::SHUTTING_DOWN) {
@@ -114,7 +112,7 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *) noexce
     if (servers_map.empty())
         return true;
 
-    auto &source_addr = actor->access<to::address>();
+    auto &source_addr = actor->get_address();
     for (auto it = servers_map.begin(); it != servers_map.end();) {
         if (it->second.state != link_state_t::UNLINKING) {
             actor->send<payload::unlink_notify_t>(it->first, source_addr);

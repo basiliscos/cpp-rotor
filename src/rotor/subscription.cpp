@@ -10,14 +10,6 @@
 
 using namespace rotor;
 
-namespace {
-namespace to {
-struct supervisor {};
-} // namespace to
-} // namespace
-
-template <> auto &actor_base_t::access<to::supervisor>() noexcept { return supervisor; }
-
 subscription_info_t::~subscription_info_t() {}
 
 subscription_t::subscription_t(supervisor_t &sup_) noexcept : supervisor{sup_} {}
@@ -28,7 +20,7 @@ subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &
     auto &address = point.address;
     auto &handler = point.handler;
     bool internal_address = &address->supervisor == &supervisor;
-    bool internal_handler = handler->actor_ptr->access<to::supervisor>() == &supervisor;
+    bool internal_handler = &handler->actor_ptr->get_supervisor() == &supervisor;
     State state = internal_address ? State::SUBSCRIBED : State::SUBSCRIBING;
     subscription_info_ptr_t info(new subscription_info_t(point, internal_address, internal_handler, state));
 

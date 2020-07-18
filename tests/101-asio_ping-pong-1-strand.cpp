@@ -77,8 +77,8 @@ TEST_CASE("ping/pong ", "[supervisor][asio]") {
 
     auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
-    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->access<rt::to::address>());
-    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->access<rt::to::address>());
+    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->get_address());
+    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->get_address());
 
     sup->start();
     io_context.run();

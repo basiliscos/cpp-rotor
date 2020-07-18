@@ -61,14 +61,6 @@ struct dummy_supervisor : public rotor::supervisor_t {
     void enqueue(rotor::message_ptr_t) noexcept override {}
 };
 
-namespace to {
-struct address {};
-} // namespace to
-
-namespace rotor {
-template <> inline auto &actor_base_t::access<to::address>() noexcept { return address; }
-} // namespace rotor
-
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
@@ -76,8 +68,8 @@ int main() {
 
     auto pinger = sup->create_actor<pinger_t>().init_timeout(timeout).shutdown_timeout(timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish(); // shortcut for init/shutdown
-    pinger->set_ponger_addr(ponger->access<to::address>());
-    ponger->set_pinger_addr(pinger->access<to::address>());
+    pinger->set_ponger_addr(ponger->get_address());
+    ponger->set_pinger_addr(pinger->get_address());
 
     sup->do_process();
     return 0;

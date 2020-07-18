@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -59,7 +59,7 @@ struct custom_child_manager_t : public r::internal::child_manager_plugin_t {
     r::address_ptr_t fail_addr;
     std::error_code fail_ec;
     void on_shutdown_fail(r::actor_base_t &actor, const std::error_code &ec) noexcept {
-        fail_addr = actor.access<rt::to::address>();
+        fail_addr = actor.get_address();
         fail_ec = ec;
     }
 };
@@ -162,7 +162,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
         static_cast<r::actor_base_t &>(*sup).access<rt::to::get_plugin>(custom_child_manager_t::class_identity);
     auto cm_plugin = static_cast<custom_child_manager_t *>(plugin);
 
-    REQUIRE(cm_plugin->fail_addr == act->access<rt::to::address>());
+    REQUIRE(cm_plugin->fail_addr == act->get_address());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
 
     fail_plugin->allow_shutdown = true;
