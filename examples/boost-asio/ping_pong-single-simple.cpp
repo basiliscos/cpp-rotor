@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -31,13 +31,16 @@ struct pinger_t : public rotor::actor_base_t {
     void set_pings(std::size_t pings) { pings_left = pings_count = pings; }
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        std::cout << "pinger_t::init_start\n";
-        subscribe(&pinger_t::on_pong);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
+            std::cout << "pinger_t::configure(), subscribing to on_pong\n";
+            p.subscribe_actor(&pinger_t::on_pong);
+        });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         std::cout << "pings start (" << pings_left << ")\n";
         start = std::chrono::high_resolution_clock::now();
         send_ping();
@@ -77,10 +80,12 @@ struct ponger_t : public rotor::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        std::cout << "pinger_t::init_start\n";
-        subscribe(&ponger_t::on_ping);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
+            std::cout << "pinger_t::configure, subscriping on_ping\n";
+            p.subscribe_actor(&ponger_t::on_ping);
+        });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept { send<pong_t>(pinger_addr); }
@@ -88,6 +93,15 @@ struct ponger_t : public rotor::actor_base_t {
   private:
     rotor::address_ptr_t pinger_addr;
 };
+
+namespace to {
+struct address {};
+} // namespace to
+
+namespace rotor {
+template <> inline auto &actor_base_t::access<to::address>() noexcept { return address; }
+} // namespace rotor
+
 
 int main(int argc, char **argv) {
 
@@ -106,9 +120,9 @@ int main(int argc, char **argv) {
 
         auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
         auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
-        pinger->set_ponger_addr(ponger->get_address());
         pinger->set_pings(count);
-        ponger->set_pinger_addr(pinger->get_address());
+        pinger->set_ponger_addr(ponger->access<to::address>());
+        ponger->set_pinger_addr(pinger->access<to::address>());
 
         supervisor->start();
         io_context.run();

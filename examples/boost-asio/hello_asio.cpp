@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,9 +11,10 @@ namespace pt = boost::posix_time;
 
 struct server_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         std::cout << "hello world\n";
-        supervisor->do_shutdown(); // optional
+        supervisor->do_shutdown();
     }
 };
 
