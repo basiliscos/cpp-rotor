@@ -38,10 +38,6 @@ struct plugin_t {
 
     virtual processing_result_t handle_subscription(message::subscription_t &message) noexcept;
 
-    template <typename Handler>
-    subscription_info_ptr_t subscribe(Handler &&handler, const address_ptr_t &address) noexcept;
-    template <typename Handler> subscription_info_ptr_t subscribe(Handler &&handler) noexcept;
-
     template <typename Plugin, typename Fn> void with_casted(Fn &&fn) noexcept {
         if (identity() == Plugin::class_identity) {
             auto &final = static_cast<Plugin &>(*this);
@@ -56,6 +52,10 @@ struct plugin_t {
     template <typename T> auto &access() noexcept;
 
   protected:
+    template <typename Handler>
+    subscription_info_ptr_t subscribe(Handler &&handler, const address_ptr_t &address) noexcept;
+    template <typename Handler> subscription_info_ptr_t subscribe(Handler &&handler) noexcept;
+
     actor_base_t *actor;
 
   private:
