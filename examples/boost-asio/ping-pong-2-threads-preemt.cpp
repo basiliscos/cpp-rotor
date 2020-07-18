@@ -47,7 +47,6 @@ struct pinger_t : public r::actor_base_t {
         });
     }
 
-
     void on_start() noexcept override {
         r::actor_base_t::on_start();
         std::cout << "pinger::on_start\n";

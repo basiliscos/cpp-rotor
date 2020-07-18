@@ -115,6 +115,23 @@ struct sample_sup3_t : public rt::supervisor_test_t {
     void on_sample(message::sample_payload_t &) noexcept { ++received; }
 };
 
+struct unsubscriber_sup_t : public rt::supervisor_test_t {
+    using sup_base_t = rt::supervisor_test_t;
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    void configure(r::plugin_t &plugin) noexcept override {
+        plugin.with_casted<r::internal::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&unsubscriber_sup_t::on_sample); });
+    }
+
+    void on_start() noexcept override {
+        rt::supervisor_test_t::on_start();
+        unsubscribe(&unsubscriber_sup_t::on_sample);
+    }
+
+    void on_sample(message::sample_payload_t &) noexcept {}
+};
+
 struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };
@@ -218,6 +235,17 @@ TEST_CASE("custom subscription", "[supervisor]") {
 TEST_CASE("shutdown immediately", "[supervisor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<sample_sup3_t>().timeout(rt::default_timeout).finish();
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("self unsubscriber", "[actor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<unsubscriber_sup_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
     sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);

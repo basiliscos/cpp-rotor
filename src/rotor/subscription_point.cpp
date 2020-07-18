@@ -14,7 +14,9 @@ bool subscription_point_t::operator==(const subscription_point_t &other) const n
 }
 
 subscription_container_t::iterator subscription_container_t::find(const subscription_point_t &point) noexcept {
-    auto predicate = [&point](auto &info) { return info->handler == point.handler && info->address == point.address; };
+    auto predicate = [&point](auto &info) {
+        return *info->handler == *point.handler && info->address == point.address;
+    };
     auto rit = std::find_if(rbegin(), rend(), predicate);
     return --rit.base();
 }
