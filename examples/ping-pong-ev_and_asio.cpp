@@ -5,15 +5,6 @@
 //
 
 /*
- * This is a little bit simplified example, as we don't supervise actor's synchonization.
- * In the real-world application the proper actions will be:
- * 1. pinger should wait ponger start, and only after that, start pinging it.
- * 2. after finishing it's job, pinger should trigger ponger shutdown
- * 3. pinger should wait ponger shutdown confirmation
- * 4. pinger should release(reset) ponger's address and initiate it's own supervisor shutdown.
- *
- * If (1) is ommitted, then a few messages(pings) might be lost. If (2)..(4) are omitted, then
- * it might lead to memory leak.
  *
  * The example below works because the lifetimes of supervisor's is known apriory, i.e.
  * sup_ev is shutted down while sup_asio is still operational. As the last don't have
