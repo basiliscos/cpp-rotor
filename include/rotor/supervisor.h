@@ -219,6 +219,8 @@ struct supervisor_t : public actor_base_t {
     template <typename T> auto &access() noexcept;
     template <typename T, typename... Args> auto access(Args... args) noexcept;
 
+    inline const address_ptr_t &get_registry_address() const noexcept { return registry_address; }
+
   protected:
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;

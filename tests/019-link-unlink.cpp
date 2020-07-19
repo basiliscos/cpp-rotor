@@ -147,10 +147,10 @@ TEST_CASE("unlink", "[actor]") {
         SECTION("client, then server") {
             act_s->do_shutdown();
             act_c->do_shutdown();
-            sup1->do_process();
             sup2->do_process();
             sup1->do_process();
             sup2->do_process();
+            sup1->do_process();
         }
 
         SECTION("server, then client") {

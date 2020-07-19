@@ -33,8 +33,20 @@
 
 namespace asio = boost::asio;
 
-struct ping_t {};
+namespace payload {
 struct pong_t {};
+struct ping_t {
+    using response_t = pong_t;
+};
+} // namespace payload
+
+namespace message {
+using ping_t = rotor::request_traits_t<payload::ping_t>::request::message_t;
+using pong_t = rotor::request_traits_t<payload::ping_t>::response::message_t;
+} // namespace message
+
+static const char ponger_name[] = "service:ponger";
+static const auto timeout = boost::posix_time::milliseconds{500};
 
 struct pinger_t : public rotor::actor_base_t {
     using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
@@ -46,13 +58,16 @@ struct pinger_t : public rotor::actor_base_t {
         pings_count = pings;
     }
 
-    void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
-
     void configure(rotor::plugin_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
             std::cout << "pinger_t::configure, subscribing on_pong\n";
             p.subscribe_actor(&pinger_t::on_pong);
+        });
+        plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) {
+            p.discover_name(ponger_name, ponger_addr).link(true, [&](auto &ec) {
+                std::cout << "discovered & linked with ponger : " << (!ec ? "yes" : "no") << "\n";
+            });
         });
     }
 
@@ -63,7 +78,18 @@ struct pinger_t : public rotor::actor_base_t {
         send_ping();
     }
 
-    void on_pong(rotor::message_t<pong_t> &) noexcept {
+    void shutdown_finish() noexcept override {
+        rotor::actor_base_t::shutdown_finish();
+        std::cout << "pinger_t::shutdown_finish\n";
+        supervisor->shutdown();
+        ponger_addr.reset(); // do not hold reference to to ponger's supervisor
+    }
+
+    void on_pong(message::pong_t &reply) noexcept {
+        auto &ec = reply.payload.ec;
+        if (ec) {
+            std::cout << "pong error: " << ec.message() << "\n";
+        }
         // std::cout << "pinger_t::on_pong\n";
         send_ping();
     }
@@ -71,19 +97,17 @@ struct pinger_t : public rotor::actor_base_t {
   private:
     void send_ping() {
         if (pings_left) {
-            send<ping_t>(ponger_addr);
+            request<payload::ping_t>(ponger_addr).send(timeout);
             --pings_left;
         } else {
             using namespace std::chrono;
             auto end = high_resolution_clock::now();
             std::chrono::duration<double> diff = end - start;
             double freq = ((double)pings_count) / diff.count();
-            std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
+            std::cout << "pings complete (" << pings_left << ") in " << diff.count() << "s"
                       << ", freq = " << std::fixed << std::setprecision(10) << freq << ", real freq = " << std::fixed
                       << std::setprecision(10) << freq * 2 << "\n";
-            supervisor->shutdown();
-            ponger_addr.reset(); // do not hold reference to to ponger's supervisor
-            // send<rotor::payload::shutdown_request_t>(ponger_addr->supervisor.get_address(), address);
+            do_shutdown();
         }
     }
 
@@ -96,20 +120,24 @@ struct pinger_t : public rotor::actor_base_t {
 struct ponger_t : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
-    void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
-
     void configure(rotor::plugin_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
             std::cout << "ponger_t::configure, subscribing on_ping\n";
             p.subscribe_actor(&ponger_t::on_ping);
         });
+        plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) {
+            std::cout << "ponger_t::configure, registering name\n";
+            p.register_name(ponger_name, address);
+        });
     }
 
-    void on_ping(rotor::message_t<ping_t> &) noexcept { send<pong_t>(pinger_addr); }
+    void on_ping(message::ping_t &ping) noexcept { reply_to(ping); }
 
-  private:
-    rotor::address_ptr_t pinger_addr;
+    void shutdown_finish() noexcept override {
+        rotor::actor_base_t::shutdown_finish();
+        std::cout << "ponger_t::shutdown_finish\n";
+    }
 };
 
 int main(int argc, char **argv) {
@@ -120,40 +148,40 @@ int main(int argc, char **argv) {
         }
 
         asio::io_context io_ctx;
-        auto timeout = boost::posix_time::milliseconds{500};
-        auto asio_guard = asio::make_work_guard(io_ctx);
         auto sys_ctx_asio = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_ctx)};
         auto strand = std::make_shared<asio::io_context::strand>(io_ctx);
 
         auto *loop = ev_loop_new(0);
         auto sys_ctx_ev = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
 
+        auto sup_asio = sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>()
+                            .strand(strand)
+                            .timeout(timeout)
+                            .create_registry(true)
+                            .guard_context(true)
+                            .finish();
         auto sup_ev = sys_ctx_ev->create_supervisor<rotor::ev::supervisor_ev_t>()
                           .loop(loop)
                           .loop_ownership(true) /* let supervisor takes ownership on the loop */
                           .timeout(timeout)
+                          .registry_address(sup_asio->get_registry_address())
                           .finish();
-        auto sup_asio =
-            sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
         auto pinger = sup_ev->create_actor<pinger_t>().timeout(timeout).finish();
         auto ponger = sup_asio->create_actor<ponger_t>().timeout(timeout).finish();
-        pinger->set_ponger_addr(ponger->get_address());
         pinger->set_pings(count);
-        ponger->set_pinger_addr(pinger->get_address());
 
         sup_asio->start();
         sup_ev->start();
 
+        // explain why
         auto thread_asio = std::thread([&] { io_ctx.run(); });
 
         ev_run(loop);
 
         sup_asio->shutdown();
-        asio_guard.reset();
         thread_asio.join();
 
-        std::cout << "main execution complete\n";
         sup_asio->do_process();
         sup_ev->do_process();
 

@@ -15,7 +15,6 @@ namespace to {
 struct init_request {};
 struct init_timeout {};
 struct get_plugin {};
-struct registry_address {};
 } // namespace to
 } // namespace
 
@@ -24,7 +23,6 @@ template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return ini
 template <> auto actor_base_t::access<to::get_plugin, const void *>(const void *identity) noexcept {
     return get_plugin(identity);
 }
-template <> auto &supervisor_t::access<to::registry_address>() noexcept { return registry_address; }
 
 const void *registry_plugin_t::class_identity = static_cast<const void *>(typeid(registry_plugin_t).name());
 
@@ -42,7 +40,7 @@ void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
 bool registry_plugin_t::register_name(const std::string &name, const address_ptr_t &address) noexcept {
     if (register_map.count(name))
         return false;
-    assert(actor->get_supervisor().access<to::registry_address>());
+    assert(actor->get_supervisor().get_registry_address());
 
     assert(!(plugin_state & LINKED));
     if (!(plugin_state & LINKING)) {
@@ -115,7 +113,7 @@ void registry_plugin_t::link_registry() noexcept {
     plugin_state = plugin_state | LINKING;
     auto plugin = actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
     auto p = static_cast<link_client_plugin_t *>(plugin);
-    auto &registry_addr = actor->get_supervisor().access<to::registry_address>();
+    auto &registry_addr = actor->get_supervisor().get_registry_address();
     /* we know that registry actor has no I/O, so it is safe to work with it in pre-operational state */
     bool operational_only = false;
     p->link(registry_addr, operational_only, [this](auto &ec) { on_link(ec); });
@@ -125,7 +123,7 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
     plugin_state = plugin_state | LINKED;
     plugin_state = plugin_state & ~LINKING;
     if (!ec) {
-        auto &registry_addr = actor->get_supervisor().access<to::registry_address>();
+        auto &registry_addr = actor->get_supervisor().get_registry_address();
         auto timeout = actor->access<to::init_timeout>();
         for (auto &it : register_map) {
             actor->request<payload::registration_request_t>(registry_addr, it.first, it.second.address).send(timeout);
@@ -149,7 +147,7 @@ bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
 bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     if (register_map.empty())
         return true;
-    auto &registry_addr = actor->get_supervisor().access<to::registry_address>();
+    auto &registry_addr = actor->get_supervisor().get_registry_address();
     for (auto it : register_map) {
         if (it.second.state == state_t::OPERATIONAL) {
             actor->send<payload::deregistration_service_t>(registry_addr, it.first);

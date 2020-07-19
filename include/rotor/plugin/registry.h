@@ -37,7 +37,7 @@ struct registry_plugin_t : public plugin_t {
         address_ptr_t *address;
         std::string service_name;
         bool link_on_discovery = false;
-        bool operational_only;
+        bool operational_only = false;
         link_callback_t callback;
 
         friend struct registry_plugin_t;

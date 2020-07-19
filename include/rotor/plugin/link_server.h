@@ -10,6 +10,7 @@
 #include <string>
 #include <unordered_set>
 #include <functional>
+#include <optional>
 
 namespace rotor::internal {
 
@@ -33,9 +34,12 @@ struct link_server_plugin_t : public plugin_t {
   private:
     enum class link_state_t { PENDING, OPERATIONAL, UNLINKING };
     using link_request_ptr_t = intrusive_ptr_t<message::link_request_t>;
+    using request_option_t = std::optional<request_id_t>;
     struct link_info_t {
+        link_info_t(link_state_t state_, link_request_ptr_t request_) noexcept : state{state_}, request{request_} {}
         link_state_t state;
         link_request_ptr_t request;
+        request_option_t unlink_request;
     };
 
     using linked_clients_t = std::unordered_map<address_ptr_t, link_info_t>;

@@ -52,10 +52,10 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
 
     bool operational_only = message.payload.request_payload.operational_only;
     if (operational_only && state < state_t::OPERATIONAL) {
-        linked_clients.emplace(client_addr, link_info_t{link_state_t::PENDING, link_request_ptr_t{&message}});
+        linked_clients.emplace(client_addr, link_info_t(link_state_t::PENDING, link_request_ptr_t{&message}));
         reaction_on(reaction_t::START);
     } else {
-        linked_clients.emplace(client_addr, link_info_t{link_state_t::OPERATIONAL, link_request_ptr_t{}});
+        linked_clients.emplace(client_addr, link_info_t(link_state_t::OPERATIONAL, link_request_ptr_t{}));
         actor->reply_to(message);
     }
 }
@@ -67,6 +67,10 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
     // ok, might be some race
     if (it == linked_clients.end())
         return;
+    auto &unlink_request = it->second.unlink_request;
+    if (unlink_request) {
+        actor->get_supervisor().cancel_timer(*unlink_request);
+    }
     linked_clients.erase(it);
 
     auto &state = actor->access<to::state>();
@@ -97,11 +101,13 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
 }
 
 bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
-    for (auto it : linked_clients) {
+    for (auto &it : linked_clients) {
         if (it.second.state == link_state_t::OPERATIONAL) {
             auto &self = actor->get_address();
             auto &timeout = actor->access<to::shutdown_timeout>();
-            actor->request<payload::unlink_request_t>(it.first, self).send(timeout);
+            auto request_id = actor->request<payload::unlink_request_t>(it.first, self).send(timeout);
+            it.second.state = link_state_t::UNLINKING;
+            it.second.unlink_request = request_id;
         }
     }
     return linked_clients.empty();
