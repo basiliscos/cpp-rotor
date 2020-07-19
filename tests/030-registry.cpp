@@ -259,7 +259,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         bool linked = false;
         act_c->configurer = [&](auto &, r::plugin_t &plugin) {
             plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
-                p.discover_name("service-name", act_c->service_addr).link([&](auto &ec) {
+                p.discover_name("service-name", act_c->service_addr).link(true, [&](auto &ec) {
                     REQUIRE(!ec);
                     linked = true;
                 });

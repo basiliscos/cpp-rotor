@@ -267,6 +267,7 @@ struct link_response_t {};
 struct link_request_t {
     using response_t = link_response_t;
     address_ptr_t client_addr;
+    bool operational_only;
 };
 
 struct unlink_notify_t {

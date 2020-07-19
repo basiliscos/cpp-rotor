@@ -18,6 +18,7 @@ struct plugin_t {
         INIT = 1 << 0,
         SHUTDOWN = 1 << 1,
         SUBSCRIPTION = 1 << 2,
+        START = 1 << 3,
     };
 
     plugin_t() = default;
@@ -31,6 +32,7 @@ struct plugin_t {
 
     virtual bool handle_init(message::init_request_t *message) noexcept;
     virtual bool handle_shutdown(message::shutdown_request_t *message) noexcept;
+    virtual bool handle_start(message::start_trigger_t *message) noexcept;
 
     virtual bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept;
     virtual bool forget_subscription(const subscription_point_t &point) noexcept;

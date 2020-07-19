@@ -46,7 +46,7 @@ bool registry_plugin_t::register_name(const std::string &name, const address_ptr
 
     assert(!(plugin_state & LINKED));
     if (!(plugin_state & LINKING)) {
-        link();
+        link_registry();
     }
 
     register_map.emplace(name, register_info_t{address, state_t::REGISTERING});
@@ -61,7 +61,7 @@ registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std:
 
     assert(!(plugin_state & LINKED));
     if (!(plugin_state & LINKING)) {
-        link();
+        link_registry();
     }
 
     auto r = discovery_map.emplace(name, discovery_task_t(*this, &address, name));
@@ -111,12 +111,14 @@ void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
     }
 }
 
-void registry_plugin_t::link() noexcept {
+void registry_plugin_t::link_registry() noexcept {
     plugin_state = plugin_state | LINKING;
     auto plugin = actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
     auto p = static_cast<link_client_plugin_t *>(plugin);
     auto &registry_addr = actor->get_supervisor().access<to::registry_address>();
-    p->link(registry_addr, [this](auto &ec) { on_link(ec); });
+    /* we know that registry actor has no I/O, so it is safe to work with it in pre-operational state */
+    bool operational_only = false;
+    p->link(registry_addr, operational_only, [this](auto &ec) { on_link(ec); });
 }
 
 void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
@@ -166,7 +168,7 @@ void registry_plugin_t::discovery_task_t::on_discovery(const std::error_code &ec
     if (!ec && callback) {
         auto p = plugin.actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
         auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
-        link_plugin.link(*address, [this](auto &ec) {
+        link_plugin.link(*address, operational_only, [this](auto &ec) {
             callback(ec);
             continue_init(ec);
         });

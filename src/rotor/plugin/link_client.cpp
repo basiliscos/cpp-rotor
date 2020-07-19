@@ -37,13 +37,14 @@ void link_client_plugin_t::activate(actor_base_t *actor_) noexcept {
     reaction_on(reaction_t::SHUTDOWN);
 }
 
-void link_client_plugin_t::link(const address_ptr_t &address, const link_callback_t &callback) noexcept {
+void link_client_plugin_t::link(const address_ptr_t &address, bool operational_only,
+                                const link_callback_t &callback) noexcept {
     assert(servers_map.count(address) == 0);
     servers_map.emplace(address, server_record_t{callback, link_state_t::LINKING});
     auto &source_addr = actor->get_address();
     reaction_on(reaction_t::INIT);
     auto &timeout = actor->access<to::init_timeout>();
-    actor->request<payload::link_request_t>(address, source_addr).send(timeout);
+    actor->request<payload::link_request_t>(address, source_addr, operational_only).send(timeout);
 }
 
 void link_client_plugin_t::on_link_response(message::link_response_t &message) noexcept {

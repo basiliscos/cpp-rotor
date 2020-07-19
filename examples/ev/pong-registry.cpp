@@ -11,6 +11,15 @@
 #include <chrono>
 #include <cstdlib>
 
+/* NB: there is some race-condition, as the ponger might be register self in the registry
+ * later then pinger asks for ponger address; then pinger receives discovery falilure
+ * reply and shuts self down.
+ *
+ * The correct behavior will be introduced later in rotor with erlang-like actor restart
+ * policy, i.e.: pinger should be downed, and it's supervisor should restart if (may be
+ * a few times, may be with some delay in between).
+ */
+
 namespace payload {
 struct pong_t {};
 struct ping_t {
@@ -30,13 +39,11 @@ struct pinger_t : public rotor::actor_base_t {
 
     using rotor::actor_base_t::actor_base_t;
 
-    void set_registry_addr(const rotor::address_ptr_t &addr) { registry_addr = addr; }
-
     void configure(rotor::plugin_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
         plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) {
-            p.discover_name(ponger_name, ponger_addr).link([&](auto &ec) {
+            p.discover_name(ponger_name, ponger_addr).link(true, [&](auto &ec) {
                 std::cout << "discovered & linked with ponger : " << (!ec ? "yes" : "no") << "\n";
             });
         });
@@ -54,7 +61,6 @@ struct pinger_t : public rotor::actor_base_t {
     }
 
     std::uint32_t attempts = 3;
-    rotor::address_ptr_t registry_addr;
     rotor::address_ptr_t ponger_addr;
 };
 
@@ -90,7 +96,6 @@ int main() {
                        .timeout(timeout)
                        .create_registry(true)
                        .finish();
-        auto registry = sup->create_actor<rotor::registry_t>().timeout(timeout).finish();
         auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
         auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
 
@@ -109,11 +114,7 @@ int main() {
 
 sample output:
 
-ponger address wasn't found: the requested service name is not registered
-lets try to discover ponger address again (2 attempts left)
-ponger has been registered, resume initialization
-ponger address was succesfully discovered
-ponger state is operational, continue pinger init
+discovered & linked with ponger : yes
 lets send ping
 ponger recevied ping request
 pong received, going to shutdown

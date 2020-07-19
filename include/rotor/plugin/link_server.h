@@ -26,12 +26,19 @@ struct link_server_plugin_t : public plugin_t {
     virtual void on_unlink_notify(message::unlink_notify_t &message) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
+    bool handle_start(message::start_trigger_t *message) noexcept override;
 
     template <typename T> auto &access() noexcept;
 
   private:
-    enum class link_state_t { OPERATIONAL, UNLINKING };
-    using linked_clients_t = std::unordered_map<address_ptr_t, link_state_t>;
+    enum class link_state_t { PENDING, OPERATIONAL, UNLINKING };
+    using link_request_ptr_t = intrusive_ptr_t<message::link_request_t>;
+    struct link_info_t {
+        link_state_t state;
+        link_request_ptr_t request;
+    };
+
+    using linked_clients_t = std::unordered_map<address_ptr_t, link_info_t>;
     linked_clients_t linked_clients;
 };
 

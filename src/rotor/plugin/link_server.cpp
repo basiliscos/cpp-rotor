@@ -36,7 +36,8 @@ void link_server_plugin_t::activate(actor_base_t *actor_) noexcept {
 }
 
 void link_server_plugin_t::on_link_request(message::link_request_t &message) noexcept {
-    if (actor->access<to::state>() >= state_t::SHUTTING_DOWN) {
+    auto state = actor->access<to::state>();
+    if (state > state_t::OPERATIONAL) {
         auto ec = make_error_code(error_code_t::actor_not_linkable);
         actor->reply_with_error(message, ec);
         return;
@@ -49,8 +50,14 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
         return;
     }
 
-    linked_clients.emplace(client_addr, link_state_t::OPERATIONAL);
-    actor->reply_to(message);
+    bool operational_only = message.payload.request_payload.operational_only;
+    if (operational_only && state < state_t::OPERATIONAL) {
+        linked_clients.emplace(client_addr, link_info_t{link_state_t::PENDING, link_request_ptr_t{&message}});
+        reaction_on(reaction_t::START);
+    } else {
+        linked_clients.emplace(client_addr, link_info_t{link_state_t::OPERATIONAL, link_request_ptr_t{}});
+        actor->reply_to(message);
+    }
 }
 
 void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) noexcept {
@@ -91,11 +98,21 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
 
 bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     for (auto it : linked_clients) {
-        if (it.second == link_state_t::OPERATIONAL) {
+        if (it.second.state == link_state_t::OPERATIONAL) {
             auto &self = actor->get_address();
             auto &timeout = actor->access<to::shutdown_timeout>();
             actor->request<payload::unlink_request_t>(it.first, self).send(timeout);
         }
     }
     return linked_clients.empty();
+}
+
+bool link_server_plugin_t::handle_start(message::start_trigger_t *) noexcept {
+    for (auto it : linked_clients) {
+        if (it.second.state == link_state_t::PENDING) {
+            actor->reply_to(*it.second.request);
+            it.second.state = link_state_t::OPERATIONAL;
+        }
+    }
+    return true;
 }

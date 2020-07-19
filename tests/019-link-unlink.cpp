@@ -25,7 +25,7 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     bool invoked = false;
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(addr_s, [&](auto &ec) mutable {
+            p.link(addr_s, false, [&](auto &ec) mutable {
                 REQUIRE(!ec);
                 invoked = true;
             });
@@ -69,7 +69,7 @@ TEST_CASE("link not possible (timeout) => shutdown", "[actor]") {
     bool invoked = false;
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(some_addr, [&](auto &ec) mutable {
+            p.link(some_addr, false, [&](auto &ec) mutable {
                 REQUIRE(ec);
                 invoked = true;
             });
@@ -121,7 +121,7 @@ TEST_CASE("unlink", "[actor]") {
     auto &addr_s = act_s->get_address();
 
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, [&](auto &) {}); });
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, false, [&](auto &) {}); });
     };
     while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
         sup1->do_process();
@@ -186,7 +186,7 @@ TEST_CASE("auto-unlink on shutdown", "[actor]") {
     auto &addr_s = act_s->get_address();
 
     act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, [&](auto &) {}); });
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, false, [&](auto &) {}); });
     };
 
     sup1->do_process();
@@ -203,4 +203,65 @@ TEST_CASE("auto-unlink on shutdown", "[actor]") {
     sup2->do_shutdown();
     sup2->do_process();
     REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("link to operational only", "[actor]") {
+    rt::system_context_test_t ctx1;
+    rt::system_context_test_t ctx2;
+    rt::system_context_test_t ctx3;
+
+    const char l1[] = "abc";
+    const char l2[] = "def";
+    const char l3[] = "ghi";
+
+    auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
+    auto sup3 = ctx3.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l3).finish();
+
+    auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_s1 = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_s2 = sup3->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+    auto &addr_s1 = act_s1->get_address();
+    auto &addr_s2 = act_s2->get_address();
+
+    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s1, true, [&](auto &) {}); });
+    };
+    act_s1->configurer = [&](auto &, r::plugin_t &plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s2, true, [&](auto &) {}); });
+    };
+
+    auto process_12 = [&]() {
+        while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+            sup1->do_process();
+            sup2->do_process();
+        }
+    };
+    auto process_123 = [&]() {
+        while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty() ||
+               !sup3->get_leader_queue().empty()) {
+            sup1->do_process();
+            sup2->do_process();
+            sup3->do_process();
+        }
+    };
+
+    process_12();
+    CHECK(act_c->get_state() == r::state_t::INITIALIZING);
+    CHECK(act_s1->get_state() == r::state_t::INITIALIZING);
+
+    process_123();
+    CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act_s1->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act_s2->get_state() == r::state_t::OPERATIONAL);
+
+    sup1->do_shutdown();
+    sup2->do_shutdown();
+    sup3->do_shutdown();
+    process_123();
+
+    CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act_s1->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act_s2->get_state() == r::state_t::SHUTTED_DOWN);
 }

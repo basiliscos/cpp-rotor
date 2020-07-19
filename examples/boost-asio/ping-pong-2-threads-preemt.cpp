@@ -42,7 +42,7 @@ struct pinger_t : public r::actor_base_t {
     void configure(r::plugin_t &plugin) noexcept override {
         plugin.with_casted<r::internal::starter_plugin_t>([&](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
-            p.link(ponger_addr,
+            p.link(ponger_addr, true,
                    [&](auto &ec) { std::cout << "pinger has been linked with ponger :: " << ec.message() << "\n"; });
         });
     }

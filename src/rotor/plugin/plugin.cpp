@@ -48,6 +48,8 @@ bool plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return 
 
 bool plugin_t::handle_init(message::init_request_t *) noexcept { return true; }
 
+bool plugin_t::handle_start(message::start_trigger_t *) noexcept { return true; }
+
 void plugin_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
     // printf("[-] forgetting %s\n", info->handler->message_type);
     actor->get_supervisor().commit_unsubscription(info);

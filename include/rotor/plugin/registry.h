@@ -19,8 +19,9 @@ struct registry_plugin_t : public plugin_t {
     struct discovery_task_t {
         using link_callback_t = link_client_plugin_t::link_callback_t;
 
-        void link(const link_callback_t callback_ = {}) noexcept {
+        void link(bool operational_only_ = true, const link_callback_t callback_ = {}) noexcept {
             link_on_discovery = true;
+            operational_only = operational_only_;
             callback = callback_;
         }
 
@@ -36,6 +37,7 @@ struct registry_plugin_t : public plugin_t {
         address_ptr_t *address;
         std::string service_name;
         bool link_on_discovery = false;
+        bool operational_only;
         link_callback_t callback;
 
         friend struct registry_plugin_t;
@@ -76,7 +78,7 @@ struct registry_plugin_t : public plugin_t {
     register_map_t register_map;
     discovery_map_t discovery_map;
 
-    void link() noexcept;
+    void link_registry() noexcept;
     void on_link(const std::error_code &ec) noexcept;
     bool has_registering() noexcept;
     virtual void continue_init(const std::error_code &ec) noexcept;
