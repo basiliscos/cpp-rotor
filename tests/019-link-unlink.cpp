@@ -265,3 +265,45 @@ TEST_CASE("link to operational only", "[actor]") {
     CHECK(act_s1->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(act_s2->get_state() == r::state_t::SHUTTED_DOWN);
 }
+
+TEST_CASE("unlink notify / response race", "[actor]") {
+    rt::system_context_test_t system_context;
+
+    const char l1[] = "abc";
+    const char l2[] = "def";
+
+    auto sup1 =
+        system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
+
+    auto act_s = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto &addr_s = act_s->get_address();
+
+    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
+        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, true, [&](auto &) {}); });
+    };
+    while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+        sup1->do_process();
+        sup2->do_process();
+    }
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+
+    act_s->do_shutdown();
+    act_c->do_shutdown();
+    sup1->do_process();
+
+    // extract unlink request to let it produce unlink notify
+    auto unlink_request = sup2->get_leader_queue().back();
+    REQUIRE(unlink_request->type_index == r::message::unlink_request_t::message_type);
+    sup2->get_leader_queue().pop_back();
+    sup2->do_process();
+
+    sup1->do_shutdown();
+    while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+        sup1->do_process();
+        sup2->do_process();
+    }
+    CHECK(sup1->active_timers.size() == 0);
+    CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+}
