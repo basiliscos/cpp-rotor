@@ -39,7 +39,7 @@ struct supervisor_ev_t : public supervisor_t {
      */
     struct timer_t : public ev_timer {
         /** \brief local timer identifier within the scrope of the supervisor */
-        timer_id_t timer_id;
+        request_id_t timer_id;
     };
 
     /** \brief an alias for unique pointer, holding `timer_t` */
@@ -60,9 +60,9 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
-    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
-    virtual void on_timer_trigger(timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
+    virtual void cancel_timer(request_id_t timer_id) noexcept override;
+    virtual void on_timer_trigger(request_id_t timer_id) noexcept override;
     virtual void shutdown_finish() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
@@ -73,7 +73,7 @@ struct supervisor_ev_t : public supervisor_t {
 
   protected:
     /** \brief a type for mapping `timer_id` to timer */
-    using timers_map_t = std::unordered_map<timer_id_t, timer_ptr_t>;
+    using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;

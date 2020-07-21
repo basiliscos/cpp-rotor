@@ -14,9 +14,6 @@
 
 namespace rotor {
 
-/** \brief unique (per supervisor) request id type */
-using request_id_t = std::uint32_t;
-
 /** \struct request_base_t
  *  \brief base class for request payload
  */

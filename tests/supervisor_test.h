@@ -21,7 +21,7 @@ struct supervisor_config_test_t : public supervisor_config_t {
 template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
-    using timers_t = std::list<timer_id_t>;
+    using timers_t = std::list<request_id_t>;
 
     using config_t = supervisor_config_test_t;
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
@@ -29,9 +29,9 @@ struct supervisor_test_t : public supervisor_t {
     supervisor_test_t(supervisor_config_test_t &config_);
     ~supervisor_test_t();
 
-    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
-    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
-    timer_id_t get_timer(std::size_t index) noexcept;
+    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
+    virtual void cancel_timer(request_id_t timer_id) noexcept override;
+    request_id_t get_timer(std::size_t index) noexcept;
     virtual void start() noexcept override {}
     virtual void shutdown() noexcept override {}
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;

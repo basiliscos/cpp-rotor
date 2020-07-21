@@ -57,10 +57,10 @@ struct supervisor_asio_t : public supervisor_t {
     struct timer_t : public asio::deadline_timer {
 
         /** \brief timer identity */
-        timer_id_t timer_id;
+        request_id_t timer_id;
 
         /** \brief constructs timer using timer_id and boos asio io_context */
-        timer_t(timer_id_t timer_id_, asio::io_context &io_context)
+        timer_t(request_id_t timer_id_, asio::io_context &io_context)
             : asio::deadline_timer(io_context), timer_id{timer_id_} {}
     };
 
@@ -83,12 +83,12 @@ struct supervisor_asio_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
-    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
+    virtual void cancel_timer(request_id_t timer_id) noexcept override;
     virtual void shutdown_finish() noexcept override;
 
     /** \brief callback when an error happen on the timer, identified by timer_id */
-    virtual void on_timer_error(timer_id_t timer_id, const sys::error_code &ec) noexcept;
+    virtual void on_timer_error(request_id_t timer_id, const sys::error_code &ec) noexcept;
 
     /** \brief an helper for creation {@link forwarder_t} */
     template <typename Handler, typename ErrHandler>
@@ -100,15 +100,6 @@ struct supervisor_asio_t : public supervisor_t {
     template <typename Handler> auto create_forwarder(Handler &&handler) {
         return forwarder_t{*this, std::move(handler)};
     }
-
-#if 0
-    /** \brief retunrns an reference to boos::asio systerm context
-     *
-     * It might be useful to get `boost::asio::io_context&`, i.e. to create socket.
-     *
-     */
-    inline system_context_asio_t &get_asio_context() noexcept { return static_cast<system_context_asio_t &>(*context); }
-#endif
 
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }

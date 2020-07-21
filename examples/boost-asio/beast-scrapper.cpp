@@ -316,7 +316,6 @@ template <typename Supervisor> struct http_manager_asio_builder_t : ra::supervis
 
 struct http_manager_t : public ra::supervisor_asio_t {
     using workers_set_t = std::unordered_set<r::address_ptr_t>;
-    using request_id = r::supervisor_t::timer_id_t;
     using request_ptr_t = r::intrusive_ptr_t<message::http_request_t>;
     using req_mapping_t = std::unordered_map<request_id, request_ptr_t>;
 

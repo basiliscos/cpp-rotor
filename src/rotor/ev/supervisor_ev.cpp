@@ -85,7 +85,7 @@ void supervisor_ev_t::shutdown() noexcept {
     supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address));
 }
 
-void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {
+void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
     auto timer = std::make_unique<timer_t>();
     auto timer_ptr = timer.get();
     ev_tstamp ev_timeout = static_cast<ev_tstamp>(timeout.total_nanoseconds()) / 1000000000;
@@ -98,14 +98,14 @@ void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer
     timers_map.emplace(timer_id, std::move(timer));
 }
 
-void supervisor_ev_t::cancel_timer(timer_id_t timer_id) noexcept {
+void supervisor_ev_t::cancel_timer(request_id_t timer_id) noexcept {
     auto &timer = timers_map.at(timer_id);
     ev_timer_stop(loop, timer.get());
     timers_map.erase(timer_id);
     intrusive_ptr_release(this);
 }
 
-void supervisor_ev_t::on_timer_trigger(timer_id_t timer_id) noexcept {
+void supervisor_ev_t::on_timer_trigger(request_id_t timer_id) noexcept {
     intrusive_ptr_release(this);
     timers_map.erase(timer_id);
     supervisor_t::on_timer_trigger(timer_id);

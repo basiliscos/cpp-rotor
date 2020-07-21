@@ -27,4 +27,7 @@ using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 namespace pt = boost::posix_time;
 
+/** \brief timer identifier type in the scope of the actor */
+using request_id_t = std::size_t;
+
 } // namespace rotor

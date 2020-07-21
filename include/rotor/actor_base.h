@@ -38,10 +38,6 @@ namespace rotor {
  *
  */
 struct actor_base_t : public arc_base_t<actor_base_t> {
-
-    /** \brief timer identifier type in the scope of the actor */
-    using timer_id_t = std::uint32_t;
-
     using config_t = actor_config_t;
     template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
 

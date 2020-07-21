@@ -115,24 +115,24 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void commit_unsubscription(const subscription_info_ptr_t &info) noexcept;
 
-    /** \brief starts non-recurring timer, identified by `timer_id`
+    /* \brief starts non-recurring timer, identified by `timer_id`
      *
      * Once timer triggers, it will invoke `on_timer_trigger(timer_id)` method;
      * othewise, if it is no longer needed, it should be cancelled via
      * `cancel_timer` method
      *
      */
-    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept = 0;
+    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept = 0;
 
     /** \brief cancels previously started timer */
-    virtual void cancel_timer(timer_id_t timer_id) noexcept = 0;
+    virtual void cancel_timer(request_id_t timer_id) noexcept = 0;
 
     /** \brief triggers an action associated with the timer
      *
      * Currently it just delivers response timeout, if any.
      *
      */
-    virtual void on_timer_trigger(timer_id_t timer_id);
+    virtual void on_timer_trigger(request_id_t timer_id);
 
     /** \brief thread-safe version of `do_process`
      *
@@ -228,7 +228,7 @@ struct supervisor_t : public actor_base_t {
     /* \brief address-to-subscription map type */
 
     /** \brief timer to response with timeout procuder type */
-    using request_map_t = std::unordered_map<timer_id_t, request_curry_t>;
+    using request_map_t = std::unordered_map<request_id_t, request_curry_t>;
 
     /** \brief non-owning pointer to system context. */
     system_context_t *context;
@@ -237,7 +237,7 @@ struct supervisor_t : public actor_base_t {
     messages_queue_t queue;
 
     /** \brief counter for request/timer ids */
-    timer_id_t last_req_id;
+    request_id_t last_req_id;
 
     /** \brief timer to response with timeout procuder */
     request_map_t request_map;
@@ -272,6 +272,14 @@ struct supervisor_t : public actor_base_t {
     template <typename Supervisor> friend struct actor_config_builder_t;
     friend struct internal::delivery_plugin_base_t;
     template <typename T> friend struct internal::delivery_plugin_t;
+
+    inline request_id_t next_request_id() noexcept {
+        request_map_t::iterator it;
+        do {
+            it = request_map.find(++last_req_id);
+        } while (it != request_map.end());
+        return last_req_id;
+    }
 };
 
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
@@ -386,7 +394,7 @@ template <typename T>
 template <typename... Args>
 request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_, const address_ptr_t &destination_,
                                         const address_ptr_t &reply_to_, Args &&... args)
-    : sup{sup_}, actor{actor_}, request_id{++sup.last_req_id}, destination{destination_}, reply_to{reply_to_},
+    : sup{sup_}, actor{actor_}, request_id{sup.next_request_id()}, destination{destination_}, reply_to{reply_to_},
       do_install_handler{false} {
     auto addr = sup.address_mapping.get_mapped_address(actor_, response_message_t::message_type);
     if (addr) {

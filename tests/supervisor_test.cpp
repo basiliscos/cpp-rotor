@@ -19,11 +19,11 @@ supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n",
 
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
-void supervisor_test_t::start_timer(const pt::time_duration &, timer_id_t timer_id) noexcept {
+void supervisor_test_t::start_timer(const pt::time_duration &, request_id_t timer_id) noexcept {
     active_timers.emplace_back(timer_id);
 }
 
-void supervisor_test_t::cancel_timer(timer_id_t timer_id) noexcept {
+void supervisor_test_t::cancel_timer(request_id_t timer_id) noexcept {
     auto it = active_timers.begin();
     while (it != active_timers.end()) {
         if (*it == timer_id) {
@@ -41,7 +41,7 @@ subscription_container_t &supervisor_test_t::get_points() noexcept {
     return static_cast<internal::lifetime_plugin_t *>(plugin)->access<to::points>();
 }
 
-supervisor_t::timer_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
+request_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
     auto it = active_timers.begin();
     for (std::size_t i = 0; i < index; ++i) {
         ++it;
