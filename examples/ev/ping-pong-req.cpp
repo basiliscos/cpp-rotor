@@ -26,7 +26,7 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
@@ -59,7 +59,7 @@ struct ponger_t : public rotor::actor_base_t {
 
     ponger_t(config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }

@@ -9,7 +9,7 @@
 #include "../subscription.h"
 #include "rotor/messages.hpp"
 
-namespace rotor {
+namespace rotor::plugin {
 
 struct plugin_base_t {
     enum processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
@@ -65,4 +65,4 @@ struct plugin_base_t {
     std::size_t reaction = 0;
 };
 
-} // namespace rotor
+} // namespace rotor::plugin

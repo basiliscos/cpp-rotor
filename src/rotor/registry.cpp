@@ -9,7 +9,7 @@
 
 using namespace rotor;
 
-void registry_t::configure(plugin_base_t &plugin) noexcept {
+void registry_t::configure(plugin::plugin_base_t &plugin) noexcept {
     actor_base_t::configure(plugin);
     plugin.with_casted<plugin::prestarter_plugin_t>([](auto &p) {
         p.subscribe_actor(&registry_t::on_reg);

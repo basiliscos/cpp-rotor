@@ -29,7 +29,7 @@ struct pinger_t : public rt::actor_test_t {
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
         plugin.with_casted<r::plugin::link_client_plugin_t>(
             [&](auto &p) { p.link(ponger_addr, true, [&](auto &ec) mutable { REQUIRE(!ec); }); });
@@ -61,7 +61,7 @@ struct ponger_t : public rt::actor_test_t {
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 

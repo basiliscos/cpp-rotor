@@ -52,7 +52,7 @@ struct sub_t : public r::actor_base_t {
 
     explicit sub_t(config_t &cfg) : r::actor_base_t(cfg), pub_addr{cfg.pub_addr} {}
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>(
             [this](auto &p) { p.subscribe_actor(&sub_t::on_payload, pub_addr); });
     }

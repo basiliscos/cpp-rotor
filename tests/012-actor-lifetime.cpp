@@ -69,11 +69,11 @@ struct custom_supervisor_t : rt::supervisor_test_t {
     using plugins_list_t =
         std::tuple<r::plugin::address_maker_plugin_t, r::plugin::locality_plugin_t,
                    r::plugin::delivery_plugin_t<r::plugin::local_delivery_t>, r::plugin::lifetime_plugin_t,
-                   r::plugin::init_shutdown_plugin_t, r::plugin::foreigners_support_plugin_t,
-                   custom_child_manager_t, r::plugin::starter_plugin_t>;
+                   r::plugin::init_shutdown_plugin_t, r::plugin::foreigners_support_plugin_t, custom_child_manager_t,
+                   r::plugin::starter_plugin_t>;
 };
 
-struct fail_plugin_t : public r::plugin_base_t {
+struct fail_plugin_t : public r::plugin::plugin_base_t {
     static bool allow_init;
     bool allow_shutdown = true;
 
@@ -83,7 +83,7 @@ struct fail_plugin_t : public r::plugin_base_t {
     void activate(r::actor_base_t *actor_) noexcept override {
         reaction_on(reaction_t::INIT);
         reaction_on(reaction_t::SHUTDOWN);
-        return r::plugin_base_t::activate(actor_);
+        return r::plugin::plugin_base_t::activate(actor_);
     }
 
     bool handle_init(r::message::init_request_t *) noexcept override { return allow_init; }
@@ -97,9 +97,8 @@ const void *fail_plugin_t::class_identity = static_cast<const void *>(typeid(fai
 
 struct fail_actor_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
-    using plugins_list_t =
-        std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t,
-                   r::plugin::init_shutdown_plugin_t, fail_plugin_t, r::plugin::starter_plugin_t>;
+    using plugins_list_t = std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t,
+                                      r::plugin::init_shutdown_plugin_t, fail_plugin_t, r::plugin::starter_plugin_t>;
 };
 
 TEST_CASE("actor litetimes", "[actor]") {

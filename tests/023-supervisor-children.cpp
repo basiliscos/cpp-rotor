@@ -52,9 +52,9 @@ struct custom_init_plugin2_t;
 struct fail_init_actor2_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
-    using plugins_list_t = std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t,
-                                      r::plugin::init_shutdown_plugin_t, custom_init_plugin1_t,
-                                      r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
+    using plugins_list_t =
+        std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
+                   custom_init_plugin1_t, r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
 };
 
 struct fail_init_actor3_t : public rt::actor_test_t {
@@ -87,16 +87,16 @@ struct fail_init_actor5_t : public rt::actor_test_t {
 struct fail_init_actor6_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
-    using plugins_list_t = std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t,
-                                      r::plugin::init_shutdown_plugin_t, custom_init_plugin2_t,
-                                      r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
+    using plugins_list_t =
+        std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
+                   custom_init_plugin2_t, r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
 };
 
-struct custom_init_plugin1_t : r::plugin_base_t {
+struct custom_init_plugin1_t : r::plugin::plugin_base_t {
     static const void *class_identity;
 
     void activate(r::actor_base_t *actor) noexcept override {
-        r::plugin_base_t::activate(actor);
+        r::plugin::plugin_base_t::activate(actor);
         reaction_on(reaction_t::INIT);
     }
 
@@ -107,11 +107,11 @@ struct custom_init_plugin1_t : r::plugin_base_t {
 
 const void *custom_init_plugin1_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin1_t).name());
 
-struct custom_init_plugin2_t : r::plugin_base_t {
+struct custom_init_plugin2_t : r::plugin::plugin_base_t {
     static const void *class_identity;
 
     void activate(r::actor_base_t *actor) noexcept override {
-        r::plugin_base_t::activate(actor);
+        r::plugin::plugin_base_t::activate(actor);
         reaction_on(reaction_t::INIT);
     }
 
@@ -127,11 +127,11 @@ struct custom_init_plugin2_t : r::plugin_base_t {
 
 const void *custom_init_plugin2_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin2_t).name());
 
-struct custom_shutdown_plugin_t : r::plugin_base_t {
+struct custom_shutdown_plugin_t : r::plugin::plugin_base_t {
     static const void *class_identity;
 
     void activate(r::actor_base_t *actor) noexcept override {
-        r::plugin_base_t::activate(actor);
+        r::plugin::plugin_base_t::activate(actor);
         reaction_on(reaction_t::SHUTDOWN);
     }
 
@@ -152,7 +152,7 @@ struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
     using child_ptr_t = r::intrusive_ptr_t<sample_actor_t>;
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::child_manager_plugin_t>(
             [this](auto &) { child = create_actor<sample_actor_t>().timeout(rt::default_timeout).finish(); });
     }
@@ -201,9 +201,9 @@ struct fail_shutdown_actor1_t : rt::actor_test_t {
 struct fail_shutdown_actor2_t : rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
-    using plugins_list_t = std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t,
-                                      r::plugin::init_shutdown_plugin_t, r::plugin::prestarter_plugin_t,
-                                      custom_shutdown_plugin_t, r::plugin::starter_plugin_t>;
+    using plugins_list_t =
+        std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
+                   r::plugin::prestarter_plugin_t, custom_shutdown_plugin_t, r::plugin::starter_plugin_t>;
 };
 
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {

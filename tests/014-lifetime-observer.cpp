@@ -37,7 +37,7 @@ struct observer_t : public r::actor_base_t {
 
     explicit observer_t(config_t &cfg) : r::actor_base_t(cfg), observable{cfg.observable} {}
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::prestarter_plugin_t>([this](auto &p) {
             p.subscribe_actor(&observer_t::on_sample_initialize, observable);
             p.subscribe_actor(&observer_t::on_sample_start, observable);

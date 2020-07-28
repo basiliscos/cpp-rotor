@@ -17,7 +17,7 @@
 
 namespace rotor {
 
-using plugins_t = std::deque<plugin_base_t *>;
+using plugins_t = std::deque<plugin::plugin_base_t *>;
 
 struct plugin_storage_base_t {
     virtual ~plugin_storage_base_t() {}

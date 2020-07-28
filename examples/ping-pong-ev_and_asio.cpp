@@ -49,7 +49,7 @@ struct pinger_t : public rotor::actor_base_t {
         pings_count = pings;
     }
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) {
             std::cout << "pinger_t::configure, subscribing on_pong\n";
@@ -111,7 +111,7 @@ struct pinger_t : public rotor::actor_base_t {
 struct ponger_t : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) {
             std::cout << "ponger_t::configure, subscribing on_ping\n";

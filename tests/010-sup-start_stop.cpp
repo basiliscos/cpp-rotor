@@ -119,7 +119,7 @@ struct unsubscriber_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>(
             [](auto &p) { p.subscribe_actor(&unsubscriber_sup_t::on_sample); });
     }

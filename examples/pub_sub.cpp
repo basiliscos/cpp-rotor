@@ -31,7 +31,7 @@ struct sub_t : public r::actor_base_t {
 
     void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<r::plugin::starter_plugin_t>(
             [&](auto &p) { p.subscribe_actor(&sub_t::on_payload, pub_addr); });

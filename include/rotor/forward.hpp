@@ -13,7 +13,6 @@ namespace rotor {
 struct address_t;
 struct actor_base_t;
 struct handler_base_t;
-struct plugin_base_t;
 struct supervisor_t;
 struct system_context_t;
 
@@ -31,3 +30,7 @@ namespace pt = boost::posix_time;
 using request_id_t = std::size_t;
 
 } // namespace rotor
+
+namespace rotor::plugin {
+struct plugin_base_t;
+}

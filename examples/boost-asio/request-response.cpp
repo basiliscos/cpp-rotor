@@ -42,7 +42,7 @@ using response_t = rotor::request_traits_t<payload::sample_req_t>::response::mes
 struct server_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>(
             [](auto &p) { p.subscribe_actor(&server_actor::on_request); });
@@ -68,7 +68,7 @@ struct client_actor : public rotor::actor_base_t {
 
     void set_server(const rotor::address_ptr_t addr) { server_addr = addr; }
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>(
             [](auto &p) { p.subscribe_actor(&client_actor::on_response); });

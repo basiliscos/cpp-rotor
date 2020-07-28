@@ -7,6 +7,7 @@
 #include "rotor/plugin/plugin_base.h"
 #include "rotor/supervisor.h"
 
+using namespace rotor::plugin;
 using namespace rotor;
 
 namespace {

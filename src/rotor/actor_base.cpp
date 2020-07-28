@@ -10,6 +10,7 @@
 //#include <boost/core/demangle.hpp>
 
 using namespace rotor;
+using namespace rotor::plugin;
 
 template <> auto &plugin_base_t::access<actor_base_t>() noexcept { return actor; }
 

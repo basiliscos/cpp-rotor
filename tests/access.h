@@ -43,7 +43,7 @@ template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const 
 
 template <> auto &rotor::subscription_t::access<test::to::internal_infos>() noexcept { return internal_infos; }
 template <> auto &rotor::subscription_t::access<test::to::mine_handlers>() noexcept { return mine_handlers; }
-template <> auto &rotor::plugin_base_t::access<test::to::own_subscriptions>() noexcept { return own_subscriptions; }
+template <> auto &rotor::plugin::plugin_base_t::access<test::to::own_subscriptions>() noexcept { return own_subscriptions; }
 template <> auto &plugin::child_manager_plugin_t::access<test::to::actors_map>() noexcept { return actors_map; }
 template <> auto &plugin::lifetime_plugin_t::access<test::to::points>() noexcept { return points; }
 template <> auto &rotor::supervisor_t::access<test::to::locality_leader>() noexcept { return locality_leader; }

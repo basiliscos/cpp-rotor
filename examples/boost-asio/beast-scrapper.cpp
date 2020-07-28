@@ -157,7 +157,7 @@ struct http_worker_t : public r::actor_base_t {
 
     inline asio::io_context::strand &get_strand() noexcept { return strand; }
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
         plugin.with_casted<r::plugin::starter_plugin_t>(
             [&](auto &p) { p.subscribe_actor(&http_worker_t::on_request); });
@@ -327,7 +327,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
     explicit http_manager_t(http_manager_config_t &config_)
         : ra::supervisor_asio_t{config_}, worker_count{config_.worker_count}, worker_timeout{config_.worker_timeout} {}
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
             p.subscribe_actor(&http_manager_t::on_request);
@@ -377,7 +377,7 @@ struct client_t : r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    void configure(rotor::plugin_base_t &plugin) noexcept override {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&client_t::on_response); });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {

@@ -323,9 +323,7 @@ subscription_info_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t
     return supervisor->subscribe(wrapped_handler, addr, this, owner_tag_t::ANONYMOUS);
 }
 
-template <typename Handler> subscription_info_ptr_t plugin_base_t::subscribe(Handler &&h) noexcept {
-    return subscribe(std::forward<Handler>(h), actor->address);
-}
+namespace plugin {
 
 template <typename Handler>
 subscription_info_ptr_t plugin_base_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
@@ -336,9 +334,11 @@ subscription_info_ptr_t plugin_base_t::subscribe(Handler &&h, const address_ptr_
     return info;
 }
 
-template <> inline auto &plugin_base_t::access<plugin::subscriber_plugin_t>() noexcept { return own_subscriptions; }
+template <typename Handler> subscription_info_ptr_t plugin_base_t::subscribe(Handler &&h) noexcept {
+    return subscribe(std::forward<Handler>(h), actor->address);
+}
 
-namespace plugin {
+template <> inline auto &plugin_base_t::access<plugin::subscriber_plugin_t>() noexcept { return own_subscriptions; }
 
 template <typename Handler> handler_ptr_t subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
     auto &address = actor->get_address();

@@ -17,9 +17,8 @@ struct foo_t {};
 struct simpleton_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::starter_plugin_t>(
-            [](auto &p) { p.subscribe_actor(&simpleton_actor_t::on_foo); });
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&simpleton_actor_t::on_foo); });
     }
 
     void on_start() noexcept override {
@@ -60,7 +59,7 @@ struct foo_observer_t : public r::actor_base_t {
 
     explicit foo_observer_t(config_t &cfg) : r::actor_base_t(cfg), simpleton_addr{cfg.observable} {}
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>(
             [this](auto &p) { p.subscribe_actor(&foo_observer_t::on_foo, simpleton_addr); });
     }

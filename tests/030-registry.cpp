@@ -33,7 +33,7 @@ struct manual_actor_t : public r::actor_base_t {
     discovery_reply_t discovery_reply;
     registration_reply_t registration_reply;
 
-    void configure(r::plugin_base_t &plugin) noexcept override {
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&manual_actor_t::on_discovery);
@@ -221,7 +221,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
     SECTION("common case (just discover)") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_s->configurer = [&](auto &actor, r::plugin_base_t &plugin) {
+        act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>(
                 [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
@@ -230,7 +230,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>(
                 [&](auto &p) { p.discover_name("service-name", act_c->service_addr); });
         };
@@ -247,7 +247,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
     SECTION("common case (discover & link)") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_s->configurer = [&](auto &actor, r::plugin_base_t &plugin) {
+        act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>(
                 [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };
@@ -257,7 +257,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         bool linked = false;
-        act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
                 p.discover_name("service-name", act_c->service_addr).link(true, [&](auto &ec) {
                     REQUIRE(!ec);
@@ -278,7 +278,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
     SECTION("discovery non-existing name => fail to init") {
         auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        act->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>(
                 [&act](auto &p) { p.discover_name("non-existing-service", act->service_addr); });
         };
@@ -292,7 +292,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         printf("act1 = %p(%p), act2 = %p(%p)\n", (void *)act1.get(), (void *)act1->get_address().get(),
                (void *)act2.get(), (void *)act2->get_address().get());
-        auto configurer = [](auto &actor, r::plugin_base_t &plugin) {
+        auto configurer = [](auto &actor, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>(
                 [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
         };

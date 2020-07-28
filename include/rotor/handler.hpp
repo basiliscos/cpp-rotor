@@ -58,7 +58,7 @@ template <typename T> struct handler_traits {};
 template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcept> {
     static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
     static auto const constexpr is_actor = std::is_base_of_v<actor_base_t, A>;
-    static auto const constexpr is_plugin = std::is_base_of_v<plugin_base_t, A>;
+    static auto const constexpr is_plugin = std::is_base_of_v<plugin::plugin_base_t, A>;
     static auto const constexpr is_lambda = false;
 
     /** \brief message type, processed by the handler */
@@ -125,7 +125,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     virtual inline ~handler_base_t() {}
 };
 
-template <> inline auto &plugin_base_t::access<handler_base_t>() noexcept { return actor; }
+template <> inline auto &plugin::plugin_base_t::access<handler_base_t>() noexcept { return actor; }
 
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
@@ -186,10 +186,10 @@ template <typename Handler>
 struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>> : public handler_base_t {
     static const void *handler_type;
 
-    plugin_base_t &plugin;
+    plugin::plugin_base_t &plugin;
     Handler handler;
 
-    explicit handler_t(plugin_base_t &plugin_, Handler &&handler_)
+    explicit handler_t(plugin::plugin_base_t &plugin_, Handler &&handler_)
         : handler_base_t{*plugin_.access<handler_base_t>(), final_message_t::message_type, handler_type},
           plugin{plugin_}, handler{handler_} {}
 
