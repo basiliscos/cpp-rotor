@@ -23,7 +23,7 @@ void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t:
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 
 void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
-    auto timer = std::make_unique<timer_t>(timer_id, strand->context());
+    auto timer = std::make_unique<supervisor_asio_t::timer_t>(timer_id, strand->context());
     timer->expires_from_now(timeout);
 
     intrusive_ptr_t<supervisor_asio_t> self(this);
