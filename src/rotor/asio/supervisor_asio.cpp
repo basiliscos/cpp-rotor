@@ -8,6 +8,7 @@
 #include "rotor/asio/forwarder.hpp"
 
 using namespace rotor::asio;
+using namespace rotor;
 
 supervisor_asio_t::supervisor_asio_t(supervisor_config_asio_t &config_)
     : supervisor_t{config_}, strand{config_.strand} {
