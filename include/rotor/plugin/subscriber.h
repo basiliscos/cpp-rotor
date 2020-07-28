@@ -6,12 +6,12 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct subscriber_plugin_t : public plugin_t {
-    using plugin_t::plugin_t;
+struct subscriber_plugin_t : public plugin_base_t {
+    using plugin_base_t::plugin_base_t;
 
     template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler) noexcept;
     template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
@@ -23,4 +23,4 @@ struct subscriber_plugin_t : public plugin_t {
     bool continue_init = false;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

@@ -8,7 +8,7 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -31,5 +31,5 @@ void locality_plugin_t::activate(actor_base_t *actor_) noexcept {
     bool use_other = parent && static_cast<actor_base_t *>(parent)->get_address()->same_locality(*address);
     auto locality_leader = use_other ? parent->access<to::locality_leader>() : &sup;
     sup.access<to::locality_leader>() = locality_leader;
-    return plugin_t::activate(actor_);
+    return plugin_base_t::activate(actor_);
 }

@@ -8,7 +8,7 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -29,7 +29,7 @@ const void *registry_plugin_t::class_identity = static_cast<const void *>(typeid
 const void *registry_plugin_t::identity() const noexcept { return class_identity; }
 
 void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
-    plugin_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     subscribe(&registry_plugin_t::on_registration);
     subscribe(&registry_plugin_t::on_discovery);
 

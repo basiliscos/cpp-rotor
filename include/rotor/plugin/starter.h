@@ -8,7 +8,7 @@
 
 #include "subscriber.h"
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
 struct starter_plugin_t : public subscriber_plugin_t {
     using subscriber_plugin_t::subscriber_plugin_t;
@@ -29,4 +29,4 @@ struct starter_plugin_t : public subscriber_plugin_t {
     bool configured = false;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

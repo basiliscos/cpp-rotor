@@ -42,9 +42,9 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void configure(rotor::plugin_t &plugin) noexcept override {
+    void configure(rotor::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
     void on_start() noexcept override {
@@ -76,9 +76,9 @@ struct ponger_t : public rotor::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void configure(rotor::plugin_t &plugin) noexcept override {
+    void configure(rotor::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>([&](auto &p) {
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([&](auto &p) {
             auto lambda = rotor::lambda<message::ping_t>([&](auto &msg) {
                 std::cout << "pong\n";
                 unsubscribe(pong_handler);

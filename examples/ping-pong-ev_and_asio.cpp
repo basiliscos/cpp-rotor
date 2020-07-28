@@ -49,13 +49,13 @@ struct pinger_t : public rotor::actor_base_t {
         pings_count = pings;
     }
 
-    void configure(rotor::plugin_t &plugin) noexcept override {
+    void configure(rotor::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) {
             std::cout << "pinger_t::configure, subscribing on_pong\n";
             p.subscribe_actor(&pinger_t::on_pong);
         });
-        plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) {
+        plugin.with_casted<rotor::plugin::registry_plugin_t>([&](auto &p) {
             p.discover_name(ponger_name, ponger_addr).link(true, [&](auto &ec) {
                 std::cout << "discovered & linked with ponger : " << (!ec ? "yes" : "no") << "\n";
             });
@@ -111,13 +111,13 @@ struct pinger_t : public rotor::actor_base_t {
 struct ponger_t : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
-    void configure(rotor::plugin_t &plugin) noexcept override {
+    void configure(rotor::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>([](auto &p) {
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) {
             std::cout << "ponger_t::configure, subscribing on_ping\n";
             p.subscribe_actor(&ponger_t::on_ping);
         });
-        plugin.with_casted<rotor::internal::registry_plugin_t>([&](auto &p) {
+        plugin.with_casted<rotor::plugin::registry_plugin_t>([&](auto &p) {
             std::cout << "ponger_t::configure, registering name\n";
             p.register_name(ponger_name, address);
         });

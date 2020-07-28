@@ -157,9 +157,9 @@ struct http_worker_t : public r::actor_base_t {
 
     inline asio::io_context::strand &get_strand() noexcept { return strand; }
 
-    void configure(r::plugin_t &plugin) noexcept override {
+    void configure(r::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
-        plugin.with_casted<r::internal::starter_plugin_t>(
+        plugin.with_casted<r::plugin::starter_plugin_t>(
             [&](auto &p) { p.subscribe_actor(&http_worker_t::on_request); });
     }
 
@@ -327,18 +327,18 @@ struct http_manager_t : public ra::supervisor_asio_t {
     explicit http_manager_t(http_manager_config_t &config_)
         : ra::supervisor_asio_t{config_}, worker_count{config_.worker_count}, worker_timeout{config_.worker_timeout} {}
 
-    void configure(r::plugin_t &plugin) noexcept override {
+    void configure(r::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
-        plugin.with_casted<r::internal::starter_plugin_t>([&](auto &p) {
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
             p.subscribe_actor(&http_manager_t::on_request);
             p.subscribe_actor(&http_manager_t::on_response);
         });
-        plugin.with_casted<r::internal::child_manager_plugin_t>([this](auto &) {
+        plugin.with_casted<r::plugin::child_manager_plugin_t>([this](auto &) {
             auto worker = create_actor<http_worker_t>().timeout(worker_timeout).finish();
             auto addr = worker->get_address();
             workers.emplace(std::move(addr));
         });
-        plugin.with_casted<r::internal::registry_plugin_t>(
+        plugin.with_casted<r::plugin::registry_plugin_t>(
             [&](auto &p) { p.register_name("service-name", get_address()); });
     }
 
@@ -377,11 +377,10 @@ struct client_t : r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    void configure(rotor::plugin_t &plugin) noexcept override {
+    void configure(rotor::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
-        plugin.with_casted<rotor::internal::starter_plugin_t>(
-            [](auto &p) { p.subscribe_actor(&client_t::on_response); });
-        plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&client_t::on_response); });
+        plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
             p.discover_name("service-name", manager_addr).link(true, [](auto &ec) {
                 std::cout << "linked with manager :: " << ec.message() << "\n";
             });

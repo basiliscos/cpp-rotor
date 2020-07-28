@@ -6,13 +6,13 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 #include <unordered_set>
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct child_manager_plugin_t : public plugin_t {
-    using plugin_t::plugin_t;
+struct child_manager_plugin_t : public plugin_base_t {
+    using plugin_base_t::plugin_base_t;
 
     static const void *class_identity;
     const void *identity() const noexcept override;
@@ -69,4 +69,4 @@ struct child_manager_plugin_t : public plugin_t {
     actors_map_t actors_map;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

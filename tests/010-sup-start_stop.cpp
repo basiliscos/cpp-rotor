@@ -27,11 +27,11 @@ using sample_payload_t = r::message_t<payload::sample_payload_t>;
 struct sample_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
 
-    using plugins_list_t = std::tuple<r::internal::address_maker_plugin_t, r::internal::locality_plugin_t,
-                                      r::internal::delivery_plugin_t<r::internal::local_delivery_t>,
-                                      r::internal::lifetime_plugin_t, init_shutdown_plugin_t, /* use custom */
-                                      r::internal::foreigners_support_plugin_t, r::internal::child_manager_plugin_t,
-                                      r::internal::starter_plugin_t>;
+    using plugins_list_t = std::tuple<r::plugin::address_maker_plugin_t, r::plugin::locality_plugin_t,
+                                      r::plugin::delivery_plugin_t<r::plugin::local_delivery_t>,
+                                      r::plugin::lifetime_plugin_t, init_shutdown_plugin_t, /* use custom */
+                                      r::plugin::foreigners_support_plugin_t, r::plugin::child_manager_plugin_t,
+                                      r::plugin::starter_plugin_t>;
 
     std::uint32_t initialized = 0;
     std::uint32_t init_invoked = 0;
@@ -55,8 +55,8 @@ struct sample_sup_t : public rt::supervisor_test_t {
     }
 };
 
-struct init_shutdown_plugin_t : r::internal::init_shutdown_plugin_t {
-    using parent_t = r::internal::init_shutdown_plugin_t;
+struct init_shutdown_plugin_t : r::plugin::init_shutdown_plugin_t {
+    using parent_t = r::plugin::init_shutdown_plugin_t;
 
     void deactivate() noexcept override { parent_t::deactivate(); }
 
@@ -119,8 +119,8 @@ struct unsubscriber_sup_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void configure(r::plugin_t &plugin) noexcept override {
-        plugin.with_casted<r::internal::starter_plugin_t>(
+    void configure(r::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>(
             [](auto &p) { p.subscribe_actor(&unsubscriber_sup_t::on_sample); });
     }
 

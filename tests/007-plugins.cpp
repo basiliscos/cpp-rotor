@@ -33,7 +33,7 @@ struct sample_actor2_t : public sample_actor_t {
     using plugins_list_t = std::tuple<sample_plugin1_t, sample_plugin2_t, buggy_plugin_t>;
 };
 
-struct sample_plugin1_t : public r::plugin_t {
+struct sample_plugin1_t : public r::plugin_base_t {
     const void *identity() const noexcept override {
         return static_cast<const void *>(typeid(sample_plugin1_t).name());
     }
@@ -41,32 +41,32 @@ struct sample_plugin1_t : public r::plugin_t {
     void activate(r::actor_base_t *actor_) noexcept override {
         auto &init_seq = static_cast<sample_actor_t *>(actor_)->init_seq;
         init_seq = (init_seq << 8 | PID_1);
-        return r::plugin_t::activate(actor_);
+        return r::plugin_base_t::activate(actor_);
     }
     void deactivate() noexcept override {
         auto &deinit_seq = static_cast<sample_actor_t *>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_1);
-        return r::plugin_t::deactivate();
+        return r::plugin_base_t::deactivate();
     }
 };
 
-struct sample_plugin2_t : public r::plugin_t {
+struct sample_plugin2_t : public r::plugin_base_t {
     const void *identity() const noexcept override {
         return static_cast<const void *>(typeid(sample_plugin2_t).name());
     }
     void activate(r::actor_base_t *actor_) noexcept override {
         auto &init_seq = static_cast<sample_actor_t *>(actor_)->init_seq;
         init_seq = (init_seq << 8 | PID_2);
-        return r::plugin_t::activate(actor_);
+        return r::plugin_base_t::activate(actor_);
     }
     void deactivate() noexcept override {
         auto &deinit_seq = static_cast<sample_actor_t *>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_2);
-        return r::plugin_t::deactivate();
+        return r::plugin_base_t::deactivate();
     }
 };
 
-struct buggy_plugin_t : public r::plugin_t {
+struct buggy_plugin_t : public r::plugin_base_t {
     const void *identity() const noexcept override { return static_cast<const void *>(typeid(buggy_plugin_t).name()); }
     void activate(r::actor_base_t *actor_) noexcept override {
         actor = actor_;

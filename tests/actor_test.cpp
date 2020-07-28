@@ -8,7 +8,7 @@ actor_test_t::~actor_test_t(){
     printf("~actor_test_t, %p(%p)\n", (void*)this, (void*)address.get());
 }
 
-void actor_test_t::configure(plugin_t &plugin) noexcept {
+void actor_test_t::configure(plugin_base_t &plugin) noexcept {
     actor_base_t::configure(plugin);
     if (configurer) configurer(*this, plugin);
 }

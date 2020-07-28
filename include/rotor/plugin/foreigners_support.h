@@ -6,12 +6,12 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct foreigners_support_plugin_t : public plugin_t {
-    using plugin_t::plugin_t;
+struct foreigners_support_plugin_t : public plugin_base_t {
+    using plugin_base_t::plugin_base_t;
 
     static const void *class_identity;
     const void *identity() const noexcept override;
@@ -26,4 +26,4 @@ struct foreigners_support_plugin_t : public plugin_t {
     subscription_container_t foreign_points;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

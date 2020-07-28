@@ -13,12 +13,12 @@
 #include <sstream>
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 delivery_plugin_base_t::~delivery_plugin_base_t() {}
 
 void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
-    plugin_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     auto sup = static_cast<supervisor_t *>(actor_);
     queue = &sup->locality_leader->queue;
     address = sup->address.get();

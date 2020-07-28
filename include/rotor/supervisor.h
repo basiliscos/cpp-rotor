@@ -61,16 +61,16 @@ struct supervisor_t : public actor_base_t {
 
     // clang-format off
     using plugins_list_t = std::tuple<
-        internal::address_maker_plugin_t,
-        internal::locality_plugin_t,
-        internal::delivery_plugin_t<internal::default_local_delivery_t>,
-        internal::lifetime_plugin_t,
-        internal::init_shutdown_plugin_t,
-        internal::prestarter_plugin_t,
-        internal::foreigners_support_plugin_t,
-        internal::child_manager_plugin_t,
-        internal::registry_plugin_t,
-        internal::starter_plugin_t>;
+        plugin::address_maker_plugin_t,
+        plugin::locality_plugin_t,
+        plugin::delivery_plugin_t<plugin::default_local_delivery_t>,
+        plugin::lifetime_plugin_t,
+        plugin::init_shutdown_plugin_t,
+        plugin::prestarter_plugin_t,
+        plugin::foreigners_support_plugin_t,
+        plugin::child_manager_plugin_t,
+        plugin::registry_plugin_t,
+        plugin::starter_plugin_t>;
     // clang-format on
 
     using config_t = supervisor_config_t;
@@ -253,8 +253,8 @@ struct supervisor_t : public actor_base_t {
     supervisor_t *parent;
 
     // internal::foreigners_support_plugin_t *subscription_support;
-    internal::delivery_plugin_base_t *delivery;
-    internal::child_manager_plugin_t *manager;
+    plugin::delivery_plugin_base_t *delivery;
+    plugin::child_manager_plugin_t *manager;
 
     /** \brief root supervisor for the locality */
     supervisor_t *locality_leader;
@@ -270,8 +270,8 @@ struct supervisor_t : public actor_base_t {
 
     template <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;
-    friend struct internal::delivery_plugin_base_t;
-    template <typename T> friend struct internal::delivery_plugin_t;
+    friend struct plugin::delivery_plugin_base_t;
+    template <typename T> friend struct plugin::delivery_plugin_t;
 
     inline request_id_t next_request_id() noexcept {
         request_map_t::iterator it;
@@ -323,12 +323,12 @@ subscription_info_ptr_t actor_base_t::subscribe(Handler &&h, const address_ptr_t
     return supervisor->subscribe(wrapped_handler, addr, this, owner_tag_t::ANONYMOUS);
 }
 
-template <typename Handler> subscription_info_ptr_t plugin_t::subscribe(Handler &&h) noexcept {
+template <typename Handler> subscription_info_ptr_t plugin_base_t::subscribe(Handler &&h) noexcept {
     return subscribe(std::forward<Handler>(h), actor->address);
 }
 
 template <typename Handler>
-subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
+subscription_info_ptr_t plugin_base_t::subscribe(Handler &&h, const address_ptr_t &addr) noexcept {
     using final_handler_t = handler_t<Handler>;
     handler_ptr_t wrapped_handler(new final_handler_t(*this, std::move(h)));
     auto info = actor->supervisor->subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
@@ -336,9 +336,9 @@ subscription_info_ptr_t plugin_t::subscribe(Handler &&h, const address_ptr_t &ad
     return info;
 }
 
-template <> inline auto &plugin_t::access<internal::subscriber_plugin_t>() noexcept { return own_subscriptions; }
+template <> inline auto &plugin_base_t::access<plugin::subscriber_plugin_t>() noexcept { return own_subscriptions; }
 
-namespace internal {
+namespace plugin {
 
 template <typename Handler> handler_ptr_t subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
     auto &address = actor->get_address();
@@ -379,7 +379,7 @@ template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process
     }
 }
 
-} // namespace internal
+} // namespace plugin
 
 template <typename Handler, typename Enabled> void actor_base_t::unsubscribe(Handler &&h) noexcept {
     supervisor->unsubscribe_actor(address, wrap_handler(*this, std::move(h)));

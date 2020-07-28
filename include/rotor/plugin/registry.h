@@ -6,15 +6,15 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 #include "link_client.h"
 #include <string>
 #include <unordered_map>
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct registry_plugin_t : public plugin_t {
-    using plugin_t::plugin_t;
+struct registry_plugin_t : public plugin_base_t {
+    using plugin_base_t::plugin_base_t;
 
     struct discovery_task_t {
         using link_callback_t = link_client_plugin_t::link_callback_t;
@@ -84,4 +84,4 @@ struct registry_plugin_t : public plugin_t {
     virtual void continue_init(const std::error_code &ec) noexcept;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

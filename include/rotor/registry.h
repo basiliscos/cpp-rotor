@@ -35,7 +35,7 @@ namespace rotor {
 struct registry_t : public actor_base_t {
     using actor_base_t::actor_base_t;
 
-    void configure(plugin_t &plugin) noexcept override;
+    void configure(plugin_base_t &plugin) noexcept override;
 
     /** \brief registers address on the service. Fails, if the name already exists */
     virtual void on_reg(message::registration_request_t &request) noexcept;

@@ -10,7 +10,7 @@
 #include <typeinfo>
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -33,13 +33,13 @@ void address_maker_plugin_t::activate(actor_base_t *actor_) noexcept {
         actor->access<to::address>() = create_address();
     }
     actor->access<to::address_maker>() = this;
-    plugin_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     actor->init_start();
 }
 
 void address_maker_plugin_t::deactivate() noexcept {
     actor->access<to::address_maker>() = nullptr;
-    return plugin_t::deactivate();
+    return plugin_base_t::deactivate();
 }
 
 address_ptr_t address_maker_plugin_t::create_address() noexcept { return actor->get_supervisor().make_address(); }

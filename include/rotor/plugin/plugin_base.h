@@ -11,7 +11,7 @@
 
 namespace rotor {
 
-struct plugin_t {
+struct plugin_base_t {
     enum processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
     enum reaction_t {
@@ -21,9 +21,9 @@ struct plugin_t {
         START = 1 << 3,
     };
 
-    plugin_t() = default;
-    plugin_t(const plugin_t &) = delete;
-    virtual ~plugin_t();
+    plugin_base_t() = default;
+    plugin_base_t(const plugin_base_t &) = delete;
+    virtual ~plugin_base_t();
 
     virtual const void *identity() const noexcept = 0;
 

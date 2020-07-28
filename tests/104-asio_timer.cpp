@@ -27,9 +27,9 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     std::error_code ec;
 
-    void configure(r::plugin_t &plugin) noexcept override {
+    void configure(r::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
-        plugin.with_casted<r::internal::starter_plugin_t>(
+        plugin.with_casted<r::plugin::starter_plugin_t>(
             [](auto &p) { p.subscribe_actor(&bad_actor_t::on_response); });
     }
 

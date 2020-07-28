@@ -8,7 +8,7 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -31,12 +31,12 @@ void foreigners_support_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&foreigners_support_plugin_t::on_call);
     subscribe(&foreigners_support_plugin_t::on_unsubscription);
     subscribe(&foreigners_support_plugin_t::on_subscription_external);
-    return plugin_t::activate(actor_);
+    return plugin_base_t::activate(actor_);
 }
 
 void foreigners_support_plugin_t::deactivate() noexcept {
     if (foreign_points.empty())
-        return plugin_t::deactivate();
+        return plugin_base_t::deactivate();
     auto lifetime = actor->access<to::lifetime>();
     for (auto &info : foreign_points) {
         lifetime->unsubscribe(info);
@@ -68,6 +68,6 @@ void foreigners_support_plugin_t::on_unsubscription(message::commit_unsubscripti
     foreign_points.erase(it);
 
     if (foreign_points.empty() && actor->access<to::state>() == state_t::SHUTTING_DOWN) {
-        plugin_t::deactivate();
+        plugin_base_t::deactivate();
     }
 }

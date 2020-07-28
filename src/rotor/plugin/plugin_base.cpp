@@ -4,7 +4,7 @@
 // Distributed under the MIT Software License
 //
 
-#include "rotor/plugin/plugin.h"
+#include "rotor/plugin/plugin_base.h"
 #include "rotor/supervisor.h"
 
 using namespace rotor;
@@ -19,14 +19,14 @@ struct state {};
 template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 
-plugin_t::~plugin_t() {}
+plugin_base_t::~plugin_base_t() {}
 
-void plugin_t::activate(actor_base_t *actor_) noexcept {
+void plugin_base_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->commit_plugin_activation(*this, true);
 }
 
-void plugin_t::deactivate() noexcept {
+void plugin_base_t::deactivate() noexcept {
     if (actor) {
         if (own_subscriptions.empty()) {
             actor->commit_plugin_deactivation(*this);
@@ -44,18 +44,18 @@ void plugin_t::deactivate() noexcept {
     }
 }
 
-bool plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return true; }
+bool plugin_base_t::handle_shutdown(message::shutdown_request_t *) noexcept { return true; }
 
-bool plugin_t::handle_init(message::init_request_t *) noexcept { return true; }
+bool plugin_base_t::handle_init(message::init_request_t *) noexcept { return true; }
 
-bool plugin_t::handle_start(message::start_trigger_t *) noexcept { return true; }
+bool plugin_base_t::handle_start(message::start_trigger_t *) noexcept { return true; }
 
-void plugin_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
+void plugin_base_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
     // printf("[-] forgetting %s\n", info->handler->message_type);
     actor->get_supervisor().commit_unsubscription(info);
 }
 
-bool plugin_t::forget_subscription(const subscription_point_t &point) noexcept {
+bool plugin_base_t::forget_subscription(const subscription_point_t &point) noexcept {
     auto &subs = own_subscriptions;
     auto it = subs.find(point);
     if (it != subs.end()) {
@@ -75,11 +75,11 @@ bool plugin_t::forget_subscription(const subscription_point_t &point) noexcept {
     return false;
 }
 
-plugin_t::processing_result_t plugin_t::handle_subscription(message::subscription_t &) noexcept {
+plugin_base_t::processing_result_t plugin_base_t::handle_subscription(message::subscription_t &) noexcept {
     return processing_result_t::IGNORED;
 }
 
-bool plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
+bool plugin_base_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
     if (external) {
         auto act = actor; /* backup */
         if (forget_subscription(point)) {

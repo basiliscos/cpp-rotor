@@ -2,9 +2,9 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 void subscriber_plugin_t::deactivate() noexcept {
     tracked.clear();
-    return plugin_t::deactivate();
+    return plugin_base_t::deactivate();
 }

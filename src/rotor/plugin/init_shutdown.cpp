@@ -8,7 +8,7 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -39,7 +39,7 @@ void init_shutdown_plugin_t::on_init(message::init_request_t &msg) noexcept {
     /* it could be shutdown, then ignore it */
     if (actor->access<to::state>() == state_t::INITIALIZING) {
         actor->access<to::init_request>().reset(&msg);
-        plugin_t::activate(actor);
+        plugin_base_t::activate(actor);
         actor->init_continue();
     }
 }

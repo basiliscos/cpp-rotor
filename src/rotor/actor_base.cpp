@@ -11,7 +11,7 @@
 
 using namespace rotor;
 
-template <> auto &plugin_t::access<actor_base_t>() noexcept { return actor; }
+template <> auto &plugin_base_t::access<actor_base_t>() noexcept { return actor; }
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
@@ -35,7 +35,7 @@ void actor_base_t::activate_plugins() noexcept {
     }
 }
 
-void actor_base_t::commit_plugin_activation(plugin_t &plugin, bool success) noexcept {
+void actor_base_t::commit_plugin_activation(plugin_base_t &plugin, bool success) noexcept {
     if (success) {
         activating_plugins.erase(plugin.identity());
     } else {
@@ -53,7 +53,7 @@ void actor_base_t::deactivate_plugins() noexcept {
     }
 }
 
-void actor_base_t::commit_plugin_deactivation(plugin_t &plugin) noexcept {
+void actor_base_t::commit_plugin_deactivation(plugin_base_t &plugin) noexcept {
     deactivating_plugins.erase(plugin.identity());
 }
 
@@ -94,9 +94,9 @@ void actor_base_t::init_continue() noexcept {
     std::size_t in_progress = plugins.size();
     for (size_t i = 0; i < plugins.size(); ++i) {
         auto plugin = plugins[i];
-        if (plugin->get_reaction() & plugin_t::INIT) {
+        if (plugin->get_reaction() & plugin_base_t::INIT) {
             if (plugin->handle_init(init_request.get())) {
-                plugin->reaction_off(plugin_t::INIT);
+                plugin->reaction_off(plugin_base_t::INIT);
                 --in_progress;
                 continue;
             }
@@ -109,7 +109,7 @@ void actor_base_t::init_continue() noexcept {
     }
 }
 
-void actor_base_t::configure(plugin_t &) noexcept {}
+void actor_base_t::configure(plugin_base_t &) noexcept {}
 
 void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
@@ -117,9 +117,9 @@ void actor_base_t::shutdown_continue() noexcept {
     std::size_t in_progress = plugins.size();
     for (size_t i = plugins.size(); i > 0; --i) {
         auto plugin = plugins[i - 1];
-        if (plugin->get_reaction() & plugin_t::SHUTDOWN) {
+        if (plugin->get_reaction() & plugin_base_t::SHUTDOWN) {
             if (plugin->handle_shutdown(shutdown_request.get())) {
-                plugin->reaction_off(plugin_t::SHUTDOWN);
+                plugin->reaction_off(plugin_base_t::SHUTDOWN);
                 --in_progress;
                 continue;
             }
@@ -146,7 +146,7 @@ template <typename Fn, typename Message> static void poll(plugins_t &plugins, Me
 }
 
 void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
-    using P = plugin_t::processing_result_t;
+    using P = plugin_base_t::processing_result_t;
     /*
     auto& point = message.payload.point;
     std::cout << "actor " << point.handler->actor_ptr.get() << " subscribed to "
@@ -155,7 +155,7 @@ void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
     */
     for (size_t i = plugins.size(); i > 0; --i) {
         auto plugin = plugins[i - 1];
-        if (plugin->get_reaction() & plugin_t::SUBSCRIPTION) {
+        if (plugin->get_reaction() & plugin_base_t::SUBSCRIPTION) {
             auto result = plugin->handle_subscription(message);
             switch (result) {
             case P::IGNORED:
@@ -163,7 +163,7 @@ void actor_base_t::on_subscription(message::subscription_t &message) noexcept {
             case P::CONSUMED:
                 return;
             case P::FINISHED:
-                plugin->reaction_off(plugin_t::SUBSCRIPTION);
+                plugin->reaction_off(plugin_base_t::SUBSCRIPTION);
             }
         }
     }
@@ -198,7 +198,7 @@ bool actor_base_t::ready_to_shutdown() noexcept {
     return deactivating_plugins.size() == 1;
 }
 
-plugin_t *actor_base_t::get_plugin(const void *identity) const noexcept {
+plugin_base_t *actor_base_t::get_plugin(const void *identity) const noexcept {
     for (auto plugin : plugins) {
         if (plugin->identity() == identity) {
             return plugin;

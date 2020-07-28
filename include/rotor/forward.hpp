@@ -13,7 +13,7 @@ namespace rotor {
 struct address_t;
 struct actor_base_t;
 struct handler_base_t;
-struct plugin_t;
+struct plugin_base_t;
 struct supervisor_t;
 struct system_context_t;
 

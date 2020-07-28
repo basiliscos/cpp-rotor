@@ -52,14 +52,14 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     // clang-format off
     using plugins_list_t = std::tuple<
-        internal::address_maker_plugin_t,
-        internal::lifetime_plugin_t,
-        internal::init_shutdown_plugin_t,
-        internal::prestarter_plugin_t,
-        internal::link_server_plugin_t,
-        internal::link_client_plugin_t,
-        internal::registry_plugin_t,
-        internal::starter_plugin_t>;
+        plugin::address_maker_plugin_t,
+        plugin::lifetime_plugin_t,
+        plugin::init_shutdown_plugin_t,
+        plugin::prestarter_plugin_t,
+        plugin::link_server_plugin_t,
+        plugin::link_client_plugin_t,
+        plugin::registry_plugin_t,
+        plugin::starter_plugin_t>;
     // clang-format on
 
     /** \brief constructs actor and links it's supervisor
@@ -158,10 +158,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     inline void unsubscribe(const handler_ptr_t &h) noexcept { lifetime->unsubscribe(h, address); }
 
     void activate_plugins() noexcept;
-    void commit_plugin_activation(plugin_t &plugin, bool success) noexcept;
+    void commit_plugin_activation(plugin_base_t &plugin, bool success) noexcept;
 
     void deactivate_plugins() noexcept;
-    void commit_plugin_deactivation(plugin_t &plugin) noexcept;
+    void commit_plugin_deactivation(plugin_base_t &plugin) noexcept;
 
     void on_subscription(message::subscription_t &message) noexcept;
     void on_unsubscription(message::unsubscription_t &message) noexcept;
@@ -206,7 +206,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief finializes initialization  */
     virtual void init_finish() noexcept;
 
-    virtual void configure(plugin_t &plugin) noexcept;
+    virtual void configure(plugin_base_t &plugin) noexcept;
 
     template <typename T> auto &access() noexcept;
     template <typename T, typename... Args> auto access(Args... args) noexcept;
@@ -242,16 +242,16 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     state_t state;
 
     /* non-owning pointers */
-    internal::address_maker_plugin_t *address_maker = nullptr;
-    internal::lifetime_plugin_t *lifetime = nullptr;
+    plugin::address_maker_plugin_t *address_maker = nullptr;
+    plugin::lifetime_plugin_t *lifetime = nullptr;
 
-    plugin_t *get_plugin(const void *identity) const noexcept;
+    plugin_base_t *get_plugin(const void *identity) const noexcept;
 
     std::set<const void *> activating_plugins;
     std::set<const void *> deactivating_plugins;
 
-    friend struct plugin_t;
-    friend struct internal::lifetime_plugin_t;
+    friend struct plugin_base_t;
+    friend struct plugin::lifetime_plugin_t;
     friend struct supervisor_t;
     template <typename T> friend struct request_builder_t;
     template <typename T, typename M> friend struct accessor_t;

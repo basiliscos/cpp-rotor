@@ -45,7 +45,7 @@ add_library(rotor
     src/rotor/plugin/link_client.cpp
     src/rotor/plugin/link_server.cpp
     src/rotor/plugin/locality.cpp
-    src/rotor/plugin/plugin.cpp
+    src/rotor/plugin/plugin_base.cpp
     src/rotor/plugin/prestarter.cpp
     src/rotor/plugin/registry.cpp
     src/rotor/plugin/starter.cpp

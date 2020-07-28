@@ -8,7 +8,7 @@
 
 #include "subscriber.h"
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
 struct prestarter_plugin_t : public subscriber_plugin_t {
     using subscriber_plugin_t::subscriber_plugin_t;
@@ -22,4 +22,4 @@ struct prestarter_plugin_t : public subscriber_plugin_t {
     processing_result_t handle_subscription(message::subscription_t &message) noexcept override;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

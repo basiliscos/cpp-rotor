@@ -6,18 +6,18 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 #include <string>
 #include <unordered_map>
 #include <functional>
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct link_client_plugin_t : public plugin_t {
+struct link_client_plugin_t : public plugin_base_t {
 
     using link_callback_t = std::function<void(const std::error_code &)>;
     using unlink_reaction_t = std::function<bool(message::unlink_request_t &message)>;
-    using plugin_t::plugin_t;
+    using plugin_base_t::plugin_base_t;
 
     static const void *class_identity;
     const void *identity() const noexcept override;
@@ -48,4 +48,4 @@ struct link_client_plugin_t : public plugin_t {
     bool configured = false;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

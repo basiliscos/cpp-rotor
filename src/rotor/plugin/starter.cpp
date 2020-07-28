@@ -8,7 +8,7 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -23,14 +23,14 @@ const void *starter_plugin_t::class_identity = static_cast<const void *>(typeid(
 const void *starter_plugin_t::identity() const noexcept { return class_identity; }
 
 void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
-    plugin_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SUBSCRIPTION);
     reaction_on(reaction_t::START);
     subscribe(&starter_plugin_t::on_start);
 }
 
-plugin_t::processing_result_t starter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+plugin_base_t::processing_result_t starter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     auto it = std::find_if(tracked.begin(), tracked.end(), [&](auto info) { return *info == point; });
     if (it != tracked.end()) {
@@ -64,9 +64,9 @@ void starter_plugin_t::on_start(message::start_trigger_t &message) noexcept {
     auto &plugins = actor->access<to::plugins>();
     for (auto rit = plugins.rbegin(); rit != plugins.rend(); ++rit) {
         auto plugin = *rit;
-        if (plugin->get_reaction() & plugin_t::START) {
+        if (plugin->get_reaction() & plugin_base_t::START) {
             if (plugin->handle_start(&message)) {
-                plugin->reaction_off(plugin_t::START);
+                plugin->reaction_off(plugin_base_t::START);
                 continue;
             }
             break;

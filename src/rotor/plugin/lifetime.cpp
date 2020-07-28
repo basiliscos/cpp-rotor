@@ -8,14 +8,14 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 const void *lifetime_plugin_t::class_identity = static_cast<const void *>(typeid(lifetime_plugin_t).name());
 
 const void *lifetime_plugin_t::identity() const noexcept { return class_identity; }
 
 struct plugin_subscriptions_t {};
-template <> auto &plugin_t::access<plugin_subscriptions_t>() noexcept { return own_subscriptions; }
+template <> auto &plugin_base_t::access<plugin_subscriptions_t>() noexcept { return own_subscriptions; }
 
 void lifetime_plugin_t::activate(actor_base_t *actor_) noexcept {
     this->actor = actor_;
@@ -29,7 +29,7 @@ void lifetime_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&lifetime_plugin_t::on_unsubscription_external);
     subscribe(&lifetime_plugin_t::on_subscription);
 
-    return plugin_t::activate(actor_);
+    return plugin_base_t::activate(actor_);
 }
 
 void lifetime_plugin_t::deactivate() noexcept {
@@ -37,7 +37,7 @@ void lifetime_plugin_t::deactivate() noexcept {
 }
 
 bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
-    if (points.empty() && plugin_t::access<plugin_subscriptions_t>().empty())
+    if (points.empty() && plugin_base_t::access<plugin_subscriptions_t>().empty())
         return true;
     unsubscribe();
     return false;
@@ -79,7 +79,7 @@ void lifetime_plugin_t::unsubscribe() noexcept {
     }
     /* wait only self to be deactivated */
     if (points.empty() && actor->ready_to_shutdown()) {
-        plugin_t::deactivate();
+        plugin_base_t::deactivate();
         actor->lifetime = nullptr;
     }
 }
@@ -96,7 +96,7 @@ void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t &info
     points.emplace_back(info);
 }
 
-plugin_t::processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+plugin_base_t::processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     // printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
     auto it = points.find(point);
@@ -113,14 +113,14 @@ bool lifetime_plugin_t::handle_unsubscription(const subscription_point_t &point,
     bool result = false;
     if (point.owner_tag != owner_tag_t::PLUGIN) {
         auto it = points.find(point);
-        plugin_t::forget_subscription(*it);
+        plugin_base_t::forget_subscription(*it);
         points.erase(it);
         result = true;
         if (points.empty()) {
-            plugin_t::deactivate();
+            plugin_base_t::deactivate();
         }
     } else {
-        result = plugin_t::handle_unsubscription(point, external);
+        result = plugin_base_t::handle_unsubscription(point, external);
     }
     return result;
 }

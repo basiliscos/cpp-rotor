@@ -6,10 +6,10 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 #include <string>
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
 struct local_delivery_t {
 
@@ -37,8 +37,8 @@ using default_local_delivery_t = local_delivery_t;
 using default_local_delivery_t = inspected_local_delivery_t;
 #endif
 
-struct delivery_plugin_base_t : public plugin_t {
-    using plugin_t::plugin_t;
+struct delivery_plugin_base_t : public plugin_base_t {
+    using plugin_base_t::plugin_base_t;
 
     ~delivery_plugin_base_t();
     virtual void process() noexcept = 0;
@@ -68,4 +68,4 @@ template <typename LocalDelivery>
 const void *
     delivery_plugin_t<LocalDelivery>::class_identity = static_cast<const void *>(typeid(local_delivery_t).name());
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

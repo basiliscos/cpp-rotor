@@ -23,8 +23,8 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     auto &addr_s = act_s->get_address();
 
     bool invoked = false;
-    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
+    act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
             p.link(addr_s, false, [&](auto &ec) mutable {
                 REQUIRE(!ec);
                 invoked = true;
@@ -67,8 +67,8 @@ TEST_CASE("link not possible (timeout) => shutdown", "[actor]") {
     auto some_addr = sup->make_address();
 
     bool invoked = false;
-    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
+    act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
             p.link(some_addr, false, [&](auto &ec) mutable {
                 REQUIRE(ec);
                 invoked = true;
@@ -120,8 +120,8 @@ TEST_CASE("unlink", "[actor]") {
     auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto &addr_s = act_s->get_address();
 
-    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, false, [&](auto &) {}); });
+    act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s, false, [&](auto &) {}); });
     };
     while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
         sup1->do_process();
@@ -185,8 +185,8 @@ TEST_CASE("auto-unlink on shutdown", "[actor]") {
     auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto &addr_s = act_s->get_address();
 
-    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, false, [&](auto &) {}); });
+    act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s, false, [&](auto &) {}); });
     };
 
     sup1->do_process();
@@ -225,11 +225,11 @@ TEST_CASE("link to operational only", "[actor]") {
     auto &addr_s1 = act_s1->get_address();
     auto &addr_s2 = act_s2->get_address();
 
-    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s1, true, [&](auto &) {}); });
+    act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s1, true, [&](auto &) {}); });
     };
-    act_s1->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s2, true, [&](auto &) {}); });
+    act_s1->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s2, true, [&](auto &) {}); });
     };
 
     auto process_12 = [&]() {
@@ -280,8 +280,8 @@ TEST_CASE("unlink notify / response race", "[actor]") {
     auto act_c = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto &addr_s = act_s->get_address();
 
-    act_c->configurer = [&](auto &, r::plugin_t &plugin) {
-        plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) { p.link(addr_s, true, [&](auto &) {}); });
+    act_c->configurer = [&](auto &, r::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s, true, [&](auto &) {}); });
     };
     while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
         sup1->do_process();

@@ -6,12 +6,12 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct address_maker_plugin_t : public plugin_t {
-    using plugin_t::plugin_t;
+struct address_maker_plugin_t : public plugin_base_t {
+    using plugin_base_t::plugin_base_t;
 
     static const void *class_identity;
     const void *identity() const noexcept override;
@@ -22,4 +22,4 @@ struct address_maker_plugin_t : public plugin_t {
     virtual address_ptr_t create_address() noexcept;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin

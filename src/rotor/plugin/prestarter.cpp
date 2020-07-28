@@ -8,14 +8,14 @@
 #include "rotor/supervisor.h"
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 const void *prestarter_plugin_t::class_identity = static_cast<const void *>(typeid(prestarter_plugin_t).name());
 
 const void *prestarter_plugin_t::identity() const noexcept { return class_identity; }
 
 void prestarter_plugin_t::activate(actor_base_t *actor_) noexcept {
-    plugin_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SUBSCRIPTION);
     actor->configure(*this);
@@ -25,7 +25,7 @@ void prestarter_plugin_t::activate(actor_base_t *actor_) noexcept {
     }
 }
 
-plugin_t::processing_result_t prestarter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+plugin_base_t::processing_result_t prestarter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     auto it = std::find_if(tracked.begin(), tracked.end(), [&](auto info) { return *info == point; });
     if (it != tracked.end()) {

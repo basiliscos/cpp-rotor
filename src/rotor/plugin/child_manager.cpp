@@ -9,7 +9,7 @@
 //#include <iostream>
 
 using namespace rotor;
-using namespace rotor::internal;
+using namespace rotor::plugin;
 
 namespace {
 namespace to {
@@ -40,7 +40,7 @@ const void *child_manager_plugin_t::class_identity = static_cast<const void *>(t
 const void *child_manager_plugin_t::identity() const noexcept { return class_identity; }
 
 void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
-    plugin_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     static_cast<supervisor_t &>(*actor_).access<to::manager>() = this;
     subscribe(&child_manager_plugin_t::on_create);
     subscribe(&child_manager_plugin_t::on_init);
@@ -58,7 +58,7 @@ void child_manager_plugin_t::deactivate() noexcept {
     if (sup.access<to::address_mapping>().empty()) {
         if (actors_map.size() == 1)
             remove_child(sup);
-        plugin_t::deactivate();
+        plugin_base_t::deactivate();
     }
 }
 
@@ -268,12 +268,12 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &p
             remove_child(*point.owner_ptr);
         }
         if (actors_map.size() == 0) {
-            plugin_t::deactivate();
+            plugin_base_t::deactivate();
         }
         if (address_mapping.empty())
-            plugin_t::deactivate();
+            plugin_base_t::deactivate();
         return false; // handled by lifetime
     } else {
-        return plugin_t::handle_unsubscription(point, external);
+        return plugin_base_t::handle_unsubscription(point, external);
     }
 }

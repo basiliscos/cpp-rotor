@@ -6,17 +6,17 @@
 // Distributed under the MIT Software License
 //
 
-#include "plugin.h"
+#include "plugin_base.h"
 #include <string>
 #include <unordered_set>
 #include <functional>
 #include <optional>
 
-namespace rotor::internal {
+namespace rotor::plugin {
 
-struct link_server_plugin_t : public plugin_t {
+struct link_server_plugin_t : public plugin_base_t {
 
-    using plugin_t::plugin_t;
+    using plugin_base_t::plugin_base_t;
     static const void *class_identity;
     const void *identity() const noexcept override;
 
@@ -46,4 +46,4 @@ struct link_server_plugin_t : public plugin_t {
     linked_clients_t linked_clients;
 };
 
-} // namespace rotor::internal
+} // namespace rotor::plugin
