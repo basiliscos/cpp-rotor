@@ -34,5 +34,5 @@ build_script:
 
 test_script:
   - ps: cd "_builds\tests"
-  - ctest -VV -C "%CONFIG%"
+  - ctest --timeout=5 -VV -C "%CONFIG%"
 
