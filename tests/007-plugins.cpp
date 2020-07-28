@@ -92,7 +92,7 @@ TEST_CASE("init/deinit sequence", "[plugin]") {
     actor->deactivate_plugins();
     REQUIRE((actor->deinit_seq == ((PID_2 << 8) | PID_1)));
     REQUIRE(actor->get_deactivating_plugins().size() == 0);
-};
+}
 
 TEST_CASE("fail init-plugin sequence", "[plugin]") {
     rt::system_context_test_t system_context;
@@ -110,4 +110,4 @@ TEST_CASE("fail init-plugin sequence", "[plugin]") {
     REQUIRE(actor->get_deactivating_plugins().size() == 0);
 
     CHECK(actor->deinit_seq == ((PID_2 << 8) | PID_1));
-};
+}
