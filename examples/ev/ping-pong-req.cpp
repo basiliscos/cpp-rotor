@@ -57,7 +57,7 @@ struct ponger_t : public rotor::actor_base_t {
     generator_t gen;
     distrbution_t dist;
 
-    ponger_t(config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
+    explicit ponger_t(config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
 
     void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);

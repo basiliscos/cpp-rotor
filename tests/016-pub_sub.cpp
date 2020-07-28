@@ -68,7 +68,7 @@ TEST_CASE("ping-pong", "[supervisor]") {
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto pub_addr = sup->create_address();
-    auto pub = sup->create_actor<pub_t>().pub_addr(pub_addr).timeout(rt::default_timeout).finish();
+    sup->create_actor<pub_t>().pub_addr(pub_addr).timeout(rt::default_timeout).finish();
     auto sub1 = sup->create_actor<sub_t>().pub_addr(pub_addr).timeout(rt::default_timeout).finish();
     auto sub2 = sup->create_actor<sub_t>().pub_addr(pub_addr).timeout(rt::default_timeout).finish();
 

@@ -26,7 +26,7 @@ int main() {
     auto sup =
         system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
-    auto hello = sup->create_actor<server_actor>().timeout(timeout).finish();
+    sup->create_actor<server_actor>().timeout(timeout).finish();
 
     sup->start();
     io_context.run();

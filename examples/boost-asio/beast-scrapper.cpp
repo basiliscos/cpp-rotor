@@ -516,12 +516,12 @@ int main(int argc, char **argv) {
                    .finish();
 
     auto worker_timeout = req_timeout * 2;
-    auto man = sup->create_actor<http_manager_t>()
-                   .strand(strand)
-                   .timeout(man_timeout)
-                   .workers(workers_count)
-                   .worker_timeout(worker_timeout)
-                   .finish();
+    sup->create_actor<http_manager_t>()
+        .strand(strand)
+        .timeout(man_timeout)
+        .workers(workers_count)
+        .worker_timeout(worker_timeout)
+        .finish();
 
     auto client = sup->create_actor<client_t>().timeout(worker_timeout).finish();
     client->timeout = req_timeout;
