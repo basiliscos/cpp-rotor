@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -157,9 +157,10 @@ struct http_worker_t : public r::actor_base_t {
 
     inline asio::io_context::strand &get_strand() noexcept { return strand; }
 
-    void init_start() noexcept override {
-        subscribe(&http_worker_t::on_request);
-        rotor::actor_base_t::init_start();
+    void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>(
+            [&](auto &p) { p.subscribe_actor(&http_worker_t::on_request); });
     }
 
     void init_finish() noexcept override { init_request.reset(); }
@@ -295,45 +296,50 @@ struct http_manager_config_t : public ra::supervisor_config_asio_t {
 };
 
 template <typename Supervisor> struct http_manager_asio_builder_t : ra::supervisor_config_asio_builder_t<Supervisor> {
+    using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
     using parent_t = ra::supervisor_config_asio_builder_t<Supervisor>;
     using parent_t::parent_t;
     constexpr static const std::uint32_t WORKERS = 1 << 3;
     constexpr static const std::uint32_t WORKER_TIMEOUT = 1 << 4;
     constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | WORKERS | WORKER_TIMEOUT;
 
-    http_manager_asio_builder_t &&workers(std::size_t count) && {
+    builder_t &&workers(std::size_t count) && {
         parent_t::config.worker_count = count;
         parent_t::mask = (parent_t::mask & ~WORKERS);
-        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+        return std::move(*static_cast<builder_t *>(this));
     }
 
-    http_manager_asio_builder_t &&worker_timeout(r::pt::time_duration &value) && {
+    builder_t &&worker_timeout(r::pt::time_duration &value) && {
         parent_t::config.worker_timeout = value;
         parent_t::mask = (parent_t::mask & ~WORKER_TIMEOUT);
-        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+        return std::move(*static_cast<builder_t *>(this));
     }
 };
 
 struct http_manager_t : public ra::supervisor_asio_t {
     using workers_set_t = std::unordered_set<r::address_ptr_t>;
     using request_ptr_t = r::intrusive_ptr_t<message::http_request_t>;
-    using req_mapping_t = std::unordered_map<request_id, request_ptr_t>;
+    using req_mapping_t = std::unordered_map<r::request_id_t, request_ptr_t>;
 
     using config_t = http_manager_config_t;
     template <typename Supervisor> using config_builder_t = http_manager_asio_builder_t<Supervisor>;
 
-    explicit http_manager_t(const http_manager_config_t &config_)
+    explicit http_manager_t(http_manager_config_t &config_)
         : ra::supervisor_asio_t{config_}, worker_count{config_.worker_count}, worker_timeout{config_.worker_timeout} {}
 
-    void init_start() noexcept override {
-        for (std::size_t i = 0; i < worker_count; ++i) {
+    void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::internal::starter_plugin_t>([&](auto &p) {
+            p.subscribe_actor(&http_manager_t::on_request);
+            p.subscribe_actor(&http_manager_t::on_response);
+        });
+        plugin.with_casted<r::internal::child_manager_plugin_t>([this](auto &) {
             auto worker = create_actor<http_worker_t>().timeout(worker_timeout).finish();
             auto addr = worker->get_address();
             workers.emplace(std::move(addr));
-        }
-        subscribe(&http_manager_t::on_request);
-        subscribe(&http_manager_t::on_response);
-        ra::supervisor_asio_t::init_start();
+        });
+        plugin.with_casted<r::internal::registry_plugin_t>(
+            [&](auto &p) { p.register_name("service-name", get_address()); });
     }
 
     void shutdown_finish() noexcept override {
@@ -371,13 +377,16 @@ struct client_t : r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-    void init_start() noexcept override {
-        subscribe(&client_t::on_status);
-        subscribe(&client_t::on_response);
-        poll_status();
+    void configure(rotor::plugin_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::internal::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&client_t::on_response); });
+        plugin.with_casted<r::internal::registry_plugin_t>([&](auto &p) {
+            p.discover_name("service-name", manager_addr).link(true, [](auto &ec) {
+                std::cout << "linked with manager :: " << ec.message() << "\n";
+            });
+        });
     }
-
-    void shutdown_start() noexcept override { r::actor_base_t::shutdown_start(); }
 
     void shutdown_finish() noexcept override {
         auto end = std::chrono::high_resolution_clock::now();
@@ -392,26 +401,6 @@ struct client_t : r::actor_base_t {
         supervisor->do_shutdown(); /* trigger all system to shutdown */
     }
 
-    void poll_status() noexcept {
-        if (poll_attempts < 3) {
-            request<r::payload::state_request_t>(manager_addr, manager_addr).send(timeout);
-            ++poll_attempts;
-        } else {
-            supervisor->do_shutdown();
-        }
-    }
-
-    void on_status(r::message::state_response_t &msg) noexcept {
-        if (msg.payload.ec) {
-            return supervisor->do_shutdown();
-        }
-        if (msg.payload.res.state != r::state_t::OPERATIONAL) {
-            poll_status();
-        } else {
-            r::actor_base_t::init_start();
-        }
-    }
-
     void make_request() noexcept {
         if (!shutdown_request) {
             if (active_requests < concurrency && total_requests < max_requests) {
@@ -424,8 +413,8 @@ struct client_t : r::actor_base_t {
         }
     }
 
-    void on_start(r::message::start_trigger_t &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         start = std::chrono::high_resolution_clock::now();
         for (std::size_t i = 0; i < concurrency; ++i) {
             make_request();
@@ -521,7 +510,11 @@ int main(int argc, char **argv) {
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto man_timeout = req_timeout + r::pt::milliseconds{workers_count * 2};
-    auto sup = system_context->create_supervisor<ra::supervisor_asio_t>().timeout(man_timeout).strand(strand).finish();
+    auto sup = system_context->create_supervisor<ra::supervisor_asio_t>()
+                   .timeout(man_timeout)
+                   .strand(strand)
+                   .create_registry()
+                   .finish();
 
     auto worker_timeout = req_timeout * 2;
     auto man = sup->create_actor<http_manager_t>()
@@ -532,7 +525,6 @@ int main(int argc, char **argv) {
                    .finish();
 
     auto client = sup->create_actor<client_t>().timeout(worker_timeout).finish();
-    client->manager_addr = man->get_address();
     client->timeout = req_timeout;
     client->concurrency = workers_count;
     client->url = *url;

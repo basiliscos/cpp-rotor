@@ -40,6 +40,7 @@ struct pinger_t : public r::actor_base_t {
     void set_pings(std::size_t pings) { pings_count = pings_left = pings; }
 
     void configure(r::plugin_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
         plugin.with_casted<r::internal::starter_plugin_t>([&](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
         plugin.with_casted<r::internal::link_client_plugin_t>([&](auto &p) {
             p.link(ponger_addr, true,

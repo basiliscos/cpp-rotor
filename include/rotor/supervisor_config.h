@@ -36,7 +36,7 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
-    builder_t &&create_registry(bool value) &&noexcept {
+    builder_t &&create_registry(bool value = true) &&noexcept {
         parent_t::config.create_registry = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
