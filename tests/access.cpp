@@ -12,5 +12,4 @@ bool empty(rotor::subscription_t &subs) noexcept {
     return subs.access<to::internal_infos>().empty() && subs.access<to::mine_handlers>().empty();
 }
 
-
 } // namespace rotor::test
