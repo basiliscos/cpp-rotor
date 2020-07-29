@@ -140,7 +140,7 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
                    .finish();
 
     sup->start();
-    auto actor = sup->create_actor<bad_actor_t>().timeout(timeout).finish();
+    sup->create_actor<bad_actor_t>().timeout(timeout).finish();
     ev_run(loop);
 
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
