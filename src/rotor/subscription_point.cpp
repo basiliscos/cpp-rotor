@@ -18,5 +18,8 @@ subscription_container_t::iterator subscription_container_t::find(const subscrip
         return *info->handler == *point.handler && info->address == point.address;
     };
     auto rit = std::find_if(rbegin(), rend(), predicate);
+    if (rit == rend()) {
+        return end();
+    }
     return --rit.base();
 }
