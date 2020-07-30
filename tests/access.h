@@ -23,6 +23,7 @@ struct parent_supervisor {};
 struct registry {};
 struct queue {};
 struct own_subscriptions {};
+struct resources {};
 } // namespace to
 } // namespace
 
@@ -33,6 +34,7 @@ bool empty(rotor::subscription_t &subs) noexcept;
 namespace rotor {
 
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
+template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }
 
 template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const void *>(const void *identity) noexcept {
     return get_plugin(identity);
@@ -45,6 +47,7 @@ template <> inline auto &rotor::plugin::plugin_base_t::access<test::to::own_subs
 }
 template <> inline auto &plugin::child_manager_plugin_t::access<test::to::actors_map>() noexcept { return actors_map; }
 template <> inline auto &plugin::lifetime_plugin_t::access<test::to::points>() noexcept { return points; }
+template <> inline auto &plugin::resources_plugin_t::access<test::to::resources>() noexcept { return resources; }
 template <> inline auto &rotor::supervisor_t::access<test::to::locality_leader>() noexcept { return locality_leader; }
 template <> inline auto &rotor::supervisor_t::access<test::to::parent_supervisor>() noexcept { return parent; }
 template <> inline auto &rotor::supervisor_t::access<test::to::registry>() noexcept { return registry_address; }

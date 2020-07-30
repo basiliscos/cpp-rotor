@@ -14,6 +14,7 @@
 #include "plugin/link_server.h"
 #include "plugin/prestarter.h"
 #include "plugin/registry.h"
+#include "plugin/resources.h"
 #include "plugin/starter.h"
 
 // supervisors plugins

@@ -3,7 +3,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ROTOR_VERSION "0.07")
+set(ROTOR_VERSION "0.09")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -48,6 +48,7 @@ add_library(rotor
     src/rotor/plugin/plugin_base.cpp
     src/rotor/plugin/prestarter.cpp
     src/rotor/plugin/registry.cpp
+    src/rotor/plugin/resources.cpp
     src/rotor/plugin/starter.cpp
     src/rotor/plugin/subscriber.cpp
 )

@@ -9,6 +9,7 @@
 #include "actor_test.h"
 #include "supervisor_test.h"
 #include "system_context_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -46,16 +47,7 @@ struct fail_start_actor_t : public rt::actor_test_t {
     }
 };
 
-struct custom_init_plugin1_t;
 struct custom_init_plugin2_t;
-
-struct fail_init_actor2_t : public rt::actor_test_t {
-    using rt::actor_test_t::actor_test_t;
-
-    using plugins_list_t =
-        std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
-                   custom_init_plugin1_t, r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
-};
 
 struct fail_init_actor3_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
@@ -91,21 +83,6 @@ struct fail_init_actor6_t : public rt::actor_test_t {
         std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
                    custom_init_plugin2_t, r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
 };
-
-struct custom_init_plugin1_t : r::plugin::plugin_base_t {
-    static const void *class_identity;
-
-    void activate(r::actor_base_t *actor) noexcept override {
-        r::plugin::plugin_base_t::activate(actor);
-        reaction_on(reaction_t::INIT);
-    }
-
-    bool handle_init(r::message::init_request_t *) noexcept override { return false; }
-
-    const void *identity() const noexcept override { return class_identity; }
-};
-
-const void *custom_init_plugin1_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin1_t).name());
 
 struct custom_init_plugin2_t : r::plugin::plugin_base_t {
     static const void *class_identity;
@@ -400,13 +377,17 @@ TEST_CASE("actor replies with error to init", "[supervisor]") {
 TEST_CASE("actor shutdown during init", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto act = sup->create_actor<fail_init_actor2_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    act->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::resources_plugin_t>([&](auto &p) { p.acquire(); });
+    };
 
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
 
     act->do_shutdown();
+    act->access<rt::to::resources>()->access<rt::to::resources>().clear();
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
@@ -414,9 +395,14 @@ TEST_CASE("actor shutdown during init", "[supervisor]") {
 
 TEST_CASE("two actors shutdown during init", "[supervisor]") {
     r::system_context_t system_context;
+    auto configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::resources_plugin_t>([&](auto &p) { p.acquire(); });
+    };
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
-    auto act1 = sup->create_actor<fail_init_actor2_t>().timeout(rt::default_timeout).finish();
-    auto act2 = sup->create_actor<fail_init_actor2_t>().timeout(rt::default_timeout).finish();
+    auto act1 = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act2 = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    act1->configurer = configurer;
+    act2->configurer = configurer;
 
     sup->do_process();
     REQUIRE(act1->get_state() == r::state_t::INITIALIZING);
@@ -425,6 +411,9 @@ TEST_CASE("two actors shutdown during init", "[supervisor]") {
 
     act1->do_shutdown();
     act2->do_shutdown();
+    act1->access<rt::to::resources>()->access<rt::to::resources>().clear();
+    act2->access<rt::to::resources>()->access<rt::to::resources>().clear();
+
     sup->do_process();
     REQUIRE(act1->get_state() == r::state_t::SHUTTED_DOWN);
     REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
@@ -511,6 +500,30 @@ TEST_CASE("failed to shutdown actor (2)", "[supervisor]") {
     sup->do_process();
 
     REQUIRE(system_context.ec == r::error_code_t::actor_misconfigured);
+    act->force_cleanup();
+
+    CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    act->access<rt::to::resources>()->acquire();
+    sup->do_shutdown();
+    sup->do_process();
+
+    CHECK(sup->active_timers.size() == 1);
+    sup->on_timer_trigger(*sup->active_timers.begin());
+    sup->do_process();
+
+    REQUIRE(system_context.ec == r::error_code_t::request_timeout);
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);

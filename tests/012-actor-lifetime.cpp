@@ -91,16 +91,6 @@ struct fail_plugin_t : public r::plugin::plugin_base_t {
     bool handle_shutdown(r::message::shutdown_request_t *) noexcept override { return allow_shutdown; }
 };
 
-bool fail_plugin_t::allow_init = true;
-
-const void *fail_plugin_t::class_identity = static_cast<const void *>(typeid(fail_plugin_t).name());
-
-struct fail_actor_t : public rt::actor_test_t {
-    using rt::actor_test_t::actor_test_t;
-    using plugins_list_t = std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t,
-                                      r::plugin::init_shutdown_plugin_t, fail_plugin_t, r::plugin::starter_plugin_t>;
-};
-
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
@@ -138,15 +128,13 @@ TEST_CASE("fail shutdown test", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
-    auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
-
-    auto fail_plugin = static_cast<fail_plugin_t *>(act->access<rt::to::get_plugin>(fail_plugin_t::class_identity));
-    fail_plugin->allow_init = true;
-    fail_plugin->allow_shutdown = false;
+    auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
     REQUIRE(sup->active_timers.size() == 0);
 
+    act->access<rt::to::resources>()->acquire();
     act->do_shutdown();
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 1); // "init child + shutdown children"
@@ -164,7 +152,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(cm_plugin->fail_addr == act->get_address());
     REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
 
-    fail_plugin->allow_shutdown = true;
+    act->access<rt::to::resources>()->release();
     act->shutdown_continue();
 
     sup->do_shutdown();
@@ -184,8 +172,8 @@ TEST_CASE("fail initialize test", "[actor]") {
     auto sup = system_context.create_supervisor<custom_supervisor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    fail_plugin_t::allow_init = false;
-    auto act = sup->create_actor<fail_actor_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    act->access<rt::to::resources>()->acquire();
     sup->do_process();
 
     REQUIRE(sup->get_children_count() == 2); // sup + actor
@@ -193,11 +181,14 @@ TEST_CASE("fail initialize test", "[actor]") {
     REQUIRE(sup->active_timers.size() == 1);
 
     sup->on_timer_trigger(*sup->active_timers.begin());
+    act->access<rt::to::resources>()->release();
     sup->do_process();
     REQUIRE(sup->get_children_count() == 1); // just sup
 
     sup->do_shutdown();
     sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
 TEST_CASE("double shutdown test (actor)", "[actor]") {

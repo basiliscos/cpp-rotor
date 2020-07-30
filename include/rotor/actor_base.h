@@ -59,6 +59,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         plugin::link_server_plugin_t,
         plugin::link_client_plugin_t,
         plugin::registry_plugin_t,
+        plugin::resources_plugin_t,
         plugin::starter_plugin_t>;
     // clang-format on
 
@@ -244,6 +245,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /* non-owning pointers */
     plugin::address_maker_plugin_t *address_maker = nullptr;
     plugin::lifetime_plugin_t *lifetime = nullptr;
+    plugin::resources_plugin_t *resources = nullptr;
 
     plugin::plugin_base_t *get_plugin(const void *identity) const noexcept;
 
