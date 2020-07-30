@@ -207,7 +207,9 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
-    sup->access<rt::to::request_map>()[2] = r::request_curry_t(); /* for better coverage*/
+    /* for better coverage */
+    auto& last = sup->access<rt::to::last_req_id>();
+    sup->access<rt::to::request_map>()[last + 1] = r::request_curry_t();
     sup->do_process();
 
     CHECK(sup->access<rt::to::last_req_id>() > 1);
