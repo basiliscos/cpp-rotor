@@ -73,10 +73,10 @@ bool resources_plugin_t::release(resource_id_t id) noexcept {
 }
 
 std::uint32_t resources_plugin_t::has(resource_id_t id) noexcept {
-    if (id >= resources.size()) return 0;
+    if (id >= resources.size())
+        return 0;
     return resources[id];
 }
-
 
 bool resources_plugin_t::has_aquired_resources() noexcept {
     auto sum = std::accumulate(resources.begin(), resources.end(), 0);

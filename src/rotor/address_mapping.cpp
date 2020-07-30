@@ -33,8 +33,7 @@ address_ptr_t address_mapping_t::get_mapped_address(actor_base_t &actor, const v
 
 void address_mapping_t::remove(const subscription_point_t &point) noexcept {
     auto it_points = actor_map.find(point.owner_ptr);
-    if (it_points == actor_map.end())
-        return;
+    assert(it_points != actor_map.end());
 
     auto &subs = it_points->second;
     for (auto it = subs.begin(); it != subs.end();) {

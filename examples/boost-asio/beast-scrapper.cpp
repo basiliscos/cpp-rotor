@@ -168,7 +168,7 @@ struct http_worker_t : public r::actor_base_t {
             [&](auto &p) { p.subscribe_actor(&http_worker_t::on_request); });
     }
 
-    //void init_finish() noexcept override { init_request.reset(); }
+    // void init_finish() noexcept override { init_request.reset(); }
 
     bool try_shutdown() {
         if (state == r::state_t::SHUTTING_DOWN) {
@@ -191,7 +191,7 @@ struct http_worker_t : public r::actor_base_t {
         return false;
     }
 
-    //void shutdown_start() noexcept override { try_shutdown(); }
+    // void shutdown_start() noexcept override { try_shutdown(); }
 
     void on_request(message::http_request_t &req) noexcept {
         assert(!orig_req);
