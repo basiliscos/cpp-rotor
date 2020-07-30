@@ -11,7 +11,7 @@
 
 namespace rotor::plugin {
 
-using resource_id_t = std::uint64_t;
+using resource_id_t = std::size_t;
 
 struct resources_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
@@ -24,13 +24,14 @@ struct resources_plugin_t : public plugin_base_t {
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
 
     virtual void acquire(resource_id_t = 0) noexcept;
+    virtual std::uint32_t has(resource_id_t = 0) noexcept;
     virtual bool release(resource_id_t = 0) noexcept;
 
     template <typename T> auto &access() noexcept;
 
   private:
     bool has_aquired_resources() noexcept;
-    using Resources = std::vector<resource_id_t>;
+    using Resources = std::vector<std::uint32_t>;
     Resources resources;
     bool configured = false;
 };

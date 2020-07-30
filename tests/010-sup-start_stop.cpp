@@ -210,6 +210,7 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
 
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->access<rt::to::state>() == r::state_t::OPERATIONAL);
+    CHECK(act->access<rt::to::resources>()->has() == 0);
 
     sup->do_shutdown();
     sup->do_process();

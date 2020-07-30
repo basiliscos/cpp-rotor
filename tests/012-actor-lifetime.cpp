@@ -174,6 +174,7 @@ TEST_CASE("fail initialize test", "[actor]") {
 
     auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     act->access<rt::to::resources>()->acquire();
+    CHECK(act->access<rt::to::resources>()->has() == 1);
     sup->do_process();
 
     REQUIRE(sup->get_children_count() == 2); // sup + actor

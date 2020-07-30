@@ -151,6 +151,11 @@ struct http_worker_t : public r::actor_base_t {
     using resolve_results_t = tcp::resolver::results_type;
     using resolve_it_t = resolve_results_t::iterator;
 
+    struct resource {
+        static const constexpr r::plugin::resource_id_t resolver = 1;
+        static const constexpr r::plugin::resource_id_t socket = 2;
+    };
+
     explicit http_worker_t(r::actor_config_t &config)
         : r::actor_base_t{config}, strand{static_cast<ra::supervisor_asio_t *>(config.supervisor)->get_strand()},
           resolver{strand.context()} {}
@@ -163,27 +168,30 @@ struct http_worker_t : public r::actor_base_t {
             [&](auto &p) { p.subscribe_actor(&http_worker_t::on_request); });
     }
 
-    void init_finish() noexcept override { init_request.reset(); }
+    //void init_finish() noexcept override { init_request.reset(); }
 
     bool try_shutdown() {
-        if (shutdown_request) {
-            if (resolver_active) {
+        if (state == r::state_t::SHUTTING_DOWN) {
+            if (resources->has(resource::resolver)) {
                 resolver.cancel();
-            } else if (sock) {
+                resources->release(resource::resolver);
+            } else if (resources->has(resource::socket)) {
                 sys::error_code ec;
                 sock->cancel(ec);
                 assert(!ec);
                 sock->close(ec);
                 assert(!ec);
-            } else {
+            }
+            /*else {
                 r::actor_base_t::shutdown_start();
             }
+            */
             return true;
         }
         return false;
     }
 
-    void shutdown_start() noexcept override { try_shutdown(); }
+    //void shutdown_start() noexcept override { try_shutdown(); }
 
     void on_request(message::http_request_t &req) noexcept {
         assert(!orig_req);
@@ -209,29 +217,31 @@ struct http_worker_t : public r::actor_base_t {
         auto &url = orig_req->payload.request_payload.url;
         auto fwd = ra::forwarder_t(*this, &http_worker_t::on_resolve, &http_worker_t::on_resolve_error);
         resolver.async_resolve(url.host, url.port, std::move(fwd));
-        resolver_active = true;
+        resources->acquire(resource::resolver);
     }
 
     void request_fail(const sys::error_code &ec) noexcept {
         reply_with_error(*orig_req, ec);
         orig_req.reset();
         sock.reset();
+        resources->release(resource::socket);
     }
 
     void on_resolve_error(const sys::error_code &ec) noexcept {
-        resolver_active = false;
+        resources->release(resource::resolver);
         request_fail(ec);
         try_shutdown();
     }
 
     void on_resolve(resolve_results_t results) noexcept {
-        resolver_active = false;
+        resources->release(resource::resolver);
         if (try_shutdown()) {
             return;
         }
 
         sock = std::make_unique<tcp::socket>(strand.context());
         sock->open(tcp::v4());
+        resources->acquire(resource::socket);
         auto fwd = ra::forwarder_t(*this, &http_worker_t::on_connect, &http_worker_t::on_tcp_error);
         asio::async_connect(*sock, results.begin(), results.end(), std::move(fwd));
     }
@@ -275,6 +285,7 @@ struct http_worker_t : public r::actor_base_t {
         sock->cancel();
         sock->close();
         sock.reset();
+        resources->release(resource::socket);
 
         try_shutdown();
     }
@@ -285,7 +296,6 @@ struct http_worker_t : public r::actor_base_t {
     request_ptr_t orig_req;
     http::request<http::empty_body> request;
     http::response<http::string_body> response;
-    bool resolver_active = false;
 };
 
 struct http_manager_config_t : public ra::supervisor_config_asio_t {
