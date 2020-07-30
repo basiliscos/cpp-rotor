@@ -44,11 +44,9 @@ struct address_mapping_t {
     /** \brief returns temporal destination address for the actor/message type */
     address_ptr_t get_mapped_address(actor_base_t &actor, const void *message) noexcept;
 
+    // check that subscription exists
     template <typename Fn> void each_subscription(const actor_base_t &actor, Fn &&fn) const noexcept {
         auto it_mappings = actor_map.find(static_cast<const void *>(&actor));
-        if (it_mappings == actor_map.end())
-            return;
-
         for (auto it : it_mappings->second) {
             fn(it.second);
         }
