@@ -128,14 +128,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
 
     auto &sup = static_cast<supervisor_t &>(*actor);
     bool continue_init = false;
-    auto init_predicate = [&](auto &it) {
-        auto &state = it.second.actor->template access<to::state>();
-        bool still_initializing =
-            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !it.second.initialized;
-        return still_initializing;
-    };
-    bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
-    continue_init = !has_initing && !ec;
+    continue_init = !ec && !has_initializing();
     if (ec) {
         auto &self_state = actor->access<to::state>();
         auto &policy = sup.access<to::policy>();
@@ -228,15 +221,7 @@ void child_manager_plugin_t::on_state_request(message::state_request_t &message)
     actor->reply_to(message, target_state);
 }
 
-bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept {
-    auto init_predicate = [&](auto it) {
-        auto &address = actor->get_address();
-        auto &state = it.second.actor->template access<to::state>();
-        return it.first != address && state <= state_t::INITIALIZING;
-    };
-    bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
-    return !has_initing;
-}
+bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept { return !has_initializing(); }
 
 bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
     /* prevent double sending req, i.e. from parent and from self */
@@ -298,4 +283,15 @@ bool child_manager_plugin_t::handle_start(message::start_trigger_t *) noexcept {
         }
     }
     return true;
+}
+
+bool child_manager_plugin_t::has_initializing() const noexcept {
+    auto init_predicate = [&](auto &it) {
+        auto &state = it.second.actor->template access<to::state>();
+        bool still_initializing =
+            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !it.second.initialized;
+        return still_initializing;
+    };
+    bool has_any = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
+    return has_any;
 }

@@ -51,6 +51,7 @@ struct child_manager_plugin_t : public plugin_base_t {
     template <typename T> auto &access() noexcept;
 
   private:
+    bool has_initializing() const noexcept;
     void init_continue() noexcept;
 
     struct actor_state_t {
