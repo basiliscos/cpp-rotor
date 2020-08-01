@@ -81,6 +81,7 @@ http_manager_t::shutdown_finish()
 #include <regex>
 #include <unordered_set>
 #include <unordered_map>
+#include <deque>
 #include <memory>
 #include <boost/program_options.hpp>
 #include <boost/beast/core.hpp>
@@ -108,6 +109,23 @@ using raw_http_response_t = http::response<http::string_body>;
 constexpr const std::uint32_t RX_BUFF_SZ = 10 * 1024;
 constexpr const std::uint32_t MAX_HTTP_FAILURES = 1;
 
+struct endpoint_t {
+    std::string host;
+    std::string port;
+    inline bool operator==(const endpoint_t &other) const noexcept { return host == other.host && port == other.port; }
+};
+
+namespace std {
+template <> struct hash<endpoint_t> {
+    inline size_t operator()(const endpoint_t &endpoint) const noexcept {
+        auto h1 = std::hash<std::string>()(endpoint.host);
+        auto h2 = std::hash<std::string>()(endpoint.port);
+        return h1 ^ (h2 << 4);
+    }
+};
+
+} // namespace std
+
 namespace payload {
 
 struct http_response_t : public r::arc_base_t<http_response_t> {
@@ -118,7 +136,7 @@ struct http_response_t : public r::arc_base_t<http_response_t> {
         : response(std::move(response_)), bytes{bytes_} {}
 };
 
-struct http_request_t : public r::arc_base_t<http_response_t> {
+struct http_request_t : public r::arc_base_t<http_request_t> {
     using rx_buff_t = boost::beast::flat_buffer;
     using rx_buff_ptr_t = std::shared_ptr<rx_buff_t>;
     using duration_t = r::pt::time_duration;
@@ -132,18 +150,228 @@ struct http_request_t : public r::arc_base_t<http_response_t> {
     duration_t timeout;
 };
 
+struct address_response_t : public r::arc_base_t<address_response_t> {
+    using resolve_results_t = tcp::resolver::results_type;
+
+    explicit address_response_t(resolve_results_t results_) : results{results_} {};
+    resolve_results_t results;
+};
+
+struct address_request_t : public r::arc_base_t<address_request_t> {
+    using response_t = r::intrusive_ptr_t<address_response_t>;
+    endpoint_t endpoint;
+    explicit address_request_t(const endpoint_t &endpoint_) : endpoint{endpoint_} {}
+};
+
 } // namespace payload
 
 namespace message {
-
 using http_request_t = r::request_traits_t<payload::http_request_t>::request::message_t;
 using http_response_t = r::request_traits_t<payload::http_request_t>::response::message_t;
-
+using resolve_request_t = r::request_traits_t<payload::address_request_t>::request::message_t;
+using resolve_response_t = r::request_traits_t<payload::address_request_t>::response::message_t;
 } // namespace message
 
-static_assert(r::details::is_constructible_v<payload::http_response_t, raw_http_response_t, std::size_t>, "zzz");
-static_assert(std::is_constructible_v<payload::http_response_t, raw_http_response_t, std::size_t>, "zzz");
+namespace resource {
+static const constexpr r::plugin::resource_id_t timer = 0;
+static const constexpr r::plugin::resource_id_t io = 1;
+} // namespace resource
 
+namespace service {
+static const char *resolver = "service:resolver";
+static const char *manager = "service:manager";
+} // namespace service
+
+static_assert(r::details::is_constructible_v<payload::http_response_t, raw_http_response_t, std::size_t>, "valid");
+static_assert(std::is_constructible_v<payload::http_response_t, raw_http_response_t, std::size_t>, "valid");
+
+struct resolver_worker_config_t : public r::actor_config_t {
+    r::pt::time_duration resolve_timeout;
+    using r::actor_config_t::actor_config_t;
+};
+
+template <typename Actor> struct resolver_worker_config_builder_t : r::actor_config_builder_t<Actor> {
+    using builder_t = typename Actor::template config_builder_t<Actor>;
+    using parent_t = r::actor_config_builder_t<Actor>;
+    using parent_t::parent_t;
+
+    builder_t &&resolve_timeout(const pt::time_duration &value) &&noexcept {
+        parent_t::config.resolve_timeout = value;
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
+};
+
+struct resolver_worker_t : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+    using request_ptr_t = r::intrusive_ptr_t<message::resolve_request_t>;
+    using resolve_results_t = payload::address_response_t::resolve_results_t;
+    using Queue = std::list<request_ptr_t>;
+    using Cache = std::unordered_map<endpoint_t, resolve_results_t>;
+
+    using config_t = resolver_worker_config_t;
+    template <typename Actor> using config_builder_t = resolver_worker_config_builder_t<Actor>;
+
+    explicit resolver_worker_t(config_t &config)
+        : r::actor_base_t{config}, io_timeout{config.resolve_timeout},
+          strand{static_cast<ra::supervisor_asio_t *>(config.supervisor)->get_strand()}, backend{strand.context()},
+          timer(strand.context()) {}
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>(
+            [&](auto &p) { p.subscribe_actor(&resolver_worker_t::on_request); });
+        plugin.with_casted<r::plugin::registry_plugin_t>(
+            [&](auto &p) { p.register_name(service::resolver, get_address()); });
+    }
+
+    bool maybe_shutdown() {
+        if (state == r::state_t::SHUTTING_DOWN) {
+            auto ec = r::make_error_code(r::error_code_t::actor_not_linkable);
+            for (auto &req : queue) {
+                reply_with_error(*req, ec);
+            }
+            queue.clear();
+
+            if (!resources->has(resource::io)) {
+                backend.cancel();
+            }
+            if (!resources->has(resource::timer)) {
+                backend.cancel();
+            }
+            return true;
+        }
+        return true;
+    }
+
+    bool cancel_timer() noexcept {
+        sys::error_code ec;
+        timer.cancel(ec);
+        if (ec) {
+            get_supervisor().do_shutdown();
+        }
+        return (bool)ec;
+    }
+
+    void on_request(message::resolve_request_t &req) noexcept {
+        if (state == r::state_t::SHUTTING_DOWN) {
+            auto ec = r::make_error_code(r::error_code_t::actor_not_linkable);
+            reply_with_error(req, ec);
+            return;
+        }
+
+        queue.emplace_back(&req);
+        if (!resources->has(resource::io))
+            process();
+    }
+
+    template <typename ReplyFn> void reply(const endpoint_t &endpoint, ReplyFn &&fn) noexcept {
+        auto it = queue.begin();
+        while (it != queue.end()) {
+            auto &message_ptr = *it;
+            if (message_ptr->payload.request_payload->endpoint == endpoint) {
+                fn(*message_ptr);
+                it = queue.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    void mass_reply(const endpoint_t &endpoint, const resolve_results_t &results) noexcept {
+        reply(endpoint, [&](auto &message) { reply_to(message, results); });
+    }
+
+    void mass_reply(const endpoint_t &endpoint, const std::error_code &ec) noexcept {
+        reply(endpoint, [&](auto &message) { reply_with_error(message, ec); });
+    }
+
+    void process() noexcept {
+        if (queue.empty())
+            return;
+        auto queue_it = queue.begin();
+        auto endpoint = (*queue_it)->payload.request_payload->endpoint;
+        auto cache_it = cache.find(endpoint);
+        if (cache_it != cache.end()) {
+            mass_reply(endpoint, cache_it->second);
+        }
+        if (queue.empty())
+            return;
+        resolve_start(*queue_it);
+    }
+
+    void resolve_start(request_ptr_t &req) noexcept {
+        if (resources->has_any())
+            return;
+        if (maybe_shutdown())
+            return;
+        if (queue.empty())
+            return;
+
+        auto &endpoint = req->payload.request_payload->endpoint;
+        auto fwd_resolver =
+            ra::forwarder_t(*this, &resolver_worker_t::on_resolve, &resolver_worker_t::on_resolve_error);
+        backend.async_resolve(endpoint.host, endpoint.port, std::move(fwd_resolver));
+        resources->acquire(resource::io);
+
+        timer.expires_from_now(io_timeout);
+        auto fwd_timer =
+            ra::forwarder_t(*this, &resolver_worker_t::on_timer_trigger, &resolver_worker_t::on_timer_error);
+        timer.async_wait(std::move(fwd_timer));
+        resources->acquire(resource::timer);
+    }
+
+    void on_resolve(resolve_results_t results) noexcept {
+        resources->release(resource::io);
+        auto &endpoint = queue.front()->payload.request_payload->endpoint;
+        auto pair = cache.emplace(endpoint, results);
+        auto &it = pair.first;
+        mass_reply(it->first, it->second);
+        cancel_timer();
+    }
+
+    void on_resolve_error(const sys::error_code &ec) noexcept {
+        resources->release(resource::io);
+        auto endpoint = queue.front()->payload.request_payload->endpoint;
+        mass_reply(endpoint, ec);
+        cancel_timer();
+    }
+
+    void on_timer_error(const sys::error_code &ec) noexcept {
+        resources->release(resource::timer);
+        if (ec != asio::error::operation_aborted) {
+            return get_supervisor().do_shutdown();
+        }
+        if (!maybe_shutdown()) {
+            process();
+        }
+    }
+
+    void on_timer_trigger() noexcept {
+        resources->release(resource::timer);
+        // could be actually some other ec...
+        auto ec = r::make_error_code(r::error_code_t::request_timeout);
+        auto endpoint = queue.front()->payload.request_payload->endpoint;
+        mass_reply(endpoint, ec);
+        if (!maybe_shutdown()) {
+            process();
+        }
+    }
+
+    // cancel any pending async ops
+    void shutdown_start() noexcept override {
+        r::actor_base_t::shutdown_start();
+        maybe_shutdown();
+    }
+
+    pt::time_duration io_timeout;
+    asio::io_context::strand &strand;
+    tcp::resolver backend;
+    asio::deadline_timer timer;
+    Queue queue;
+    Cache cache;
+};
+
+#if 0
 struct http_worker_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     using request_ptr_t = r::intrusive_ptr_t<message::http_request_t>;
@@ -471,8 +699,10 @@ struct client_t : r::actor_base_t {
     std::size_t concurrency;
     timepoint_t start;
 };
+#endif
 
 int main(int argc, char **argv) {
+#if 0
     using url_ptr_t = std::unique_ptr<URL>;
     // clang-format off
     /* parse command-line & config options */
@@ -541,5 +771,6 @@ int main(int argc, char **argv) {
 
     sup->start();
     io_context.run();
+#endif
     return 0;
 }

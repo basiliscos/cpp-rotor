@@ -41,10 +41,10 @@ bool resources_plugin_t::handle_init(message::init_request_t *) noexcept {
         actor->configure(*this);
         configured = true;
     }
-    return !has_aquired_resources();
+    return !has_any();
 }
 
-bool resources_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return !has_aquired_resources(); }
+bool resources_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return !has_any(); }
 
 void resources_plugin_t::acquire(resource_id_t id) noexcept {
     if (id >= resources.size()) {
@@ -59,7 +59,7 @@ bool resources_plugin_t::release(resource_id_t id) noexcept {
     assert(value > 0 && "release should be previously acquired before releasing");
     --value;
     auto state = actor->access<to::state>();
-    bool has_acquired = has_aquired_resources();
+    bool has_acquired = has_any();
     if (state == state_t::INITIALIZING) {
         if (!has_acquired) {
             actor->init_continue();
@@ -78,7 +78,7 @@ std::uint32_t resources_plugin_t::has(resource_id_t id) noexcept {
     return resources[id];
 }
 
-bool resources_plugin_t::has_aquired_resources() noexcept {
+bool resources_plugin_t::has_any() noexcept {
     auto sum = std::accumulate(resources.begin(), resources.end(), 0);
     return sum > 0;
 }

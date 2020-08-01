@@ -26,11 +26,11 @@ struct resources_plugin_t : public plugin_base_t {
     virtual void acquire(resource_id_t = 0) noexcept;
     virtual std::uint32_t has(resource_id_t = 0) noexcept;
     virtual bool release(resource_id_t = 0) noexcept;
+    virtual bool has_any() noexcept;
 
     template <typename T> auto &access() noexcept;
 
   private:
-    bool has_aquired_resources() noexcept;
     using Resources = std::vector<std::uint32_t>;
     Resources resources;
     bool configured = false;
