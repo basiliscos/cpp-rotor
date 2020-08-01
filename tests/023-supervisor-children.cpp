@@ -529,3 +529,26 @@ TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
+
+TEST_CASE("synchronized start", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+            .synchronize_start().timeout(rt::default_timeout).finish();
+    auto act1 = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act2 = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+    act1->access<rt::to::resources>()->acquire();
+    sup->do_process();
+    CHECK(act1->get_state() == r::state_t::INITIALIZING);
+    CHECK(act2->get_state() == r::state_t::INITIALIZED);
+    CHECK(sup->get_state() == r::state_t::INITIALIZING);
+
+    act1->access<rt::to::resources>()->release();
+    sup->do_process();
+    CHECK(act1->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act2->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+}

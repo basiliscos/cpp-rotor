@@ -42,6 +42,7 @@ struct child_manager_plugin_t : public plugin_base_t {
 
     bool handle_init(message::init_request_t *) noexcept override;
     bool handle_shutdown(message::shutdown_request_t *) noexcept override;
+    bool handle_start(message::start_trigger_t *message) noexcept override;
 
     bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept override;
 
@@ -50,13 +51,18 @@ struct child_manager_plugin_t : public plugin_base_t {
     template <typename T> auto &access() noexcept;
 
   private:
+    void init_continue() noexcept;
+
     struct actor_state_t {
         /** \brief intrusive pointer to actor */
         actor_ptr_t actor;
 
-        bool strated;
-        /** \brief whethe the shutdown request is already sent */
-        bool shutdown_requesting;
+        template <typename Actor> actor_state_t(Actor &&act) noexcept : actor{std::forward<Actor>(act)} {}
+
+        bool initialized = false;
+        bool strated = false;
+        /** \brief whether the shutdown request is already sent */
+        bool shutdown_requesting = false;
     };
 
     using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;

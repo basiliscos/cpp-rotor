@@ -22,6 +22,7 @@ struct address_mapping {};
 struct system_context {};
 struct policy {};
 struct parent {};
+struct synchronize_start {};
 } // namespace to
 } // namespace
 
@@ -34,6 +35,7 @@ template <> auto &supervisor_t::access<to::address_mapping>() noexcept { return 
 template <> auto &supervisor_t::access<to::system_context>() noexcept { return context; }
 template <> auto &supervisor_t::access<to::policy>() noexcept { return policy; }
 template <> auto &supervisor_t::access<to::parent>() noexcept { return parent; }
+template <> auto &supervisor_t::access<to::synchronize_start>() noexcept { return synchronize_start; }
 
 const void *child_manager_plugin_t::class_identity = static_cast<const void *>(typeid(child_manager_plugin_t).name());
 
@@ -49,7 +51,8 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&child_manager_plugin_t::on_state_request);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SHUTDOWN);
-    actors_map.emplace(actor->get_address(), actor_state_t{actor, false, false});
+    reaction_on(reaction_t::START);
+    actors_map.emplace(actor->get_address(), actor_state_t(actor));
     actor->configure(*this);
 }
 
@@ -105,7 +108,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     child->do_initialize(sup.access<to::system_context>());
     auto &timeout = child->access<to::init_timeout>();
     sup.send<payload::create_actor_t>(actor->get_address(), child, timeout);
-    actors_map.emplace(child->get_address(), actor_state_t{child, false, false});
+    actors_map.emplace(child->get_address(), actor_state_t(child));
     if (static_cast<actor_base_t &>(sup).access<to::state>() == state_t::INITIALIZING) {
         postponed_init = true;
     }
@@ -127,7 +130,9 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     bool continue_init = false;
     auto init_predicate = [&](auto &it) {
         auto &state = it.second.actor->template access<to::state>();
-        return it.first != actor->get_address() && state <= state_t::INITIALIZING;
+        bool still_initializing =
+            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !it.second.initialized;
+        return still_initializing;
     };
     bool has_initing = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
     continue_init = !has_initing && !ec;
@@ -147,8 +152,11 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
         /* the if is needed for the very rare case when supervisor was immediately shutted down
            right after creation */
         if (it_actor != actors_map.end()) {
-            sup.template send<payload::start_actor_t>(address, address);
-            it_actor->second.strated = true;
+            it_actor->second.initialized = true;
+            if (!sup.access<to::synchronize_start>() || address == actor->get_address()) {
+                sup.template send<payload::start_actor_t>(address, address);
+                it_actor->second.strated = true;
+            }
         }
     }
     if (continue_init && postponed_init && actor->access<to::state>() < state_t::INITIALIZED) {
@@ -276,4 +284,18 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &p
     } else {
         return plugin_base_t::handle_unsubscription(point, external);
     }
+}
+
+bool child_manager_plugin_t::handle_start(message::start_trigger_t *) noexcept {
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    if (sup.access<to::synchronize_start>()) {
+        for (auto &it : actors_map) {
+            auto &address = it.first;
+            if (address == actor->get_address())
+                continue;
+            sup.template send<payload::start_actor_t>(address, address);
+            it.second.strated = true;
+        }
+    }
+    return true;
 }

@@ -261,6 +261,7 @@ struct supervisor_t : public actor_base_t {
 
   private:
     bool create_registry;
+    bool synchronize_start;
     address_ptr_t registry_address;
 
     supervisor_policy_t policy;

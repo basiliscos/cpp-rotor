@@ -11,7 +11,8 @@ using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), last_req_id{1}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
-      create_registry(config.create_registry), registry_address(config.registry_address), policy{config.policy} {
+      create_registry(config.create_registry), synchronize_start(config.synchronize_start),
+      registry_address(config.registry_address), policy{config.policy} {
     if (!supervisor) {
         supervisor = this;
     }

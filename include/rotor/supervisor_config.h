@@ -22,6 +22,7 @@ struct supervisor_config_t : actor_config_t {
     supervisor_policy_t policy = supervisor_policy_t::shutdown_self;
 
     bool create_registry = false;
+    bool synchronize_start = false;
 
     address_ptr_t registry_address;
 };
@@ -38,6 +39,11 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
 
     builder_t &&create_registry(bool value = true) &&noexcept {
         parent_t::config.create_registry = value;
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
+
+    builder_t &&synchronize_start(bool value = true) &&noexcept {
+        parent_t::config.synchronize_start = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
