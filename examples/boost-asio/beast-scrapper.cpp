@@ -190,6 +190,12 @@ struct resolver_worker_config_t : public r::actor_config_t {
     using r::actor_config_t::actor_config_t;
 };
 
+struct http_worker_config_t : public r::actor_config_t {
+    r::pt::time_duration resolve_timeout;
+    r::pt::time_duration request_timeout;
+    using r::actor_config_t::actor_config_t;
+};
+
 template <typename Actor> struct resolver_worker_config_builder_t : r::actor_config_builder_t<Actor> {
     using builder_t = typename Actor::template config_builder_t<Actor>;
     using parent_t = r::actor_config_builder_t<Actor>;
@@ -197,6 +203,22 @@ template <typename Actor> struct resolver_worker_config_builder_t : r::actor_con
 
     builder_t &&resolve_timeout(const pt::time_duration &value) &&noexcept {
         parent_t::config.resolve_timeout = value;
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
+};
+
+template <typename Actor> struct http_worker_config_builder_t : r::actor_config_builder_t<Actor> {
+    using builder_t = typename Actor::template config_builder_t<Actor>;
+    using parent_t = r::actor_config_builder_t<Actor>;
+    using parent_t::parent_t;
+
+    builder_t &&resolve_timeout(const pt::time_duration &value) &&noexcept {
+        parent_t::config.resolve_timeout = value;
+        return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
+
+    builder_t &&request_timeout(const pt::time_duration &value) &&noexcept {
+        parent_t::config.request_timeout = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 };
@@ -224,7 +246,7 @@ struct resolver_worker_t : public r::actor_base_t {
             [&](auto &p) { p.register_name(service::resolver, get_address()); });
     }
 
-    bool maybe_shutdown() {
+    bool maybe_shutdown() noexcept {
         if (state == r::state_t::SHUTTING_DOWN) {
             auto ec = r::make_error_code(r::error_code_t::actor_not_linkable);
             for (auto &req : queue) {
@@ -232,10 +254,10 @@ struct resolver_worker_t : public r::actor_base_t {
             }
             queue.clear();
 
-            if (!resources->has(resource::io)) {
+            if (resources->has(resource::io)) {
                 backend.cancel();
             }
-            if (!resources->has(resource::timer)) {
+            if (resources->has(resource::timer)) {
                 backend.cancel();
             }
             return true;
@@ -371,164 +393,205 @@ struct resolver_worker_t : public r::actor_base_t {
     Cache cache;
 };
 
-#if 0
 struct http_worker_t : public r::actor_base_t {
-    using r::actor_base_t::actor_base_t;
     using request_ptr_t = r::intrusive_ptr_t<message::http_request_t>;
     using tcp_socket_ptr_t = std::unique_ptr<tcp::socket>;
-    using resolve_results_t = tcp::resolver::results_type;
-    using resolve_it_t = resolve_results_t::iterator;
+    using resolve_it_t = payload::address_response_t::resolve_results_t::iterator;
 
-    struct resource {
-        static const constexpr r::plugin::resource_id_t resolver = 1;
-        static const constexpr r::plugin::resource_id_t socket = 2;
-    };
+    using config_t = http_worker_config_t;
+    template <typename Actor> using config_builder_t = http_worker_config_builder_t<Actor>;
 
-    explicit http_worker_t(r::actor_config_t &config)
-        : r::actor_base_t{config}, strand{static_cast<ra::supervisor_asio_t *>(config.supervisor)->get_strand()},
-          resolver{strand.context()} {}
-
-    inline asio::io_context::strand &get_strand() noexcept { return strand; }
+    explicit http_worker_t(config_t &config)
+        : r::actor_base_t{config}, resolve_timeout(config.resolve_timeout), request_timeout(config.request_timeout),
+          strand{static_cast<ra::supervisor_asio_t *>(config.supervisor)->get_strand()}, timer{strand.context()} {}
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
-        plugin.with_casted<r::plugin::starter_plugin_t>(
-            [&](auto &p) { p.subscribe_actor(&http_worker_t::on_request); });
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            p.subscribe_actor(&http_worker_t::on_request);
+            p.subscribe_actor(&http_worker_t::on_resolve);
+        });
+        plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
+            p.discover_name(service::resolver, resolver).link(false, [&](auto &ec) {
+                if (ec) {
+                    std::cerr << "resolver not found :; " << ec.message() << "\n";
+                }
+            });
+        });
     }
 
-    // void init_finish() noexcept override { init_request.reset(); }
-
-    bool try_shutdown() {
+    bool maybe_shutdown() noexcept {
         if (state == r::state_t::SHUTTING_DOWN) {
-            if (resources->has(resource::resolver)) {
-                resolver.cancel();
-                resources->release(resource::resolver);
-            } else if (resources->has(resource::socket)) {
-                sys::error_code ec;
-                sock->cancel(ec);
-                assert(!ec);
-                sock->close(ec);
-                assert(!ec);
+            if (resources->has(resource::io)) {
+                sock->cancel();
             }
-            /*else {
-                r::actor_base_t::shutdown_start();
+            if (resources->has(resource::timer)) {
+                timer.cancel();
             }
-            */
             return true;
         }
         return false;
     }
 
-    // void shutdown_start() noexcept override { try_shutdown(); }
-
     void on_request(message::http_request_t &req) noexcept {
         assert(!orig_req);
-        assert(!shutdown_request);
+        assert(!sock);
         orig_req.reset(&req);
-        response.clear();
-
-        conditional_start();
+        http_response.clear();
+        auto &url = req.payload.request_payload->url;
+        endpoint_t endpoint{url.host, url.port};
+        request<payload::address_request_t>(resolver, std::move(endpoint)).send(resolve_timeout);
     }
 
-    void conditional_start() noexcept {
-        if (sock) {
-            auto self = r::intrusive_ptr_t<http_worker_t>(this);
-            asio::defer(strand, [self = self]() {
-                self->conditional_start();
-                self->get_supervisor().do_process();
-            });
-        }
-        start_request();
-    }
-
-    void start_request() noexcept {
-        auto &url = orig_req->payload.request_payload.url;
-        auto fwd = ra::forwarder_t(*this, &http_worker_t::on_resolve, &http_worker_t::on_resolve_error);
-        resolver.async_resolve(url.host, url.port, std::move(fwd));
-        resources->acquire(resource::resolver);
-    }
-
-    void request_fail(const sys::error_code &ec) noexcept {
-        reply_with_error(*orig_req, ec);
-        orig_req.reset();
-        sock.reset();
-        resources->release(resource::socket);
-    }
-
-    void on_resolve_error(const sys::error_code &ec) noexcept {
-        resources->release(resource::resolver);
-        request_fail(ec);
-        try_shutdown();
-    }
-
-    void on_resolve(resolve_results_t results) noexcept {
-        resources->release(resource::resolver);
-        if (try_shutdown()) {
+    void on_resolve(message::resolve_response_t &res) noexcept {
+        auto &ec = res.payload.ec;
+        if (ec) {
+            reply_with_error(*orig_req, ec);
+            orig_req.reset();
             return;
         }
 
-        sock = std::make_unique<tcp::socket>(strand.context());
-        sock->open(tcp::v4());
-        resources->acquire(resource::socket);
-        auto fwd = ra::forwarder_t(*this, &http_worker_t::on_connect, &http_worker_t::on_tcp_error);
-        asio::async_connect(*sock, results.begin(), results.end(), std::move(fwd));
-    }
+        sys::error_code ec_sock;
+        sock = std::make_unique<tcp::socket>(strand);
+        sock->open(tcp::v4(), ec_sock);
+        if (ec_sock) {
+            reply_with_error(*orig_req, ec_sock);
+            orig_req.reset();
+            return;
+        }
 
-    void on_tcp_error(const sys::error_code &ec) noexcept {
-        request_fail(ec);
-        try_shutdown();
+        auto &addresses = res.payload.res->results;
+        auto fwd_connect = ra::forwarder_t(*this, &http_worker_t::on_connect, &http_worker_t::on_tcp_error);
+        asio::async_connect(*sock, addresses.begin(), addresses.end(), std::move(fwd_connect));
+        resources->acquire(resource::io);
+
+        timer.expires_from_now(request_timeout);
+        auto fwd_timer = ra::forwarder_t(*this, &http_worker_t::on_timer_trigger, &http_worker_t::on_timer_error);
+        timer.async_wait(std::move(fwd_timer));
+        resources->acquire(resource::timer);
     }
 
     void on_connect(resolve_it_t) noexcept {
-        auto &url = orig_req->payload.request_payload.url;
-        if (try_shutdown()) {
+        if (!orig_req) {
+            resources->release(resource::io);
+            return;
+        }
+        if (maybe_shutdown()) {
             return;
         }
 
-        request.method(http::verb::get);
-        request.version(11);
-        request.target(url.path);
-        request.set(http::field::host, url.host);
-        request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+        auto &url = orig_req->payload.request_payload->url;
+        http_request.method(http::verb::get);
+        http_request.version(11);
+        http_request.target(url.path);
+        http_request.set(http::field::host, url.host);
+        http_request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
         auto fwd = ra::forwarder_t(*this, &http_worker_t::on_request_sent, &http_worker_t::on_tcp_error);
-        http::async_write(*sock, request, std::move(fwd));
+        http::async_write(*sock, http_request, std::move(fwd));
     }
 
     void on_request_sent(std::size_t /* bytes */) noexcept {
-        if (try_shutdown())
+        if (!orig_req) {
+            resources->release(resource::io);
+            return;
+        }
+        if (maybe_shutdown())
             return;
 
         auto fwd = ra::forwarder_t(*this, &http_worker_t::on_request_read, &http_worker_t::on_tcp_error);
 
-        auto &rx_buff = orig_req->payload.request_payload.rx_buff;
-        rx_buff->prepare(orig_req->payload.request_payload.rx_buff_size);
-        http::async_read(*sock, *rx_buff, response, std::move(fwd));
+        auto &rx_buff = orig_req->payload.request_payload->rx_buff;
+        rx_buff->prepare(orig_req->payload.request_payload->rx_buff_size);
+        http::async_read(*sock, *rx_buff, http_response, std::move(fwd));
     }
 
     void on_request_read(std::size_t bytes) noexcept {
-        reply_to(*orig_req, std::move(response), bytes);
-        orig_req.reset();
+        response_size = bytes;
 
-        sock->cancel();
-        sock->close();
+        sys::error_code ec;
+        /* sock->cancel(); */
+        sock->close(ec);
+        if (ec) {
+            // we are going to destroy socket anyway
+            std::cout << "socket closing error: " << ec.message() << "\n";
+        }
         sock.reset();
-        resources->release(resource::socket);
-
-        try_shutdown();
+        resources->release(resource::io);
+        cancel_timer();
+        maybe_shutdown();
     }
 
+    void on_tcp_error(const sys::error_code &ec) noexcept {
+        resources->release(resource::io);
+        if (!orig_req) {
+            return;
+        }
+
+        reply_with_error(*orig_req, ec);
+        orig_req.reset();
+        cancel_timer();
+    }
+
+    void on_timer_error(const sys::error_code &ec) noexcept {
+        resources->release(resource::timer);
+        if (ec != asio::error::operation_aborted) {
+            if (orig_req) {
+                reply_with_error(*orig_req, ec);
+                orig_req.reset();
+            }
+            return get_supervisor().do_shutdown();
+        }
+
+        assert(!resources->has_any());
+        reply_to(*orig_req, std::move(http_response), response_size);
+        orig_req.reset();
+    }
+
+    void on_timer_trigger() noexcept {
+        resources->release(resource::timer);
+        if (orig_req) {
+            auto ec = r::make_error_code(r::error_code_t::request_timeout);
+            reply_with_error(*orig_req, ec);
+            orig_req.reset();
+        }
+        if (sock) {
+            sock->cancel();
+        }
+    }
+
+    bool cancel_timer() noexcept {
+        sys::error_code ec;
+        timer.cancel(ec);
+        if (ec) {
+            get_supervisor().do_shutdown();
+        }
+        return (bool)ec;
+    }
+
+    // cancel any pending async ops
+    void shutdown_start() noexcept override {
+        r::actor_base_t::shutdown_start();
+        maybe_shutdown();
+    }
+
+    pt::time_duration resolve_timeout;
+    pt::time_duration request_timeout;
     asio::io_context::strand &strand;
-    tcp::resolver resolver;
-    tcp_socket_ptr_t sock;
+    asio::deadline_timer timer;
+    r::address_ptr_t resolver;
     request_ptr_t orig_req;
-    http::request<http::empty_body> request;
-    http::response<http::string_body> response;
+    tcp_socket_ptr_t sock;
+    http::request<http::empty_body> http_request;
+    http::response<http::string_body> http_response;
+    size_t response_size;
 };
 
 struct http_manager_config_t : public ra::supervisor_config_asio_t {
     std::size_t worker_count;
     r::pt::time_duration worker_timeout;
+    r::pt::time_duration resolve_timeout;
+    r::pt::time_duration request_timeout;
 
     using ra::supervisor_config_asio_t::supervisor_config_asio_t;
 };
@@ -539,7 +602,10 @@ template <typename Supervisor> struct http_manager_asio_builder_t : ra::supervis
     using parent_t::parent_t;
     constexpr static const std::uint32_t WORKERS = 1 << 3;
     constexpr static const std::uint32_t WORKER_TIMEOUT = 1 << 4;
-    constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | WORKERS | WORKER_TIMEOUT;
+    constexpr static const std::uint32_t REQUEST_TIMEOUT = 1 << 5;
+    constexpr static const std::uint32_t RESOLVE_TIMEOUT = 1 << 6;
+    constexpr static const std::uint32_t requirements_mask =
+        parent_t::requirements_mask | WORKERS | WORKER_TIMEOUT | REQUEST_TIMEOUT | RESOLVE_TIMEOUT;
 
     builder_t &&workers(std::size_t count) && {
         parent_t::config.worker_count = count;
@@ -547,9 +613,21 @@ template <typename Supervisor> struct http_manager_asio_builder_t : ra::supervis
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    builder_t &&worker_timeout(r::pt::time_duration &value) && {
+    builder_t &&worker_timeout(const r::pt::time_duration &value) && {
         parent_t::config.worker_timeout = value;
         parent_t::mask = (parent_t::mask & ~WORKER_TIMEOUT);
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    builder_t &&resolve_timeout(const r::pt::time_duration &value) && {
+        parent_t::config.resolve_timeout = value;
+        parent_t::mask = (parent_t::mask & ~RESOLVE_TIMEOUT);
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    builder_t &&request_timeout(const r::pt::time_duration &value) && {
+        parent_t::config.request_timeout = value;
+        parent_t::mask = (parent_t::mask & ~REQUEST_TIMEOUT);
         return std::move(*static_cast<builder_t *>(this));
     }
 };
@@ -563,7 +641,8 @@ struct http_manager_t : public ra::supervisor_asio_t {
     template <typename Supervisor> using config_builder_t = http_manager_asio_builder_t<Supervisor>;
 
     explicit http_manager_t(http_manager_config_t &config_)
-        : ra::supervisor_asio_t{config_}, worker_count{config_.worker_count}, worker_timeout{config_.worker_timeout} {}
+        : ra::supervisor_asio_t{config_}, worker_count{config_.worker_count}, worker_timeout{config_.worker_timeout},
+          request_timeout{config_.request_timeout}, resolve_timeout{config_.resolve_timeout} {}
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
@@ -572,17 +651,23 @@ struct http_manager_t : public ra::supervisor_asio_t {
             p.subscribe_actor(&http_manager_t::on_response);
         });
         plugin.with_casted<r::plugin::child_manager_plugin_t>([this](auto &) {
-            auto worker = create_actor<http_worker_t>().timeout(worker_timeout).finish();
-            auto addr = worker->get_address();
-            workers.emplace(std::move(addr));
+            for (std::size_t i = 0; i < worker_count; ++i) {
+                auto worker_address = create_actor<http_worker_t>()
+                                          .timeout(worker_timeout)
+                                          .resolve_timeout(resolve_timeout)
+                                          .request_timeout(request_timeout)
+                                          .finish()
+                                          ->get_address();
+                workers.emplace(std::move(worker_address));
+            }
         });
         plugin.with_casted<r::plugin::registry_plugin_t>(
-            [&](auto &p) { p.register_name("service-name", get_address()); });
+            [&](auto &p) { p.register_name(service::manager, get_address()); });
     }
 
     void shutdown_finish() noexcept override {
-        ra::supervisor_asio_t::shutdown_finish();
         std::cerr << "http_manager_t::shutdown_finish()\n";
+        ra::supervisor_asio_t::shutdown_finish();
     }
 
     void on_request(message::http_request_t &req) noexcept {
@@ -593,7 +678,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
         auto worker_addr = *it;
         workers.erase(it);
         auto &payload = req.payload.request_payload;
-        auto request_id = request<payload::http_request_t>(worker_addr, payload).send(payload.timeout);
+        auto request_id = request<payload::http_request_t>(worker_addr, payload).send(payload->timeout);
         req_mapping.emplace(request_id, &req);
     }
 
@@ -607,6 +692,8 @@ struct http_manager_t : public ra::supervisor_asio_t {
 
     std::size_t worker_count;
     r::pt::time_duration worker_timeout;
+    r::pt::time_duration request_timeout;
+    r::pt::time_duration resolve_timeout;
     workers_set_t workers;
     req_mapping_t req_mapping;
 };
@@ -619,8 +706,10 @@ struct client_t : r::actor_base_t {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&client_t::on_response); });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name("service-name", manager_addr).link(true, [](auto &ec) {
-                std::cout << "linked with manager :: " << ec.message() << "\n";
+            p.discover_name(service::manager, manager_addr).link(false, [&](auto &ec) {
+                if (ec) {
+                    std::cerr << "manager was not discovered:" << ec.message() << "\n";
+                }
             });
         });
     }
@@ -633,7 +722,7 @@ struct client_t : r::actor_base_t {
 
         std::cerr << "client_t::shutdown_finish, stats: " << success_requests << "/" << total_requests
                   << " requests, in " << diff.count() << "s, rps = " << rps << "\n";
-        send<r::payload::shutdown_trigger_t>(supervisor->get_address(), manager_addr);
+        // send<r::payload::shutdown_trigger_t>(supervisor->get_address(), manager_addr);
         manager_addr.reset();
         supervisor->do_shutdown(); /* trigger all system to shutdown */
     }
@@ -699,20 +788,20 @@ struct client_t : r::actor_base_t {
     std::size_t concurrency;
     timepoint_t start;
 };
-#endif
 
 int main(int argc, char **argv) {
-#if 0
     using url_ptr_t = std::unique_ptr<URL>;
     // clang-format off
     /* parse command-line & config options */
     po::options_description cmdline_descr("Allowed options");
     cmdline_descr.add_options()
-            ("help", "show this help message")
-            ("url", po::value<std::string>()->default_value("http://www.example.com:80/index.html"), "URL to poll")
-            ("workers_count", po::value<std::size_t>()->default_value(10), "concurrency (number of http workers)")
-            ("timeout", po::value<std::size_t>()->default_value(1000), "generic timeout (in milliseconds)")
-            ("max_requests", po::value<std::size_t>()->default_value(100), "maximum amount of requests before shutting down");
+        ("help", "show this help message")
+        ("url", po::value<std::string>()->default_value("http://www.example.com:80/index.html"), "URL to poll")
+        ("workers_count", po::value<std::size_t>()->default_value(1), "concurrency (number of http workers)")
+        ("timeout", po::value<std::size_t>()->default_value(5000), "generic timeout (in milliseconds)")
+        ("resolve_timeout", po::value<std::size_t>()->default_value(1000), "resolve timeout (in milliseconds)")
+        ("rotor_timeout", po::value<std::size_t>()->default_value(10), "rotor timeout (in milliseconds)")
+        ("max_requests", po::value<std::size_t>()->default_value(100), "maximum amount of requests before shutting down");
     // clang-format on
 
     po::variables_map vm;
@@ -740,37 +829,48 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto req_timeout = r::pt::milliseconds{vm["timeout"].as<std::size_t>()};
+    auto request_timeout = r::pt::milliseconds{vm["timeout"].as<std::size_t>()};
+    auto resolve_timeout = r::pt::milliseconds{vm["resolve_timeout"].as<std::size_t>()};
+    auto rotor_timeout = r::pt::milliseconds{vm["rotor_timeout"].as<std::size_t>()};
     auto workers_count = vm["workers_count"].as<std::size_t>();
     std::cerr << "using " << workers_count << " workers for " << url->host << ":" << url->port << url->path
-              << ", timeout: " << req_timeout << "\n";
+              << ", timeout: " << request_timeout << "\n";
     asio::io_context io_context;
 
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
-    auto man_timeout = req_timeout + r::pt::milliseconds{workers_count * 2};
+    auto man_timeout = request_timeout + (rotor_timeout * workers_count * 2);
     auto sup = system_context->create_supervisor<ra::supervisor_asio_t>()
                    .timeout(man_timeout)
                    .strand(strand)
                    .create_registry()
+                   .synchronize_start()
                    .finish();
 
-    auto worker_timeout = req_timeout * 2;
+    sup->create_actor<resolver_worker_t>()
+        .timeout(resolve_timeout + rotor_timeout)
+        .resolve_timeout(resolve_timeout)
+        .finish();
+
+    auto worker_timeout = request_timeout * 2;
     sup->create_actor<http_manager_t>()
         .strand(strand)
         .timeout(man_timeout)
         .workers(workers_count)
         .worker_timeout(worker_timeout)
+        .request_timeout(request_timeout)
+        .resolve_timeout(resolve_timeout + rotor_timeout * 2)
+        .synchronize_start()
         .finish();
 
     auto client = sup->create_actor<client_t>().timeout(worker_timeout).finish();
-    client->timeout = req_timeout;
+    client->timeout = request_timeout + rotor_timeout * 2;
     client->concurrency = workers_count;
     client->url = *url;
     client->max_requests = vm["max_requests"].as<std::size_t>();
 
     sup->start();
     io_context.run();
-#endif
+
     return 0;
 }
