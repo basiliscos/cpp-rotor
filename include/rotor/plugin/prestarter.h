@@ -6,12 +6,12 @@
 // Distributed under the MIT Software License
 //
 
-#include "subscriber.h"
+#include "subscriber.hpp"
 
 namespace rotor::plugin {
 
-struct prestarter_plugin_t : public subscriber_plugin_t {
-    using subscriber_plugin_t::subscriber_plugin_t;
+struct prestarter_plugin_t : subscriber_plugin_t<plugin_t<start_policy_t::early>> {
+    using parent_t = subscriber_plugin_t<plugin_t<start_policy_t::early>>;
 
     static const void *class_identity;
     const void *identity() const noexcept override;

@@ -92,3 +92,22 @@ bool plugin_base_t::handle_unsubscription(const subscription_point_t &point, boo
     }
     return forget_subscription(point);
 }
+
+void plugin_t<start_policy_t::early>::activate(actor_base_t *actor) noexcept {
+    plugin_base_t::activate(actor);
+    actor->configure(*this);
+}
+
+void plugin_t<start_policy_t::late>::activate(actor_base_t *actor) noexcept {
+    plugin_base_t::activate(actor);
+    reaction_on(reaction_t::INIT);
+}
+
+bool plugin_t<start_policy_t::late>::handle_init(message::init_request_t *message) noexcept {
+    if (!configured) {
+        actor->configure(*this);
+        configured = true;
+        post_configure();
+    }
+    return configured_handle_init(message);
+}
