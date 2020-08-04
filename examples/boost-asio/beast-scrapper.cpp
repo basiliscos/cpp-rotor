@@ -267,9 +267,11 @@ struct resolver_worker_t : public r::actor_base_t {
 
     bool cancel_timer() noexcept {
         sys::error_code ec;
-        timer.cancel(ec);
-        if (ec) {
-            get_supervisor().do_shutdown();
+        if (resources->has(resource::timer)) {
+            timer.cancel(ec);
+            if (ec) {
+                get_supervisor().do_shutdown();
+            }
         }
         return (bool)ec;
     }
@@ -344,10 +346,12 @@ struct resolver_worker_t : public r::actor_base_t {
 
     void on_resolve(resolve_results_t results) noexcept {
         resources->release(resource::io);
-        auto &endpoint = queue.front()->payload.request_payload->endpoint;
-        auto pair = cache.emplace(endpoint, results);
-        auto &it = pair.first;
-        mass_reply(it->first, it->second);
+        if (!queue.empty()) {
+            auto &endpoint = queue.front()->payload.request_payload->endpoint;
+            auto pair = cache.emplace(endpoint, results);
+            auto &it = pair.first;
+            mass_reply(it->first, it->second);
+        }
         cancel_timer();
     }
 
@@ -370,10 +374,12 @@ struct resolver_worker_t : public r::actor_base_t {
 
     void on_timer_trigger() noexcept {
         resources->release(resource::timer);
-        // could be actually some other ec...
-        auto ec = r::make_error_code(r::error_code_t::request_timeout);
-        auto endpoint = queue.front()->payload.request_payload->endpoint;
-        mass_reply(endpoint, ec);
+        if (!queue.empty()) {
+            // could be actually some other ec...
+            auto ec = r::make_error_code(r::error_code_t::request_timeout);
+            auto endpoint = queue.front()->payload.request_payload->endpoint;
+            mass_reply(endpoint, ec);
+        }
         if (!maybe_shutdown()) {
             process();
         }
@@ -543,9 +549,12 @@ struct http_worker_t : public r::actor_base_t {
             return get_supervisor().do_shutdown();
         }
 
-        assert(!resources->has_any());
-        reply_to(*orig_req, std::move(http_response), response_size);
-        orig_req.reset();
+        if (orig_req) {
+            reply_to(*orig_req, std::move(http_response), response_size);
+            orig_req.reset();
+        }
+        cancel_sock();
+        maybe_shutdown();
     }
 
     void on_timer_trigger() noexcept {
@@ -555,9 +564,19 @@ struct http_worker_t : public r::actor_base_t {
             reply_with_error(*orig_req, ec);
             orig_req.reset();
         }
+        cancel_sock();
+        maybe_shutdown();
+    }
+
+    bool cancel_sock() noexcept {
+        sys::error_code ec;
         if (sock) {
-            sock->cancel();
+            sock->cancel(ec);
+            if (ec) {
+                get_supervisor().do_shutdown();
+            }
         }
+        return (bool)ec;
     }
 
     bool cancel_timer() noexcept {
@@ -795,7 +814,7 @@ int main(int argc, char **argv) {
     cmdline_descr.add_options()
         ("help", "show this help message")
         ("url", po::value<std::string>()->default_value("http://www.example.com:80/index.html"), "URL to poll")
-        ("workers_count", po::value<std::size_t>()->default_value(1), "concurrency (number of http workers)")
+        ("workers_count", po::value<std::size_t>()->default_value(10), "concurrency (number of http workers)")
         ("timeout", po::value<std::size_t>()->default_value(5000), "generic timeout (in milliseconds)")
         ("resolve_timeout", po::value<std::size_t>()->default_value(1000), "resolve timeout (in milliseconds)")
         ("rotor_timeout", po::value<std::size_t>()->default_value(10), "rotor timeout (in milliseconds)")

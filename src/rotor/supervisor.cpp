@@ -48,8 +48,10 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
 }
 
 void supervisor_t::do_shutdown() noexcept {
-    auto upstream_sup = parent ? parent : this;
-    send<payload::shutdown_trigger_t>(upstream_sup->address, address);
+    if (state < state_t::SHUTTING_DOWN) {
+        auto upstream_sup = parent ? parent : this;
+        send<payload::shutdown_trigger_t>(upstream_sup->address, address);
+    }
 }
 
 subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
