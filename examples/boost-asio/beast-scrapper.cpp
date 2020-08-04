@@ -839,7 +839,7 @@ int main(int argc, char **argv) {
 
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
-    auto man_timeout = request_timeout + (rotor_timeout * workers_count * 2);
+    auto man_timeout = request_timeout + (rotor_timeout * static_cast<int>(workers_count) * 2);
     auto sup = system_context->create_supervisor<ra::supervisor_asio_t>()
                    .timeout(man_timeout)
                    .strand(strand)
