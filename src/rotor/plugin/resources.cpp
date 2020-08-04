@@ -32,6 +32,7 @@ void resources_plugin_t::activate(actor_base_t *actor_) noexcept {
     reaction_on(reaction_t::SHUTDOWN);
 
     actor->access<to::resources>() = this;
+    actor->configure(*this);
 
     return plugin_base_t::activate(actor_);
 }

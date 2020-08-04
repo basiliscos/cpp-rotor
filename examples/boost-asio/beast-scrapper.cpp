@@ -662,7 +662,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
             }
         });
         plugin.with_casted<r::plugin::registry_plugin_t>(
-            [&](auto &p) { p.register_name(service::manager, get_address()); });
+            [&](auto &p) { p.register_name(service::manager, get_address()); }, r::plugin::config_phase_t::PREINIT);
     }
 
     void shutdown_finish() noexcept override {

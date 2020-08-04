@@ -25,6 +25,7 @@ plugin_base_t::~plugin_base_t() {}
 void plugin_base_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->commit_plugin_activation(*this, true);
+    phase = config_phase_t::INITIALIZING;
 }
 
 void plugin_base_t::deactivate() noexcept {

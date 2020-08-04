@@ -11,6 +11,8 @@
 
 namespace rotor::plugin {
 
+enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
+
 struct plugin_base_t {
     enum processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
@@ -40,8 +42,10 @@ struct plugin_base_t {
 
     virtual processing_result_t handle_subscription(message::subscription_t &message) noexcept;
 
-    template <typename Plugin, typename Fn> void with_casted(Fn &&fn) noexcept {
-        if (identity() == Plugin::class_identity) {
+    template <typename Plugin, typename Fn>
+    void with_casted(Fn &&fn, config_phase_t desired_phase = config_phase_t::INITIALIZING) noexcept {
+        int phase_match = static_cast<int>(phase) & static_cast<int>(desired_phase);
+        if (phase_match && identity() == Plugin::class_identity) {
             auto &final = static_cast<Plugin &>(*this);
             fn(final);
         }
@@ -63,6 +67,7 @@ struct plugin_base_t {
   private:
     subscription_container_t own_subscriptions;
     std::size_t reaction = 0;
+    config_phase_t phase = config_phase_t::PREINIT;
 };
 
 } // namespace rotor::plugin

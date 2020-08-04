@@ -55,7 +55,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         plugin::address_maker_plugin_t,
         plugin::lifetime_plugin_t,
         plugin::init_shutdown_plugin_t,
-        plugin::prestarter_plugin_t,
         plugin::link_server_plugin_t,
         plugin::link_client_plugin_t,
         plugin::registry_plugin_t,

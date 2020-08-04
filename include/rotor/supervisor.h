@@ -66,7 +66,6 @@ struct supervisor_t : public actor_base_t {
         plugin::delivery_plugin_t<plugin::default_local_delivery_t>,
         plugin::lifetime_plugin_t,
         plugin::init_shutdown_plugin_t,
-        plugin::prestarter_plugin_t,
         plugin::foreigners_support_plugin_t,
         plugin::child_manager_plugin_t,
         plugin::registry_plugin_t,

@@ -22,7 +22,6 @@ struct manual_actor_t : public r::actor_base_t {
         r::plugin::address_maker_plugin_t,
         r::plugin::lifetime_plugin_t,
         r::plugin::init_shutdown_plugin_t,
-        r::plugin::prestarter_plugin_t,
         r::plugin::starter_plugin_t>;
     // clang-format on
 

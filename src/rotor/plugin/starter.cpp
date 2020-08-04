@@ -23,6 +23,8 @@ const void *starter_plugin_t::class_identity = static_cast<const void *>(typeid(
 const void *starter_plugin_t::identity() const noexcept { return class_identity; }
 
 void starter_plugin_t::activate(actor_base_t *actor_) noexcept {
+    actor = actor_;
+    actor_->configure(*this);
     plugin_base_t::activate(actor_);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SUBSCRIPTION);

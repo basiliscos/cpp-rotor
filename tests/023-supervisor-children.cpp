@@ -81,7 +81,7 @@ struct fail_init_actor6_t : public rt::actor_test_t {
 
     using plugins_list_t =
         std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
-                   custom_init_plugin2_t, r::plugin::prestarter_plugin_t, r::plugin::starter_plugin_t>;
+                   custom_init_plugin2_t, r::plugin::starter_plugin_t>;
 };
 
 struct custom_init_plugin2_t : r::plugin::plugin_base_t {
@@ -180,7 +180,7 @@ struct fail_shutdown_actor2_t : rt::actor_test_t {
 
     using plugins_list_t =
         std::tuple<r::plugin::address_maker_plugin_t, r::plugin::lifetime_plugin_t, r::plugin::init_shutdown_plugin_t,
-                   r::plugin::prestarter_plugin_t, custom_shutdown_plugin_t, r::plugin::starter_plugin_t>;
+                   custom_shutdown_plugin_t, r::plugin::starter_plugin_t>;
 };
 
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {
