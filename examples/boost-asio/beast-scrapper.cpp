@@ -262,7 +262,7 @@ struct resolver_worker_t : public r::actor_base_t {
             }
             return true;
         }
-        return true;
+        return false;
     }
 
     bool cancel_timer() noexcept {
