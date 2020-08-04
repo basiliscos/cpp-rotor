@@ -39,11 +39,13 @@ struct observer_t : public r::actor_base_t {
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         using namespace r::plugin;
-        plugin.with_casted<starter_plugin_t>([this](auto &p) {
-            p.subscribe_actor(&observer_t::on_sample_initialize, observable);
-            p.subscribe_actor(&observer_t::on_sample_start, observable);
-            p.subscribe_actor(&observer_t::on_sample_shutdown, observable);
-        }, config_phase_t::PREINIT);
+        plugin.with_casted<starter_plugin_t>(
+            [this](auto &p) {
+                p.subscribe_actor(&observer_t::on_sample_initialize, observable);
+                p.subscribe_actor(&observer_t::on_sample_start, observable);
+                p.subscribe_actor(&observer_t::on_sample_shutdown, observable);
+            },
+            config_phase_t::PREINIT);
     }
 
     void on_sample_initialize(r::message::init_request_t &) noexcept { event += 1; }

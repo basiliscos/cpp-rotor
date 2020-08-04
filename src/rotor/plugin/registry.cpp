@@ -32,6 +32,7 @@ void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
     subscribe(&registry_plugin_t::on_registration);
     subscribe(&registry_plugin_t::on_discovery);
+    subscribe(&registry_plugin_t::on_future);
 
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SHUTDOWN);
@@ -51,8 +52,8 @@ bool registry_plugin_t::register_name(const std::string &name, const address_ptr
     return true;
 }
 
-registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std::string &name,
-                                                                      address_ptr_t &address) noexcept {
+registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std::string &name, address_ptr_t &address,
+                                                                      bool delayed) noexcept {
     auto it = discovery_map.find("name");
     if (it != discovery_map.end())
         return it->second;
@@ -62,7 +63,7 @@ registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std:
         link_registry();
     }
 
-    auto r = discovery_map.emplace(name, discovery_task_t(*this, &address, name));
+    auto r = discovery_map.emplace(name, discovery_task_t(*this, &address, name, delayed));
     return r.first->second;
 }
 
@@ -82,16 +83,9 @@ void registry_plugin_t::on_registration(message::registration_response_t &messag
     }
 }
 
-void registry_plugin_t::on_discovery(message::discovery_response_t &message) noexcept {
-    auto &service = message.payload.req->payload.request_payload.service_name;
-    auto &ec = message.payload.ec;
-    auto it = discovery_map.find(service);
-    assert(it != discovery_map.end());
-    if (!ec) {
-        *it->second.address = message.payload.res.service_addr;
-    }
-    it->second.on_discovery(ec);
-}
+void registry_plugin_t::on_discovery(message::discovery_response_t &message) noexcept { process_discovery(message); }
+
+void registry_plugin_t::on_future(message::discovery_future_t &message) noexcept { process_discovery(message); }
 
 void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
     auto &init_request = actor->access<to::init_request>();
@@ -129,7 +123,11 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
             actor->request<payload::registration_request_t>(registry_addr, it.first, it.second.address).send(timeout);
         }
         for (auto &it : discovery_map) {
-            actor->request<payload::discovery_request_t>(registry_addr, it.first).send(timeout);
+            if (!it.second.delayed) {
+                actor->request<payload::discovery_request_t>(registry_addr, it.first).send(timeout);
+            } else {
+                actor->request<payload::discovery_promise_t>(registry_addr, it.first).send(timeout);
+            }
         }
     } else {
         // no-op as linked_client plugin should already reply with error to init-request

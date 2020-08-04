@@ -533,7 +533,9 @@ TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
 TEST_CASE("synchronized start", "[supervisor]") {
     rt::system_context_test_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
-            .synchronize_start().timeout(rt::default_timeout).finish();
+                   .synchronize_start()
+                   .timeout(rt::default_timeout)
+                   .finish();
     auto act1 = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
     auto act2 = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 

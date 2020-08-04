@@ -26,10 +26,12 @@ struct manual_actor_t : public r::actor_base_t {
     // clang-format on
 
     using discovery_reply_t = r::intrusive_ptr_t<r::message::discovery_response_t>;
+    using future_reply_t = r::intrusive_ptr_t<r::message::discovery_future_t>;
     using registration_reply_t = r::intrusive_ptr_t<r::message::registration_response_t>;
 
     r::address_ptr_t registry_addr;
     discovery_reply_t discovery_reply;
+    future_reply_t future_reply;
     registration_reply_t registration_reply;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
@@ -37,12 +39,18 @@ struct manual_actor_t : public r::actor_base_t {
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
             p.subscribe_actor(&manual_actor_t::on_discovery);
             p.subscribe_actor(&manual_actor_t::on_registration_reply);
+            p.subscribe_actor(&manual_actor_t::on_future);
         });
     }
 
     void query_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
         request<r::payload::discovery_request_t>(registry_addr, name).send(timeout);
+    }
+
+    void promise_name(const std::string &name) {
+        auto timeout = r::pt::milliseconds{1};
+        request<r::payload::discovery_promise_t>(registry_addr, name).send(timeout);
     }
 
     void register_name(const std::string &name) {
@@ -55,6 +63,7 @@ struct manual_actor_t : public r::actor_base_t {
     void unregister_name(const std::string &name) { send<r::payload::deregistration_service_t>(registry_addr, name); }
 
     void on_discovery(r::message::discovery_response_t &reply) noexcept { discovery_reply.reset(&reply); }
+    void on_future(r::message::discovery_future_t &reply) noexcept { future_reply.reset(&reply); }
 
     void on_registration_reply(r::message::registration_response_t &reply) noexcept {
         registration_reply.reset(&reply);
@@ -207,6 +216,24 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         REQUIRE(act->discovery_reply->payload.ec == r::make_error_code(r::error_code_t::unknown_service));
     }
 
+    SECTION("promise & future") {
+        REQUIRE(!act->future_reply);
+        SECTION("promise, register, future") {
+            act->promise_name("s1");
+            act->register_name("s1");
+            sup->do_process();
+            CHECK(act->future_reply);
+            CHECK(act->future_reply->payload.res.service_addr.get() == act->get_address().get());
+        }
+        SECTION("future, register, promise") {
+            act->register_name("s1");
+            act->promise_name("s1");
+            sup->do_process();
+            CHECK(act->future_reply);
+            CHECK(act->future_reply->payload.res.service_addr.get() == act->get_address().get());
+        }
+    }
+
     sup->do_shutdown();
     sup->do_process();
 }
@@ -265,6 +292,39 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
             });
         };
         sup->do_process();
+        CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+        CHECK(act_c->service_addr == act_s->get_address());
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act_s->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    }
+
+    SECTION("common case (promise & link)") {
+        auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        bool linked = false;
+        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
+                p.discover_name("service-name", act_c->service_addr, true).link(true, [&](auto &ec) {
+                    REQUIRE(!ec);
+                    linked = true;
+                });
+            });
+        };
+        sup->do_process();
+        REQUIRE(!linked);
+
+        auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::registry_plugin_t>(
+                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
+        };
+
+        sup->do_process();
+        CHECK(linked);
+        CHECK(sup->get_state() == r::state_t::OPERATIONAL);
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
         CHECK(act_c->service_addr == act_s->get_address());
 

@@ -26,8 +26,8 @@ struct registry_plugin_t : public plugin_base_t {
         }
 
       private:
-        discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_)
-            : plugin{plugin_}, address(address_), service_name{service_name_} {}
+        discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_, bool delayed_)
+            : plugin{plugin_}, address(address_), service_name{service_name_}, delayed{delayed_} {}
         operator bool() const noexcept { return address; }
 
         void on_discovery(const std::error_code &ec) noexcept;
@@ -36,6 +36,7 @@ struct registry_plugin_t : public plugin_base_t {
         registry_plugin_t &plugin;
         address_ptr_t *address;
         std::string service_name;
+        bool delayed;
         bool link_on_discovery = false;
         bool operational_only = false;
         link_callback_t callback;
@@ -50,9 +51,11 @@ struct registry_plugin_t : public plugin_base_t {
 
     virtual void on_registration(message::registration_response_t &) noexcept;
     virtual void on_discovery(message::discovery_response_t &) noexcept;
+    virtual void on_future(message::discovery_future_t &message) noexcept;
 
     virtual bool register_name(const std::string &name, const address_ptr_t &address) noexcept;
-    virtual discovery_task_t &discover_name(const std::string &name, address_ptr_t &address) noexcept;
+    virtual discovery_task_t &discover_name(const std::string &name, address_ptr_t &address,
+                                            bool delayed = false) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
@@ -60,6 +63,17 @@ struct registry_plugin_t : public plugin_base_t {
     template <typename T> auto &access() noexcept;
 
   private:
+    template <typename Message> void process_discovery(Message &message) noexcept {
+        auto &service = message.payload.req->payload.request_payload.service_name;
+        auto &ec = message.payload.ec;
+        auto it = discovery_map.find(service);
+        assert(it != discovery_map.end());
+        if (!ec) {
+            *it->second.address = message.payload.res.service_addr;
+        }
+        it->second.on_discovery(ec);
+    }
+
     enum class state_t { REGISTERING, LINKING, OPERATIONAL, UNREGISTERING };
     struct register_info_t {
         address_ptr_t address;

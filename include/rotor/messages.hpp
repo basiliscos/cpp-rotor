@@ -263,10 +263,15 @@ struct discovery_request_t {
     std::string service_name;
 };
 
-struct discovery_future_t: discovery_reply_t {};
+struct discovery_future_t {
+    /**  \brief the service address found by name in a registry */
+    address_ptr_t service_addr;
+};
 
-struct discovery_promise_t: discovery_request_t {
+struct discovery_promise_t {
     using response_t = discovery_future_t;
+    /**  \brief the service name to be looked in a registry */
+    std::string service_name;
 };
 
 struct link_response_t {};
