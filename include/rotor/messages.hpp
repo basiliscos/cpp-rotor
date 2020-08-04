@@ -263,6 +263,12 @@ struct discovery_request_t {
     std::string service_name;
 };
 
+struct discovery_future_t: discovery_reply_t {};
+
+struct discovery_promise_t: discovery_request_t {
+    using response_t = discovery_future_t;
+};
+
 struct link_response_t {};
 struct link_request_t {
     using response_t = link_response_t;
@@ -313,6 +319,8 @@ using deregistration_notify_t = message_t<payload::deregistration_notify_t>;
 using deregistration_service_t = message_t<payload::deregistration_service_t>;
 using discovery_request_t = request_traits_t<payload::discovery_request_t>::request::message_t;
 using discovery_response_t = request_traits_t<payload::discovery_request_t>::response::message_t;
+using discovery_promise_t = request_traits_t<payload::discovery_promise_t>::request::message_t;
+using discovery_future_t = request_traits_t<payload::discovery_promise_t>::response::message_t;
 
 using link_request_t = request_traits_t<payload::link_request_t>::request::message_t;
 using link_response_t = request_traits_t<payload::link_request_t>::response::message_t;

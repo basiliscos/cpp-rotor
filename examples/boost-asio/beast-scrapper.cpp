@@ -452,7 +452,7 @@ struct http_worker_t : public r::actor_base_t {
         }
 
         sys::error_code ec_sock;
-        sock = std::make_unique<tcp::socket>(strand);
+        sock = std::make_unique<tcp::socket>(strand.context());
         sock->open(tcp::v4(), ec_sock);
         if (ec_sock) {
             reply_with_error(*orig_req, ec_sock);
