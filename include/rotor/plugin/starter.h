@@ -6,27 +6,27 @@
 // Distributed under the MIT Software License
 //
 
-#include "subscriber.hpp"
+#include "subscriber.h"
 
 namespace rotor::plugin {
 
-struct starter_plugin_t : subscriber_plugin_t<plugin_t<start_policy_t::late>> {
-    using parent_t = subscriber_plugin_t<plugin_t<start_policy_t::late>>;
+struct starter_plugin_t : public subscriber_plugin_t {
+    using subscriber_plugin_t::subscriber_plugin_t;
 
     static const void *class_identity;
     const void *identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
 
+    bool handle_init(message::init_request_t *) noexcept override;
     bool handle_start(message::start_trigger_t *message) noexcept override;
 
     processing_result_t handle_subscription(message::subscription_t &message) noexcept override;
 
     void on_start(message::start_trigger_t &message) noexcept;
 
-  protected:
-    void post_configure() noexcept override;
-    bool configured_handle_init(message::init_request_t *) noexcept override;
+  private:
+    bool configured = false;
 };
 
 } // namespace rotor::plugin

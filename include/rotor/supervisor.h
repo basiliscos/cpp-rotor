@@ -339,32 +339,21 @@ template <typename Handler> subscription_info_ptr_t plugin_base_t::subscribe(Han
     return subscribe(std::forward<Handler>(h), actor->address);
 }
 
-namespace subscriber_plugin {
-struct own_subscriptions {};
-} // namespace subscriber_plugin
+template <> inline auto &plugin_base_t::access<plugin::subscriber_plugin_t>() noexcept { return own_subscriptions; }
 
-template <> inline auto &plugin_base_t::access<subscriber_plugin::own_subscriptions>() noexcept {
-    return own_subscriptions;
-}
-
-template <typename Plugin>
-template <typename Handler>
-handler_ptr_t subscriber_plugin_t<Plugin>::subscribe_actor(Handler &&handler) noexcept {
-    auto &actor = this->actor;
+template <typename Handler> handler_ptr_t subscriber_plugin_t::subscribe_actor(Handler &&handler) noexcept {
     auto &address = actor->get_address();
     return subscribe_actor(std::forward<Handler>(handler), address);
 }
 
-template <typename Plugin>
 template <typename Handler>
-handler_ptr_t subscriber_plugin_t<Plugin>::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
-    auto &actor = this->actor;
-    auto wrapped_handler = wrap_handler(*this->actor, std::move(handler));
+handler_ptr_t subscriber_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
+    auto wrapped_handler = wrap_handler(*actor, std::move(handler));
     auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     assert(std::count_if(tracked.begin(), tracked.end(), [&](auto &it) { return *it == *info; }) == 0 &&
            "already subscribed");
     tracked.emplace_back(info);
-    this->template access<subscriber_plugin::own_subscriptions>().emplace_back(std::move(info));
+    access<subscriber_plugin_t>().emplace_back(std::move(info));
     return wrapped_handler;
 }
 

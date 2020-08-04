@@ -15,9 +15,10 @@ const void *prestarter_plugin_t::class_identity = static_cast<const void *>(type
 const void *prestarter_plugin_t::identity() const noexcept { return class_identity; }
 
 void prestarter_plugin_t::activate(actor_base_t *actor_) noexcept {
-    parent_t::activate(actor_);
+    plugin_base_t::activate(actor_);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SUBSCRIPTION);
+    actor->configure(*this);
     if (tracked.empty()) {
         reaction_off(reaction_t::INIT);
         reaction_off(reaction_t::SUBSCRIPTION);

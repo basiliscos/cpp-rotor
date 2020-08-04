@@ -50,6 +50,7 @@ add_library(rotor
     src/rotor/plugin/registry.cpp
     src/rotor/plugin/resources.cpp
     src/rotor/plugin/starter.cpp
+    src/rotor/plugin/subscriber.cpp
 )
 target_include_directories(rotor
     PUBLIC

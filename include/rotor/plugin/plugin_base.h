@@ -11,8 +11,6 @@
 
 namespace rotor::plugin {
 
-enum class start_policy_t { early, late };
-
 struct plugin_base_t {
     enum processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
 
@@ -65,24 +63,6 @@ struct plugin_base_t {
   private:
     subscription_container_t own_subscriptions;
     std::size_t reaction = 0;
-};
-
-template <start_policy_t Policy> struct plugin_t;
-
-template <> struct plugin_t<start_policy_t::early> : plugin_base_t {
-    void activate(actor_base_t *actor) noexcept override;
-};
-
-template <> struct plugin_t<start_policy_t::late> : plugin_base_t {
-    void activate(actor_base_t *actor) noexcept override;
-    bool handle_init(message::init_request_t *) noexcept override;
-
-  protected:
-    virtual void post_configure() noexcept = 0;
-    virtual bool configured_handle_init(message::init_request_t *) noexcept = 0;
-    bool configured = false;
-
-  private:
 };
 
 } // namespace rotor::plugin
