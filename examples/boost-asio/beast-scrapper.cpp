@@ -662,7 +662,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
             }
         });
         plugin.with_casted<r::plugin::registry_plugin_t>(
-            [&](auto &p) { p.register_name(service::manager, get_address()); }, r::plugin::config_phase_t::PREINIT);
+            [&](auto &p) { p.register_name(service::manager, get_address()); });
     }
 
     void shutdown_finish() noexcept override {
@@ -706,10 +706,8 @@ struct client_t : r::actor_base_t {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&client_t::on_response); });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name(service::manager, manager_addr).link(false, [&](auto &ec) {
-                if (ec) {
-                    std::cerr << "manager was not discovered:" << ec.message() << "\n";
-                }
+            p.discover_name(service::manager, manager_addr, true).link(false, [&](auto &ec) {
+                std::cerr << "manager has been found:" << ec.message() << "\n";
             });
         });
     }

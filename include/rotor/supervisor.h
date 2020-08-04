@@ -68,6 +68,8 @@ struct supervisor_t : public actor_base_t {
         plugin::init_shutdown_plugin_t,
         plugin::foreigners_support_plugin_t,
         plugin::child_manager_plugin_t,
+        plugin::link_server_plugin_t,
+        plugin::link_client_plugin_t,
         plugin::registry_plugin_t,
         plugin::starter_plugin_t>;
     // clang-format on
