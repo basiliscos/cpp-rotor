@@ -441,10 +441,10 @@ struct http_worker_t : public r::actor_base_t {
     }
 
     void on_request(message::http_request_t &req) noexcept {
-        assert(!orig_req);
         assert(!sock);
         orig_req.reset(&req);
         http_response.clear();
+        need_response = true;
         auto &url = req.payload.request_payload->url;
         endpoint_t endpoint{url.host, url.port};
         request<payload::address_request_t>(resolver, std::move(endpoint)).send(resolve_timeout);
@@ -454,7 +454,7 @@ struct http_worker_t : public r::actor_base_t {
         auto &ec = res.payload.ec;
         if (ec) {
             reply_with_error(*orig_req, ec);
-            orig_req.reset();
+            need_response = false;
             return;
         }
 
@@ -464,6 +464,7 @@ struct http_worker_t : public r::actor_base_t {
         if (ec_sock) {
             reply_with_error(*orig_req, ec_sock);
             orig_req.reset();
+            need_response = false;
             return;
         }
 
@@ -479,7 +480,7 @@ struct http_worker_t : public r::actor_base_t {
     }
 
     void on_connect(resolve_it_t) noexcept {
-        if (!orig_req) {
+        if (!need_response) {
             resources->release(resource::io);
             return;
         }
@@ -531,27 +532,28 @@ struct http_worker_t : public r::actor_base_t {
 
     void on_tcp_error(const sys::error_code &ec) noexcept {
         resources->release(resource::io);
-        if (!orig_req) {
+        if (!need_response) {
             return;
         }
 
         reply_with_error(*orig_req, ec);
-        orig_req.reset();
+        need_response = false;
         cancel_timer();
     }
 
     void on_timer_error(const sys::error_code &ec) noexcept {
         resources->release(resource::timer);
         if (ec != asio::error::operation_aborted) {
-            if (orig_req) {
+            if (need_response) {
                 reply_with_error(*orig_req, ec);
-                orig_req.reset();
+                need_response = false;
             }
             return get_supervisor().do_shutdown();
         }
 
-        if (orig_req) {
+        if (need_response) {
             reply_to(*orig_req, std::move(http_response), response_size);
+            need_response = false;
             orig_req.reset();
         }
         cancel_sock();
@@ -560,10 +562,10 @@ struct http_worker_t : public r::actor_base_t {
 
     void on_timer_trigger() noexcept {
         resources->release(resource::timer);
-        if (orig_req) {
+        if (need_response) {
             auto ec = r::make_error_code(r::error_code_t::request_timeout);
             reply_with_error(*orig_req, ec);
-            orig_req.reset();
+            need_response = false;
         }
         cancel_sock();
         maybe_shutdown();
@@ -601,6 +603,7 @@ struct http_worker_t : public r::actor_base_t {
     asio::deadline_timer timer;
     r::address_ptr_t resolver;
     request_ptr_t orig_req;
+    bool need_response = false;
     tcp_socket_ptr_t sock;
     http::request<http::empty_body> http_request;
     http::response<http::string_body> http_response;
