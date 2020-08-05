@@ -119,11 +119,11 @@ void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcep
     auto &actor = message.payload.actor;
     auto &actor_address = actor->get_address();
     assert(actors_map.count(actor_address) == 1);
-    sup.template request<payload::initialize_actor_t>(actor_address, actor_address).send(message.payload.timeout);
+    sup.template request<payload::initialize_actor_t>(actor_address).send(message.payload.timeout);
 }
 
 void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept {
-    auto &address = message.payload.req->payload.request_payload.actor_address;
+    auto &address = message.payload.req->address;
     auto &ec = message.payload.ec;
 
     auto &sup = static_cast<supervisor_t &>(*actor);
@@ -138,7 +138,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             sup.do_shutdown();
         } else {
             auto &timeout = static_cast<actor_base_t &>(sup).access<to::shutdown_timeout>();
-            sup.template request<payload::shutdown_request_t>(address, address).send(timeout);
+            sup.template request<payload::shutdown_request_t>(address).send(timeout);
         }
     } else {
         auto it_actor = actors_map.find(address);
@@ -147,7 +147,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
         if (it_actor != actors_map.end()) {
             it_actor->second.initialized = true;
             if (!sup.access<to::synchronize_start>() || address == actor->get_address()) {
-                sup.template send<payload::start_actor_t>(address, address);
+                sup.template send<payload::start_actor_t>(address);
                 it_actor->second.strated = true;
             }
         }
@@ -179,7 +179,7 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
         if (!actor_state.shutdown_requesting) {
             actor_state.shutdown_requesting = true;
             auto &timeout = actor->access<to::shutdown_timeout>();
-            sup.request<payload::shutdown_request_t>(source_addr, source_addr).send(timeout);
+            sup.request<payload::shutdown_request_t>(source_addr).send(timeout);
         }
     }
 }
@@ -242,7 +242,7 @@ void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
             auto &parent = sup.access<to::parent>();
             if ((actor_addr != address) || parent) {
                 auto &timeout = actor->access<to::shutdown_timeout>();
-                sup.request<payload::shutdown_request_t>(actor_addr, actor_addr).send(timeout);
+                sup.request<payload::shutdown_request_t>(actor_addr).send(timeout);
             }
             actor_state.shutdown_requesting = true;
         }
@@ -278,7 +278,7 @@ bool child_manager_plugin_t::handle_start(message::start_trigger_t *) noexcept {
             auto &address = it.first;
             if (address == actor->get_address())
                 continue;
-            sup.template send<payload::start_actor_t>(address, address);
+            sup.template send<payload::start_actor_t>(address);
             it.second.strated = true;
         }
     }

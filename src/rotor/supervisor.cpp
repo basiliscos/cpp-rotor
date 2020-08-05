@@ -36,7 +36,7 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     actor_base_t::do_initialize(ctx);
     // do self-bootstrap
     if (!parent) {
-        request<payload::initialize_actor_t>(address, address).send(init_timeout);
+        request<payload::initialize_actor_t>(address).send(init_timeout);
     }
     if (create_registry) {
         auto actor = create_actor<registry_t>().init_timeout(init_timeout).shutdown_timeout(shutdown_timeout).finish();
@@ -87,7 +87,7 @@ void supervisor_t::on_timer_trigger(request_id_t timer_id) {
         auto &request_curry = it->second;
         message_ptr_t &request = request_curry.request_message;
         auto ec = make_error_code(error_code_t::request_timeout);
-        auto timeout_message = request_curry.fn(request_curry.reply_to, *request, std::move(ec));
+        auto timeout_message = request_curry.fn(request_curry.origin, *request, std::move(ec));
         put(std::move(timeout_message));
         request_map.erase(it);
     }

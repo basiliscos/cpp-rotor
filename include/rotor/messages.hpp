@@ -36,27 +36,13 @@ struct initialize_confirmation_t {};
 struct initialize_actor_t {
     /** \brief link to response payload type */
     using response_t = initialize_confirmation_t;
-
-    /** \brief target actor address, which is asked for initialization
-     *
-     * The `actor_address` might be useful for observing the actor initialization
-     * in some other actor
-     */
-    address_ptr_t actor_address;
 };
 
 /** \struct start_actor_t
  *  \brief Message with this payload is sent from a supervisor to an actor as
  *  start confirmation
  */
-struct start_actor_t {
-    /** \brief target actor address, which is asked for start
-     *
-     * The `actor_address` might be useful for observing the actor start
-     * in some other actor
-     */
-    address_ptr_t actor_address;
-};
+struct start_actor_t {};
 
 /** \struct create_actor_t
  *  \brief Message with this payload is sent to supervisor when an actor is
@@ -101,13 +87,6 @@ struct shutdown_confirmation_t {};
 struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
-
-    /** \brief source actor address, which has been shutted down
-     *
-     * The `actor_address` might be useful for observing the actor shutting down
-     * in some other actor
-     */
-    address_ptr_t actor_address;
 };
 
 /** \struct handler_call_t
@@ -277,7 +256,6 @@ struct discovery_promise_t {
 struct link_response_t {};
 struct link_request_t {
     using response_t = link_response_t;
-    address_ptr_t client_addr;
     bool operational_only;
 };
 

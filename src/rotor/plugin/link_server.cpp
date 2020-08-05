@@ -43,7 +43,7 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
         return;
     }
 
-    auto &client_addr = message.payload.request_payload.client_addr;
+    auto &client_addr = message.payload.origin;
     if (linked_clients.find(client_addr) != linked_clients.end()) {
         auto ec = make_error_code(error_code_t::already_linked);
         actor->reply_with_error(message, ec);

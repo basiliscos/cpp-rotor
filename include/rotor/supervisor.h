@@ -408,7 +408,8 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
         imaginary_address = sup.make_address();
         do_install_handler = true;
     }
-    req.reset(new request_message_t{destination, request_id, imaginary_address, std::forward<Args>(args)...});
+    req.reset(
+        new request_message_t{destination, request_id, imaginary_address, reply_to_, std::forward<Args>(args)...});
 }
 
 template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration timeout) noexcept {
@@ -428,7 +429,7 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
         auto it = supervisor->request_map.find(request_id);
         if (it != supervisor->request_map.end()) {
             supervisor->cancel_timer(request_id);
-            auto &orig_addr = it->second.reply_to;
+            auto &orig_addr = it->second.origin;
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
             supervisor->request_map.erase(it);
         }

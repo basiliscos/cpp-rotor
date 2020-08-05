@@ -27,6 +27,8 @@ struct request_base_t {
      *
      */
     address_ptr_t reply_to;
+
+    address_ptr_t origin;
 };
 
 /** \brief optionally wraps request type into intrusive pointer
@@ -82,8 +84,8 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
     template <typename... Args>
-    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, Args &&... args)
-        : request_base_t{id_, reply_to_}, request_payload{std::forward<Args>(args)...} {}
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_, Args &&... args)
+        : request_base_t{id_, reply_to_, origin_}, request_payload{std::forward<Args>(args)...} {}
 
     /** \brief original, user-supplied payload */
     T request_payload;
@@ -108,14 +110,15 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
      * The differnt `request-id` and `reply_to` address argruments are supplied
      * to make it possible cheaply forward requests.
      */
-    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const request_t &request_)
-        : request_base_t{id_, reply_to_}, request_payload{request_} {}
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_,
+                      const request_t &request_)
+        : request_base_t{id_, reply_to_, origin_}, request_payload{request_} {}
 
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
     template <typename... Args, typename E = std::enable_if_t<std::is_constructible_v<raw_request_t, Args...>>>
-    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, Args &&... args)
-        : request_base_t{id_, reply_to_}, request_payload{new raw_request_t{std::forward<Args>(args)...}} {}
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_, Args &&... args)
+        : request_base_t{id_, reply_to_, origin_}, request_payload{new raw_request_t{std::forward<Args>(args)...}} {}
 
     /** \brief intrusive pointer to user-supplied payload */
     request_t request_payload;
@@ -276,7 +279,7 @@ struct request_curry_t {
     error_producer_t *fn;
 
     /** \brief destination address for the error response */
-    address_ptr_t reply_to;
+    address_ptr_t origin;
 
     /** \brief the original request message */
     message_ptr_t request_message;
