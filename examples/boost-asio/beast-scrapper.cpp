@@ -418,9 +418,10 @@ struct http_worker_t : public r::actor_base_t {
             p.subscribe_actor(&http_worker_t::on_resolve);
         });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name(service::resolver, resolver).link(false, [&](auto &ec) {
+            p.discover_name(service::resolver, resolver).link(false).callback([](auto phase, auto &ec) {
                 if (ec) {
-                    std::cerr << "resolver not found :; " << ec.message() << "\n";
+                    auto p = (phase == rotor::plugin::registry_plugin_t::phase_t::linking) ? "link" : "discovery";
+                    std::cout << "cannot link with resolver (" << p << "): " << ec.message() << "\n";
                 }
             });
         });
@@ -725,8 +726,9 @@ struct client_t : r::actor_base_t {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&client_t::on_response); });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name(service::manager, manager_addr, true).link(false, [&](auto &ec) {
-                std::cerr << "manager has been found:" << ec.message() << "\n";
+            p.discover_name(service::manager, manager_addr, true).link(false).callback([](auto phase, auto &ec) {
+                auto p = (phase == rotor::plugin::registry_plugin_t::phase_t::linking) ? "link" : "discovery";
+                std::cerr << "manager has been found:" << ec.message() << " (" << p << ")\n";
             });
         });
     }

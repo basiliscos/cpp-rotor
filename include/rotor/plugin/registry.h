@@ -16,13 +16,18 @@ namespace rotor::plugin {
 struct registry_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
+    enum class phase_t { discovering, linking };
     struct discovery_task_t {
-        using link_callback_t = link_client_plugin_t::link_callback_t;
+        using callback_t = std::function<void(phase_t phase, const std::error_code &)>;
 
-        void link(bool operational_only_ = true, const link_callback_t callback_ = {}) noexcept {
+        discovery_task_t &link(bool operational_only_ = true) noexcept {
             link_on_discovery = true;
             operational_only = operational_only_;
-            callback = callback_;
+            return *this;
+        }
+
+        template <typename Callback> void callback(Callback &&cb) noexcept {
+            task_callback = std::forward<Callback>(cb);
         }
 
       private:
@@ -39,7 +44,7 @@ struct registry_plugin_t : public plugin_base_t {
         bool delayed;
         bool link_on_discovery = false;
         bool operational_only = false;
-        link_callback_t callback;
+        callback_t task_callback;
 
         friend struct registry_plugin_t;
     };

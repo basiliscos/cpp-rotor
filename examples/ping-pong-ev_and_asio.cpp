@@ -56,8 +56,9 @@ struct pinger_t : public rotor::actor_base_t {
             p.subscribe_actor(&pinger_t::on_pong);
         });
         plugin.with_casted<rotor::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name(ponger_name, ponger_addr).link(true, [&](auto &ec) {
-                std::cout << "discovered & linked with ponger : " << (!ec ? "yes" : "no") << "\n";
+            p.discover_name(ponger_name, ponger_addr).link(true).callback([](auto phase, auto &ec) {
+                auto p = (phase == rotor::plugin::registry_plugin_t::phase_t::linking) ? "link" : "discovery";
+                std::cout << "executing " << p << " in accordance with ponger : " << (!ec ? "yes" : "no") << "\n";
             });
         });
     }

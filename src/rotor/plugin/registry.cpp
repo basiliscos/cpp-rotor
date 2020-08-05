@@ -161,11 +161,14 @@ bool registry_plugin_t::has_registering() noexcept {
 }
 
 void registry_plugin_t::discovery_task_t::on_discovery(const std::error_code &ec) noexcept {
-    if (!ec && callback) {
+    if (task_callback)
+        task_callback(phase_t::discovering, ec);
+    if (!ec) {
         auto p = plugin.actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
         auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
         link_plugin.link(*address, operational_only, [this](auto &ec) {
-            callback(ec);
+            if (task_callback)
+                task_callback(phase_t::linking, ec);
             continue_init(ec);
         });
         return;

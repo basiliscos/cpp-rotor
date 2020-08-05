@@ -32,7 +32,6 @@ struct starter_plugin_t : public plugin_base_t {
   private:
     subscription_container_t tracked;
     bool configured = false;
-    bool continue_init = false;
 };
 
 } // namespace rotor::plugin
