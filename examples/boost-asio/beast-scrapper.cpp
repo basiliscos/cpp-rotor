@@ -445,6 +445,7 @@ struct http_worker_t : public r::actor_base_t {
         orig_req.reset(&req);
         http_response.clear();
         need_response = true;
+        response_size = 0;
         auto &url = req.payload.request_payload->url;
         endpoint_t endpoint{url.host, url.port};
         request<payload::address_request_t>(resolver, std::move(endpoint)).send(resolve_timeout);
@@ -607,7 +608,7 @@ struct http_worker_t : public r::actor_base_t {
     tcp_socket_ptr_t sock;
     http::request<http::empty_body> http_request;
     http::response<http::string_body> http_response;
-    size_t response_size;
+    size_t response_size = 0;
 };
 
 struct http_manager_config_t : public ra::supervisor_config_asio_t {

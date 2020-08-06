@@ -4,11 +4,11 @@
 // Distributed under the MIT Software License
 //
 
+#include "access.h"
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "actor_test.h"
-#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -51,6 +51,11 @@ struct manual_actor_t : public r::actor_base_t {
     void promise_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
         request<r::payload::discovery_promise_t>(registry_addr, name).send(timeout);
+    }
+
+    void cancel_name(const std::string &name) {
+        auto timeout = r::pt::milliseconds{1};
+        send<r::payload::discovery_cancel_t>(registry_addr, address, name);
     }
 
     void register_name(const std::string &name) {
@@ -231,6 +236,17 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
             sup->do_process();
             CHECK(act->future_reply);
             CHECK(act->future_reply->payload.res.service_addr.get() == act->get_address().get());
+        }
+        SECTION("cancel") {
+            act->promise_name("s1");
+            act->cancel_name("s1");
+            sup->do_process();
+            auto plugin = static_cast<r::actor_base_t*>(sup.get())->access<rt::to::get_plugin>(r::plugin::child_manager_plugin_t::class_identity);
+            auto& actors_map = static_cast<r::plugin::child_manager_plugin_t*>(plugin)->access<rt::to::actors_map>();
+            auto actor_state = actors_map.find(act->registry_addr);
+            auto& registry = actor_state->second.actor;
+            auto& promises_map = static_cast<r::registry_t*>(registry.get())->access<rt::to::promises_map>();
+            CHECK(promises_map.empty());
         }
     }
 

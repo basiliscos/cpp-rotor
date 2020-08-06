@@ -9,6 +9,7 @@
 #include "messages.hpp"
 #include <unordered_map>
 #include <set>
+#include <list>
 
 namespace rotor {
 
@@ -51,9 +52,13 @@ struct registry_t : public actor_base_t {
 
     virtual void on_promise(message::discovery_promise_t &request) noexcept;
 
+    virtual void on_cancel(message::discovery_cancel_t &notify) noexcept;
+
+    template <typename T> auto &access() noexcept;
+
   protected:
     using promise_ptr_t = intrusive_ptr_t<message::discovery_promise_t>;
-    using promises_list_t = std::vector<promise_ptr_t>;
+    using promises_list_t = std::list<promise_ptr_t>;
 
     /** \brief name-to-address mapping type */
     using registered_map_t = std::unordered_map<std::string, address_ptr_t>;

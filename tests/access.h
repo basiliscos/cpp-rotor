@@ -7,6 +7,7 @@
 #pragma once
 
 #include "rotor.hpp"
+#include "rotor/registry.h"
 
 namespace rotor::test {
 
@@ -26,6 +27,7 @@ struct own_subscriptions {};
 struct request_map {};
 struct resources {};
 struct last_req_id {};
+struct promises_map {};
 } // namespace to
 } // namespace
 
@@ -56,5 +58,6 @@ template <> inline auto &rotor::supervisor_t::access<test::to::registry>() noexc
 template <> inline auto &rotor::supervisor_t::access<test::to::queue>() noexcept { return queue; }
 template <> inline auto &rotor::supervisor_t::access<test::to::request_map>() noexcept { return request_map; }
 template <> inline auto &rotor::supervisor_t::access<test::to::last_req_id>() noexcept { return last_req_id; }
+template <> inline auto &rotor::registry_t::access<test::to::promises_map>() noexcept { return promises_map; }
 
 } // namespace rotor

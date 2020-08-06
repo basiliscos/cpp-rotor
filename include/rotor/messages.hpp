@@ -253,6 +253,12 @@ struct discovery_promise_t {
     std::string service_name;
 };
 
+struct discovery_cancel_t {
+    address_ptr_t client_addr;
+
+    std::string service_name;
+};
+
 struct link_response_t {};
 struct link_request_t {
     using response_t = link_response_t;
@@ -304,6 +310,7 @@ using discovery_request_t = request_traits_t<payload::discovery_request_t>::requ
 using discovery_response_t = request_traits_t<payload::discovery_request_t>::response::message_t;
 using discovery_promise_t = request_traits_t<payload::discovery_promise_t>::request::message_t;
 using discovery_future_t = request_traits_t<payload::discovery_promise_t>::response::message_t;
+using discovery_cancel_t = message_t<payload::discovery_cancel_t>;
 
 using link_request_t = request_traits_t<payload::link_request_t>::request::message_t;
 using link_response_t = request_traits_t<payload::link_request_t>::response::message_t;
