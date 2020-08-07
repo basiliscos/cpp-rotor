@@ -54,7 +54,6 @@ struct manual_actor_t : public r::actor_base_t {
     }
 
     void cancel_name(const std::string &name) {
-        auto timeout = r::pt::milliseconds{1};
         send<r::payload::discovery_cancel_t>(registry_addr, address, name);
     }
 
@@ -333,22 +332,34 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         sup->do_process();
         CHECK(succeses == 0);
 
-        auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
-            plugin.with_casted<r::plugin::registry_plugin_t>(
-                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
-        };
+        SECTION("successful link") {
+            auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+            act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
+                plugin.with_casted<r::plugin::registry_plugin_t>(
+                    [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
+            };
 
-        sup->do_process();
-        CHECK(succeses == 2);
-        CHECK(sup->get_state() == r::state_t::OPERATIONAL);
-        CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
-        CHECK(act_c->service_addr == act_s->get_address());
+            sup->do_process();
+            CHECK(succeses == 2);
+            CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+            CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+            CHECK(act_c->service_addr == act_s->get_address());
+        }
+
+        SECTION("cancel promise") {
+            CHECK(act_c->get_state() == r::state_t::INITIALIZING);
+            act_c->do_shutdown();
+            sup->do_process();
+            CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+            auto plugin = act_c->access<rt::to::get_plugin>(r::plugin::registry_plugin_t::class_identity);
+            auto p = static_cast<r::plugin::registry_plugin_t*>(plugin);
+            auto& dm = p->access<rt::to::discovery_map>();
+            CHECK(dm.size() == 0);
+        }
 
         sup->do_shutdown();
         sup->do_process();
         CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(act_s->get_state() == r::state_t::SHUTTED_DOWN);
         CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     }
 

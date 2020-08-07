@@ -123,10 +123,12 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
             actor->request<payload::registration_request_t>(registry_addr, it.first, it.second.address).send(timeout);
         }
         for (auto &it : discovery_map) {
-            if (!it.second.delayed) {
-                actor->request<payload::discovery_request_t>(registry_addr, it.first).send(timeout);
+            auto &task = it.second;
+            task.requested = true;
+            if (!task.delayed) {
+                actor->request<payload::discovery_request_t>(registry_addr, task.service_name).send(timeout);
             } else {
-                actor->request<payload::discovery_promise_t>(registry_addr, it.first).send(timeout);
+                actor->request<payload::discovery_promise_t>(registry_addr, task.service_name).send(timeout);
             }
         }
     } else {
@@ -143,14 +145,26 @@ bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
 }
 
 bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
-    if (register_map.empty())
-        return true;
-    auto &registry_addr = actor->get_supervisor().get_registry_address();
-    for (auto it : register_map) {
-        if (it.second.state == state_t::OPERATIONAL) {
-            actor->send<payload::deregistration_service_t>(registry_addr, it.first);
-            it.second.state = state_t::UNREGISTERING;
+    if (!register_map.empty()) {
+        auto &registry_addr = actor->get_supervisor().get_registry_address();
+        for (auto &it : register_map) {
+            if (it.second.state == state_t::OPERATIONAL) {
+                actor->send<payload::deregistration_service_t>(registry_addr, it.first);
+                it.second.state = state_t::UNREGISTERING;
+            }
         }
+        register_map.clear();
+    }
+
+    if (!discovery_map.empty()) {
+        auto &registry_addr = actor->get_supervisor().get_registry_address();
+        for (auto it = discovery_map.begin(); it != discovery_map.end(); ++it) {
+            auto &task = it->second;
+            if (task.delayed && task.requested) {
+                actor->send<payload::discovery_cancel_t>(registry_addr, actor->get_address(), task.service_name);
+            }
+        }
+        discovery_map.clear();
     }
     return true;
 }

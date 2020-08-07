@@ -44,6 +44,7 @@ struct registry_plugin_t : public plugin_base_t {
         bool delayed;
         bool link_on_discovery = false;
         bool operational_only = false;
+        bool requested = false;
         callback_t task_callback;
 
         friend struct registry_plugin_t;
