@@ -150,6 +150,9 @@ struct supervisor_t : public actor_base_t {
 
     virtual void shutdown_finish() noexcept override;
 
+    virtual void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept;
+    virtual void on_child_shutdown(actor_base_t *actor, const std::error_code &ec) noexcept;
+
     /** \brief enqueues messages thread safe way and triggers processing
      *
      * This is the only method for deliver message outside of `rotor` context.

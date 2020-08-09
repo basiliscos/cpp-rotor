@@ -53,9 +53,7 @@ struct manual_actor_t : public r::actor_base_t {
         request<r::payload::discovery_promise_t>(registry_addr, name).send(timeout);
     }
 
-    void cancel_name(const std::string &name) {
-        send<r::payload::discovery_cancel_t>(registry_addr, address, name);
-    }
+    void cancel_name(const std::string &name) { send<r::payload::discovery_cancel_t>(registry_addr, address, name); }
 
     void register_name(const std::string &name) {
         auto timeout = r::pt::milliseconds{1};
@@ -240,11 +238,12 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
             act->promise_name("s1");
             act->cancel_name("s1");
             sup->do_process();
-            auto plugin = static_cast<r::actor_base_t*>(sup.get())->access<rt::to::get_plugin>(r::plugin::child_manager_plugin_t::class_identity);
-            auto& actors_map = static_cast<r::plugin::child_manager_plugin_t*>(plugin)->access<rt::to::actors_map>();
+            auto plugin = static_cast<r::actor_base_t *>(sup.get())->access<rt::to::get_plugin>(
+                r::plugin::child_manager_plugin_t::class_identity);
+            auto &actors_map = static_cast<r::plugin::child_manager_plugin_t *>(plugin)->access<rt::to::actors_map>();
             auto actor_state = actors_map.find(act->registry_addr);
-            auto& registry = actor_state->second.actor;
-            auto& promises_map = static_cast<r::registry_t*>(registry.get())->access<rt::to::promises_map>();
+            auto &registry = actor_state->second.actor;
+            auto &promises_map = static_cast<r::registry_t *>(registry.get())->access<rt::to::promises_map>();
             CHECK(promises_map.empty());
         }
     }
@@ -300,10 +299,12 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         int succeses = 0;
         act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-                p.discover_name("service-name", act_c->service_addr).link(true).callback([&](auto /*phase*/, auto &ec) mutable {
-                    REQUIRE(!ec);
-                    ++succeses;
-                });
+                p.discover_name("service-name", act_c->service_addr)
+                    .link(true)
+                    .callback([&](auto /*phase*/, auto &ec) mutable {
+                        REQUIRE(!ec);
+                        ++succeses;
+                    });
             });
         };
         sup->do_process();
@@ -323,10 +324,12 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         int succeses = 0;
         act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-                p.discover_name("service-name", act_c->service_addr, true).link(true).callback([&](auto /*phase*/, auto &ec) mutable {
-                    REQUIRE(!ec);
-                    ++succeses;
-                });
+                p.discover_name("service-name", act_c->service_addr, true)
+                    .link(true)
+                    .callback([&](auto /*phase*/, auto &ec) mutable {
+                        REQUIRE(!ec);
+                        ++succeses;
+                    });
             });
         };
         sup->do_process();
@@ -352,8 +355,8 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
             sup->do_process();
             CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
             auto plugin = act_c->access<rt::to::get_plugin>(r::plugin::registry_plugin_t::class_identity);
-            auto p = static_cast<r::plugin::registry_plugin_t*>(plugin);
-            auto& dm = p->access<rt::to::discovery_map>();
+            auto p = static_cast<r::plugin::registry_plugin_t *>(plugin);
+            auto &dm = p->access<rt::to::discovery_map>();
             CHECK(dm.size() == 0);
         }
 

@@ -49,7 +49,7 @@ struct sample_sup_t : public rt::supervisor_test_t {
         sup_base_t::do_initialize(ctx);
     }
 
-    virtual void shutdown_finish() noexcept override {
+    void shutdown_finish() noexcept override {
         ++shutdown_finished;
         rt::supervisor_test_t::shutdown_finish();
     }
@@ -81,6 +81,10 @@ struct sample_sup2_t : public rt::supervisor_test_t {
     std::uint32_t shutdown_finished = 0;
     std::uint32_t shutdown_conf_invoked = 0;
     r::address_ptr_t shutdown_addr;
+    actor_base_t *init_child = nullptr;
+    actor_base_t *shutdown_child = nullptr;
+    std::error_code init_ec;
+    std::error_code shutdown_ec;
 
     using rt::supervisor_test_t::supervisor_test_t;
 
@@ -99,6 +103,16 @@ struct sample_sup2_t : public rt::supervisor_test_t {
     virtual void shutdown_finish() noexcept override {
         ++shutdown_finished;
         rt::supervisor_test_t::shutdown_finish();
+    }
+
+    void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept override {
+        init_child = actor;
+        init_ec = ec;
+    }
+
+    void on_child_shutdown(actor_base_t *actor, const std::error_code &ec) noexcept override {
+        shutdown_child = actor;
+        shutdown_ec = ec;
     }
 };
 
@@ -177,6 +191,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
 
     REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
+    REQUIRE(sup->init_child == nullptr);
 
     sup->do_process();
     REQUIRE(sup->init_invoked == 1);
@@ -193,6 +208,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->shutdown_child == nullptr);
 
     REQUIRE(destroyed == 0);
     delete system_context;
@@ -204,7 +220,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
 
 TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
-    auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
     /* for better coverage */
@@ -217,11 +233,16 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->access<rt::to::state>() == r::state_t::OPERATIONAL);
     CHECK(act->access<rt::to::resources>()->has() == 0);
+    CHECK(sup->init_child == act.get());
+    CHECK(!sup->init_ec);
+    CHECK(sup->shutdown_child == nullptr);
 
     sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(act->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->shutdown_child == act.get());
+    CHECK(!sup->shutdown_ec);
 }
 
 TEST_CASE("custom subscription", "[supervisor]") {

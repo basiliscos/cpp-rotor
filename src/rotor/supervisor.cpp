@@ -81,6 +81,9 @@ void supervisor_t::shutdown_finish() noexcept {
     actor_base_t::shutdown_finish();
 }
 
+void supervisor_t::on_child_init(actor_base_t *, const std::error_code &) noexcept {}
+void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) noexcept {}
+
 void supervisor_t::on_timer_trigger(request_id_t timer_id) {
     auto it = request_map.find(timer_id);
     if (it != request_map.end()) {

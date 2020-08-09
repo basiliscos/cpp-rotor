@@ -129,6 +129,9 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     auto &sup = static_cast<supervisor_t &>(*actor);
     bool continue_init = false;
     continue_init = !ec && !has_initializing();
+    auto it_actor = actors_map.find(address);
+    bool actor_found = it_actor != actors_map.end();
+
     if (ec) {
         auto &self_state = actor->access<to::state>();
         auto &policy = sup.access<to::policy>();
@@ -141,10 +144,9 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             sup.template request<payload::shutdown_request_t>(address).send(timeout);
         }
     } else {
-        auto it_actor = actors_map.find(address);
         /* the if is needed for the very rare case when supervisor was immediately shutted down
            right after creation */
-        if (it_actor != actors_map.end()) {
+        if (actor_found) {
             it_actor->second.initialized = true;
             if (!sup.access<to::synchronize_start>() || address == actor->get_address()) {
                 sup.template send<payload::start_actor_t>(address);
@@ -154,6 +156,10 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     }
     if (continue_init && postponed_init && actor->access<to::state>() < state_t::INITIALIZED) {
         actor->init_continue();
+    }
+    // no need of treating self as a child
+    if (address != actor->get_address()) {
+        sup.on_child_init(actor_found ? it_actor->second.actor.get() : nullptr, ec);
     }
 }
 
@@ -206,6 +212,10 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &m
         address_mapping.each_subscription(*child_actor, action);
     } else {
         remove_child(*child_actor);
+    }
+    // no need of treating self as a child
+    if (child_actor.get() != actor) {
+        sup.on_child_shutdown(child_actor.get(), ec);
     }
 }
 
