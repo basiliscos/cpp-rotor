@@ -26,7 +26,8 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
         plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
             p.link(addr_s, false, [&](auto &ec) mutable {
-                REQUIRE(!ec);
+                REQUIRE(ec.category().name() == std::string("rotor_error"));
+                REQUIRE(ec.message() == std::string("success"));
                 invoked = true;
             });
         });

@@ -44,6 +44,7 @@ TEST_CASE("root supervisor cannot be created twice", "[system_context]") {
     REQUIRE(!sup2);
     REQUIRE(system_context.get_supervisor() == sup1);
     REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::supervisor_defined));
+    REQUIRE(system_context.ec.message() == std::string("supervisor is already defined"));
 
     sup1->do_process();
     sup1->do_shutdown();
