@@ -9,6 +9,7 @@
 #include "actor_test.h"
 #include "system_context_test.h"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = rotor::test;
@@ -79,6 +80,9 @@ TEST_CASE("init/deinit sequence", "[plugin]") {
     using builder_t = typename sample_actor_t::template config_builder_t<sample_actor_t>;
     auto builder = builder_t([&](auto &) {}, system_context);
     auto actor = std::move(builder).timeout(rt::default_timeout).finish();
+
+    const void* ptr = actor.get();
+    CHECK(actor->access<rt::to::get_plugin>(ptr) == nullptr);
 
     REQUIRE(actor->get_activating_plugins().size() == 2);
     REQUIRE(actor->get_deactivating_plugins().size() == 0);

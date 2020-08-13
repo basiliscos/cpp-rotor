@@ -83,18 +83,20 @@ void actor_base_t::shutdown_finish() noexcept {
     }
 
     // maybe delete plugins here?
+    assert(deactivating_plugins.empty() && "plugin was not deactivated");
+    /*
     if (!deactivating_plugins.empty()) {
         auto p = *deactivating_plugins.begin();
         (void)p;
         assert(!p && "a plugin was not deactivated");
     }
+    */
     state = state_t::SHUTTED_DOWN;
 }
 
 void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
-    if (!init_request)
-        return;
+    assert(init_request);
 
     std::size_t in_progress = plugins.size();
     for (size_t i = 0; i < plugins.size(); ++i) {
@@ -136,8 +138,6 @@ void actor_base_t::shutdown_continue() noexcept {
         shutdown_finish();
     }
 }
-
-void actor_base_t::unsubscribe() noexcept { lifetime->unsubscribe(); }
 
 template <typename Fn, typename Message> static void poll(plugins_t &plugins, Message &message, Fn &&fn) {
     for (auto rit = plugins.rbegin(); rit != plugins.rend();) {
