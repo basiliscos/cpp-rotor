@@ -37,7 +37,7 @@ void starter_plugin_t::deactivate() noexcept {
     return plugin_base_t::deactivate();
 }
 
-plugin_base_t::processing_result_t starter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+bool starter_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     auto it = std::find_if(tracked.begin(), tracked.end(), [&](auto info) { return *info == point; });
     if (it != tracked.end()) {
@@ -45,9 +45,9 @@ plugin_base_t::processing_result_t starter_plugin_t::handle_subscription(message
     }
     if (configured && tracked.empty()) {
         actor->init_continue();
-        return processing_result_t::FINISHED;
+        return true;
     }
-    return processing_result_t::IGNORED;
+    return false;
 }
 
 bool starter_plugin_t::handle_init(message::init_request_t *message) noexcept {

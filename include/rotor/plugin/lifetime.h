@@ -29,7 +29,7 @@ struct lifetime_plugin_t : public plugin_base_t {
     virtual void on_unsubscription(message::unsubscription_t &) noexcept;
     virtual void on_unsubscription_external(message::unsubscription_external_t &) noexcept;
 
-    processing_result_t handle_subscription(message::subscription_t &message) noexcept override;
+    bool handle_subscription(message::subscription_t &message) noexcept override;
     bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept override;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;

@@ -96,15 +96,16 @@ void lifetime_plugin_t::initate_subscription(const subscription_info_ptr_t &info
     points.emplace_back(info);
 }
 
-plugin_base_t::processing_result_t lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
+bool lifetime_plugin_t::handle_subscription(message::subscription_t &message) noexcept {
     auto &point = message.payload.point;
     // printf("[+]subscribed %p to %s\n", point.address.get(), point.handler->message_type);
     auto it = points.find(point);
     auto &info = **it;
     assert(info.state == subscription_info_t::state_t::SUBSCRIBING || info.internal_address);
-    if (!info.internal_address)
+    if (!info.internal_address) {
         info.state = subscription_info_t::state_t::SUBSCRIBED;
-    return processing_result_t::CONSUMED;
+    }
+    return true;
 }
 
 bool lifetime_plugin_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {

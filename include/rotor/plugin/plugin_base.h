@@ -14,8 +14,6 @@ namespace rotor::plugin {
 enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
 
 struct plugin_base_t {
-    enum processing_result_t { CONSUMED = 0, IGNORED, FINISHED };
-
     enum reaction_t {
         INIT = 1 << 0,
         SHUTDOWN = 1 << 1,
@@ -40,7 +38,7 @@ struct plugin_base_t {
     virtual bool forget_subscription(const subscription_point_t &point) noexcept;
     virtual void forget_subscription(const subscription_info_ptr_t &info) noexcept;
 
-    virtual processing_result_t handle_subscription(message::subscription_t &message) noexcept;
+    virtual bool handle_subscription(message::subscription_t &message) noexcept;
 
     template <typename Plugin, typename Fn>
     void with_casted(Fn &&fn, config_phase_t desired_phase = config_phase_t::INITIALIZING) noexcept {

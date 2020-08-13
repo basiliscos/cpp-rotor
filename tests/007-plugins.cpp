@@ -81,7 +81,7 @@ TEST_CASE("init/deinit sequence", "[plugin]") {
     auto builder = builder_t([&](auto &) {}, system_context);
     auto actor = std::move(builder).timeout(rt::default_timeout).finish();
 
-    const void* ptr = actor.get();
+    const void *ptr = actor.get();
     CHECK(actor->access<rt::to::get_plugin>(ptr) == nullptr);
 
     REQUIRE(actor->get_activating_plugins().size() == 2);
