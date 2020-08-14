@@ -148,8 +148,6 @@ struct supervisor_t : public actor_base_t {
 
     virtual void do_shutdown() noexcept override;
 
-    virtual void shutdown_finish() noexcept override;
-
     virtual void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept;
     virtual void on_child_shutdown(actor_base_t *actor, const std::error_code &ec) noexcept;
 

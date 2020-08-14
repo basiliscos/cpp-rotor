@@ -76,10 +76,12 @@ void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) no
     subscription_map.forget(info);
 }
 
+/*
 void supervisor_t::shutdown_finish() noexcept {
     // address_mapping.clear(*this);
     actor_base_t::shutdown_finish();
 }
+*/
 
 void supervisor_t::on_child_init(actor_base_t *, const std::error_code &) noexcept {}
 void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) noexcept {}

@@ -25,6 +25,21 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
     auto &get_subscription() noexcept { return subscription_map; }
 };
 
+struct self_shutdowner_sup_t : public re::supervisor_ev_t {
+    using re::supervisor_ev_t::supervisor_ev_t;
+
+    void init_finish() noexcept override {
+        re::supervisor_ev_t::init_finish();
+        printf("triggering shutdown\n");
+        parent->shutdown();
+    }
+
+    void shutdown_finish() noexcept override {
+        re::supervisor_ev_t::shutdown_finish();
+        printf("shutdown_finish\n");
+    }
+};
+
 struct system_context_ev_test_t : public re::system_context_ev_t {
     std::error_code code;
     void on_error(const std::error_code &ec) noexcept override {
@@ -150,4 +165,23 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     ev_run(loop);
 
     system_context.reset();
+}
+
+TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {
+    auto *loop = ev_loop_new(0);
+    auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
+    auto timeout = r::pt::milliseconds{10};
+    auto sup = system_context->create_supervisor<supervisor_ev_test_t>()
+                   .loop(loop)
+                   .loop_ownership(true)
+                   .timeout(timeout)
+                   .finish();
+
+    auto act = sup->create_actor<self_shutdowner_sup_t>().loop(loop).loop_ownership(false).timeout(timeout).finish();
+    sup->start();
+    ev_run(loop);
+    CHECK(!system_context->code);
+
+    CHECK(((r::actor_base_t *)act.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    CHECK(((r::actor_base_t *)sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
 }
