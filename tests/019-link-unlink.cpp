@@ -364,11 +364,6 @@ TEST_CASE("link errors", "[actor]") {
     auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
     auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
 
-    auto act_c = sup1->create_actor<double_linked_actor_t>().timeout(rt::default_timeout).finish();
-    auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-
-    act_c->target = act_s->get_address();
-
     auto process_12 = [&]() {
         while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
             sup1->do_process();
@@ -377,6 +372,11 @@ TEST_CASE("link errors", "[actor]") {
     };
 
     SECTION("double link attempt") {
+        auto act_c = sup1->create_actor<double_linked_actor_t>().timeout(rt::default_timeout).finish();
+        auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+        act_c->target = act_s->get_address();
+
         process_12();
         REQUIRE(act_c->message1);
         CHECK(!act_c->message1->payload.ec);
@@ -384,6 +384,27 @@ TEST_CASE("link errors", "[actor]") {
         REQUIRE(act_c->message2);
         CHECK(act_c->message2->payload.ec);
         CHECK(act_c->message2->payload.ec.message() == std::string("already linked"));
+    }
+
+    SECTION("not linkeable") {
+        auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+        sup2->do_process();
+
+        act_s->access<rt::to::resources>()->acquire();
+        act_s->do_shutdown();
+        sup2->do_process();
+        REQUIRE(act_s->get_state() == r::state_t::SHUTTING_DOWN);
+
+        std::error_code err;
+        auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::link_client_plugin_t>(
+                [&](auto &p) { p.link(act_s->get_address(), false, [&](auto &ec) { err = ec; }); });
+        };
+        process_12();
+        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(err.message() == std::string("actor is not linkeable"));
+        act_s->access<rt::to::resources>()->release();
     }
 
     sup1->do_shutdown();
