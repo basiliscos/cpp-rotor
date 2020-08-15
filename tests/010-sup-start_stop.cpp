@@ -162,7 +162,7 @@ struct sample_actor2_t : public rt::actor_test_t {
         });
     }
 
-    void on_link(message::sample_payload_t&) noexcept { ++received; }
+    void on_link(message::sample_payload_t &) noexcept { ++received; }
 
     r::address_ptr_t alternative;
     int received = 0;
@@ -311,4 +311,3 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
 }
-

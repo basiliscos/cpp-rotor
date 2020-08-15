@@ -25,11 +25,12 @@ std::string error_code_category::message(int c) const {
         return "actor is misconfigured";
     case error_code_t::actor_not_linkable:
         return "actor is not linkeable";
+    case error_code_t::already_linked:
+        return "already linked";
     case error_code_t::unknown_service:
         return "the requested service name is not registered";
-    default:
-        return "unknown";
     }
+    return "unknown";
 }
 
 } // namespace details

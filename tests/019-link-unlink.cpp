@@ -14,6 +14,51 @@
 namespace r = rotor;
 namespace rt = r::test;
 
+struct double_linked_actor_t : r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+    using message_ptr_t = r::intrusive_ptr_t<r::message::link_response_t>;
+
+    struct resource {
+        static const constexpr r::plugin::resource_id_t linking = 0;
+        static const constexpr r::plugin::resource_id_t unlinking = 1;
+    };
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) { alternative = p.create_address(); });
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            p.subscribe_actor(&double_linked_actor_t::on_link, alternative);
+            p.subscribe_actor(&double_linked_actor_t::on_unlink, alternative);
+            for (auto i = 0; i < 2; ++i) {
+                resources->acquire(resource::linking);
+                request_via<r::payload::link_request_t>(target, alternative, false).send(rt::default_timeout);
+            }
+        });
+    }
+
+    void on_link(r::message::link_response_t &res) noexcept {
+        resources->release(resource::linking);
+        if (!message1)
+            message1 = &res;
+        else if (!message2)
+            message2 = &res;
+    }
+
+    virtual void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        resources->acquire(resource::unlinking);
+    }
+
+    void on_unlink(r::message::unlink_request_t &message) noexcept {
+        reply_to(message, alternative);
+        if (resources->has(resource::unlinking))
+            resources->release(resource::unlinking);
+    }
+
+    r::address_ptr_t target;
+    message_ptr_t message1, message2;
+    r::address_ptr_t alternative;
+};
+
 TEST_CASE("client/server, common workflow", "[actor]") {
     r::system_context_t system_context;
 
@@ -307,4 +352,44 @@ TEST_CASE("unlink notify / response race", "[actor]") {
     }
     CHECK(sup1->active_timers.size() == 0);
     CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("link errors", "[actor]") {
+    rt::system_context_test_t ctx1;
+    rt::system_context_test_t ctx2;
+
+    const char l1[] = "abc";
+    const char l2[] = "def";
+
+    auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
+
+    auto act_c = sup1->create_actor<double_linked_actor_t>().timeout(rt::default_timeout).finish();
+    auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+    act_c->target = act_s->get_address();
+
+    auto process_12 = [&]() {
+        while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+            sup1->do_process();
+            sup2->do_process();
+        }
+    };
+
+    SECTION("double link attempt") {
+        process_12();
+        REQUIRE(act_c->message1);
+        CHECK(!act_c->message1->payload.ec);
+
+        REQUIRE(act_c->message2);
+        CHECK(act_c->message2->payload.ec);
+        CHECK(act_c->message2->payload.ec.message() == std::string("already linked"));
+    }
+
+    sup1->do_shutdown();
+    sup2->do_shutdown();
+    process_12();
+
+    CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUTTED_DOWN);
 }

@@ -52,6 +52,12 @@ void resources_plugin_t::acquire(resource_id_t id) noexcept {
         resources.resize(id + 1);
     }
     ++resources[id];
+    auto state = actor->access<to::state>();
+    if (state == state_t::INITIALIZING) {
+        reaction_on(reaction_t::INIT);
+    } else if (state == state_t::SHUTTING_DOWN) {
+        reaction_on(reaction_t::SHUTDOWN);
+    }
 }
 
 bool resources_plugin_t::release(resource_id_t id) noexcept {
