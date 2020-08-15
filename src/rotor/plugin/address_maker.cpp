@@ -34,6 +34,7 @@ void address_maker_plugin_t::activate(actor_base_t *actor_) noexcept {
     }
     actor->access<to::address_maker>() = this;
     plugin_base_t::activate(actor_);
+    actor_->configure(*this);
     actor->init_start();
 }
 

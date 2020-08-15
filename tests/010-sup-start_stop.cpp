@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "actor_test.h"
 #include "access.h"
 
 namespace r = rotor;
@@ -150,6 +151,23 @@ struct sample_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 };
 
+struct sample_actor2_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) { alternative = p.create_address(); });
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            p.subscribe_actor(&sample_actor2_t::on_link, alternative);
+            send<payload::sample_payload_t>(alternative);
+        });
+    }
+
+    void on_link(message::sample_payload_t&) noexcept { ++received; }
+
+    r::address_ptr_t alternative;
+    int received = 0;
+};
+
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
     destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -278,3 +296,19 @@ TEST_CASE("self unsubscriber", "[actor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
 }
+
+TEST_CASE("alternative address subscriber", "[actor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor2_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act->received == 1);
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
