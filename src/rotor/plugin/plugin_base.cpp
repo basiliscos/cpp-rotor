@@ -82,12 +82,11 @@ bool plugin_base_t::handle_subscription(message::subscription_t &) noexcept { re
 bool plugin_base_t::handle_unsubscription(const subscription_point_t &point, bool external) noexcept {
     if (external) {
         auto act = actor; /* backup */
-        if (forget_subscription(point)) {
-            auto &sup_addr = static_cast<actor_base_t &>(point.address->supervisor).get_address();
-            act->send<payload::commit_unsubscription_t>(sup_addr, point);
-            return true;
-        }
-        return false;
+        auto ok = forget_subscription(point);
+        assert(ok && "unsubscription handled");
+        auto &sup_addr = static_cast<actor_base_t &>(point.address->supervisor).get_address();
+        act->send<payload::commit_unsubscription_t>(sup_addr, point);
+        return ok;
     }
     return forget_subscription(point);
 }
