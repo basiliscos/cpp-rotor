@@ -114,12 +114,8 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
 
     auto &source_addr = actor->get_address();
     for (auto it = servers_map.begin(); it != servers_map.end();) {
-        if (it->second.state != link_state_t::UNLINKING) {
-            actor->send<payload::unlink_notify_t>(it->first, source_addr);
-            it = servers_map.erase(it);
-        } else {
-            ++it;
-        }
+        actor->send<payload::unlink_notify_t>(it->first, source_addr);
+        it = servers_map.erase(it);
     }
     return plugin_base_t::handle_shutdown(req);
 }

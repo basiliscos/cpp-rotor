@@ -37,7 +37,7 @@ struct link_client_plugin_t : public plugin_base_t {
     template <typename T, typename Tag, typename... Args> T access(Args &&...) noexcept;
 
   private:
-    enum class link_state_t { LINKING, OPERATIONAL, UNLINKING };
+    enum class link_state_t { LINKING, OPERATIONAL };
     struct server_record_t {
         link_callback_t callback;
         link_state_t state;
