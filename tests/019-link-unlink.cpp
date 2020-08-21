@@ -293,7 +293,6 @@ TEST_CASE("link to operational only", "[actor]") {
         plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s2, true, [&](auto &) {}); });
     };
 
-
     process_12();
     CHECK(act_c->get_state() == r::state_t::INITIALIZING);
     CHECK(act_s1->get_state() == r::state_t::INITIALIZING);
@@ -414,7 +413,7 @@ TEST_CASE("link errors", "[actor]") {
             CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
 
             auto plugin1 = act_c->access<rt::to::get_plugin>(r::plugin::link_client_plugin_t::class_identity);
-            auto p1 = static_cast<r::plugin::link_client_plugin_t*>(plugin1);
+            auto p1 = static_cast<r::plugin::link_client_plugin_t *>(plugin1);
             p1->link(act_s->get_address(), false, [&](auto &) {});
             act_c->access<rt::to::resources>()->acquire();
             act_c->do_shutdown();
@@ -425,6 +424,33 @@ TEST_CASE("link errors", "[actor]") {
         }
 
         act_s->access<rt::to::resources>()->release();
+    }
+
+    SECTION("unlink during shutring down") {
+        auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+        auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::link_client_plugin_t>(
+                [&](auto &p) { p.link(act_s->get_address(), false, [&](auto &) {}); });
+        };
+
+        process_12();
+        CHECK(sup1->get_state() == r::state_t::OPERATIONAL);
+        CHECK(sup2->get_state() == r::state_t::OPERATIONAL);
+
+        act_c->do_shutdown();
+        act_c->access<rt::to::resources>()->acquire();
+        sup1->do_process();
+        CHECK(act_c->get_state() == r::state_t::SHUTTING_DOWN);
+
+        act_s->do_shutdown();
+        sup2->do_process();
+
+        sup1->do_process();
+        CHECK(act_c->get_state() == r::state_t::SHUTTING_DOWN);
+        act_c->access<rt::to::resources>()->release();
+        process_12();
     }
 
     sup1->do_shutdown();
