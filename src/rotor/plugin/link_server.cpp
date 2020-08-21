@@ -127,5 +127,5 @@ bool link_server_plugin_t::handle_start(message::start_trigger_t *trigger) noexc
             it.second.state = link_state_t::OPERATIONAL;
         }
     }
-    plugin_base_t::handle_start(trigger);
+    return plugin_base_t::handle_start(trigger);
 }
