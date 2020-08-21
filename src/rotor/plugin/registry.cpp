@@ -53,8 +53,7 @@ bool registry_plugin_t::register_name(const std::string &name, const address_ptr
 
 registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std::string &name, address_ptr_t &address,
                                                                       bool delayed) noexcept {
-    auto it = discovery_map.find("name");
-    assert(it == discovery_map.end() && "name is already discovering");
+    assert(discovery_map.count(name) == 0 && "name is already discovering");
 
     assert(!(plugin_state & LINKED));
     if (!(plugin_state & LINKING)) {
