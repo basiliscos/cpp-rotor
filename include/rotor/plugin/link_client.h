@@ -26,13 +26,15 @@ struct link_client_plugin_t : public plugin_base_t {
     virtual void link(const address_ptr_t &address, bool operational_only = true,
                       const link_callback_t &callback = {}) noexcept;
 
+    template <typename F> void on_unlink(F &&callback) noexcept { unlink_reaction = std::forward<F>(callback); }
+
     virtual void on_link_response(message::link_response_t &message) noexcept;
     virtual void on_unlink_request(message::unlink_request_t &message) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
-    template <typename T> auto &access() noexcept;
+    template <typename T, typename Tag, typename... Args> T access(Args &&...) noexcept;
 
   private:
     enum class link_state_t { LINKING, OPERATIONAL, UNLINKING };

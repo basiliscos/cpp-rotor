@@ -29,6 +29,7 @@ struct resources {};
 struct last_req_id {};
 struct promises_map {};
 struct discovery_map {};
+struct forget_link {};
 } // namespace to
 } // namespace
 
@@ -54,6 +55,12 @@ template <> inline auto &plugin::child_manager_plugin_t::access<test::to::actors
 template <> inline auto &plugin::lifetime_plugin_t::access<test::to::points>() noexcept { return points; }
 template <> inline auto &plugin::resources_plugin_t::access<test::to::resources>() noexcept { return resources; }
 template <> inline auto &plugin::registry_plugin_t::access<test::to::discovery_map>() noexcept { return discovery_map; }
+template <>
+inline void plugin::link_client_plugin_t::access<void, test::to::forget_link, rotor::message::unlink_request_t &>(
+    rotor::message::unlink_request_t &req) noexcept {
+    forget_link(req);
+}
+
 template <> inline auto &rotor::supervisor_t::access<test::to::locality_leader>() noexcept { return locality_leader; }
 template <> inline auto &rotor::supervisor_t::access<test::to::parent_supervisor>() noexcept { return parent; }
 template <> inline auto &rotor::supervisor_t::access<test::to::registry>() noexcept { return registry_address; }

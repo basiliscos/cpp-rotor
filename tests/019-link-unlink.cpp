@@ -217,6 +217,40 @@ TEST_CASE("unlink", "[actor]") {
     REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
 }
 
+TEST_CASE("unlink reaction", "[actor]") {
+    using request_ptr_t = r::intrusive_ptr_t<r::message::unlink_request_t>;
+    rt::system_context_test_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+
+    auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_c = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    auto &addr_s = act_s->get_address();
+
+    request_ptr_t unlink_req;
+    act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
+            p.link(addr_s, false, [&](auto &) {});
+            p.on_unlink([&](auto &req) {
+                unlink_req = &req;
+                p.template access<void, rt::to::forget_link>(req);
+                return true;
+            });
+        });
+    };
+
+    sup->do_process();
+    act_s->do_shutdown();
+    sup->do_process();
+
+    REQUIRE(unlink_req);
+    REQUIRE(unlink_req->message_type == r::message::unlink_request_t::message_type);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
 TEST_CASE("auto-unlink on shutdown", "[actor]") {
     rt::system_context_test_t ctx1;
     rt::system_context_test_t ctx2;
