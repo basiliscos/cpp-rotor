@@ -86,17 +86,11 @@ void registry_plugin_t::on_future(message::discovery_future_t &message) noexcept
 
 void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
     auto &init_request = actor->access<to::init_request>();
+    assert(init_request);
     if (ec) {
-        if (init_request) {
-            actor->reply_with_error(*init_request, ec);
-            init_request.reset();
-        } else {
-            actor->do_shutdown();
-        }
+        actor->reply_with_error(*init_request, ec);
     } else {
-        if (init_request) {
-            actor->init_continue();
-        }
+        actor->init_continue();
     }
 }
 
