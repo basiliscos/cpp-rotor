@@ -57,7 +57,7 @@ void resources_plugin_t::acquire(resource_id_t id) noexcept {
     auto state = actor->access<to::state>();
     if (state == state_t::INITIALIZING) {
         reaction_on(reaction_t::INIT);
-    } else if (state == state_t::SHUTTING_DOWN) {
+    } else if (state >= state_t::OPERATIONAL) {
         reaction_on(reaction_t::SHUTDOWN);
     }
 }

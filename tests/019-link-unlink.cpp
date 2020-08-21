@@ -271,13 +271,6 @@ TEST_CASE("link to operational only", "[actor]") {
     auto &addr_s1 = act_s1->get_address();
     auto &addr_s2 = act_s2->get_address();
 
-    act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
-        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s1, true, [&](auto &) {}); });
-    };
-    act_s1->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
-        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s2, true, [&](auto &) {}); });
-    };
-
     auto process_12 = [&]() {
         while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
             sup1->do_process();
@@ -292,6 +285,14 @@ TEST_CASE("link to operational only", "[actor]") {
             sup3->do_process();
         }
     };
+
+    act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s1, true, [&](auto &) {}); });
+    };
+    act_s1->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr_s2, true, [&](auto &) {}); });
+    };
+
 
     process_12();
     CHECK(act_c->get_state() == r::state_t::INITIALIZING);
@@ -395,15 +396,34 @@ TEST_CASE("link errors", "[actor]") {
         sup2->do_process();
         REQUIRE(act_s->get_state() == r::state_t::SHUTTING_DOWN);
 
-        std::error_code err;
-        auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
-        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
-            plugin.with_casted<r::plugin::link_client_plugin_t>(
-                [&](auto &p) { p.link(act_s->get_address(), false, [&](auto &ec) { err = ec; }); });
-        };
-        process_12();
-        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(err.message() == std::string("actor is not linkeable"));
+        SECTION("check error") {
+            std::error_code err;
+            auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+            act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+                plugin.with_casted<r::plugin::link_client_plugin_t>(
+                    [&](auto &p) { p.link(act_s->get_address(), false, [&](auto &ec) { err = ec; }); });
+            };
+            process_12();
+            CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+            CHECK(err.message() == std::string("actor is not linkeable"));
+        }
+
+        SECTION("get the error during shutdown") {
+            auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+            sup1->do_process();
+            CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+
+            auto plugin1 = act_c->access<rt::to::get_plugin>(r::plugin::link_client_plugin_t::class_identity);
+            auto p1 = static_cast<r::plugin::link_client_plugin_t*>(plugin1);
+            p1->link(act_s->get_address(), false, [&](auto &) {});
+            act_c->access<rt::to::resources>()->acquire();
+            act_c->do_shutdown();
+
+            process_12();
+            CHECK(act_c->get_state() == r::state_t::SHUTTING_DOWN);
+            act_c->access<rt::to::resources>()->release();
+        }
+
         act_s->access<rt::to::resources>()->release();
     }
 
