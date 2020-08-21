@@ -23,7 +23,7 @@ struct starter_plugin_t : public plugin_base_t {
     template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
 
     bool handle_init(message::init_request_t *) noexcept override;
-    bool handle_start(message::start_trigger_t *message) noexcept override;
+    void handle_start(message::start_trigger_t *message) noexcept override;
     bool handle_subscription(message::subscription_t &message) noexcept override;
 
     void on_start(message::start_trigger_t &message) noexcept;

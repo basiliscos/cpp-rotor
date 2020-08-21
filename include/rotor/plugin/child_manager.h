@@ -42,7 +42,7 @@ struct child_manager_plugin_t : public plugin_base_t {
 
     bool handle_init(message::init_request_t *) noexcept override;
     bool handle_shutdown(message::shutdown_request_t *) noexcept override;
-    bool handle_start(message::start_trigger_t *message) noexcept override;
+    void handle_start(message::start_trigger_t *message) noexcept override;
 
     bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept override;
 

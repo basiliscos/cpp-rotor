@@ -282,7 +282,7 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &p
     }
 }
 
-bool child_manager_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
+void child_manager_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     if (sup.access<to::synchronize_start>()) {
         for (auto &it : actors_map) {

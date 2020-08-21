@@ -27,7 +27,7 @@ struct link_server_plugin_t : public plugin_base_t {
     virtual void on_unlink_notify(message::unlink_notify_t &message) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
-    bool handle_start(message::start_trigger_t *message) noexcept override;
+    void handle_start(message::start_trigger_t *message) noexcept override;
 
     template <typename T> auto &access() noexcept;
 

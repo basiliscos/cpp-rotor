@@ -120,7 +120,7 @@ bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
     return linked_clients.empty() && plugin_base_t::handle_shutdown(req);
 }
 
-bool link_server_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
+void link_server_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
     for (auto it : linked_clients) {
         if (it.second.state == link_state_t::PENDING) {
             actor->reply_to(*it.second.request);

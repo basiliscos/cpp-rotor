@@ -50,7 +50,7 @@ bool plugin_base_t::handle_shutdown(message::shutdown_request_t *) noexcept { re
 
 bool plugin_base_t::handle_init(message::init_request_t *) noexcept { return true; }
 
-bool plugin_base_t::handle_start(message::start_trigger_t *) noexcept { return true; }
+void plugin_base_t::handle_start(message::start_trigger_t *) noexcept {}
 
 void plugin_base_t::forget_subscription(const subscription_info_ptr_t &info) noexcept {
     // printf("[-] forgetting %s\n", info->handler->message_type);

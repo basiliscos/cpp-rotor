@@ -62,7 +62,7 @@ bool starter_plugin_t::handle_init(message::init_request_t *message) noexcept {
     return tracked.empty() && message;
 }
 
-bool starter_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
+void starter_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
     actor->on_start();
     return plugin_base_t::handle_start(trigger);
 }
@@ -72,11 +72,8 @@ void starter_plugin_t::on_start(message::start_trigger_t &message) noexcept {
     for (auto rit = plugins.rbegin(); rit != plugins.rend(); ++rit) {
         auto plugin = *rit;
         if (plugin->get_reaction() & plugin_base_t::START) {
-            if (plugin->handle_start(&message)) {
-                plugin->reaction_off(plugin_base_t::START);
-                continue;
-            }
-            break;
+            plugin->handle_start(&message);
+            plugin->reaction_off(plugin_base_t::START);
         }
     }
 }
