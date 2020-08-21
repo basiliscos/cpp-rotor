@@ -39,8 +39,7 @@ void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
 }
 
 bool registry_plugin_t::register_name(const std::string &name, const address_ptr_t &address) noexcept {
-    if (register_map.count(name))
-        return false;
+    assert(register_map.count(name) == 0 && "name is already registering");
     assert(actor->get_supervisor().get_registry_address());
 
     assert(!(plugin_state & LINKED));
@@ -55,8 +54,7 @@ bool registry_plugin_t::register_name(const std::string &name, const address_ptr
 registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std::string &name, address_ptr_t &address,
                                                                       bool delayed) noexcept {
     auto it = discovery_map.find("name");
-    if (it != discovery_map.end())
-        return it->second;
+    assert(it == discovery_map.end() && "name is already discovering");
 
     assert(!(plugin_state & LINKED));
     if (!(plugin_state & LINKING)) {

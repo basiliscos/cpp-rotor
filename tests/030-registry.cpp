@@ -263,7 +263,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>(
-                [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
+                [&actor](auto &p) { CHECK(p.register_name("service-name", actor.get_address())); });
         };
 
         sup->do_process();
