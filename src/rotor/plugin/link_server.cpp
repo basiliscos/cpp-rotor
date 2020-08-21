@@ -64,9 +64,13 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
     auto &client = message.payload.client_addr;
     auto it = linked_clients.find(client);
 
-    // ok, might be some race
+    // no idea, how to trigger/cause the race
+    assert(it != linked_clients.end());
+    /*
     if (it == linked_clients.end())
         return;
+    */
+
     auto &unlink_request = it->second.unlink_request;
     if (unlink_request) {
         actor->get_supervisor().cancel_timer(*unlink_request);
@@ -89,9 +93,12 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
     auto &client = message.payload.res.client_addr;
     auto it = linked_clients.find(client);
 
-    // ok, might be some race
+    // no idea, how to trigger/cause the race
+    assert(it != linked_clients.end());
+    /*
     if (it == linked_clients.end())
         return;
+    */
     linked_clients.erase(it);
 
     auto &state = actor->access<to::state>();
