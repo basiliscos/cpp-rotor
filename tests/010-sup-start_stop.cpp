@@ -168,6 +168,15 @@ struct sample_actor2_t : public rt::actor_test_t {
     int received = 0;
 };
 
+struct sample_actor3_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void shutdown_start() noexcept override {
+        rt::actor_test_t::shutdown_start();
+        resources->acquire();
+    }
+};
+
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
     destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -307,6 +316,23 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     CHECK(act->received == 1);
 
     sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
+}
+
+TEST_CASE("acquire resources on shutdown start", "[actor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor3_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
+
+    act->access<rt::to::resources>()->release();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
     CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
