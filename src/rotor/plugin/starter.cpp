@@ -47,7 +47,7 @@ bool starter_plugin_t::handle_subscription(message::subscription_t &message) noe
         actor->init_continue();
         return true;
     }
-    return false;
+    return plugin_base_t::handle_subscription(message);
 }
 
 bool starter_plugin_t::handle_init(message::init_request_t *message) noexcept {
