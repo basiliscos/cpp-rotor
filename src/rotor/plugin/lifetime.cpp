@@ -36,9 +36,9 @@ void lifetime_plugin_t::deactivate() noexcept {
     // NOOP, do not unsubscribe too early.
 }
 
-bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     if (points.empty() && plugin_base_t::access<plugin_subscriptions_t>().empty())
-        return true;
+        return plugin_base_t::handle_shutdown(req);
     unsubscribe();
     return false;
 }

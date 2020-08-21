@@ -58,7 +58,7 @@ bool init_shutdown_plugin_t::handle_init(message::init_request_t *) noexcept {
     return bool(actor->access<to::init_request>());
 }
 
-bool init_shutdown_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+bool init_shutdown_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     actor->deactivate_plugins();
-    return true;
+    return plugin_base_t::handle_shutdown(req);
 }

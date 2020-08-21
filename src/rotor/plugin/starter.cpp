@@ -62,9 +62,9 @@ bool starter_plugin_t::handle_init(message::init_request_t *message) noexcept {
     return tracked.empty() && message;
 }
 
-bool starter_plugin_t::handle_start(message::start_trigger_t *) noexcept {
+bool starter_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
     actor->on_start();
-    return true;
+    return plugin_base_t::handle_start(trigger);
 }
 
 void starter_plugin_t::on_start(message::start_trigger_t &message) noexcept {

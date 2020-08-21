@@ -233,13 +233,14 @@ void child_manager_plugin_t::on_state_request(message::state_request_t &message)
 
 bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept { return !has_initializing(); }
 
-bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     /* prevent double sending req, i.e. from parent and from self */
     auto &self = actors_map.at(actor->get_address());
     self.shutdown_requesting = true;
     unsubscribe_all(false);
 
-    return actors_map.size() == 1; /* only own actor left, which will be handled differently */
+    /* only own actor left, which will be handled differently */
+    return actors_map.size() == 1 && plugin_base_t::handle_shutdown(req);
 }
 
 void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
@@ -281,7 +282,7 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &p
     }
 }
 
-bool child_manager_plugin_t::handle_start(message::start_trigger_t *) noexcept {
+bool child_manager_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     if (sup.access<to::synchronize_start>()) {
         for (auto &it : actors_map) {
@@ -292,7 +293,7 @@ bool child_manager_plugin_t::handle_start(message::start_trigger_t *) noexcept {
             it.second.strated = true;
         }
     }
-    return true;
+    return plugin_base_t::handle_start(trigger);
 }
 
 bool child_manager_plugin_t::has_initializing() const noexcept {

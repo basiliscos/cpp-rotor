@@ -45,7 +45,9 @@ bool resources_plugin_t::handle_init(message::init_request_t *) noexcept {
     return !has_any();
 }
 
-bool resources_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept { return !has_any(); }
+bool resources_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
+    return !has_any() && plugin_base_t::handle_shutdown(req);
+}
 
 void resources_plugin_t::acquire(resource_id_t id) noexcept {
     if (id >= resources.size()) {

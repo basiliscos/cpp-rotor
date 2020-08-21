@@ -108,9 +108,9 @@ bool link_client_plugin_t::handle_init(message::init_request_t *) noexcept {
     return not_linking;
 }
 
-bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     if (servers_map.empty())
-        return true;
+        return plugin_base_t::handle_shutdown(req);
 
     auto &source_addr = actor->get_address();
     for (auto it = servers_map.begin(); it != servers_map.end();) {
@@ -121,5 +121,5 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *) noexce
             ++it;
         }
     }
-    return true;
+    return plugin_base_t::handle_shutdown(req);
 }

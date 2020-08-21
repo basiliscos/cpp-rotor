@@ -144,7 +144,7 @@ bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
     return discovery_map.empty() && !has_registering();
 }
 
-bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept {
+bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     if (!register_map.empty()) {
         auto &registry_addr = actor->get_supervisor().get_registry_address();
         for (auto &it : register_map) {
@@ -166,7 +166,7 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *) noexcept 
         }
         discovery_map.clear();
     }
-    return true;
+    return plugin_base_t::handle_shutdown(req);
 }
 
 bool registry_plugin_t::has_registering() noexcept {
