@@ -164,8 +164,6 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
 }
 
 void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &message) noexcept {
-    if (actors_map.empty())
-        return; /* already finished / deactivated */
     auto &sup = static_cast<supervisor_t &>(*actor);
     auto &source_addr = message.payload.actor_address;
     if (source_addr == static_cast<actor_base_t &>(sup).get_address()) {
