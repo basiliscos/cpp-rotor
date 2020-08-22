@@ -31,7 +31,7 @@ struct inspected_local_delivery_t {
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
 };
 
-#ifdef NDEBUG
+#if defined(NDEBUG) || defined(ROTOR_DEBUG_DELIVERY)
 using default_local_delivery_t = local_delivery_t;
 #else
 using default_local_delivery_t = inspected_local_delivery_t;

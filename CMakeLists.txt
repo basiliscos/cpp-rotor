@@ -9,13 +9,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 include(CMakePrintHelpers)
 
-option(BUILD_BOOST_ASIO    "Enable building with boost::asio support [default: OFF]"    OFF)
-option(BUILD_WX            "Enable building with wxWidgets support   [default: OFF]"    OFF)
-option(BUILD_EV            "Enable building with libev support   [default: OFF]"        OFF)
-option(BUILD_EXAMPLES      "Enable building examples [default: OFF]"                    OFF)
-option(BUILD_TESTS         "Enable building tests    [default: OFF]"                    OFF)
-option(BUILD_DOC           "Enable building documentation [default: OFF]"               OFF)
-option(BUILD_THREAD_UNSAFE "Enable building thead-unsafe library [default: OFF]"        OFF)
+option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
+option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
+option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
+option(BUILD_TESTS          "Enable building tests    [default: OFF]"                    OFF)
+option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
+option(BUILD_THREAD_UNSAFE  "Enable building thead-unsafe library [default: OFF]"        OFF)
+option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"            OFF)
 
 
 set(ROTOR_BOOST_COMPONENTS)
@@ -60,6 +61,9 @@ target_include_directories(rotor
 target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
 if (BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
+endif()
+if (ROTOR_DEBUG_DELIVERY)
+    target_compile_definitions(rotor PRIVATE "ROTOR_DEBUG_DELIVERY")
 endif()
 target_compile_features(rotor PUBLIC cxx_std_17)
 set_target_properties(rotor PROPERTIES
