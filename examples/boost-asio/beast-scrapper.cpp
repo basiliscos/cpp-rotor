@@ -8,19 +8,22 @@
 
     The current example in some extent mimics curl usage example in CAF
 ( https://github.com/actor-framework/actor-framework/blob/master/examples/curl/curl_fuse.cpp ),
-but instead of CAF + curl pair, the rotor + bease pair is used.
-There is a single client (can be multiple), there is a single http-manager (supervisor),
-which holds a pool of multiple http-workers.
+but instead of CAF + curl pair, the rotor + beast pair is used.
 
-client -> (timerC_1) request_1 -> http-manager -> (timerM_1) request_1 -> http-worker_1
-          (timerC_2) request_2 ->              -> (timerM_2) request_1 -> http-worker_2
-                      ...                                      ...          ...
-          (timerC_n) request_n ->              -> (timerM_n) request_1 -> http-worker_n
+There is a single client (can be multiple), there is a single http-manager (supervisor),
+which holds a pool of multiple http-workers and a caching resolver-actor.
+
+client -> request_1 -> http-manager -> request_1 -> http-worker_1
+          request_2 ->              -> request_1 -> http-worker_2
+          ...                           ...          ...
+          request_n ->              -> request_1 -> http-worker_n
+
+
 
 1. The client makes an request, which contains the URL of the remote resource, and the buffer
 where the parsed reply is put.
 
-2. The reply is intrusive pointer to the real reply, i.e. to avoid unnecessary copying.
+2. The reply is intrusive pointer to the real http-response, i.e. to avoid unnecessary copying.
 
 3. The client makes as many requests as it needs, and the manager just for forwards them
 to free http-workers. The amounts of simultaneous requests and http-workers are "coordinated",
@@ -48,6 +51,13 @@ immediately from http-worker to http-client). As the result in the current code 
 client *have to wait* until all requests will be finished either successfully or via
 timeout triggering. The noticible delay in shutdown can be observed, and it is described
 here.
+
+However, workres are properly shutted down if ctrl+c is pressed (or if any other reason for
+whole system to shutdown has been triggered).
+
+3.6. Currenlty only single thread is used. However, it is not a problem to use all threads,
+just the actors architecture should be redesigend a litte bit, to let them be launched
+on different threads.
 
 4. The care should be taken to properly shut down the application: only when there is
 no I/O activities from client perspective, the shut down is initiated.
