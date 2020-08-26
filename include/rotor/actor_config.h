@@ -104,10 +104,10 @@ template <typename Actor> struct actor_config_builder_t {
     /** \brief post-construction callback */
     install_action_t install_action;
 
-    /** \brief raw pointer to {@link supervisor_t} (is `null` for top-level supervisors) */
+    /** \brief raw pointer to `supervisor_t` (is `null` for top-level supervisors) */
     supervisor_t *supervisor;
 
-    /** \brief refernce to {@link system_context_t} */
+    /** \brief refernce to `system_context_t` */
     system_context_t &system_context;
 
     /** \brief the currently build config (templated) */
@@ -119,7 +119,7 @@ template <typename Actor> struct actor_config_builder_t {
     /** \brief ctor with install action and raw pointer to supervisor */
     actor_config_builder_t(install_action_t &&action_, supervisor_t *supervisor_);
 
-    /** \brief ctor with install action and pointer to {@link system_context_t} */
+    /** \brief ctor with install action and pointer to `system_context_t` */
     actor_config_builder_t(install_action_t &&action_, system_context_t &system_context_)
         : install_action{std::move(action_)}, supervisor{nullptr}, system_context{system_context_}, config{nullptr} {
         init_ctor();

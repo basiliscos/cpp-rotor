@@ -21,7 +21,7 @@ subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &
     auto &handler = point.handler;
     bool internal_address = &address->supervisor == &supervisor;
     bool internal_handler = &handler->actor_ptr->get_supervisor() == &supervisor;
-    State state = internal_address ? State::SUBSCRIBED : State::SUBSCRIBING;
+    State state = internal_address ? State::ESTABLISHED : State::SUBSCRIBING;
     subscription_info_ptr_t info(new subscription_info_t(point, internal_address, internal_handler, state));
 
     if (internal_address) {
