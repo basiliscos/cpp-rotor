@@ -63,6 +63,8 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
     bool internal_handler;
     state_t state;
 };
+
+/** \brief intrusive pointer for {@link subscription_info_t} */
 using subscription_info_ptr_t = intrusive_ptr_t<subscription_info_t>;
 
 /** \struct subscription_container_t
