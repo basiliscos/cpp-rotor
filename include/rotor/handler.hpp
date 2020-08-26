@@ -71,6 +71,7 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
     static_assert(is_actor || is_plugin, "message handler should be either actor or plugin");
 };
 
+/** \brief handler decomposer for lambda-based handler */
 template <typename M, typename H> struct handler_traits<lambda_holder_t<M, H>> {
     static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
     static_assert(has_valid_message, "lambda does not process valid message");
@@ -146,7 +147,7 @@ inline constexpr bool is_plugin_handler_v =
 
 template <typename Handler, typename Enable = void> struct handler_t;
 
-/** \struct handler_t
+/**
  *  \brief the actor handler meant to hold user-specific pointer-to-member function
  *  \tparam Handler pointer-to-member function type
  */
@@ -181,7 +182,9 @@ template <typename Handler>
 const void *handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>>::handler_type =
     static_cast<const void *>(typeid(Handler).name());
 
-// plugin handler
+/**
+ * \brief handler specialization for plugin
+ */
 template <typename Handler>
 struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>> : public handler_base_t {
     static const void *handler_type;

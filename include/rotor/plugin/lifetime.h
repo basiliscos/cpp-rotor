@@ -10,6 +10,14 @@
 
 namespace rotor::plugin {
 
+/** \struct lifetime_plugin_t
+ *
+ * \brief manages all actor subscriptions (i.e. from plugins or actor itself).
+ *
+ * The plugin main focus to properly cancel subscriptions, i.e. every address
+ * where an actor plugin or the actor itslef was subscribscribed to.
+ *
+ */
 struct lifetime_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 

@@ -13,6 +13,18 @@
 
 namespace rotor::plugin {
 
+/** \struct link_client_plugin_t
+ *
+ * \brief allows actor to have active (client) role in linking
+ *
+ * The plugin keeps records of all "servers" where it is connected to.
+ * When actor it will notify peers about unlinking.
+ *
+ * It is allowed to have a custom actors' callback on every link result.
+ * connected clients will send unlink confirmation (or until
+ * timeout will trigger).
+ *
+ */
 struct link_client_plugin_t : public plugin_base_t {
 
     using link_callback_t = std::function<void(const std::error_code &)>;

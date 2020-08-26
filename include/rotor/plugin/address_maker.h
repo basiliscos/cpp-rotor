@@ -10,6 +10,17 @@
 
 namespace rotor::plugin {
 
+/** \struct address_maker_plugin_t
+ *
+ * \brief create actor's addresses
+ *
+ * The plugin is executed on very early stage of actor creation
+ * to assing its main address as soon as possible.
+ *
+ * If additional addresses are needed by the actor, they can be
+ * asked via the plugin.
+ *
+ */
 struct address_maker_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 

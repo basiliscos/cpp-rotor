@@ -15,7 +15,7 @@
 
 namespace rotor {
 
-/* \struct subscription_t
+/** \struct subscription_t
  *  \brief Holds and classifies message handlers on behalf of supervisor
  *
  * The handlers are classified by message type and by the source supervisor, i.e.
@@ -24,7 +24,13 @@ namespace rotor {
  */
 struct subscription_t {
     using message_type_t = const void *;
+
+    /** \brief vector of handler pointers */
     using handlers_t = std::vector<handler_base_t *>;
+
+    /** \struct joint_handlers_t
+     *  \brief pair internal and external {@link handler_t}
+     */
     struct joint_handlers_t {
         handlers_t internal;
         handlers_t external;

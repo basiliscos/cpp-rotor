@@ -13,6 +13,11 @@ namespace rotor::plugin {
 
 enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
 
+/** \struct plugin_base_t
+ *
+ * \brief base class for all actor plugins
+ *
+ */
 struct plugin_base_t {
     enum reaction_t {
         INIT = 1 << 0,

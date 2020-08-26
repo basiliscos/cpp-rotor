@@ -110,7 +110,7 @@ struct bad_actor_t : public r::actor_base_t {
 
 TEST_CASE("ping/pong", "[supervisor][ev]") {
     auto *loop = ev_loop_new(0);
-    auto system_context = re::system_context_ev_t::ptr_t{new re::system_context_ev_t()};
+    auto system_context = re::system_context_ptr_t{new re::system_context_ev_t()};
     auto timeout = r::pt::milliseconds{10};
     auto sup = system_context->create_supervisor<supervisor_ev_test_t>()
                    .loop(loop)

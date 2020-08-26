@@ -44,6 +44,7 @@ template <typename T, typename = void> struct request_wrapper_t {
     using request_t = T;
 };
 
+/** \brief request_wrapper_t specialization for refcounted item */
 template <typename T> struct request_wrapper_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> {
     /** \brief an alias for the original request type, wrapped into intrusive poitner */
     using request_t = intrusive_ptr_t<T>;
@@ -62,6 +63,8 @@ template <typename T, typename = void> struct request_unwrapper_t {
     using request_t = T;
 };
 
+
+/** \brief request_unwrapper_t specialization for intrusive pointer of T */
 template <typename T> struct request_unwrapper_t<intrusive_ptr_t<T>> {
     /** \brief an alias for the original request type, if it was wrapped into intrusive poitner */
     using request_t = T;
@@ -91,7 +94,7 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     T request_payload;
 };
 
-/** \struct wrapped_request_t
+/**
  * \brief wrapped request specialization, when the request should be wrapped into intrusive pointer
  */
 template <typename T>
@@ -137,7 +140,7 @@ template <typename Responce> struct response_helper_t {
     }
 };
 
-/** \struct response_helper_t
+/**
  * \brief specific helper, which helps to construct intrusive pointer to user-defined
  *  response payload
  */
@@ -177,20 +180,29 @@ template <typename T, typename... Args>
 inline constexpr bool is_somehow_constructible_v =
     std::is_constructible_v<T, Args...> || is_braces_constructible_v<T, Args...>;
 
+/** \brief main helper to check constructability of T from Args... */
 template <typename T, typename E = void, typename... Args>
 struct is_constructible : is_constructible<T, void, E, Args...> {};
+
+/** \brief checks whether T is default-constructible  */
 template <typename T> struct is_constructible<T, void> {
     /** \brief returns true fi type T is default-constructible */
     static constexpr auto value = std::is_default_constructible_v<T>;
 };
+
+/** \brief checks whether it is possible construct T from Arg */
 template <typename T, typename Arg> struct is_constructible<T, Arg> {
     /** \brief returns true fi type T is constructible or braces-constructible from `Arg` */
     static constexpr auto value = is_somehow_constructible_v<T, Arg>;
 };
+
+/** \brief checks whether it is possible construct T from Arg */
 template <typename T, typename Arg> struct is_constructible<T, void, Arg> {
     /** \brief returns true fi type T is constructible or braces-constructible from `Arg` */
     static constexpr auto value = is_somehow_constructible_v<T, Arg>;
 };
+
+/** \brief checks whether it is possible construct T from Args... */
 template <typename T, typename... Args> struct is_constructible<T, void, Args...> {
     /** \brief returns true fi type T is constructible or braces-constructible from `Args...` */
     static constexpr auto value = is_somehow_constructible_v<T, Args...>;

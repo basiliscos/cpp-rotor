@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
         auto strand = std::make_shared<asio::io_context::strand>(io_ctx);
 
         auto *loop = ev_loop_new(0);
-        auto sys_ctx_ev = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
+        auto sys_ctx_ev = rotor::ev::system_context_ptr_t{new rotor::ev::system_context_ev_t()};
 
         auto sup_asio = sys_ctx_asio->create_supervisor<rotor::asio::supervisor_asio_t>()
                             .strand(strand)

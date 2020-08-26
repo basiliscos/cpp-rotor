@@ -13,6 +13,20 @@ namespace rotor::plugin {
 
 using resource_id_t = std::size_t;
 
+/** \struct resources_plugin_t
+ *
+ * \brief "lock" for external resources
+ *
+ * The main purpose of the plugin is to let actor know, that some
+ * external resources are acquired, and the actor should will be
+ * suspended until they will be released.
+ *
+ * The suspension will happen during init and shutdown phases, e.g.:
+ * - actor can wait, until connection will be estableshed
+ * - actor can wait, until it receives handshake from remote system
+ * - etc...
+ *
+ */
 struct resources_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 

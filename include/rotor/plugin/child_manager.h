@@ -11,6 +11,16 @@
 
 namespace rotor::plugin {
 
+/** \struct child_manager_plugin_t
+ *
+ * \brief supervisor's plugin for child-actors housekeeping
+ *
+ * The plugin is responsible for child actors creation, initialization
+ * and shutdown. The supervisor policy is also handled here, e.g.
+ * if an child-actor fails to initialize self, the supervisor
+ * might shutdown self.
+ *
+ */
 struct child_manager_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 

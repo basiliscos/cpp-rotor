@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
         }
 
         auto *loop = ev_loop_new(0);
-        auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
+        auto system_context = rotor::ev::system_context_ptr_t{new rotor::ev::system_context_ev_t()};
         auto timeout = boost::posix_time::milliseconds{10};
         auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>()
                        .loop(loop)

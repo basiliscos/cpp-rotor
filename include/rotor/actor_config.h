@@ -19,6 +19,8 @@ namespace rotor {
 
 using plugins_t = std::deque<plugin::plugin_base_t *>;
 
+/** \struct  plugin_storage_base_t
+ * \brief abstract item to store plugins inside actor */
 struct plugin_storage_base_t {
     virtual ~plugin_storage_base_t() {}
     virtual plugins_t get_plugins() noexcept = 0;
@@ -26,6 +28,7 @@ struct plugin_storage_base_t {
 
 using plugin_storage_ptr_t = std::unique_ptr<plugin_storage_base_t>;
 
+/** \brief templated plugin storage implementation */
 template <typename PluginList> struct plugin_storage_t : plugin_storage_base_t {
     plugins_t get_plugins() noexcept override {
         plugins_t plugins;
@@ -44,6 +47,9 @@ template <typename PluginList> struct plugin_storage_t : plugin_storage_base_t {
     }
 };
 
+/** \struct actor_config_t
+ * \brief basic actor configuration: init and shutdown timeouts, etc.
+ */
 struct actor_config_t {
     using plugins_constructor_t = std::function<plugin_storage_ptr_t()>;
 
@@ -58,6 +64,7 @@ struct actor_config_t {
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
 };
 
+/** \brief CRTP actor config builder */
 template <typename Actor> struct actor_config_builder_t {
     using builder_t = typename Actor::template config_builder_t<Actor>;
     using config_t = typename Actor::config_t;

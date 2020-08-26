@@ -30,23 +30,27 @@ namespace asio = boost::asio;
 
 namespace details {
 
-template <typename T> struct callback_traits {};
-
 namespace count {
 using _0 = std::integral_constant<size_t, 0>;
 using _1 = std::integral_constant<size_t, 1>;
 } // namespace count
 
+/** \brief asio callback decomposer into 1 possible argument type and total argruments count (0 or 1) */
+template <typename T> struct callback_traits {};
+
+/** \brief callback decomposer specialization for reference argument */
 template <typename Class, typename M> struct callback_traits<void (Class::*)(M &) noexcept> {
     using args_count = count::_1;
     using arg_type = M &;
 };
 
+/** \brief callback decomposer specialization for value argument */
 template <typename Class, typename M> struct callback_traits<void (Class::*)(M) noexcept> {
     using args_count = count::_1;
     using arg_type = M;
 };
 
+/** \brief callback decomposer specialization for no-argument callback */
 template <typename Class> struct callback_traits<void (Class::*)() noexcept> {
     using args_count = count::_0;
     using arg_type = void;
@@ -126,6 +130,7 @@ struct forwarder_t<Actor, Handler, details::count::_0, ErrHandler> : forwarder_b
     }
 };
 
+/** \brief forwarder specialization for 1-argument asio-callback */
 template <typename Actor, typename Handler, typename ErrHandler>
 struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> : forwarder_base_t<Actor, Handler, ErrHandler> {
     using base_t = forwarder_base_t<Actor, Handler, ErrHandler>;

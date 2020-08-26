@@ -19,19 +19,10 @@ struct supervisor_ev_t;
 /** \brief intrusive pointer for ev supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;
 
-/* \struct system_context_ev_t
- *  \brief The libev system context, which holds an intrusive pointer
- * root ev-supervisor
- */
-struct system_context_ev_t : public system_context_t {
-    /** \brief intrusive pointer type for ev system context */
-    using ptr_t = rotor::intrusive_ptr_t<system_context_ev_t>;
-
-    system_context_ev_t();
-};
+using system_context_ev_t = rotor::system_context_t;
 
 /** \brief intrusive pointer type for ev system context */
-using system_context_ptr_t = typename system_context_ev_t::ptr_t;
+using system_context_ptr_t = typename rotor::intrusive_ptr_t<system_context_ev_t>;
 
 } // namespace ev
 } // namespace rotor

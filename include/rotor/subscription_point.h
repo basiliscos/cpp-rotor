@@ -43,6 +43,9 @@ struct subscription_point_t {
     bool operator==(const subscription_point_t &other) const noexcept;
 };
 
+/** \struct subscription_info_t
+ *  \brief {@link subscription_point_t} with extended information (e.g. state)
+ */
 struct subscription_info_t : public arc_base_t<subscription_info_t>, subscription_point_t {
     enum state_t { SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING };
 
@@ -62,6 +65,9 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
 };
 using subscription_info_ptr_t = intrusive_ptr_t<subscription_info_t>;
 
+/** \struct subscription_container_t
+ *  \brief list of {@link subscription_info_ptr_t} with possibility to find via {@link subscription_point_t}
+ */
 struct subscription_container_t : public std::list<subscription_info_ptr_t> {
     iterator find(const subscription_point_t &point) noexcept;
 };

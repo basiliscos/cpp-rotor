@@ -11,6 +11,10 @@
 
 namespace rotor::plugin {
 
+/** \struct local_delivery_t
+ *
+ * \brief basic local message delivery implementation
+ */
 struct local_delivery_t {
 
     /** \brief delivers an message for self of one of child-actors  (non-supervisors)
@@ -26,6 +30,10 @@ struct local_delivery_t {
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
 };
 
+/** \struct inspected_local_delivery_t
+ *
+ * \brief debugging local message delivery implementation with dumping details to stdout.
+ */
 struct inspected_local_delivery_t {
     static std::string identify(message_base_t *message) noexcept;
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
@@ -37,6 +45,10 @@ using default_local_delivery_t = local_delivery_t;
 using default_local_delivery_t = inspected_local_delivery_t;
 #endif
 
+/** \struct delivery_plugin_base_t
+ *
+ * \brief base implementation for messages delivery plugin
+ */
 struct delivery_plugin_base_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
@@ -56,6 +68,7 @@ struct delivery_plugin_base_t : public plugin_base_t {
     subscription_t *subscription_map;
 };
 
+/** \brief templated message delivery plugin, to allow local message delivery be customized */
 template <typename LocalDelivery = local_delivery_t> struct delivery_plugin_t : public delivery_plugin_base_t {
     using delivery_plugin_base_t::delivery_plugin_base_t;
 

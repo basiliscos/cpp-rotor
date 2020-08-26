@@ -33,6 +33,7 @@ struct supervisor_config_wx_t : public supervisor_config_t {
     using supervisor_config_t::supervisor_config_t;
 };
 
+/** \brief config builder for wx supervisor */
 template <typename Supervisor> struct supervisor_config_wx_builder_t : supervisor_config_builder_t<Supervisor> {
     using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
     using parent_t = supervisor_config_builder_t<Supervisor>;

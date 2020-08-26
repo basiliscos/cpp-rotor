@@ -10,6 +10,15 @@
 
 namespace rotor::plugin {
 
+/** \struct init_shutdown_plugin_t
+ *
+ * \brief manages actors init and shutdown procedures
+ *
+ * All actor plugins are polled when init(shutdown) request is received
+ * in the direct(reverse) order. When all actors confirmed that they are
+ * ready then initialization (shutdown) is confirmed to uplink.
+ *
+ */
 struct init_shutdown_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 

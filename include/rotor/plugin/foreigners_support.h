@@ -10,6 +10,10 @@
 
 namespace rotor::plugin {
 
+/** \struct foreigners_support_plugin_t
+ *
+ * \brief allows non-local actors to subscribe on the local addresses of a supervisor.
+ */
 struct foreigners_support_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 

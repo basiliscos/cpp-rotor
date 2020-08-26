@@ -14,6 +14,16 @@
 
 namespace rotor::plugin {
 
+/** \struct link_server_plugin_t
+ *
+ * \brief allows actor to have passive (server) role in linking
+ *
+ * The plugin keeps records of connected clients. When actor is
+ * going to shutdown it will block shutdown process until all
+ * connected clients will send unlink confirmation (or until
+ * timeout will trigger).
+ *
+ */
 struct link_server_plugin_t : public plugin_base_t {
 
     using plugin_base_t::plugin_base_t;

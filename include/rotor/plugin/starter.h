@@ -10,6 +10,21 @@
 
 namespace rotor::plugin {
 
+/** \struct resources_plugin_t
+ *
+ * \brief allows custom (actor) subscriptions and it is responsibe
+ * for starting actor when it is initialized.
+ *
+ * The main purpose of the plugin is to let actor know, that some
+ * external resources are acquired, and the actor should will be
+ * suspended until they will be released.
+ *
+ * The suspension will happen during init and shutdown phases, e.g.:
+ * - actor can wait, until connection will be estableshed
+ * - actor can wait, until it receives handshake from remote system
+ * - etc...
+ *
+ */
 struct starter_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
