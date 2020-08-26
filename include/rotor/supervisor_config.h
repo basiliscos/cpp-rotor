@@ -27,6 +27,7 @@ struct supervisor_config_t : actor_config_t {
     address_ptr_t registry_address;
 };
 
+/** \brief CRTP supervisor config builder */
 template <typename Supervisor> struct supervisor_config_builder_t : actor_config_builder_t<Supervisor> {
     using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
     using parent_t = actor_config_builder_t<Supervisor>;

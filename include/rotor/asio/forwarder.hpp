@@ -61,8 +61,10 @@ template <typename Class> struct callback_traits<void (Class::*)() noexcept> {
 /** \brief return `strand` of the boost::asio aware actor */
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor);
 
+/** \brief templated forwarder base class */
 template <typename Actor, typename Handler, typename ErrHandler> struct forwarder_base_t;
 
+/** \brief patrial specialization of forwarder base when there is no error handler */
 template <typename Actor, typename Handler> struct forwarder_base_t<Actor, Handler, void> {
     /** \brief alias for intrusive pointer for an actor type */
     using typed_actor_ptr_t = intrusive_ptr_t<Actor>;
@@ -80,6 +82,7 @@ template <typename Actor, typename Handler> struct forwarder_base_t<Actor, Handl
     Handler handler;
 };
 
+/** \brief forwarder base implementation with result and error handlers */
 template <typename Actor, typename Handler, typename ErrHandler>
 struct forwarder_base_t : forwarder_base_t<Actor, Handler, void> {
     using base_t = forwarder_base_t<Actor, Handler, void>;
@@ -158,6 +161,7 @@ struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> : forwarder_b
     }
 };
 
+/** \brief forwarder specialization for 1-argument asio-callback without error handler */
 template <typename Actor, typename Handler>
 struct forwarder_t<Actor, Handler, details::count::_0, void> : forwarder_base_t<Actor, Handler, void> {
     using base_t = forwarder_base_t<Actor, Handler, void>;

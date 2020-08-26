@@ -63,7 +63,6 @@ template <typename T, typename = void> struct request_unwrapper_t {
     using request_t = T;
 };
 
-
 /** \brief request_unwrapper_t specialization for intrusive pointer of T */
 template <typename T> struct request_unwrapper_t<intrusive_ptr_t<T>> {
     /** \brief an alias for the original request type, if it was wrapped into intrusive poitner */

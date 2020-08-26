@@ -13,7 +13,7 @@
 
 namespace rotor {
 
-/* \struct address_mapping_t
+/** \struct address_mapping_t
  * \brief NAT mechanism for `rotor`
  *
  * It plays the similar role as https://en.wikipedia.org/wiki/Network_address_translation

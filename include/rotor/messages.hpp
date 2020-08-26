@@ -157,9 +157,9 @@ struct commit_unsubscription_t {
     subscription_point_t point;
 };
 
-/* \struct unsubscription_confirmation_t
+/** \struct unsubscription_confirmation_t
  *  \brief Message with this payload is sent from a supervisor to an actor with
- *  confirmation that `handler` is no longer subscribed to `target_address`
+ *  confirmation that `pooint` is no longer active (subscribed).`
  */
 struct unsubscription_confirmation_t {
     subscription_point_t point;
@@ -242,32 +242,57 @@ struct discovery_request_t {
     std::string service_name;
 };
 
+/** \struct discovery_future_t
+ *  \brief delayed discovery response as soon as an address has been registered
+ */
 struct discovery_future_t {
     /**  \brief the service address found by name in a registry */
     address_ptr_t service_addr;
 };
 
+/** \struct discovery_promise_t
+ *  \brief ask registry for {@link discovery_future_t} when the target
+ *  service name has been registered
+ */
 struct discovery_promise_t {
     using response_t = discovery_future_t;
     /**  \brief the service name to be looked in a registry */
     std::string service_name;
 };
 
+/** \struct discovery_cancel_t
+ *  \brief cancels previously asked {@link discovery_future_t}
+ */
 struct discovery_cancel_t {
     address_ptr_t client_addr;
 
     std::string service_name;
 };
 
+/** \struct link_response_t
+ *  \brief successful confirmation to {@link link_request_t}
+ */
 struct link_response_t {};
+
+/** \struct link_request_t
+ *  \brief requests target actor to be linked with the current one
+ */
 struct link_request_t {
     using response_t = link_response_t;
     bool operational_only;
 };
 
+/** \struct unlink_notify_t
+ * \brief "client" notifies "server" that the connection has been closed
+ * from its side
+ */
 struct unlink_notify_t {
     address_ptr_t client_addr;
 };
+
+/** \struct unlink_request_t
+ *  \brief "server" asks "client" for closing connection
+ */
 struct unlink_request_t {
     address_ptr_t server_addr;
     using response_t = unlink_notify_t;

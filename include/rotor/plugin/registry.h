@@ -29,6 +29,10 @@ struct registry_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     enum class phase_t { discovering, linking };
+
+    /** \struct discovery_task_t
+     * \brief helper class to invoke callback upon address discovery
+     */
     struct discovery_task_t {
         using callback_t = std::function<void(phase_t phase, const std::error_code &)>;
 

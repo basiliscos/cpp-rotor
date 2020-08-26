@@ -214,7 +214,9 @@ template <typename Handler>
 const void *handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>>::handler_type =
     static_cast<const void *>(typeid(Handler).name());
 
-// lambda handler
+/**
+ * \brief handler specialization for lambda handler
+ */
 template <typename Handler, typename M>
 struct handler_t<lambda_holder_t<Handler, M>,
                  std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>> : public handler_base_t {

@@ -30,6 +30,7 @@ struct supervisor_config_asio_t : public supervisor_config_t {
     using supervisor_config_t::supervisor_config_t;
 };
 
+/** \brief CRTP supervisor asio config builder */
 template <typename Supervisor> struct supervisor_config_asio_builder_t : supervisor_config_builder_t<Supervisor> {
     using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
     using parent_t = supervisor_config_builder_t<Supervisor>;
