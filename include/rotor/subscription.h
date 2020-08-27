@@ -23,6 +23,7 @@ namespace rotor {
  *
  */
 struct subscription_t {
+    /** \brief alias for message type (i.e. stringized typeid) */
     using message_type_t = const void *;
 
     /** \brief vector of handler pointers */
@@ -32,18 +33,31 @@ struct subscription_t {
      *  \brief pair internal and external {@link handler_t}
      */
     struct joint_handlers_t {
+        /** \brief internal handlers, i.e. those which belong to actors of the supervisor */
         handlers_t internal;
+        /** \brief external handlers, i.e. those which belong to actors of other supervisor */
         handlers_t external;
     };
 
+    /** \brief ctor from supervisor reference */
     subscription_t(supervisor_t &supervisor) noexcept;
 
+    /** \brief upgrades subscription_point_t into subscription_info smart pointer
+     *
+     * Performs the classification of the point, i.e. whether handler and address
+     * are internal or external, records the state subcription state and records
+     * the handler among address handlers.
+     *
+     */
     subscription_info_ptr_t materialize(const subscription_point_t &point) noexcept;
 
+    /** \brief remove subscription_info from `internal_infos` and `mine_handlers` */
     void forget(const subscription_info_ptr_t &info) noexcept;
 
+    /** \brief returns list of all handlers for the message (internal and external) */
     const joint_handlers_t *get_recipients(const message_base_t &message) const noexcept;
 
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
   private:

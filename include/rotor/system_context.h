@@ -23,7 +23,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
  */
 struct system_context_t : arc_base_t<system_context_t> {
   public:
-    /* \brief creates root supervior. `args` are forwared for supervisor constructor */
+    /** \brief returns builder for root supervisor */
     template <typename Supervisor = supervisor_t> auto create_supervisor();
 
     /** \brief returns root supervisor */
