@@ -81,10 +81,18 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
 
 /** \brief handler decomposer for lambda-based handler */
 template <typename M, typename H> struct handler_traits<lambda_holder_t<M, H>> {
+    /** \brief returns true if message is valid */
     static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
+
     static_assert(has_valid_message, "lambda does not process valid message");
+
+    /** \brief not an actor handler */
     static auto const constexpr is_actor = false;
+
+    /** \brief not a plugin handler */
     static auto const constexpr is_plugin = false;
+
+    /** \brief yes, it is lambda handler */
     static auto const constexpr is_lambda = true;
 };
 
@@ -134,8 +142,6 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     virtual inline ~handler_base_t() {}
 };
 
-template <> inline auto &plugin::plugin_base_t::access<handler_base_t>() noexcept { return actor; }
-
 using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
 
 namespace details {
@@ -151,7 +157,16 @@ template <typename Handler>
 inline constexpr bool is_plugin_handler_v =
     handler_traits<Handler>::has_valid_message &&handler_traits<Handler>::is_plugin &&
     !handler_traits<Handler>::is_actor && !handler_traits<Handler>::is_lambda;
+
+namespace {
+namespace to {
+struct actor {};
+} // namespace to
+} // namespace
 } // namespace details
+
+/** \brief access to actor via plugin */
+template <> inline auto &plugin::plugin_base_t::access<details::to::actor>() noexcept { return actor; }
 
 template <typename Handler, typename Enable = void> struct handler_t;
 
@@ -195,13 +210,18 @@ const void *handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Hand
  */
 template <typename Handler>
 struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>> : public handler_base_t {
+    /** \brief typeid of Handler */
     static const void *handler_type;
 
+    /** \brief source plugin for handler */
     plugin::plugin_base_t &plugin;
+
+    /** \brief handler itself */
     Handler handler;
 
+    /** \brief ctor form plugin and plugin handler (pointer-to-member function of the plugin) */
     explicit handler_t(plugin::plugin_base_t &plugin_, Handler &&handler_)
-        : handler_base_t{*plugin_.access<handler_base_t>(), final_message_t::message_type, handler_type},
+        : handler_base_t{*plugin_.access<details::to::actor>(), final_message_t::message_type, handler_type},
           plugin{plugin_}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
