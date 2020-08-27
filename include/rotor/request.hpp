@@ -28,6 +28,7 @@ struct request_base_t {
      */
     address_ptr_t reply_to;
 
+    /** \brief the source (original) actor address, which made an request */
     address_ptr_t origin;
 };
 
