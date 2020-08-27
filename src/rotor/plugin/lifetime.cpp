@@ -10,12 +10,17 @@
 using namespace rotor;
 using namespace rotor::plugin;
 
+namespace to {
+struct own_subscriptions {};
+struct deactivating_plugins {};
+} // namespace to
+
+template <> auto &plugin_base_t::access<to::own_subscriptions>() noexcept { return own_subscriptions; }
+template <> auto &actor_base_t::access<to::deactivating_plugins>() noexcept { return deactivating_plugins; }
+
 const void *lifetime_plugin_t::class_identity = static_cast<const void *>(typeid(lifetime_plugin_t).name());
 
 const void *lifetime_plugin_t::identity() const noexcept { return class_identity; }
-
-struct plugin_subscriptions_t {};
-template <> auto &plugin_base_t::access<plugin_subscriptions_t>() noexcept { return own_subscriptions; }
 
 void lifetime_plugin_t::activate(actor_base_t *actor_) noexcept {
     this->actor = actor_;
@@ -37,7 +42,7 @@ void lifetime_plugin_t::deactivate() noexcept {
 }
 
 bool lifetime_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
-    if (points.empty() && plugin_base_t::access<plugin_subscriptions_t>().empty())
+    if (points.empty() && plugin_base_t::access<to::own_subscriptions>().empty())
         return plugin_base_t::handle_shutdown(req);
     unsubscribe();
     return false;
@@ -78,7 +83,7 @@ void lifetime_plugin_t::unsubscribe() noexcept {
         }
     }
     /* wait only self to be deactivated */
-    if (points.empty() && actor->ready_to_shutdown()) {
+    if (points.empty() && ready_to_shutdown()) {
         plugin_base_t::deactivate();
         actor->lifetime = nullptr;
     }
@@ -112,4 +117,9 @@ bool lifetime_plugin_t::handle_unsubscription(const subscription_point_t &point,
         result = plugin_base_t::handle_unsubscription(point, external);
     }
     return result;
+}
+
+bool lifetime_plugin_t::ready_to_shutdown() noexcept {
+    /* just me */
+    return actor->access<to::deactivating_plugins>().size() == 1;
 }

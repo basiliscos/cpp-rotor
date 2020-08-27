@@ -56,9 +56,16 @@ template <typename T> struct handler_traits {};
  *  \brief Helper class to extract final actor class and message type from pointer-to-member function
  */
 template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcept> {
+    /** \brief returns true if message is valid */
     static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
+
+    /** \brief returns true if handler belongs to actor */
     static auto const constexpr is_actor = std::is_base_of_v<actor_base_t, A>;
+
+    /** \brief returns true if handler belongs to plugin */
     static auto const constexpr is_plugin = std::is_base_of_v<plugin::plugin_base_t, A>;
+
+    /** \brief returns true if it is lambda-handler */
     static auto const constexpr is_lambda = false;
 
     /** \brief message type, processed by the handler */
@@ -67,6 +74,7 @@ template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcep
     /** \brief alias for message type payload */
     using payload_t = typename M::payload_t;
 
+    /** \brief alias for Actor or Plugin class */
     using backend_t = A;
     static_assert(is_actor || is_plugin, "message handler should be either actor or plugin");
 };

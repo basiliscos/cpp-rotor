@@ -22,6 +22,7 @@ struct supervisor {};
 
 namespace rotor {
 
+/** \brief access to supervisor */
 template <> inline auto &actor_base_t::access<asio::to::supervisor>() noexcept { return supervisor; }
 
 namespace asio {
@@ -47,6 +48,7 @@ template <typename Class, typename M> struct callback_traits<void (Class::*)(M &
 /** \brief callback decomposer specialization for value argument */
 template <typename Class, typename M> struct callback_traits<void (Class::*)(M) noexcept> {
     using args_count = count::_1;
+    /** \brief alias for message type */
     using arg_type = M;
 };
 

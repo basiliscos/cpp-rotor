@@ -46,6 +46,8 @@ struct lifetime_plugin_t : public plugin_base_t {
   private:
     /** \brief recorded subscription points (i.e. handler/address pairs) */
     subscription_container_t points;
+
+    bool ready_to_shutdown() noexcept;
 };
 
 } // namespace rotor::plugin

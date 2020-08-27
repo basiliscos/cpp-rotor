@@ -38,7 +38,10 @@ namespace rotor {
  *
  */
 struct actor_base_t : public arc_base_t<actor_base_t> {
+    /** \brief injects an alias for actor_config_t */
     using config_t = actor_config_t;
+
+    /** \brief injects templated actor_config_builder_t */
     template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
 
     /** \brief SFINAE handler detector
@@ -51,6 +54,12 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
         std::enable_if_t<std::is_member_function_pointer_v<Handler> || std::is_base_of_v<handler_base_t, Handler>>;
 
     // clang-format off
+    /** \brief the default list of plugins for an actor
+     *
+     * The order of plugins is very important, as they are initialized in the direct order
+     * and deinitilized in the reverse order.
+     *
+     */
     using plugins_list_t = std::tuple<
         plugin::address_maker_plugin_t,
         plugin::lifetime_plugin_t,
@@ -85,6 +94,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief convenient method to send actor's supervisor shutdown trigger message */
     virtual void do_shutdown() noexcept;
 
+    /** \brief actor is fully initialized and it's supervisor has sent signal to start */
     virtual void on_start() noexcept;
 
     /** \brief sends message to the destination address
@@ -155,69 +165,101 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief initiates handler unsubscription from the default actor address */
     inline void unsubscribe(const handler_ptr_t &h) noexcept { lifetime->unsubscribe(h, address); }
 
+    /** \brief starts plugins activation */
     void activate_plugins() noexcept;
+
+    /** \brief finishes plugin activation, successful or not */
     void commit_plugin_activation(plugin::plugin_base_t &plugin, bool success) noexcept;
 
+    /** \brief starts plugins deactivation */
     void deactivate_plugins() noexcept;
+
+    /** \brief finishes plugin deactivation */
     void commit_plugin_deactivation(plugin::plugin_base_t &plugin) noexcept;
 
+    /** \brief propaagtes subscription message to corresponding actors */
     void on_subscription(message::subscription_t &message) noexcept;
+
+    /** \brief propaagtes unsubscription message to corresponding actors */
     void on_unsubscription(message::unsubscription_t &message) noexcept;
+
+    /** \brief propaagtes external unsubscription message to corresponding actors */
     void on_unsubscription_external(message::unsubscription_external_t &message) noexcept;
 
+    /** \brief creates new unique address for an actor (via address_maker plugin) */
     address_ptr_t create_address() noexcept;
 
-    /** \brief finalize shutdown, release aquired resources
+    /** \brief starts shutdown procedure, e.g. upon receiving shutdown request
      *
-     * This is the last action in the shutdown sequence.
-     * No further methods will be invoked.
+     * The actor state is set to SHUTTING_DOWN.
      *
      */
-    virtual void shutdown_finish() noexcept;
     virtual void shutdown_start() noexcept;
 
-    /* brief strart releasing acquired resources
+    /** \brief polls plugins for shutdown
      *
-     * The method can be overriden in derived classes to initiate the
-     * release of resources, i.e. (asynchronously) close all opened
-     * sockets before confirm shutdown to supervisor.
-     *
-     * It actually forwards shutdown for the behavior
+     * The poll is performed in the reverse order. If all plugins, with active
+     * shutdown reaction confirm they are ready to shutdown, then the
+     * `shutdown_finish` method is invoked.
      *
      */
     void shutdown_continue() noexcept;
 
-    /** \brief finializes initialization  */
+    /** \brief finalizes shutdown
+     *
+     * The shutdown response is sent and actor state is set to SHUTTED_DOWN.
+     *
+     * This is the last action in the shutdown sequence.
+     * No further methods will be invoked on the actor
+     *
+     */
+    virtual void shutdown_finish() noexcept;
+
+    /** \brief starts initialization procedure
+     *
+     * The actor state is set to INITIALIZING.
+     *
+     */
     virtual void init_start() noexcept;
 
-    /*  starts initialization
+    /** \brief polls plugins whether they completed initialization.
      *
-     * Some resources might be acquired synchronously, if needed. If resources need
-     * to be acquired asynchronously this method should be overriden, and
-     * invoked only after resources acquisition.
-     *
-     * In internals it forwards initialization sequence to the behavior.
+     * The poll is performed in the direct order. If all plugins, with active
+     * init reaction confirm they are ready, then the `init_finish` method
+     * is invoked.
      *
      */
     void init_continue() noexcept;
 
-    /** \brief finializes initialization  */
+    /** \brief finalizes initialization
+     *
+     * The init response is sent and actor state is set to INITIALIZED.
+     *
+     */
     virtual void init_finish() noexcept;
 
+    /** \brief main callback for plugin configuration when it's ready */
     virtual void configure(plugin::plugin_base_t &plugin) noexcept;
 
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
+
+    /** \brief generic non-public methods accessor */
     template <typename T, typename... Args> auto access(Args... args) noexcept;
+
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() const noexcept;
+
+    /** \brief generic non-public methods accessor */
     template <typename T, typename... Args> auto access(Args... args) const noexcept;
 
+    /** \brief returns actor's main address */
     inline const address_ptr_t &get_address() const noexcept { return address; }
 
+    /** \brief returns actor's supervisor */
     inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
 
   protected:
-    virtual bool ready_to_shutdown() noexcept;
-
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
@@ -230,23 +272,40 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
 
+    /** \brief opaque plugins storage (owning) */
     plugin_storage_ptr_t plugins_storage;
+
+    /** \brief non-ownling list of plugins */
     plugins_t plugins;
 
+    /** \brief timeout for actor initialization (used by supervisor) */
     pt::time_duration init_timeout;
+
+    /** \brief timeout for actor shutdown (used by supervisorr) */
     pt::time_duration shutdown_timeout;
 
     /** \brief current actor state */
     state_t state;
 
-    /* non-owning pointers */
+    /** \brief non-owning pointer to address_maker plugin */
     plugin::address_maker_plugin_t *address_maker = nullptr;
+
+    /** \brief non-owning pointer to lifetime plugin */
     plugin::lifetime_plugin_t *lifetime = nullptr;
+
+    /** \brief non-owning pointer to resources plugin */
     plugin::resources_plugin_t *resources = nullptr;
 
+    /** \brief finds plugin by plugin class identity
+     *
+     * `nullptr` is returned when plugin cannot be found
+     */
     plugin::plugin_base_t *get_plugin(const void *identity) const noexcept;
 
+    /** \brief set of activating plugin identities */
     std::set<const void *> activating_plugins;
+
+    /** \brief set of deactivating plugin identities */
     std::set<const void *> deactivating_plugins;
 
     friend struct plugin::plugin_base_t;

@@ -26,11 +26,16 @@ namespace rotor {
  *  must be unique (in the scope of registry); the same address
  *  can be registered on different names, if need. It is good
  *  practice to unregister addresses when actor is going to be
- *  shutdown. It is possible to unregister single name, or all
+ *  shutdown (it is done by `registry_plugin_t`).
+ *  It is possible to unregister single name, or all
  *  names associated with an address.
  *
  *  The discovery response returned to "client-actor" might contain
  *  error code if there is no address associated with the asked name.
+ *
+ *  The actor has syncornization facilities, i.e. it is possible to
+ *  ask the actor to notify when some name has been registered
+ * (discovery promise/future).
  *
  */
 struct registry_t : public actor_base_t {
@@ -50,14 +55,20 @@ struct registry_t : public actor_base_t {
     /** \brief returns service address associated with the name or error */
     virtual void on_discovery(message::discovery_request_t &request) noexcept;
 
+    /** \brief notify the requestee when service name/address becomes available */
     virtual void on_promise(message::discovery_promise_t &request) noexcept;
 
+    /** \brief cancels previously asked discovery promise */
     virtual void on_cancel(message::discovery_cancel_t &notify) noexcept;
 
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
   protected:
+    /** \brief intrusive pointer to discovery promise message (type) */
     using promise_ptr_t = intrusive_ptr_t<message::discovery_promise_t>;
+
+    /** \brief list of intrusive pointers to discovery promise messages (type) */
     using promises_list_t = std::list<promise_ptr_t>;
 
     /** \brief name-to-address mapping type */
@@ -69,6 +80,7 @@ struct registry_t : public actor_base_t {
     /** \brief service address to registered names mapping type */
     using revese_map_t = std::unordered_map<address_ptr_t, registered_names_t>;
 
+    /** \brief service-name to list of promises map (type)*/
     using promises_map_t = std::unordered_map<std::string, promises_list_t>;
 
     /** \brief name-to-address mapping */
@@ -77,6 +89,7 @@ struct registry_t : public actor_base_t {
     /** \brief address-to-list_of_names mapping */
     revese_map_t revese_map;
 
+    /** \brief service-name to list of promises map */
     promises_map_t promises_map;
 };
 

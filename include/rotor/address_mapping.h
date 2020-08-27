@@ -26,10 +26,7 @@ namespace rotor {
  *
  */
 struct address_mapping_t {
-    /* \brief alias for vector of subscription points */
-    // using points_t = std::vector<subscription_info_ptr_t>;
-
-    /* \brief associates temporal destination point with actor's message type
+    /** \brief associates temporal destination point with actor's message type
      *
      * An actor is able to process message type indetified by `message`. So,
      * the temporal subscription point (hander and temporal address) will
@@ -44,7 +41,7 @@ struct address_mapping_t {
     /** \brief returns temporal destination address for the actor/message type */
     address_ptr_t get_mapped_address(actor_base_t &actor, const void *message) noexcept;
 
-    // check that subscription exists
+    /** \brief iterates on all subscriptions for an actor */
     template <typename Fn> void each_subscription(const actor_base_t &actor, Fn &&fn) const noexcept {
         auto it_mappings = actor_map.find(static_cast<const void *>(&actor));
         for (auto it : it_mappings->second) {
@@ -52,8 +49,13 @@ struct address_mapping_t {
         }
     }
 
+    /** \brief checks whether an actor has any subscriptions */
     bool has_subscriptions(const actor_base_t &actor) const noexcept;
+
+    /** \brief returns true if there is no any subscription for any actor */
     bool empty() const noexcept { return actor_map.empty(); }
+
+    /** \brief forgets subscription point */
     void remove(const subscription_point_t &point) noexcept;
 
   private:
