@@ -121,6 +121,7 @@ struct handler_call_t {
  *
  */
 struct external_subscription_t {
+    /** \brief subscription details */
     subscription_point_t point;
 };
 
@@ -132,6 +133,7 @@ struct external_subscription_t {
  *
  */
 struct subscription_confirmation_t {
+    /** \brief subscription details */
     subscription_point_t point;
 };
 
@@ -143,6 +145,7 @@ struct subscription_confirmation_t {
  *
  */
 struct external_unsubscription_t {
+    /** \brief subscription details */
     subscription_point_t point;
 };
 
@@ -154,6 +157,7 @@ struct external_unsubscription_t {
  *
  */
 struct commit_unsubscription_t {
+    /** \brief subscription details */
     subscription_point_t point;
 };
 
@@ -162,6 +166,7 @@ struct commit_unsubscription_t {
  *  confirmation that `pooint` is no longer active (subscribed).`
  */
 struct unsubscription_confirmation_t {
+    /** \brief subscription details */
     subscription_point_t point;
 };
 
@@ -255,6 +260,7 @@ struct discovery_future_t {
  *  service name has been registered
  */
 struct discovery_promise_t {
+    /** \brief link to discovery future payload type */
     using response_t = discovery_future_t;
     /**  \brief the service name to be looked in a registry */
     std::string service_name;
@@ -264,8 +270,10 @@ struct discovery_promise_t {
  *  \brief cancels previously asked {@link discovery_future_t}
  */
 struct discovery_cancel_t {
+    /** \brief client-actor address */
     address_ptr_t client_addr;
 
+    /** \brief target service name */
     std::string service_name;
 };
 
@@ -278,7 +286,10 @@ struct link_response_t {};
  *  \brief requests target actor to be linked with the current one
  */
 struct link_request_t {
+    /** \brief link to link response payload type */
     using response_t = link_response_t;
+
+    /** \brief wait until target server (actor) starts, only then reply to the source actor */
     bool operational_only;
 };
 
@@ -287,6 +298,7 @@ struct link_request_t {
  * from its side
  */
 struct unlink_notify_t {
+    /** \brief client actor address in unlinking */
     address_ptr_t client_addr;
 };
 
@@ -294,8 +306,11 @@ struct unlink_notify_t {
  *  \brief "server" asks "client" for closing connection
  */
 struct unlink_request_t {
-    address_ptr_t server_addr;
+    /** \brief link to unlink response payload type */
     using response_t = unlink_notify_t;
+
+    /** \brief server actor address in unlinking */
+    address_ptr_t server_addr;
 };
 
 } // namespace payload
