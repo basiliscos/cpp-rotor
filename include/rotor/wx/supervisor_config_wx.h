@@ -35,13 +35,20 @@ struct supervisor_config_wx_t : public supervisor_config_t {
 
 /** \brief config builder for wx supervisor */
 template <typename Supervisor> struct supervisor_config_wx_builder_t : supervisor_config_builder_t<Supervisor> {
+    /** \brief final builder class */
     using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
+
+    /** \brief parent config builder */
     using parent_t = supervisor_config_builder_t<Supervisor>;
     using parent_t::parent_t;
 
+    /** \brief bit mask for event handler validation */
     constexpr static const std::uint32_t EVT_LOOP = 1 << 2;
+
+    /** \brief bit mask for all required fields */
     constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | EVT_LOOP;
 
+    /** \brief sets event handler */
     builder_t &&handler(wxEvtHandler *handler_) && {
         parent_t::config.handler = handler_;
         parent_t::mask = (parent_t::mask & ~EVT_LOOP);

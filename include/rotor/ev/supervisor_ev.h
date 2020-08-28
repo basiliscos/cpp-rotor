@@ -33,6 +33,11 @@ namespace ev {
  *
  */
 struct supervisor_ev_t : public supervisor_t {
+    /** \brief injects an alias for supervisor_config_ev_t */
+    using config_t = supervisor_config_ev_t;
+
+    /** \brief injects templated supervisor_config_ev_builder_t */
+    template <typename Supervisor> using config_builder_t = supervisor_config_ev_builder_t<Supervisor>;
 
     /** \struct timer_t
      * \brief inheritance of ev_timer, which holds rotor `timer_id`
@@ -45,9 +50,6 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief an alias for unique pointer, holding `timer_t` */
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
-    using config_t = supervisor_config_ev_t;
-    template <typename Supervisor> using config_builder_t = supervisor_config_ev_builder_t<Supervisor>;
-
     /** brief constructs new supervisor from parent supervisor and supervisor config
      *
      * the `parent` supervisor can be `null`
@@ -57,13 +59,13 @@ struct supervisor_ev_t : public supervisor_t {
     virtual void do_initialize(system_context_t *ctx) noexcept override;
     ~supervisor_ev_t();
 
-    virtual void start() noexcept override;
-    virtual void shutdown() noexcept override;
-    virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
-    virtual void cancel_timer(request_id_t timer_id) noexcept override;
-    virtual void on_timer_trigger(request_id_t timer_id) noexcept override;
-    virtual void shutdown_finish() noexcept override;
+    void start() noexcept override;
+    void shutdown() noexcept override;
+    void enqueue(message_ptr_t message) noexcept override;
+    void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
+    void cancel_timer(request_id_t timer_id) noexcept override;
+    void on_timer_trigger(request_id_t timer_id) noexcept override;
+    void shutdown_finish() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
     inline struct ev_loop *get_loop() noexcept { return loop; }

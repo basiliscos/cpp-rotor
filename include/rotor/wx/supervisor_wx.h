@@ -40,22 +40,21 @@ namespace wx {
  */
 struct supervisor_wx_t : public supervisor_t {
 
+    /** \brief injects an alias for supervisor_config_wx_t */
     using config_t = supervisor_config_wx_t;
+
+    /** \brief injects templated supervisor_config_wx_builder_t */
     template <typename Supervisor> using config_builder_t = supervisor_config_wx_builder_t<Supervisor>;
 
-    /* \brief constructs new supervisor from parent supervisor and supervisor config
-     *
-     * the `parent` supervisor can be `null`
-     *
-     */
+    /** \brief constructs new supervisor from supervisor config */
     supervisor_wx_t(supervisor_config_wx_t &config);
 
-    virtual void start() noexcept override;
-    virtual void shutdown() noexcept override;
-    virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
-    virtual void cancel_timer(request_id_t timer_id) noexcept override;
-    virtual void on_timer_trigger(request_id_t timer_id) noexcept override;
+    void start() noexcept override;
+    void shutdown() noexcept override;
+    void enqueue(message_ptr_t message) noexcept override;
+    void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
+    void cancel_timer(request_id_t timer_id) noexcept override;
+    void on_timer_trigger(request_id_t timer_id) noexcept override;
 
     /** \brief returns pointer to the wx system context */
     inline system_context_wx_t *get_context() noexcept { return static_cast<system_context_wx_t *>(context); }
