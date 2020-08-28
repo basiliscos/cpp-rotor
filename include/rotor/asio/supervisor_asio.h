@@ -49,7 +49,10 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  */
 struct supervisor_asio_t : public supervisor_t {
 
+    /** \brief injects an alias for supervisor_config_asio_t */
     using config_t = supervisor_config_asio_t;
+
+    /** \brief injects templated supervisor_config_asio_builder_t */
     template <typename Supervisor> using config_builder_t = supervisor_config_asio_builder_t<Supervisor>;
 
     /** \struct timer_t
@@ -105,7 +108,10 @@ struct supervisor_asio_t : public supervisor_t {
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
   protected:
+    /** \brief guard type : alias for asio executor_work_guard */
     using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
+
+    /** \brief alias for a guard */
     using guard_ptr_t = std::unique_ptr<guard_t>;
 
     /** \brief timer id to timer pointer mapping */
@@ -114,6 +120,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief config for the supervisor */
     supervisor_config_asio_t::strand_ptr_t strand;
 
+    /** \brief guard to control ownership of the io-context */
     guard_ptr_t guard;
 };
 

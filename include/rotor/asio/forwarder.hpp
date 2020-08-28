@@ -41,20 +41,28 @@ template <typename T> struct callback_traits {};
 
 /** \brief callback decomposer specialization for reference argument */
 template <typename Class, typename M> struct callback_traits<void (Class::*)(M &) noexcept> {
+    /** \brief number of arguments for asio callback (1) */
     using args_count = count::_1;
+
+    /** \brief argument type is a reference */
     using arg_type = M &;
 };
 
 /** \brief callback decomposer specialization for value argument */
 template <typename Class, typename M> struct callback_traits<void (Class::*)(M) noexcept> {
+    /** \brief number of arguments for asio callback (1) */
     using args_count = count::_1;
-    /** \brief alias for message type */
+
+    /** \brief argument type is a value */
     using arg_type = M;
 };
 
 /** \brief callback decomposer specialization for no-argument callback */
 template <typename Class> struct callback_traits<void (Class::*)() noexcept> {
+    /** \brief number of arguments for asio callback (0) */
     using args_count = count::_0;
+
+    /** \brief argument type is missing (void) */
     using arg_type = void;
 };
 
@@ -87,6 +95,7 @@ template <typename Actor, typename Handler> struct forwarder_base_t<Actor, Handl
 /** \brief forwarder base implementation with result and error handlers */
 template <typename Actor, typename Handler, typename ErrHandler>
 struct forwarder_base_t : forwarder_base_t<Actor, Handler, void> {
+    /** \brief alias for base class */
     using base_t = forwarder_base_t<Actor, Handler, void>;
 
     /** \brief constructs forwarder_base for the actor from it's member functions: positive
@@ -111,6 +120,7 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  */
 template <typename Actor, typename Handler, typename ErrHandler>
 struct forwarder_t<Actor, Handler, details::count::_0, ErrHandler> : forwarder_base_t<Actor, Handler, ErrHandler> {
+    /** \brief alias for base class */
     using base_t = forwarder_base_t<Actor, Handler, ErrHandler>;
     using base_t::base_t;
 
@@ -138,6 +148,7 @@ struct forwarder_t<Actor, Handler, details::count::_0, ErrHandler> : forwarder_b
 /** \brief forwarder specialization for 1-argument asio-callback */
 template <typename Actor, typename Handler, typename ErrHandler>
 struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> : forwarder_base_t<Actor, Handler, ErrHandler> {
+    /** \brief alias for base class */
     using base_t = forwarder_base_t<Actor, Handler, ErrHandler>;
     using base_t::base_t;
 
@@ -166,6 +177,7 @@ struct forwarder_t<Actor, Handler, details::count::_1, ErrHandler> : forwarder_b
 /** \brief forwarder specialization for 1-argument asio-callback without error handler */
 template <typename Actor, typename Handler>
 struct forwarder_t<Actor, Handler, details::count::_0, void> : forwarder_base_t<Actor, Handler, void> {
+    /** \brief alias for base class */
     using base_t = forwarder_base_t<Actor, Handler, void>;
     using base_t::base_t;
 
@@ -186,6 +198,7 @@ struct forwarder_t<Actor, Handler, details::count::_0, void> : forwarder_base_t<
 /** \brief forwarder specialization, when error case is not possible  */
 template <typename Actor, typename Handler>
 struct forwarder_t<Actor, Handler, details::count::_1, void> : forwarder_base_t<Actor, Handler, void> {
+    /** \brief alias for base class */
     using base_t = forwarder_base_t<Actor, Handler, void>;
     using base_t::base_t;
 
@@ -204,11 +217,12 @@ struct forwarder_t<Actor, Handler, details::count::_1, void> : forwarder_base_t<
     }
 };
 
-/** construtor deduction guide for forwarder */
+/** construtor deduction guide for forwarder (without error handler) */
 template <typename Actor, typename Handler>
 forwarder_t(Actor &, Handler &&)
     -> forwarder_t<Actor, Handler, typename details::callback_traits<Handler>::args_count, void>;
 
+/** construtor deduction guide for forwarder (with error handler) */
 template <typename Actor, typename Handler, typename ErrHandler>
 forwarder_t(Actor &, Handler &&, ErrHandler &&)
     -> forwarder_t<Actor, Handler, typename details::callback_traits<Handler>::args_count, ErrHandler>;
