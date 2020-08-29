@@ -46,9 +46,9 @@ void plugin_base_t::deactivate() noexcept {
     }
 }
 
-bool plugin_base_t::handle_shutdown(message::shutdown_request_t *) noexcept { return true; }
-
 bool plugin_base_t::handle_init(message::init_request_t *) noexcept { return true; }
+
+bool plugin_base_t::handle_shutdown(message::shutdown_request_t *) noexcept { return true; }
 
 void plugin_base_t::handle_start(message::start_trigger_t *) noexcept {}
 

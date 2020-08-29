@@ -72,6 +72,7 @@ struct delivery_plugin_base_t : public plugin_base_t {
 template <typename LocalDelivery = local_delivery_t> struct delivery_plugin_t : public delivery_plugin_base_t {
     using delivery_plugin_base_t::delivery_plugin_base_t;
 
+    /** The plugin unique identity to allow further static_cast'ing*/
     static const void *class_identity;
     const void *identity() const noexcept override { return class_identity; }
     void process() noexcept override;

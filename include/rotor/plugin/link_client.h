@@ -31,7 +31,9 @@ struct link_client_plugin_t : public plugin_base_t {
     using unlink_reaction_t = std::function<bool(message::unlink_request_t &message)>;
     using plugin_base_t::plugin_base_t;
 
+    /** The plugin unique identity to allow further static_cast'ing*/
     static const void *class_identity;
+
     const void *identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;

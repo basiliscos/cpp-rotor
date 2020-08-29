@@ -30,7 +30,9 @@ using resource_id_t = std::size_t;
 struct resources_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
+    /** The plugin unique identity to allow further static_cast'ing*/
     static const void *class_identity;
+
     const void *identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;

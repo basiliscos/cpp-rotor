@@ -66,7 +66,9 @@ struct registry_plugin_t : public plugin_base_t {
         friend struct registry_plugin_t;
     };
 
+    /** The plugin unique identity to allow further static_cast'ing*/
     static const void *class_identity;
+
     const void *identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
