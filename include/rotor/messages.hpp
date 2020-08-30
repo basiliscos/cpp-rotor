@@ -219,7 +219,7 @@ struct deregistration_notify_t {
  *  \brief removes single service by name from a registry
  */
 struct deregistration_service_t {
-    /** \brief the  name of the sevice address to be remoed for a registry */
+    /** \brief the  name of the sevice address to be removed for a registry */
     std::string service_name;
 };
 
@@ -313,46 +313,84 @@ struct unlink_request_t {
 /// namespace for rotor core messages (which just transform payloads)
 namespace message {
 
+// subscription-related
+/** \brief unsubscription confirmation message */
 using unsubscription_t = message_t<payload::unsubscription_confirmation_t>;
+/** \brief external unsubscription message */
 using unsubscription_external_t = message_t<payload::external_unsubscription_t>;
+/** \brief subscription confirmation message */
 using subscription_t = message_t<payload::subscription_confirmation_t>;
 
-using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
-using init_response_t = request_traits_t<payload::initialize_actor_t>::response::message_t;
-
-using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
-using init_response_t = request_traits_t<payload::initialize_actor_t>::response::message_t;
-
-using start_trigger_t = message_t<payload::start_actor_t>;
-
-using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
-using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;
-using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::response::message_t;
-
-using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
-using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
-
+/** \brief external subscription message */
 using external_subscription_t = message_t<payload::external_subscription_t>;
+/** \brief unsubscription commit message */
 using commit_unsubscription_t = message_t<payload::commit_unsubscription_t>;
+
+/** \brief delivers foreign message to the actor's supervisor
+ *
+ * Unpon delivery the appropriate handler on the actor will be thread-safely
+ * called by it's supervisor
+ */
 using handler_call_t = message_t<payload::handler_call_t>;
 
+// lifetime-related
+/** \brief actor initialization request */
+using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
+/** \brief actor initialization response */
+using init_response_t = request_traits_t<payload::initialize_actor_t>::response::message_t;
+
+/** \brief actor start trigger */
+using start_trigger_t = message_t<payload::start_actor_t>;
+
+/** \brief actor shutdown trigger */
+using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
+/** \brief actor shutdown request */
+using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;
+/** \brief actor shutdown response */
+using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::response::message_t;
+
+/** \brief supervisor's message upon actor instantiation */
 using create_actor_t = message_t<payload::create_actor_t>;
 
+//registry-related
+/** \brief name/address registration request */
 using registration_request_t = request_traits_t<payload::registration_request_t>::request::message_t;
+/** \brief name/address registration response */
 using registration_response_t = request_traits_t<payload::registration_request_t>::response::message_t;
+/** \brief deregistration notification (from client) */
 using deregistration_notify_t = message_t<payload::deregistration_notify_t>;
+/** \brief deregistration notification (from registry-server) */
 using deregistration_service_t = message_t<payload::deregistration_service_t>;
+
+/** \brief name discovery request */
 using discovery_request_t = request_traits_t<payload::discovery_request_t>::request::message_t;
+/** \brief name discovery response */
 using discovery_response_t = request_traits_t<payload::discovery_request_t>::response::message_t;
+/** \brief name discovery promise (aka get response when name will be available) */
 using discovery_promise_t = request_traits_t<payload::discovery_promise_t>::request::message_t;
+/** \brief name discovery future (reply to promise) */
 using discovery_future_t = request_traits_t<payload::discovery_promise_t>::response::message_t;
+/** \brief name discovery promise cancellation */
 using discovery_cancel_t = message_t<payload::discovery_cancel_t>;
 
+// link-related
+/** \brief actor link request */
 using link_request_t = request_traits_t<payload::link_request_t>::request::message_t;
+/** \brief actor link response */
 using link_response_t = request_traits_t<payload::link_request_t>::response::message_t;
+/** \brief unlink notification (client is no longer interested in the link) */
 using unlink_notify_t = message_t<payload::unlink_notify_t>;
+/** \brief unlink request (server is asking client to cancel link) */
 using unlink_request_t = request_traits_t<payload::unlink_request_t>::request::message_t;
+/** \brief unlink response (client confirms link cancellation) */
 using unlink_response_t = request_traits_t<payload::unlink_request_t>::response::message_t;
+
+// misc
+/** \brief actor state request */
+using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
+/** \brief actor state response */
+using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
+
 
 } // namespace message
 
