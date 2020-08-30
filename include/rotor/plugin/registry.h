@@ -86,13 +86,30 @@ struct registry_plugin_t : public plugin_base_t {
     /** \brief reaction on discovery future */
     virtual void on_future(message::discovery_future_t &message) noexcept;
 
-    virtual bool register_name(const std::string &name, const address_ptr_t &address) noexcept;
+    /** \brief enqueues name/address registration
+     *
+     * It links with registry actor first upon demand, and then sends to it
+     * name registration request(s).
+     */
+    virtual void register_name(const std::string &name, const address_ptr_t &address) noexcept;
+
+    /** \brief creates name discovery task
+     *
+     * The address pointer is the place, where the discovered address should be stored.
+     *
+     * The `delayed` means: if the name is missing in the registry, do not response
+     * with error (which will cause shutdown of client), but wait until the name be
+     * registered, and only then reply with found address. In other words: instead
+     * of sending discovery request, it will send discovery future.
+     *
+     */
     virtual discovery_task_t &discover_name(const std::string &name, address_ptr_t &address,
                                             bool delayed = false) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
   private:

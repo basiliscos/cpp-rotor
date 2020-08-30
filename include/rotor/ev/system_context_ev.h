@@ -19,6 +19,7 @@ struct supervisor_ev_t;
 /** \brief intrusive pointer for ev supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;
 
+/** \brief alias for system main system context */
 using system_context_ev_t = rotor::system_context_t;
 
 /** \brief intrusive pointer type for ev system context */
