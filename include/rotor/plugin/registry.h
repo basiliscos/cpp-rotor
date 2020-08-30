@@ -28,20 +28,24 @@ namespace rotor::plugin {
 struct registry_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
+    /** \brief phase for each discovery task: discovering or linking */
     enum class phase_t { discovering, linking };
 
     /** \struct discovery_task_t
      * \brief helper class to invoke callback upon address discovery
      */
     struct discovery_task_t {
+        /** \brief callback for the discovery progress */
         using callback_t = std::function<void(phase_t phase, const std::error_code &)>;
 
+        /** \brief sets that linking should be performed on operational-only discovered address */
         discovery_task_t &link(bool operational_only_ = true) noexcept {
             link_on_discovery = true;
             operational_only = operational_only_;
             return *this;
         }
 
+        /** \brief discovery progress callback setter */
         template <typename Callback> void callback(Callback &&cb) noexcept {
             task_callback = std::forward<Callback>(cb);
         }
@@ -73,8 +77,13 @@ struct registry_plugin_t : public plugin_base_t {
 
     void activate(actor_base_t *actor) noexcept override;
 
+    /** \brief reaction on registration response */
     virtual void on_registration(message::registration_response_t &) noexcept;
+
+    /** \brief reaction on discovery response */
     virtual void on_discovery(message::discovery_response_t &) noexcept;
+
+    /** \brief reaction on discovery future */
     virtual void on_future(message::discovery_future_t &message) noexcept;
 
     virtual bool register_name(const std::string &name, const address_ptr_t &address) noexcept;

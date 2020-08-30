@@ -26,9 +26,16 @@ namespace rotor::plugin {
  *
  */
 struct link_client_plugin_t : public plugin_base_t {
-
+    /** \brief callback action upon link */
     using link_callback_t = std::function<void(const std::error_code &)>;
+
+    /** \brief unlink interceptor callback
+     *
+     * if it returns true, the unlink is not performed. It is assumed,
+     * that `forget_link` will be called later
+     */
     using unlink_reaction_t = std::function<bool(message::unlink_request_t &message)>;
+
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
@@ -37,17 +44,32 @@ struct link_client_plugin_t : public plugin_base_t {
     const void *identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
+
+    /** \brief attempt to link with the address
+     *
+     * If `operational_only` is set, then the server side will respond
+     * only upon becoming operational.
+     *
+     * The link callback is always invoked upon response (successful or
+     * nor) receiving.
+     *
+     */
     virtual void link(const address_ptr_t &address, bool operational_only = true,
                       const link_callback_t &callback = {}) noexcept;
 
+    /** \brief sets actor's callback on unlink request */
     template <typename F> void on_unlink(F &&callback) noexcept { unlink_reaction = std::forward<F>(callback); }
 
+    /** \brief handler for link response */
     virtual void on_link_response(message::link_response_t &message) noexcept;
+
+    /** \brief handler for unlink request */
     virtual void on_unlink_request(message::unlink_request_t &message) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
+    /** \brief generic non-public fields & methods accessor */
     template <typename T, typename Tag, typename... Args> T access(Args &&...) noexcept;
 
   private:

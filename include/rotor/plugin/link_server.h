@@ -34,13 +34,19 @@ struct link_server_plugin_t : public plugin_base_t {
 
     void activate(actor_base_t *actor) noexcept override;
 
+    /** \brief reaction upon link request */
     virtual void on_link_request(message::link_request_t &message) noexcept;
+
+    /** \brief reaction upon link unlink response */
     virtual void on_unlink_response(message::unlink_response_t &message) noexcept;
+
+    /** \brief reaction upon link unlink notify */
     virtual void on_unlink_notify(message::unlink_notify_t &message) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     void handle_start(message::start_trigger_t *message) noexcept override;
 
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
   private:
