@@ -29,8 +29,11 @@ struct init_shutdown_plugin_t : public plugin_base_t {
 
     void activate(actor_base_t *actor) noexcept override;
 
-    virtual void on_init(message::init_request_t &message) noexcept;
-    virtual void on_shutdown(message::shutdown_request_t &message) noexcept;
+    /** \brief init message handler */
+    void on_init(message::init_request_t &message) noexcept;
+
+    /** \brief shutdown message handler */
+    void on_shutdown(message::shutdown_request_t &message) noexcept;
 
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;

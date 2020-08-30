@@ -32,13 +32,47 @@ struct child_manager_plugin_t : public plugin_base_t {
     void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
 
+    /** \brief pre-initializes child and sends create_child message to the supervisor */
     virtual void create_child(const actor_ptr_t &actor) noexcept;
+
+    /** \brief removes the child from the supervisor
+     *
+     * If there was an error, the supervisor might trigger shutdown self (in accordance with policy)
+     *
+     * Otherwise, if all is ok, it continues the supervisor initialization
+     */
     virtual void remove_child(const actor_base_t &actor) noexcept;
+
+    /** \brief reaction on child shutdown failure
+     *
+     * By default it is forwarded to system context, which terminates program by default
+     */
     virtual void on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept;
 
+    /** \brief sends initialization request upon actor creation message */
     virtual void on_create(message::create_actor_t &message) noexcept;
+
+    /** \brief reaction on (maybe unsuccessful) init confirmatinon
+     *
+     * Possibilities:
+     *  - shutdown child
+     *  - shutdown self (supervisor)
+     *  - continue init
+     *
+     */
     virtual void on_init(message::init_response_t &message) noexcept;
+
+    /** \brief reaction on shutdown trigger
+     *
+     * Possibilities:
+     *  - shutdown self (supervisor), via shutdown request
+     *  - shutdown self (supervisor) directly, if there is no root supervisor
+     *  - shutdown request for a child
+     *
+     */
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &message) noexcept;
+
+    /** \brief reacion on shutdown confirmation (i.e. perform some cleanings) */
     virtual void on_shutdown_confirm(message::shutdown_response_t &message) noexcept;
 
     /** \brief answers about actor's state, identified by it's address
@@ -58,13 +92,13 @@ struct child_manager_plugin_t : public plugin_base_t {
 
     bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept override;
 
-    void unsubscribe_all(bool continue_shutdown) noexcept;
-
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
   private:
     bool has_initializing() const noexcept;
     void init_continue() noexcept;
+    void unsubscribe_all(bool continue_shutdown) noexcept;
 
     struct actor_state_t {
         /** \brief intrusive pointer to actor */

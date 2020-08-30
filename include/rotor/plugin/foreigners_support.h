@@ -24,8 +24,13 @@ struct foreigners_support_plugin_t : public plugin_base_t {
     void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
 
+    /** \brief handler for message call */
     virtual void on_call(message::handler_call_t &message) noexcept;
+
+    /** \brief unsubscription message handler */
     virtual void on_unsubscription(message::commit_unsubscription_t &message) noexcept;
+
+    /** \brief external unsubscription message handler */
     virtual void on_subscription_external(message::external_subscription_t &message) noexcept;
 
   private:

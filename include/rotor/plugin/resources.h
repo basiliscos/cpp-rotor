@@ -26,6 +26,10 @@ using resource_id_t = std::size_t;
  * - actor can wait, until it receives handshake from remote system
  * - etc...
  *
+ * The used `resource_id` can be anything, which has meaning for
+ * an actor. Internally `resource_id` is just an index in vector,
+ * so don't create it too big.
+ *
  */
 struct resources_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
@@ -39,11 +43,32 @@ struct resources_plugin_t : public plugin_base_t {
     bool handle_init(message::init_request_t *message) noexcept override;
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
 
+    /** \brief increments the resource counter (aka locks)
+     *
+     * It will block init/shutdown until the resource be released
+     *
+     */
     virtual void acquire(resource_id_t = 0) noexcept;
-    virtual std::uint32_t has(resource_id_t = 0) noexcept;
+
+    /** \brief decrements the resource counter (aka locks)
+     *
+     * If there is no any resource free, the init/shutdown
+     * procedure (if it was started) will be continued
+     *
+     */
     virtual bool release(resource_id_t = 0) noexcept;
+
+    /** \brief returns counter value for `resource_id`
+     *
+     * if the resource was freed, zero is returned
+     *
+     */
+    virtual std::uint32_t has(resource_id_t = 0) noexcept;
+
+    /** \brief returns true if there is any resource locked */
     virtual bool has_any() noexcept;
 
+    /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
   private:
