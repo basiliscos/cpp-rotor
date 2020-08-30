@@ -91,7 +91,6 @@ struct supervisor_t : public actor_base_t {
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
 
-    /** auto-start children here */
     virtual void do_initialize(system_context_t *ctx) noexcept override;
 
     /** \brief process queue of messages of locality leader
@@ -171,7 +170,7 @@ struct supervisor_t : public actor_base_t {
      * The thread-safety should be guaranteed by derived class and/or used event-loop.
      *
      * This method is used for messaging between supervisors with different
-     * localities, or actors which use different loops/threads.
+     * localities, event loops or threads.
      *
      */
     virtual void enqueue(message_ptr_t message) noexcept = 0;

@@ -73,7 +73,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief timer id to timer pointer mapping type */
     using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
-    /** \brief constructs new supervisor from supervisor config */
+    /** \brief constructs new supervisor from asio supervisor config */
     supervisor_asio_t(supervisor_config_asio_t &config);
 
     virtual address_ptr_t make_address() noexcept override;

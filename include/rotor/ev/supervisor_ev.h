@@ -50,11 +50,7 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief an alias for unique pointer, holding `timer_t` */
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
-    /** brief constructs new supervisor from parent supervisor and supervisor config
-     *
-     * the `parent` supervisor can be `null`
-     *
-     */
+    /** \brief constructs new supervisor from ev supervisor config */
     supervisor_ev_t(supervisor_config_ev_t &config);
     virtual void do_initialize(system_context_t *ctx) noexcept override;
     ~supervisor_ev_t();
@@ -70,11 +66,11 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief retuns ev-loop associated with the supervisor */
     inline struct ev_loop *get_loop() noexcept { return loop; }
 
-    /** \brief returns pointer to the wx system context */
+    /** \brief returns pointer to the ev system context */
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
   protected:
-    /** \brief a type for mapping `timer_id` to timer */
+    /** \brief a type for mapping `timer_id` to timer pointer */
     using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
     /** \brief EV-specific trampoline function for `on_async` method */

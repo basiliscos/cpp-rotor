@@ -11,17 +11,12 @@
 #include "state.h"
 #include "request.hpp"
 #include "subscription_point.h"
+#include "forward.hpp"
 
 namespace rotor {
 
-struct handler_base_t;
-using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
-using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
-
+/// namespace for rotor core payloads
 namespace payload {
-
-using callback_t = std::function<void()>;
-using callback_ptr_t = std::shared_ptr<callback_t>;
 
 /** \struct initialize_confirmation_t
  *  \brief Message with this payload is sent from an actor to its supervisor to
@@ -315,6 +310,7 @@ struct unlink_request_t {
 
 } // namespace payload
 
+/// namespace for rotor core messages (which just transform payloads)
 namespace message {
 
 using unsubscription_t = message_t<payload::unsubscription_confirmation_t>;
