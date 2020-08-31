@@ -18,7 +18,7 @@ namespace rotor::plugin {
  * \brief allows actor to have active (client) role in linking
  *
  * The plugin keeps records of all "servers" where it is connected to.
- * When actor it will notify peers about unlinking.
+ * When actor is going to shutdown it will notify peers about unlinking.
  *
  * It is allowed to have a custom actors' callback on every link result.
  * connected clients will send unlink confirmation (or until

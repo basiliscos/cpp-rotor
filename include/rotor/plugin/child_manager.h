@@ -67,7 +67,7 @@ struct child_manager_plugin_t : public plugin_base_t {
      * Possibilities:
      *  - shutdown self (supervisor), via shutdown request
      *  - shutdown self (supervisor) directly, if there is no root supervisor
-     *  - shutdown request for a child
+     *  - shutdown via request for a child
      *
      */
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &message) noexcept;

@@ -13,7 +13,7 @@ namespace rotor::plugin {
 /** \struct starter_plugin_t
  *
  * \brief allows custom (actor) subscriptions and it is responsibe
- * for starting actor when it is initialized.
+ * for starting actor when it receives {@link message::start_trigger_t}.
  *
  */
 struct starter_plugin_t : public plugin_base_t {

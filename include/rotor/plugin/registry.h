@@ -22,7 +22,8 @@ namespace rotor::plugin {
  *
  * Simialary the {@link registry_t} can be used to discover name in the registry
  * and link the current actor to the target address during init phase; there is
- * no reverse operation during shutdown phase.
+ * no reverse operation during shutdown phase, because unlinking will be handled
+ * by {@link link_client_t} plugin.
  *
  */
 struct registry_plugin_t : public plugin_base_t {

@@ -19,7 +19,7 @@ enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
  *
  */
 struct plugin_base_t {
-    /** \brief possible plugin's reaactions on actor lifetime events */
+    /** \brief possible plugin's reactions on actor lifetime events */
     enum reaction_t {
         INIT = 1 << 0,
         SHUTDOWN = 1 << 1,
@@ -102,16 +102,14 @@ struct plugin_base_t {
      */
     virtual bool handle_subscription(message::subscription_t &message) noexcept;
 
-    /** \brief polls plugin, whether it is done with subscription
+    /** \brief polls plugin, whether it is done with unsubscription
      *
      * All plugins are polled for unsubscription, no special handling is
      * needed unless you know what your are doing.
      *
      * The `true` is returned, that means plugin is done with unsubscription and
-     * will not be longer polled in future.
+     * will not be longer polled in future. The default is `false`.
      *
-     * The this implementation *must* be invoked sooner or longer, as it removes
-     * subscription info, otherwise memory leaks will be possible.
      */
     virtual bool handle_unsubscription(const subscription_point_t &point, bool external) noexcept;
 

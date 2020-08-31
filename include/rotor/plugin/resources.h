@@ -50,7 +50,7 @@ struct resources_plugin_t : public plugin_base_t {
      */
     virtual void acquire(resource_id_t = 0) noexcept;
 
-    /** \brief decrements the resource counter (aka locks)
+    /** \brief decrements the resource counter (aka unlocks)
      *
      * If there is no any resource free, the init/shutdown
      * procedure (if it was started) will be continued
@@ -65,7 +65,7 @@ struct resources_plugin_t : public plugin_base_t {
      */
     virtual std::uint32_t has(resource_id_t = 0) noexcept;
 
-    /** \brief returns true if there is any resource locked */
+    /** \brief returns true if there is any resource is locked */
     virtual bool has_any() noexcept;
 
     /** \brief generic non-public fields accessor */
