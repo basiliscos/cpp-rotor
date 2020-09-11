@@ -39,31 +39,30 @@ as the supervisor does not uses any event loop:
 #include "rotor.hpp"
 #include <iostream>
 
-struct hello_actor: public rotor::actor_base_t {
+struct hello_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         std::cout << "hello world\n";
-        supervisor.do_shutdown();   // optional
+        supervisor->do_shutdown();
     }
 };
 
 struct dummy_supervisor : public rotor::supervisor_t {
     using rotor::supervisor_t::supervisor_t;
 
-    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
-    void cancel_timer(timer_id_t) noexcept override {}
+    void start_timer(const rotor::pt::time_duration &, rotor::request_id_t) noexcept override {}
+    void cancel_timer(rotor::request_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
 };
 
-
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    rotor::supervisor_config_t cfg{timeout};
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
-    sup->create_actor<hello_actor>(timeout);
+    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
+    sup->create_actor<hello_actor>().timeout(timeout).finish();
     sup->do_process();
     return 0;
 }
@@ -77,26 +76,28 @@ int main() {
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 
-struct hello_actor : public rotor::actor_base_t {
+struct server_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         std::cout << "hello world\n";
-        supervisor.do_shutdown();   // optional
+        supervisor->shutdown();
     }
 };
 
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
-    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = boost::posix_time::milliseconds{500};
-    rotor::asio::supervisor_config_asio_t conf{timeout, std::move(stand)};
-    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
+    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>()
+               .strand(strand).timeout(timeout).finish();
 
-    auto hello = sup->create_actor<hello_actor>(timeout);
+    sup->create_actor<server_actor>().timeout(timeout).finish();
 
     sup->start();
     io_context.run();
+
     return 0;
 }
 ~~~
@@ -131,19 +132,19 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-        rotor::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         send<ping_t>(ponger_addr);
     }
 
     void on_pong(rotor::message_t<pong_t> &) noexcept {
         std::cout << "pong\n";
-        supervisor.do_shutdown(); // optional
+        supervisor->do_shutdown(); // optional
     }
 
     rotor::address_ptr_t ponger_addr;
@@ -153,9 +154,9 @@ struct ponger_t : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {
@@ -170,8 +171,8 @@ struct ponger_t : public rotor::actor_base_t {
 struct dummy_supervisor : public rotor::supervisor_t {
     using rotor::supervisor_t::supervisor_t;
 
-    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
-    void cancel_timer(timer_id_t) noexcept override {}
+    void start_timer(const rotor::pt::time_duration &, rotor::request_id_t) noexcept override {}
+    void cancel_timer(rotor::request_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -180,11 +181,10 @@ struct dummy_supervisor : public rotor::supervisor_t {
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    rotor::supervisor_config_t cfg{timeout};
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
+    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
 
-    auto pinger = sup->create_actor<pinger_t>(timeout);
-    auto ponger = sup->create_actor<ponger_t>(timeout);
+    auto pinger = sup->create_actor<pinger_t>().init_timeout(timeout).shutdown_timeout(timeout).finish();
+    auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish(); // shortcut for init/shutdown
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
@@ -223,8 +223,8 @@ struct pub_t : public r::actor_base_t {
 
     void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         send<payload_t>(pub_addr);
     }
 
@@ -236,9 +236,10 @@ struct sub_t : public r::actor_base_t {
 
     void set_pub_addr(const r::address_ptr_t &addr) { pub_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&sub_t::on_payload, pub_addr);
-        rotor::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>(
+            [&](auto &p) { p.subscribe_actor(&sub_t::on_payload, pub_addr); });
     }
 
     void on_payload(sample_message_t &) noexcept { std::cout << "received on " << static_cast<void *>(this) << "\n"; }
@@ -248,8 +249,8 @@ struct sub_t : public r::actor_base_t {
 
 struct dummy_supervisor : public rotor::supervisor_t {
     using rotor::supervisor_t::supervisor_t;
-    void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
-    void cancel_timer(timer_id_t) noexcept override {}
+    void start_timer(const rotor::pt::time_duration &, r::request_id_t) noexcept override {}
+    void cancel_timer(r::request_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}
@@ -258,13 +259,12 @@ struct dummy_supervisor : public rotor::supervisor_t {
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    rotor::supervisor_config_t cfg{timeout};
-    auto sup = ctx.create_supervisor<dummy_supervisor>(nullptr, cfg);
+    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
 
     auto pub_addr = sup->create_address(); // (1)
-    auto pub = sup->create_actor<pub_t>(timeout);
-    auto sub1 = sup->create_actor<sub_t>(timeout);
-    auto sub2 = sup->create_actor<sub_t>(timeout);
+    auto pub = sup->create_actor<pub_t>().timeout(timeout).finish();
+    auto sub1 = sup->create_actor<sub_t>().timeout(timeout).finish();
+    auto sub2 = sup->create_actor<sub_t>().timeout(timeout).finish();
 
     pub->set_pub_addr(pub_addr);
     sub1->set_pub_addr(pub_addr);
@@ -289,6 +289,9 @@ The address in the line `(1)` is arbitrary: the address of pub-actor itself
 as well as the address of the supervisor can be used... even address of different
 supervisor can be used.
 
+Please note, that sinse `v0.09` there is a new way of subscribing an actor to
+messages: now it is done via `starter_plugin_t` and overriding `configure`
+method of the actor.
 
 ## request-response example (boost::asio)
 
@@ -333,6 +336,12 @@ using response_t = rotor::request_traits_t<payload::sample_req_t>::response::mes
 struct server_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&server_actor::on_request); });
+    }
+
     void on_request(message::request_t &req) noexcept {
         auto in = req.payload.request_payload.value;
         if (in >= 0) {
@@ -344,11 +353,6 @@ struct server_actor : public rotor::actor_base_t {
             reply_with_error(req, ec);
         }
     }
-
-    void init_start() noexcept override {
-        subscribe(&server_actor::on_request);
-        rotor::actor_base_t::init_start();
-    }
 };
 
 struct client_actor : public rotor::actor_base_t {
@@ -358,9 +362,10 @@ struct client_actor : public rotor::actor_base_t {
 
     void set_server(const rotor::address_ptr_t addr) { server_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&client_actor::on_response);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&client_actor::on_response); });
     }
 
     void on_response(message::response_t &res) noexcept {
@@ -369,11 +374,11 @@ struct client_actor : public rotor::actor_base_t {
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";
         }
-        supervisor.do_shutdown(); // optional;
+        supervisor->do_shutdown(); // optional;
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-        rotor::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         auto timeout = rotor::pt::milliseconds{1};
         request<payload::sample_req_t>(server_addr, 25.0).send(timeout);
     }
@@ -382,12 +387,12 @@ struct client_actor : public rotor::actor_base_t {
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
-    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = boost::posix_time::milliseconds{500};
-    rotor::asio::supervisor_config_asio_t conf{timeout, std::move(stand)};
-    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
-    auto server = sup->create_actor<server_actor>(timeout);
-    auto client = sup->create_actor<client_actor>(timeout);
+    auto sup =
+        system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
+    auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
+    auto client = sup->create_actor<client_actor>().timeout(timeout).finish();
     client->set_server(server->get_address());
     sup->do_process();
     return 0;

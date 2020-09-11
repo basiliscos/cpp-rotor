@@ -5,6 +5,7 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.09 (xx-XX-xxxx)
+ - [improvement/breaking] plugin system where introduced for actors
  - [improvement] `actor_config_t` was introduced, which now holds pointer to
 supervisor, init and shutdown timeouts
  - [improvement] `builder` pattern was introduced to simplify actors construction

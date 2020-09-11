@@ -40,3 +40,5 @@
  - [Learn You Some Erlang for great good!][erlang-book] very recommended free ebook about erlang reliability and supervisors
  - [documentation][akka-doc] of famous java actor framrwork [akka][akka]; good for gaining insights
  - [overview of actor frameworks][yt-my] (my video in Russian)
+ - you can view examples in the `examples` source dir as well as in the `tests` dir
+ 
