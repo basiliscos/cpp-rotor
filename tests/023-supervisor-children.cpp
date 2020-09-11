@@ -152,7 +152,6 @@ struct pre_shutdown_actor_t : public rt::actor_test_t {
 
     void shutdown_start() noexcept override {
         do_shutdown();
-        std::this_thread::sleep_for()
         rt::actor_test_t::shutdown_start();
     }
 };
