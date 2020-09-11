@@ -5,7 +5,7 @@
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
 [wx-widgets]: https://www.wxwidgets.org/ "wxWidgets"
-[ev]: http://software.schmorp.de/pkg/libev.html
+[libev]: http://software.schmorp.de/pkg/libev.html "libev"
 
 C++ 17 is required to use rotor.
 
@@ -58,17 +58,17 @@ target_link_libraries(my_target rotor::asio)
 ## Adding rotor into a project (classical way)
 
 ~~~
-git clone https://github.com/basiliscos/cpp-rotor.git external/rotor lib/cpp-rotor --branch=v0.09
+git clone https://github.com/basiliscos/cpp-rotor.git external/rotor lib/rotor --branch=v0.09
 ~~~
 
 Your `CMakeLists.txt` should have something like
 
 ~~~
 set(BUILD_BOOST_ASIO ON CACHE BOOL "with asio")
-add_subdirectory("lib/cpp-rotor")
+add_subdirectory("lib/rotor")
 
 target_include_directories(my_target PUBLIC
-    ${PROJECT_SOURCE_DIR}/external/rotor/include
+    ${PROJECT_SOURCE_DIR}/lib/rotor/include
 )
 target_link_libraries(my_lib rotor::asio)
 ~~~
