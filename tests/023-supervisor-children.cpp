@@ -323,7 +323,6 @@ TEST_CASE("actor shutdown's self during start => supervisor is not affected", "[
     sup->do_shutdown();
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
-    std::th
 }
 
 TEST_CASE("actor shutdown on init_finish()", "[supervisor]") {
