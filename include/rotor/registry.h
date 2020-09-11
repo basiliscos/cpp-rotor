@@ -19,14 +19,14 @@ namespace rotor {
  *  The class solves the following problem: one actor needs to know
  *  somehow the address of other actor. Instead of tightly couple
  *  them, i.e. manually binding addresses, it is possible to just
- *  take the registry everywhere and ask it (or registere there)
+ *  take the registry everywhere and ask it (or register there)
  *  just on actor startup (initialization)
  *
  *  The "server-actor" must register it's address first. The name
  *  must be unique (in the scope of registry); the same address
  *  can be registered on different names, if need. It is good
  *  practice to unregister addresses when actor is going to be
- *  shutdown (it is done by `registry_plugin_t`).
+ *  shutdown (it is done by {@link plugin::registry_plugin_t}).
  *  It is possible to unregister single name, or all
  *  names associated with an address.
  *

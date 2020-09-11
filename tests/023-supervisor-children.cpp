@@ -10,6 +10,7 @@
 #include "supervisor_test.h"
 #include "system_context_test.h"
 #include "access.h"
+#include <thread>
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -151,6 +152,7 @@ struct pre_shutdown_actor_t : public rt::actor_test_t {
 
     void shutdown_start() noexcept override {
         do_shutdown();
+        std::this_thread::sleep_for()
         rt::actor_test_t::shutdown_start();
     }
 };
@@ -322,6 +324,7 @@ TEST_CASE("actor shutdown's self during start => supervisor is not affected", "[
     sup->do_shutdown();
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    std::th
 }
 
 TEST_CASE("actor shutdown on init_finish()", "[supervisor]") {

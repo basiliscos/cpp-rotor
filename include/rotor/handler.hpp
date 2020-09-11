@@ -132,7 +132,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
         return handler_type == rhs.handler_type && raw_actor_ptr == rhs.raw_actor_ptr;
     }
 
-    /** \brief attempt to delivery message to he handler
+    /** \brief attempt to delivery message to the handler
      *
      * The message is delivered only if its type matches to the handler message type,
      * otherwise it is silently ignored

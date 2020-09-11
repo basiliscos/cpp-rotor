@@ -48,7 +48,7 @@ namespace rotor {
  * other supervisors constructing tree-like organization of responsibilities.
  *
  * Unlike Erlang's supervisor, rotor's supervisor does not spawn actors
- * if they terminated. It should be, hovewer, to implement it in derived
+ * if they terminated. It should be possible, hovewer, to implement it in derived
  * classes with application-specific logic.
  *
  * This supervisor class is abstract, and the concrete implementation is

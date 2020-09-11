@@ -83,10 +83,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief early actor initialization (pre-initialization)
      *
-     * Actor's "main" address is created, actor's behavior is created.
-     *
-     * Actor performs subsscription on all major methods, defined by
-     * `rotor` framework; sets internal actor state to `INITIALIZING`.
+     * Actor's plugins are activated, "main" address is created
+     * (via {@link plugin::address_maker_plugin_t}), state is set
+     * to `INITIALIZING` (via {@link plugin::init_shutdown_plugin_t}).
      *
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;

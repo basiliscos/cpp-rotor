@@ -815,6 +815,7 @@ INPUT                  =  @CMAKE_CURRENT_SOURCE_DIR@/docs/Introduction.md   \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Patterns.md       \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/License.md        \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Changelog.md      \
+                          @CMAKE_CURRENT_SOURCE_DIR@/docs/References.md     \
                           @CMAKE_CURRENT_SOURCE_DIR@/include
 
 # This tag can be used to specify the character encoding of the source files

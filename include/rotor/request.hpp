@@ -131,8 +131,8 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
  * \brief generic helper, which helps to construct user-defined response payload
  */
 template <typename Responce> struct response_helper_t {
-    /** original user-supplied responce type */
-    using responce_t = Responce;
+    /** original user-supplied response type */
+    using response_t = Responce;
 
     /** \brief constructs user defined response payload */
     template <typename... Args> static Responce construct(Args &&... args) {
@@ -148,8 +148,8 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
     /** \brief type for intrusive pointer user defined response payload  */
     using res_ptr_t = intrusive_ptr_t<Responce>;
 
-    /** original user-supplied responce type */
-    using responce_t = Responce;
+    /** original user-supplied response type */
+    using response_t = Responce;
 
     /** \brief constructs intrusive pointer to user defined response payload */
     template <typename... Args> static res_ptr_t construct(Args &&... args) {
@@ -236,7 +236,7 @@ template <typename Request> struct wrapped_response_t {
     using res_helper_t = response_helper_t<response_t>;
 
     /** \brief alias user-supplied response type */
-    using unwrapped_response_t = typename res_helper_t::responce_t;
+    using unwrapped_response_t = typename res_helper_t::response_t;
 
     static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
 
@@ -254,7 +254,7 @@ template <typename Request> struct wrapped_response_t {
 
     /** \brief "forward-constructor"
      *
-     * The request message, error code are copied, while the responce (possible intrusive
+     * The request message, error code are copied, while the response (possible intrusive
      * poitner to the original request) is forwarded.
      *
      */
@@ -262,10 +262,10 @@ template <typename Request> struct wrapped_response_t {
     wrapped_response_t(req_message_ptr_t message_, const std::error_code &ec_, Responce &&res_)
         : ec{ec_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
 
-    /** \brief successful-responce constructor.
+    /** \brief successful-response constructor.
      *
      * The request message is copied, the error code is set to success,
-     * the responce (possible intrusive poitner to the original request) constructed from
+     * the response (possible intrusive poitner to the original request) constructed from
      * the arguments.
      *
      */

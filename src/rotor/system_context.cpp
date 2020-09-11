@@ -5,6 +5,7 @@
 //
 
 #include <iostream>
+#include <thread>
 
 #include "rotor/supervisor.h"
 #include "rotor/system_context.h"

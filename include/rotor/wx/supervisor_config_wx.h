@@ -18,14 +18,14 @@ namespace wx {
 struct supervisor_config_wx_t : public supervisor_config_t {
     /** \brief the wx context, responsible for messages delivery
      *
-     * Actuall rotor-message delivery for actors runnion on the
+     * Actual rotor-message delivery for actors running on the
      * top of wx-loop is performed via wx-events, i.e. rotor-messages
      * are **wrapped**  into wx-events.
      *
      * The wx-supervisor subscribes to the `wx-events` and unswraps
      * the rotor-messages from the events.
      *
-     * The wx event handler is used as a transport medium
+     * The wx event handler is used as a transport medium.
      *
      */
     wxEvtHandler *handler;

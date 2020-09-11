@@ -110,10 +110,10 @@ template <typename Actor> struct actor_config_builder_t {
     /** \brief refernce to `system_context_t` */
     system_context_t &system_context;
 
-    /** \brief the currently build config (templated) */
+    /** \brief the currently build config */
     config_t config;
 
-    /** \brief required fields mask (user for validation) */
+    /** \brief required fields mask (used for validation) */
     std::uint32_t mask = builder_t::requirements_mask;
 
     /** \brief ctor with install action and raw pointer to supervisor */

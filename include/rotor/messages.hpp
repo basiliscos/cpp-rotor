@@ -352,7 +352,7 @@ using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::respo
 /** \brief supervisor's message upon actor instantiation */
 using create_actor_t = message_t<payload::create_actor_t>;
 
-//registry-related
+// registry-related
 /** \brief name/address registration request */
 using registration_request_t = request_traits_t<payload::registration_request_t>::request::message_t;
 /** \brief name/address registration response */
@@ -390,7 +390,6 @@ using unlink_response_t = request_traits_t<payload::unlink_request_t>::response:
 using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
 /** \brief actor state response */
 using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
-
 
 } // namespace message
 
