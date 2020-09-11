@@ -58,7 +58,7 @@ target_link_libraries(my_target rotor::asio)
 ## Adding rotor into a project (classical way)
 
 ~~~
-git clone https://github.com/basiliscos/cpp-rotor.git external/rotor --branch=v0.07
+git clone https://github.com/basiliscos/cpp-rotor.git external/rotor lib/cpp-rotor --branch=v0.09
 ~~~
 
 Your `CMakeLists.txt` should have something like
@@ -70,5 +70,5 @@ add_subdirectory("lib/cpp-rotor")
 target_include_directories(my_target PUBLIC
     ${PROJECT_SOURCE_DIR}/external/rotor/include
 )
-target_link_libraries(aramis_lib rotor::asio)
+target_link_libraries(my_lib rotor::asio)
 ~~~
