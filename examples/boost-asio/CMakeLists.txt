@@ -11,6 +11,10 @@ add_executable(request-response request-response.cpp)
 target_link_libraries(request-response rotor_asio ${Boost_LIBRARIES})
 add_test(request-response "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/request-response")
 
+add_executable(request-response-discovery request-response-discovery.cpp)
+target_link_libraries(request-response-discovery rotor_asio ${Boost_LIBRARIES})
+add_test(request-response-discovery "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/request-response-discovery")
+
 add_executable(ping_pong-single-simple ping_pong-single-simple.cpp)
 target_link_libraries(ping_pong-single-simple rotor_asio ${Boost_LIBRARIES})
 add_test(ping_pong-single-simple "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong-single-simple")
