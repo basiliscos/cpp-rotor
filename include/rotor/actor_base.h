@@ -206,7 +206,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief finalizes shutdown
      *
-     * The shutdown response is sent and actor state is set to SHUTTED_DOWN.
+     * The shutdown response is sent and actor state is set to SHUT_DOWN.
      *
      * This is the last action in the shutdown sequence.
      * No further methods will be invoked on the actor

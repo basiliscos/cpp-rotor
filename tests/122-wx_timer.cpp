@@ -72,7 +72,7 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
 
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
 

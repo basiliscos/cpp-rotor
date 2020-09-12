@@ -280,9 +280,9 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         sup->do_shutdown();
         sup->do_process();
-        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(act_s->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(act_s->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     }
 
     SECTION("common case (discover & link)") {
@@ -314,9 +314,9 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         sup->do_shutdown();
         sup->do_process();
-        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(act_s->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(act_s->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     }
 
     SECTION("common case (promise & link)") {
@@ -353,7 +353,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
             CHECK(act_c->get_state() == r::state_t::INITIALIZING);
             act_c->do_shutdown();
             sup->do_process();
-            CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+            CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
             auto plugin = act_c->access<rt::to::get_plugin>(r::plugin::registry_plugin_t::class_identity);
             auto p = static_cast<r::plugin::registry_plugin_t *>(plugin);
             auto &dm = p->access<rt::to::discovery_map>();
@@ -362,8 +362,8 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         sup->do_shutdown();
         sup->do_process();
-        CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     }
 
     SECTION("discovery non-existing name => fail to init") {
@@ -374,7 +374,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         };
 
         sup->do_process();
-        REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+        REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     }
 
     SECTION("double name registration => fail") {
@@ -390,8 +390,8 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         act2->configurer = configurer;
 
         sup->do_process();
-        CHECK(act1->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(act2->get_state() == r::state_t::SHUTTED_DOWN);
-        CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+        CHECK(act1->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(act2->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     }
 }

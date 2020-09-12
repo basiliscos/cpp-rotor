@@ -44,7 +44,7 @@ TEST_CASE("lambda handler", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     REQUIRE(rt::empty(sup->get_subscription()));

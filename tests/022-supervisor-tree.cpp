@@ -122,9 +122,9 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     sup_root->do_shutdown();
     sup_root->do_process();
 
-    REQUIRE(sup_A2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup_B2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup_A1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup_B1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup_root->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup_A2->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup_B2->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup_A1->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup_B1->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup_root->get_state() == r::state_t::SHUT_DOWN);
 }

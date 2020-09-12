@@ -100,14 +100,14 @@ TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
     REQUIRE(ponger->ping_received == 1);
     REQUIRE(ponger->pong_sent == 1);
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup1.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup1.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup1->get_subscription()));
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(sup2->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup2->get_subscription()));
 
-    REQUIRE(pinger->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(ponger->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(pinger->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(ponger->get_state() == r::state_t::SHUT_DOWN);
 }

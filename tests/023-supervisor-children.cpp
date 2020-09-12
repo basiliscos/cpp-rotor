@@ -244,9 +244,9 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
     auto act2_init_req = sup->get_timer(1);
     sup->on_timer_trigger(act2_init_req);
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(act1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(act1->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(act2->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("supervisor create child during init phase", "[supervisor]") {
@@ -285,8 +285,8 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     sup->do_process();
 
     sup->do_process();
-    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("shutdown_self policy", "[supervisor]") {
@@ -307,8 +307,8 @@ TEST_CASE("shutdown_self policy", "[supervisor]") {
     sup->do_process();
 
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor shutdown's self during start => supervisor is not affected", "[supervisor]") {
@@ -317,12 +317,12 @@ TEST_CASE("actor shutdown's self during start => supervisor is not affected", "[
     auto act = sup->create_actor<fail_start_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
-    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor shutdown on init_finish()", "[supervisor]") {
@@ -331,8 +331,8 @@ TEST_CASE("actor shutdown on init_finish()", "[supervisor]") {
     auto act = sup->create_actor<fail_init_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
-    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor shutdown on init_start(), post", "[supervisor]") {
@@ -341,8 +341,8 @@ TEST_CASE("actor shutdown on init_start(), post", "[supervisor]") {
     auto act = sup->create_actor<fail_init_actor3_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor shutdown on init_start(), pre", "[supervisor]") {
@@ -351,8 +351,8 @@ TEST_CASE("actor shutdown on init_start(), pre", "[supervisor]") {
     auto act = sup->create_actor<fail_init_actor4_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor sends shutdown to sup during init_start()", "[supervisor]") {
@@ -361,8 +361,8 @@ TEST_CASE("actor sends shutdown to sup during init_start()", "[supervisor]") {
     auto act = sup->create_actor<fail_init_actor5_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor replies with error to init", "[supervisor]") {
@@ -371,8 +371,8 @@ TEST_CASE("actor replies with error to init", "[supervisor]") {
     auto act = sup->create_actor<fail_init_actor6_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("actor shutdown during init", "[supervisor]") {
@@ -390,8 +390,8 @@ TEST_CASE("actor shutdown during init", "[supervisor]") {
     act->do_shutdown();
     act->access<rt::to::resources>()->access<rt::to::resources>().clear();
     sup->do_process();
-    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("two actors shutdown during init", "[supervisor]") {
@@ -416,9 +416,9 @@ TEST_CASE("two actors shutdown during init", "[supervisor]") {
     act2->access<rt::to::resources>()->access<rt::to::resources>().clear();
 
     sup->do_process();
-    REQUIRE(act1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(act2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act1->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(act2->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("double shutdown attempt (post)", "[supervisor]") {
@@ -432,8 +432,8 @@ TEST_CASE("double shutdown attempt (post)", "[supervisor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("double shutdown attempt (pre)", "[supervisor]") {
@@ -447,8 +447,8 @@ TEST_CASE("double shutdown attempt (pre)", "[supervisor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("managed supervisor (autostart child)", "[supervisor]") {
@@ -462,8 +462,8 @@ TEST_CASE("managed supervisor (autostart child)", "[supervisor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("failed to shutdown actor (1)", "[supervisor]") {
@@ -485,7 +485,7 @@ TEST_CASE("failed to shutdown actor (1)", "[supervisor]") {
     REQUIRE(system_context.ec == r::error_code_t::request_timeout);
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("failed to shutdown actor (2)", "[supervisor]") {
@@ -504,7 +504,7 @@ TEST_CASE("failed to shutdown actor (2)", "[supervisor]") {
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
@@ -528,7 +528,7 @@ TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("synchronized start", "[supervisor]") {
@@ -571,7 +571,7 @@ TEST_CASE("1 child is initializing, and another one started, and then shutted do
     act2->do_shutdown();
     sup->do_process();
     CHECK(act1->get_state() == r::state_t::INITIALIZING);
-    CHECK(act2->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act2->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup->get_state() == r::state_t::INITIALIZING);
 
     act1->access<rt::to::resources>()->release();

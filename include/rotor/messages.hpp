@@ -65,7 +65,7 @@ struct create_actor_t {
  *
  */
 struct shutdown_trigger_t {
-    /** \brief the actor to be shutted down */
+    /** \brief the actor to be shut down */
     address_ptr_t actor_address;
 };
 

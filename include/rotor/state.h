@@ -16,7 +16,7 @@ enum class state_t {
     INITIALIZED,
     OPERATIONAL,
     SHUTTING_DOWN,
-    SHUTTED_DOWN,
+    SHUT_DOWN,
 };
 
 } // namespace rotor

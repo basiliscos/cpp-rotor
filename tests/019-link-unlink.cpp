@@ -90,14 +90,14 @@ TEST_CASE("client/server, common workflow", "[actor]") {
         SECTION("indirect client-initiated unlink via client-shutdown") {
             act_c->do_shutdown();
             sup->do_process();
-            CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+            CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
         }
 
         SECTION("indirect client-initiated unlink via server-shutdown") {
             act_s->do_shutdown();
             sup->do_process();
-            CHECK(act_s->get_state() == r::state_t::SHUTTED_DOWN);
-            CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+            CHECK(act_s->get_state() == r::state_t::SHUT_DOWN);
+            CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
         }
 
         sup->do_shutdown();
@@ -130,7 +130,7 @@ TEST_CASE("link not possible (timeout) => shutdown", "[actor]") {
 
     sup->do_process();
     REQUIRE(invoked);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 #if 0
@@ -146,9 +146,9 @@ TEST_CASE("link not possible => supervisor is shutted down", "[actor]") {
     act_c->link_request(server_addr, rt::default_timeout);
     sup->do_process();
 
-    REQUIRE(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(act_s->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act_c->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(act_s->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 #endif
 
@@ -214,7 +214,7 @@ TEST_CASE("unlink", "[actor]") {
         sup1->do_process();
         sup2->do_process();
     }
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("unlink reaction", "[actor]") {
@@ -248,7 +248,7 @@ TEST_CASE("unlink reaction", "[actor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("auto-unlink on shutdown", "[actor]") {
@@ -274,15 +274,15 @@ TEST_CASE("auto-unlink on shutdown", "[actor]") {
     act_c->do_shutdown();
 
     sup1->do_process();
-    REQUIRE(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act_c->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
 
     sup2->do_process();
     REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
 
     sup2->do_shutdown();
     sup2->do_process();
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("link to operational only", "[actor]") {
@@ -341,9 +341,9 @@ TEST_CASE("link to operational only", "[actor]") {
     sup3->do_shutdown();
     process_123();
 
-    CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(act_s1->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(act_s2->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(act_s1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(act_s2->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("unlink notify / response race", "[actor]") {
@@ -385,7 +385,7 @@ TEST_CASE("unlink notify / response race", "[actor]") {
         sup2->do_process();
     }
     CHECK(sup1->active_timers.size() == 0);
-    CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("link errors", "[actor]") {
@@ -437,7 +437,7 @@ TEST_CASE("link errors", "[actor]") {
                     [&](auto &p) { p.link(act_s->get_address(), false, [&](auto &ec) { err = ec; }); });
             };
             process_12();
-            CHECK(act_c->get_state() == r::state_t::SHUTTED_DOWN);
+            CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
             CHECK(err.message() == std::string("actor is not linkeable"));
         }
 
@@ -491,6 +491,6 @@ TEST_CASE("link errors", "[actor]") {
     sup2->do_shutdown();
     process_12();
 
-    CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
 }

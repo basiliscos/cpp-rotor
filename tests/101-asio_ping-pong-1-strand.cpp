@@ -88,7 +88,7 @@ TEST_CASE("ping/pong ", "[supervisor][asio]") {
     REQUIRE(ponger->pong_sent == 1);
     REQUIRE(ponger->ping_received == 1);
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
 

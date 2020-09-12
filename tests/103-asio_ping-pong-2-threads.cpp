@@ -135,14 +135,14 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
         // both threads
     }
 
-    CHECK(static_cast<r::actor_base_t *>(sup1.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    CHECK(static_cast<r::actor_base_t *>(sup1.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(sup1->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup1->get_subscription()));
 
-    CHECK(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    CHECK(static_cast<r::actor_base_t *>(sup2.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(sup2->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup2->get_subscription()));
 
-    REQUIRE(pinger->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(ponger->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(pinger->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(ponger->get_state() == r::state_t::SHUT_DOWN);
 }

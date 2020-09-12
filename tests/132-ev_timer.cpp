@@ -57,5 +57,5 @@ TEST_CASE("timer", "[supervisor][ev]") {
     ev_run(loop);
 
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }

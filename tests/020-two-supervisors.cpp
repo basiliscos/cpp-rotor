@@ -38,7 +38,7 @@ struct my_supervisor_t : public rt::supervisor_test_t {
     void shutdown_finish() noexcept override {
         rt::supervisor_test_t::shutdown_finish();
         shutdown_finish_count++;
-        assert(state == r::state_t::SHUTTED_DOWN);
+        assert(state == r::state_t::SHUT_DOWN);
     }
 
     ~my_supervisor_t() { ++destroyed; }
@@ -110,7 +110,7 @@ TEST_CASE("two supervisors, different localities, shutdown 2nd", "[supervisor]")
 
     sup2->do_process();
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->shutdown_start_count == 0);
     REQUIRE(sup1->shutdown_finish_count == 0);
     REQUIRE(sup2->shutdown_start_count == 1);
@@ -118,7 +118,7 @@ TEST_CASE("two supervisors, different localities, shutdown 2nd", "[supervisor]")
 
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->shutdown_start_count == 0);
     REQUIRE(sup1->shutdown_finish_count == 0);
     REQUIRE(sup2->shutdown_start_count == 1);
@@ -126,7 +126,7 @@ TEST_CASE("two supervisors, different localities, shutdown 2nd", "[supervisor]")
 
     sup1->do_shutdown();
     sup1->do_process();
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->shutdown_start_count == 1);
     REQUIRE(sup1->shutdown_finish_count == 1);
 
@@ -164,8 +164,8 @@ TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]")
         sup1->do_process();
         sup2->do_process();
     }
-    CHECK(sup1->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
@@ -199,8 +199,8 @@ TEST_CASE("two supervisors, same locality", "[supervisor]") {
     sup1->do_shutdown();
     sup1->do_process();
 
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->shutdown_start_count == 1);
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
@@ -237,12 +237,12 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
     sup2->send<r::payload::shutdown_trigger_t>(address, address);
     sup1->do_process();
 
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
 
     sup1->do_shutdown();
     sup1->do_process();
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
 
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);

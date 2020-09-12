@@ -105,7 +105,7 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     ponger.reset();
     REQUIRE(destroyed == 4);
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
 

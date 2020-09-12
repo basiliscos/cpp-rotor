@@ -111,14 +111,14 @@ TEST_CASE("actor litetimes", "[actor]") {
     CHECK(act->event_init_start == 1);
 
     REQUIRE(destroyed == 0);
-    REQUIRE(act->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
     act.reset();
     REQUIRE(destroyed == 1);
 
     /* for asan */
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
@@ -159,8 +159,8 @@ TEST_CASE("fail shutdown test", "[actor]") {
     sup->do_process();
     REQUIRE(sup->get_children_count() == 0);
 
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup->get_leader_queue().size() == 0);
     CHECK(sup->get_points().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
@@ -188,8 +188,8 @@ TEST_CASE("fail initialize test", "[actor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    CHECK(act->get_state() == r::state_t::SHUTTED_DOWN);
-    CHECK(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("double shutdown test (actor)", "[actor]") {

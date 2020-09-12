@@ -58,10 +58,10 @@ TEST_CASE("timer", "[supervisor][asio]") {
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
 
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(rt::empty(sup->get_subscription()));
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
 }

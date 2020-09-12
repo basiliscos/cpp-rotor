@@ -144,7 +144,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             sup.template request<payload::shutdown_request_t>(address).send(timeout);
         }
     } else {
-        /* the if is needed for the very rare case when supervisor was immediately shutted down
+        /* the if is needed for the very rare case when supervisor was immediately shut down
            right after creation */
         if (actor_found) {
             it_actor->second.initialized = true;
@@ -172,7 +172,6 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
             sup.do_shutdown();
         } else {
             // do not do shutdown-request on self
-            // assert((actor->state != state_t::SHUTTING_DOWN) || (actor->state != state_t::SHUTTED_DOWN));
             if (actor->access<to::state>() != state_t::SHUTTING_DOWN) {
                 actor->shutdown_start();
                 unsubscribe_all(true);

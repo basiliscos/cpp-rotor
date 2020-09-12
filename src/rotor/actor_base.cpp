@@ -91,7 +91,7 @@ void actor_base_t::shutdown_finish() noexcept {
         assert(!p && "a plugin was not deactivated");
     }
     */
-    state = state_t::SHUTTED_DOWN;
+    state = state_t::SHUT_DOWN;
 }
 
 void actor_base_t::init_continue() noexcept {
