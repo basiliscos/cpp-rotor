@@ -103,6 +103,25 @@ counters.
 
 ## Actor lifecycle
 
+![lifetime-simplified](lifecycle-simplified.png)
+
+The simplified actor lifetime is shown on the picture above. When actor is ready, it
+enters into `operational` state, providing its services (i.e. starting to react on
+the incoming messages).
+
+The `init` and `shut down` actor states are similar to constructor and destructor 
+for an object, with one noteable exception: they are *asynchronous*. If `init`
+fails, an actor does not enters into `operational` state and starts to shut down.
+
+![lifetime-full](lifecycle-full.png)
+
+The real world actor lifecycle is a little bit more complicated.
+
+
+## Old
+
+## Actor lifecycle
+
 ![actor-lifecycle](actor-lifecycle.png)
 
 (yellow - actor state, purple - actor methods, green - behavior methods,
