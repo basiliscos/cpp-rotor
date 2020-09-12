@@ -51,8 +51,8 @@ distinguishing `replies`.
 i.e. responsible for spawning/terminating actors, interaction with loop (timeouts),
 and for message dispatching/delivering. All messages sent by spawned actors, are
 put into outbound queue of supervisor. `supervisor` was designed to represent
-*sequential execution context*, similar to `strand` from [boost-asio] (in fact has
-`strand` object for `rotor-boost`); in other words all messages are delivered sequentially
+*sequential execution context*, similar to `strand` from [boost-asio] (in fact `rotor-asio`
+has strand` object fo); in other words all messages are delivered sequentially
 within the context of an `supervisor`, and it is safe to call one some actor's method
 from some other actor, located on the same supervisor, if needed.
 
