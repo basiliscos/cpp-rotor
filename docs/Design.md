@@ -9,6 +9,7 @@
 [blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
 [blog-cpp-permission]: https://basiliscos.github.io/blog/2020/07/23/permission-model/ "C++ permission model"
 [cpu-affinity]: https://en.wikipedia.org/wiki/Processor_affinity
+[crtp]: https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
 
 **address** is runtime entity, served as subscription and delivery point. Any `message` can
 be sent to an address; any `actor` can subscribe on any kind of messages on any address.
@@ -281,3 +282,16 @@ the method, which will grant access to the required fields or methods.
 
 For further details, please consult an [article][blog-cpp-permission] in my blog.
 
+### Actor (configuration) builder
+
+Since `v0.09` every actor (including supervisors) should have a config. It is just 
+a plain `struct` with the minimal set of properties like: init and shutdown timeouts,
+parent supervisor pointer etc.
+
+However, it is not handy to deal with plain `struct`, especially if there are aliases
+and optional fields. That's why dedicated `config_builder_t` was introduced to 
+mark that some required fields have been filled and other convenient things like 
+actor instantiation.
+
+To cover the cases, when any *derived* actor/config can have custom properties, the 
+[Curiously recurring template pattern aka CRTP pattern][crtp] was used.
