@@ -195,7 +195,7 @@ with an other actor(s) ("server(s)"). This can be seen as "virtual TCP-connectio
 i.e. making sure that "server" will outlive "client", i.e. all messages from
 "client" to "server" will be eventually delivered, i.e. "server" will not spontaneously
 shut self down having alive client connected to it. The "server" have to confirm
-successful linking of a "client", while "client" waiting the response confirmation
+successful linkig of a "client", while "client" waiting the response confirmation
 suspends its own initialization (i.e its state is `INITIALIZING`). It
 should be noted, that actors linking is performed by actor addresses only,
 i.e. "client" and "server" actors might belong to different threads, supervisors,
@@ -215,3 +215,37 @@ continue initialization (or shutdown) it needs to acquire/release external
 starts, it needs to open TCP connector to remote side and perform successful
 authorization", i.e. it suspends initialization (shutdown) until some external
 events occur.
+
+## Miscellaneous topics
+
+### Contract and its violation
+
+It is absolutely correct to **fail initialization** because an actor will be
+asked to shutdown, probably with up-scaling the problem; however **fail shutdown**
+for `rotor` is violation of the contract, similar to an exception in destructor
+in C++. What can the micro framework do in that situation? Out of the box
+it delegates the issue to the `system_context_t` which default implementation
+is to print the error and invoke `std::termiate`.
+
+You can override the `on_error` method and hope, that it will continue to work.
+The most likely it will, however, there will be a memory leak. The *rotor part*
+of the leak in the failed to shutdown actor still can be handled via cleaning
+internal rotor resources (see `tests/actor_test.cpp` the `force_cleanup()`
+method how to do that). Still the most likely there are non-rotor leaked resources,
+which have to be released too. So, if you are routing this way, you are on
+very very very shaky ground near UB, and the advice not to go here at all.
+
+If a client-actor refuses to `unlink` in time, when server-actor asked it
+(because it was asked to shut down), it is also violation of the contract.
+
+If you meeting the issue, you should tune (shutdown) timeouts for your actors
+to give them enough breath to finish activities they are doing. For example,
+as the (parent) supervisor shutdowns after all its children are shut down,
+then the parent supervisor shutdown timeout *should be greater* then
+the corresponding timeout of any of its children. Probably, the easiest way
+to start is to use everywhere some fixed, but large enough, timeout (e.g. `100ms`)
+everywhere, and only later, if the problem occurs, tune individual timeouts
+on demand.
+
+It is recommended to launch code under memory sanitizer tool like `valgrind`
+to make sure everything is correctly cleaned.
