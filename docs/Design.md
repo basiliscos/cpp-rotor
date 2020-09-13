@@ -7,6 +7,7 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 [let-it-crash]: http://wiki.c2.com/?LetItCrash
 [blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
+[blog-cpp-permission]: https://basiliscos.github.io/blog/2020/07/23/permission-model/ "C++ permission model"
 [cpu-affinity]: https://en.wikipedia.org/wiki/Processor_affinity
 
 **address** is runtime entity, served as subscription and delivery point. Any `message` can
@@ -249,3 +250,34 @@ on demand.
 
 It is recommended to launch code under memory sanitizer tool like `valgrind`
 to make sure everything is correctly cleaned.
+
+### Debugging messaging
+
+To see the messages traffic in *non-release* build, the special environment
+variable `ROTOR_INSPECT_DELIVERY=1` should be used. The `delivery` plugin
+will dump messages routing via a supervisor. Here is an excerpt:
+
+~~~
+>> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::payload::unsubscription_confirmation_t>, addr: 0x5567c50db770  for 0x5567c50db770
+>> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::payload::external_unsubscription_t>, addr: 0x5567c50db770  for 0x5567c50db770
+>> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::payload::subscription_confirmation_t>, addr: 0x5567c50db770  for 0x5567c50db770
+>> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::wrapped_request_t<rotor::payload::initialize_actor_t, void> >, addr: 0x5567c50db770  for 0x5567c50db770
+...
+~~~
+
+If you need something more custom, then a new delivery plugin should be developed,
+and then it should be linked into new supervisor type.
+
+### Non-public properties access
+
+To have everything public is bad, as some fields and methods are not part of public
+interface. Still sometimes there is a need to access them outside, e.g. in tests.
+Provide getters and setters for all of them seems also incorrect, again, because
+they are not part of public interface.
+
+Since `v0.09` the experimental templated `access()` method was added to handle that
+rare cases. It is assumed, that you'll add your own partial specialization of
+the method, which will grant access to the required fields or methods.
+
+For further details, please consult an [article][blog-cpp-permission] in my blog.
+
