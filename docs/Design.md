@@ -109,96 +109,109 @@ The simplified actor lifetime is shown on the picture above. When actor is ready
 enters into `operational` state, providing its services (i.e. starting to react on
 the incoming messages).
 
-The `init` and `shut down` actor states are similar to constructor and destructor 
+The `init` and `shut down` actor states are similar to constructor and destructor
 for an object, with one noteable exception: they are *asynchronous*. If `init`
 fails, an actor does not enters into `operational` state and starts to shut down.
 
 ![lifetime-full](lifecycle-full.png)
 
-The real world actor lifecycle is a little bit more complicated.
+The real world actor lifecycle is a little bit more complicated. The freshly
+instantiated actor is in `NEW` state; it does not receives any messages. In
+the `INITIALIZING` state it starts plugins initialization, they subscribe
+to system (rotor) messages and do other init activities, including the user
+ones.
 
+When init is finished (i.e. all plugins confirmed they are done with
+initialization), an actor enters into `INITIALIZED` state. It is already
+subscribed to all required user messages and ready to serve; however,
+it still can wait an signal to start from it supervisor to perform
+some action on demand, and only then the actor enters into `OPERATIONAL`
+state. The signal does not have to come: supervisor might postpone it
+(see synchronization patterns) or do not send at all, asking to shutdown
+(because it was asked by its parent supervisor or some sibling actor
+failed to init).
 
-## Old
+The shutdown is procedure is reverse: in `SHUTTING_DOWN` state actor
+unsubscribes from all user and system messages, releases resources etc., and
+when it is done, it enters into `SHUT_DOWN` state. In that state it
+does not receives any messages and sooner it will be destroyed.
 
-## Actor lifecycle
+It is possible to hook corresponding methods from `actor_base_t` (please
+note, that the `actor_base_t` methods *must* be called when overriding):
 
-![actor-lifecycle](actor-lifecycle.png)
+~~~{.cpp}
+void actor_base_t::init_start()      // NEW           -> INITIALIZING
+void actor_base_t::init_finish()     // INITIALIZING  -> INITIALIZED
+void actor_base_t::on_start()        // INITIALIZED   -> OPERATIONAL
+void actor_base_t::shutdown_start()  // OPERATIONAL   -> SHUTTING_DOWN
+void actor_base_t::shutdown_finish() // SHUTTING_DOWN -> SHUT_DOWN
+~~~
 
-(yellow - actor state, purple - actor methods, green - behavior methods,
-light blue - call/messages from an actor to supervisor; yellow - actor state,
-orange - call/messages from supervisor to an actor).
+The state transitioning is usually performed via sending and receiving appropriate
+messages, e.g. a supervisor sends to an actor `message::initialize_actor_t` **request**
+and the actor enters into `INITIALIZING` state; when it switches to `INITIALIZED` at
+state the actor sends back the initialization confirmation. That details are hidden
+from user since `v0.09`.
 
-**Short story**: if you need customization, override `init_start()`, when your
-initialization (i.e. possible asynchronous resources acquisition) is finished
-call `init_start()`. For simple post-init (possibly synchronous) actions override
-`init_finish()`. Likewise, for suspending shutdown override `shutdown_start()`
-and call it later, once your resources will be (asynchronously) released. For
-simple post-shutdown (possibly synchronous) actions, override `shutdown_finish()`
+**Supervisor** is an actor, so it has exactly the same lifecycle. It has the peculiarity,
+that it waits it's children, i.e. supervisor enters into `INITIALIZING` state before
+any of it's children actors, then it waits until all of its childern confirm that
+they are `INITIALIZED`, and only after that the supervisor confirms that its own
+initialization is accomplished (the similar procedure is done for shutdown procedure).
 
-**Long story**. An actor is constructed via a `supervisor` or in some
-thread-safe context (i.e. when `supervisor` is inactive). Then, within the same
-context the `do_initialize` method is invoked; it performs *early initialization*,
-i.e. subscription to rotor-message via the `supervisor`. The default behavior
-is created and plugged.
+That reveals very important property of an actor lifecycle - it is **composeable**.
+In a simple words it can be explained as the following: it makes it possible that
+whole tree (hierarchy) of actors and supervisors either becames ready (`OPERATIONAL`)
+or not (`SHUT DOWN`) without any special intervention from a user.
 
-Then `supervisor` delivers a message for `on_initialize` method. By default `actor`
-calls records the init-message and calls `init_start`, which in its turn
-delegates initialization sequence to the behavior. The actor's behavior
-replies with confirmation to the init-message request and sets actor's state
-to `INITIALIZED`. Once the supervisor receives init-confirmation it sends
-`start_actor_t` messages, which, after receiving, advances actor's start
-to `OPERATIONAL`.
+What makes it distinguishing supervisors from actors? It is the mechanism of plugins.
 
-It is possible to "suspend" initialization by overriding `init_start()` method.
-For example it is possible to send messages to other actors, wait their replies,
-and if all is OK, continue/commit the initialization by calling `init_start()`
-of the base class. The `init_start()` method is good for asynchronous acquisition
-of resources, i.e. opening ports, connecting to other hosts etc.
+## Plugins
 
-Subscriptions to the additional local actor addresses can be performed
-here (if you need subscription confirmations before `on_start`, do subscribe
-*before* calling `init_start()`). If the actor subscribes to the external
-addresses, then, probably to avoid races, it should wait subscription
-confirmations and only then confirm initialization by calling `init_start()`.
+Plugins were introduced in `v0.09` to replace actors behavior, because behavior
+nor actor itself can *authoritatively* answer the question whether the initialization
+(shutdown) is done, because there are a lot of factors with different natures, which
+affect the answer: are system subscriptions done? are user subscriptions done? are
+all child actors confirmed initialization? are all acquired external resources already
+released? The answer should be committed *cooperatively* and the single vote in the
+role of a plugin. If a plugin says "I'm still not yet done with initialization",
+then the whole actor still holds the `INITIALIZING` state; if a plugin says
+"I'm failed to initialize", the whole actor state jumps into shutdown phase.
 
-Note, however, that init-message is a **request**, i.e. it is timeout-supervised;
-the default supervisor behavior will ask for shutdown the actor in the
-case of init timeout.
+Each actor has a static (compile-time) list of plugins. They are polled for init-ready
+question in the direct order, and for shutdown-ready question in the reverse order.
+Once a plugin says "I'm done", the next one is polled etc.
 
-The `init_finish()` will be invoked as the last step of the initialization.
+The most important for user actor plugins are:
 
-The shutdown procedure goes in similar way: after receiving shutdown-message,
-it is recorded and `shutdown_start()` is invoked. Override it to suspend
-(postpone) actor shutdown procedure, and call it once actor will be ready,
-i.e. additional messages can be send to other actors and their responses
-can be waited, and only then shutdown can be continued.
+~~~{.cpp}
+plugin::link_client_plugin_t
+plugin::registry_plugin_t
+plugin::resources_plugin_t
+~~~
 
-After starting shutdown procedure actor unsubscribes itself from all
-associated addresses, so most likely it will be not able to receive
-any other (user-defined) messages.
+The `link_client` plugin is response for linking the current actor ("client" role)
+with an other actor(s) ("server(s)"). This can be seen as "virtual TCP-connection",
+i.e. making sure that "server" will outlive "client", i.e. all messages from
+"client" to "server" will be eventually delivered, i.e. "server" will not spontaneously
+shut self down having alive client connected to it. The "server" have to confirm
+successful linking of a "client", while "client" waiting the response confirmation
+suspends its own initialization (i.e its state is `INITIALIZING`). It
+should be noted, that actors linking is performed by actor addresses only,
+i.e. "client" and "server" actors might belong to different threads, supervisors,
+localities or event loops.
 
-As with init, the shutdown message is a **request**, i.e. it is timeout-supervised;
-the default supervisor behavior will delegate the error to `system_context`, which
-by default will abort the application. If the reaction should be tuned,
-the custom supervisor behavior should be plugged.
+The `registry` plugin is the continued development of the `link_client` plugin. It
+allows for "server" to register self in the "registry" (special actor, shipped
+with `rotor`), and for "client" to discover "server" address via some symbolic
+name (string) and then link to it (using, `link_client`, of course). This makes
+it possible to encapsulate actors dependencies (i.e. to work I need "servcieA"
+and "serviceB") as well as export actors services (i.e. once I'm working
+I provide "serviceC").
 
-After unsubscription from all addresses, the behavior sends shutdown-confirmation,
-sets the actors status to `SHUTTED_DOWN` and then `shutdown_finish()` is called.
-
-In the `shutdown_finish()` is the final method called by `rotor`. For example,
-external addresses should be released to avoid memory leaks.
-
-## Supervisor lifecycle
-
-Generally supervisor's lifecycle is specialization of actors lifecycle. Supervisor
-is considered initialized when all it's children actors are initialized, i.e.
-it waits until all already created children confirm their initialization.
-The default policy (`supervisor_policy_t::shutdown_self`) specifies, that if
-something is wrong with a child initialization, then the supervisor will shutdown
-self (and all it's children). Once all children confirmed initialization their
-supervisor also confirms that (i.e. moves it's state from `INITIALIZING`
-to `INITIALIZED`). All children actors created in `OPERATIONAL` supervisor state
-are outside of the described behavior.
-
-The shutdown procedure is opposite: a supervisor waits all it's children confirm
-shutdown, and only then the supervisor shuts down self.
+The `resources` plugin is very specific one, as it allows to actor know that to
+continue initialization (or shutdown) it needs to acquire/release external
+(non-`rotor`) resources. For example, it covers the cases like: "before my actor
+starts, it needs to open TCP connector to remote side and perform successful
+authorization", i.e. it suspends initialization (shutdown) until some external
+events occur.

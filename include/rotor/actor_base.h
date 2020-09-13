@@ -93,7 +93,11 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief convenient method to send actor's supervisor shutdown trigger message */
     virtual void do_shutdown() noexcept;
 
-    /** \brief actor is fully initialized and it's supervisor has sent signal to start */
+    /** \brief actor is fully initialized and it's supervisor has sent signal to start
+     *
+     * The actor state is set to `OPERATIONAL`.
+     *
+     */
     virtual void on_start() noexcept;
 
     /** \brief sends message to the destination address
