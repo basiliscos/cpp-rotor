@@ -286,7 +286,7 @@ in the client-actor discovery timeout will trigger and the client-actor will shu
 ### Linking actors
 
 When two actors performing an interaction via messages they need to stay **operational**,
-but as they are some kind autonomous entities and can shut self down at any time. How
+but they are some kind autonomous entities and can shut self down at any time. How
 to deal with that? The actor linking mechanism was invented: when a client-actor is
 linked to server-actor, and server actor is going to shutdown then it will ask the
 client-actor to unlink. That way the client actor will shutdown too, but it still
@@ -309,13 +309,25 @@ struct client_actor : public rotor::actor_base_t {
 ~~~
 
 The `(1)` is convenient api to link after discovery, which the most likely you should use as
-it covers most use cases. The `(2) is more low-level API, where it is possible to setup
+it covers most use cases. The `(2)` is more low-level API, where it is possible to setup
 callback (it is available in `(1)` too), and the target actor address have to be specified.
 
 The special `bool` argument available in the both versions make postponed link confirmation,
 i.e. only upon server-actor start. Usually, this is have to be `false`.
 
 ### Synchronized start
+
+By default actor is started as soon as possible, i.e. once it confirmed initialization
+its supervisor sends it start trigger. However, this behavior is not always desirable,
+and there is need of barrier-like action, i.e. to let all child actors on a supervisor
+start simultaneously. The special option `synchronized_start` is response for that:
+
+~~~{.cpp}
+    auto sup = system_context.create_supervisor<rotor::ev::supervisor_ev_t>()
+                   .synchronize_start()
+                   .timeout(...)
+                   .finish();
+~~~
 
 
 
