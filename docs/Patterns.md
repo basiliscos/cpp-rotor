@@ -437,7 +437,7 @@ Of course, actors can dynamically subscribe/unsubscribe from address at runtime.
 [sobjectizer] ships with build-in message box protection, i.e. when inbound
 message queue hits certain threshold an predefined action can be performed:
 an message can be silently dropped (the newest one), it can be transformed to
-some other kind of message, or actor or application can be shutted down etc.
+some other kind of message, or actor or application can be shut down etc.
 
 In `rotor` there is no "inbound" queue, and the [sobjectizer]'s approach is
 not flexible enough: the overloading not always measured in number of
