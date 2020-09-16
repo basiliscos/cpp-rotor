@@ -355,54 +355,64 @@ and then it is unwrapped and delivered to the actor.
 Each `actor` has it's own `address`. Due to MPMC-feature above it is possible that
 first actor will receive messages for processing, and some other actor ( *foreign*
 actor) is able to subscribe to the same kind of messages and observe them (with some
-latency). It is possible observe even `rotor` "internal" messages, which are
-part of the API. In other words it is possible to do something like:
+latency). It is possible observe even `rotor` "internal" messages, however it is
+discouraged since there are more reliable synchronization approaches.
+
+Let's assume that server-actor via non-rotor I/O somehow generates data (e.g.
+it measures temperature once per second). Where should it send it if the consumers
+of the data are dynamic (e.g. connected from network)? The solution is to send
+metrics to itself, while dynamical clients should discover and link to the
+sensor actor, and then subscribe to metrics on the sensor actor address.
 
 ~~~{.cpp}
 namespace r = rotor;
 
-struct observer_t: public r::actor_base_t {
-    r::address_ptr_t observable;
-    void set_observable(r::address_ptr_t addr) { observable = std::move(addr); }
 
-    void init_start() noexcept override {
-        subscribe(&observer_t::on_target_initialize, observable);
-        subscribe(&observer_t::on_target_start, observable);
-        subscribe(&observer_t::on_target_shutdown, observable);
-        r::actor_base_t::init_start();
-    }
+namespace payload {
+    struct temperature_t { double value; };
+};
 
-    void on_target_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept {
-        // ...
-    }
+namespace message {
+    using temperature_notification_t = message_t<payload::temperature_t>;
+}
 
-    void on_target_start(r::message_t<r::payload::start_actor_t> &) noexcept {
-        // ...
-    }
-
-    void on_target_shutdown(r::message_t<r::payload::shutdown_request_t> &) noexcept {
-        // ...
+struct sensor_actor_t: public r::actor_base_t {
+    // registration "service::sensor" is omitted
+    void on_new_temperature(double value) {
+        // yep, send it to itself
+        send<payload::temperature_t>(address, value);
     }
 };
 
-int main() {
-    ...
-    auto observer = sup->create_actor<observer_t>();
-    auto target_actor = sup->create_actor<...>();
-    observer->set_observable(sample_actor->get_address());
-    ...
-}
+struct client_actor_t: public r::actor_base_t {
+    r::address_ptr_t sensor_addr;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
+            p.discover_name("service::sensor", sensor_addr)
+                .link()
+                .callback([&](auto phase, auto &ec) mutable {
+                    if (phase == r::plugin::registry_plugin_t::phase_t::linking && !ec) {
+                        auto subscriber = get_plugin(r::plugin::starter_plugin_t::class_identity);
+                        static_cast<r::plugin::starter_plugin_t*>(subscriber)->subscribe_actor(&client_actor_t::on_temperature);
+                    }
+                });
+        });
+    }
+
+    void on_temperature(message::temperature_notification_t& msg) noexcept {
+        ...
+    }
+};
 ~~~
 
-It should noted, that subscription request is regular `rotor` message, i.e. sequence
-of arrival of messages is undefined as soon as they are generated in different places;
-hence, an observer might be subscired *too late*, while the original
-messages has already been delivered to original recipient and the observer "misses" the
-message. See the pattern below how to synronize actors.
+That way it is possible to "spy" messages of the sensor actor. To avoid synchronization
+issues the client should discover and link to the sensor actor.
 
 The distinguish of *foreign and non-foreign* actors or MPMC pattern is completely
 **architectural** and application specific, i.e. whether it is known apriori that
-there are multiple subscribers (MPMC) or single subsciber and other subscribes
+there are multiple subscribers (MPMC) or single subscriber and other subscribes
 are are hidden from the original message flow. There is no difference between them
 at the `rotor` core, i.e.
 
@@ -420,8 +430,7 @@ at the `rotor` core, i.e.
     actor_d->set_c_addr(actor_c->get_address());
 ~~~
 
-Of course, actors can dynamically subscribe/unsubscribe from address at runtime
-
+Of course, actors can dynamically subscribe/unsubscribe from address at runtime.
 
 ## Actor overload protection (workload balancing)
 
