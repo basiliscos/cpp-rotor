@@ -209,7 +209,7 @@ struct forwarder_t<Actor, Handler, details::count::_1, void> : forwarder_base_t<
         auto &typed_actor = base_t::typed_actor;
         auto &sup = static_cast<supervisor_asio_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
-        asio::defer(strand, [actor = base_t::ttyped_actor, handler = std::move(base_t::handler),
+        asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::handler),
                              arg = std::move(arg)]() mutable {
             ((*actor).*handler)(std::move(arg));
             actor->get_supervisor().do_process();
