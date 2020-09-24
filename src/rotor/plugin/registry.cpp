@@ -98,6 +98,7 @@ void registry_plugin_t::link_registry() noexcept {
     auto plugin = actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
     auto p = static_cast<link_client_plugin_t *>(plugin);
     auto &registry_addr = actor->get_supervisor().get_registry_address();
+    assert(registry_addr && "supervisor has registry address");
     /* we know that registry actor has no I/O, so it is safe to work with it in pre-operational state */
     bool operational_only = false;
     p->link(registry_addr, operational_only, [this](auto &ec) { on_link(ec); });
