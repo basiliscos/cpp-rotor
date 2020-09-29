@@ -69,8 +69,8 @@ struct link_client_plugin_t : public plugin_base_t {
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;
 
-    /** \brief generic non-public fields & methods accessor */
-    template <typename T, typename Tag, typename... Args> T access(Args &&...) noexcept;
+    /** \brief continues previously suspended unlink request */
+    void forget_link(message::unlink_request_t &message) noexcept;
 
   private:
     enum class link_state_t { LINKING, OPERATIONAL };
@@ -80,7 +80,6 @@ struct link_client_plugin_t : public plugin_base_t {
     };
     using servers_map_t = std::unordered_map<address_ptr_t, server_record_t>;
 
-    void forget_link(message::unlink_request_t &message) noexcept;
     servers_map_t servers_map;
     unlink_reaction_t unlink_reaction;
     bool configured = false;

@@ -233,7 +233,7 @@ TEST_CASE("unlink reaction", "[actor]") {
             p.link(addr_s, false, [&](auto &) {});
             p.on_unlink([&](auto &req) {
                 unlink_req = &req;
-                p.template access<void, rt::to::forget_link>(req);
+                p.forget_link(req);
                 return true;
             });
         });
