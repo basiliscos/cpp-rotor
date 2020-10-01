@@ -508,8 +508,10 @@ TEST_CASE("proper shutdown order, defined by linkage", "[actor]") {
     auto act_2 = sup->create_actor<tracked_actor_t>().timeout(rt::default_timeout).finish();
     auto act_3 = sup->create_actor<tracked_actor_t>().timeout(rt::default_timeout).finish();
 
+    /*
     printf("a1 = %p(%p), a2 = %p(%p), a3 = %p(%p)\n", act_1.get(), act_1->get_address().get(),
            act_2.get(), act_2->get_address().get(), act_3.get(), act_3->get_address().get());
+    */
 
     std::uint32_t event_id = 1;
     auto shutdowner = [&](auto& me) {
