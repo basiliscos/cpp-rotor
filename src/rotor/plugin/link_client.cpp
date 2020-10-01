@@ -23,7 +23,6 @@ struct link_server {};
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
-template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
 template <> auto &actor_base_t::access<to::link_server>() noexcept { return link_server; }
 
 const void *link_client_plugin_t::class_identity = static_cast<const void *>(typeid(link_client_plugin_t).name());
