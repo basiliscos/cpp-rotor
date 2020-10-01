@@ -96,13 +96,10 @@ void inspected_local_delivery_t::delivery(message_ptr_t &message,
                                           const subscription_t::joint_handlers_t &local_recipients) noexcept {
     auto var = std::getenv("ROTOR_INSPECT_DELIVERY");
     if (var) {
-        int threshold;
-        auto [p, ec] = std::from_chars(var, var + strlen(var), threshold);
-        if (ec == std::errc()) {
-            auto dump = identify(message.get(), threshold);
-            if (dump.size() > 0) {
-                std::cout << ">> " << dump << " for " << message->address.get() << "\n";
-            }
+        int threshold = atoi(var);
+        auto dump = identify(message.get(), threshold);
+        if (dump.size() > 0) {
+            std::cout << ">> " << dump << " for " << message->address.get() << "\n";
         }
     }
     local_delivery_t::delivery(message, local_recipients);
