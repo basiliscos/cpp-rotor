@@ -59,6 +59,11 @@ struct double_linked_actor_t : r::actor_base_t {
     r::address_ptr_t alternative;
 };
 
+struct tracked_actor_t : rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+    std::uint32_t shutdown_event = 0;
+};
+
 TEST_CASE("client/server, common workflow", "[actor]") {
     r::system_context_t system_context;
 
@@ -493,4 +498,45 @@ TEST_CASE("link errors", "[actor]") {
 
     CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("proper shutdown order, defined by linkage", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_1 = sup->create_actor<tracked_actor_t>().timeout(rt::default_timeout).finish();
+    auto act_2 = sup->create_actor<tracked_actor_t>().timeout(rt::default_timeout).finish();
+    auto act_3 = sup->create_actor<tracked_actor_t>().timeout(rt::default_timeout).finish();
+
+    printf("a1 = %p(%p), a2 = %p(%p), a3 = %p(%p)\n", act_1.get(), act_1->get_address().get(),
+           act_2.get(), act_2->get_address().get(), act_3.get(), act_3->get_address().get());
+
+    std::uint32_t event_id = 1;
+    auto shutdowner = [&](auto& me) {
+        auto& self = static_cast<tracked_actor_t&>(me);
+        self.shutdown_event = event_id++;
+    };
+    act_1->shutdowner = act_2->shutdowner = act_3->shutdowner = shutdowner;
+
+    act_1->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
+            p.link(act_2->get_address(), false);
+            p.link(act_3->get_address(), false);
+        });
+    };
+    act_2->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
+            p.link(act_3->get_address(), false);
+        });
+    };
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+
+    CHECK(act_1->shutdown_event == 1);
+    CHECK(act_2->shutdown_event == 2);
+    CHECK(act_3->shutdown_event == 3);
 }

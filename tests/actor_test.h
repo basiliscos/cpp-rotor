@@ -15,12 +15,14 @@ namespace test {
 
 struct actor_test_t;
 using plugin_configurer_t = std::function<void(actor_test_t &self, plugin::plugin_base_t &)>;
+using shutdown_fn_t = std::function<void(actor_test_t& self)>;
 
 struct actor_test_t : public actor_base_t {
     using actor_base_t::actor_base_t;
 
     ~actor_test_t();
     plugin_configurer_t configurer;
+    shutdown_fn_t shutdowner;
 
     void configure(plugin::plugin_base_t &plugin) noexcept override;
     auto &get_plugins() const noexcept { return plugins; }
@@ -29,6 +31,7 @@ struct actor_test_t : public actor_base_t {
 
     auto &get_state() noexcept { return state; }
 
+    void shutdown_finish() noexcept override;
     void force_cleanup() noexcept;
 };
 

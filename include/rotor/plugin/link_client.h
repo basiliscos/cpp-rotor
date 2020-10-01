@@ -10,6 +10,7 @@
 #include <string>
 #include <unordered_map>
 #include <functional>
+#include <forward_list>
 
 namespace rotor::plugin {
 
@@ -73,15 +74,19 @@ struct link_client_plugin_t : public plugin_base_t {
     void forget_link(message::unlink_request_t &message) noexcept;
 
   private:
-    enum class link_state_t { LINKING, OPERATIONAL };
+    enum class link_state_t { LINKING, OPERATIONAL, UNLINKING };
     struct server_record_t {
         link_callback_t callback;
         link_state_t state;
     };
     using servers_map_t = std::unordered_map<address_ptr_t, server_record_t>;
+    using unlink_req_t = intrusive_ptr_t<message::unlink_request_t>;
+    using unlink_queue_t = std::list<unlink_req_t>;
 
+    void try_forget_links(bool attempt_shutdown) noexcept;
     servers_map_t servers_map;
     unlink_reaction_t unlink_reaction;
+    unlink_queue_t unlink_queue;
     bool configured = false;
 };
 

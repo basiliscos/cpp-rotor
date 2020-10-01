@@ -46,6 +46,9 @@ struct link_server_plugin_t : public plugin_base_t {
     bool handle_shutdown(message::shutdown_request_t *message) noexcept override;
     void handle_start(message::start_trigger_t *message) noexcept override;
 
+    /** \brief returns true if there is any connected client */
+    virtual bool has_clients() noexcept { return !linked_clients.empty(); }
+
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 

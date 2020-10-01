@@ -11,6 +11,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
+#include <charconv>
 
 using namespace rotor;
 using namespace rotor::plugin;
@@ -39,10 +40,11 @@ void local_delivery_t::delivery(message_ptr_t &message,
     }
 }
 
-std::string inspected_local_delivery_t::identify(message_base_t *message) noexcept {
+std::string inspected_local_delivery_t::identify(message_base_t *message, std::int32_t threshold) noexcept {
     using boost::core::demangle;
     using T = owner_tag_t;
     std::string info = demangle((const char *)message->type_index);
+    std::int32_t level = 0;
     auto dump_point = [](subscription_point_t &p) -> std::string {
         std::stringstream out;
         out << " [";
@@ -69,24 +71,39 @@ std::string inspected_local_delivery_t::identify(message_base_t *message) noexce
     };
 
     if (auto m = dynamic_cast<message::unsubscription_t *>(message); m) {
+        level = 9;
         info += dump_point(m->payload.point);
     } else if (auto m = dynamic_cast<message::subscription_t *>(message); m) {
+        level = 9;
         info += dump_point(m->payload.point);
     } else if (auto m = dynamic_cast<message::unsubscription_external_t *>(message); m) {
+        level = 9;
         info += dump_point(m->payload.point);
     } else if (auto m = dynamic_cast<message::external_subscription_t *>(message); m) {
+        level = 9;
         info += dump_point(m->payload.point);
     } else if (auto m = dynamic_cast<message::commit_unsubscription_t *>(message); m) {
+        level = 9;
         info += dump_point(m->payload.point);
     }
+
+    if (level > threshold)
+        return "";
     return info;
 }
 
 void inspected_local_delivery_t::delivery(message_ptr_t &message,
                                           const subscription_t::joint_handlers_t &local_recipients) noexcept {
     auto var = std::getenv("ROTOR_INSPECT_DELIVERY");
-    if (var && strcmp(var, "1") == 0) {
-        std::cout << ">> " << identify(message.get()) << " for " << message->address.get() << "\n";
+    if (var) {
+        int threshold;
+        auto [p, ec] = std::from_chars(var, var + strlen(var), threshold);
+        if (ec == std::errc()) {
+            auto dump = identify(message.get(), threshold);
+            if (dump.size() > 0) {
+                std::cout << ">> " << dump << " for " << message->address.get() << "\n";
+            }
+        }
     }
     local_delivery_t::delivery(message, local_recipients);
 }

@@ -16,6 +16,7 @@ struct init_request {};
 struct init_timeout {};
 struct state {};
 struct shutdown_request {};
+struct link_server {};
 } // namespace to
 } // namespace
 
@@ -23,6 +24,7 @@ template <> auto &actor_base_t::access<to::init_request>() noexcept { return ini
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
+template <> auto &actor_base_t::access<to::link_server>() noexcept { return link_server; }
 
 const void *link_client_plugin_t::class_identity = static_cast<const void *>(typeid(link_client_plugin_t).name());
 
@@ -79,15 +81,29 @@ void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexc
     if (it == servers_map.end())
         return;
 
-    actor->reply_to(message, actor->get_address());
-    servers_map.erase(it);
+    unlink_queue.emplace_back(&message);
+    try_forget_links(true);
+}
 
-    if (actor->access<to::state>() == rotor::state_t::SHUTTING_DOWN) {
-        if (actor->access<to::shutdown_request>()) {
-            actor->shutdown_continue();
+void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
+    if (!actor->access<to::link_server>()->has_clients()) {
+        bool unlink_requested = !unlink_queue.empty();
+        for (auto it : unlink_queue) {
+            auto &message = *it;
+            auto &server_addr = message.payload.request_payload.server_addr;
+            auto server_it = servers_map.find(server_addr);
+            if (server_it != servers_map.end()) {
+                actor->reply_to(message, actor->get_address());
+                servers_map.erase(server_it);
+            }
         }
-    } else {
-        actor->do_shutdown();
+        if (attempt_shutdown) {
+            if (actor->access<to::state>() == rotor::state_t::SHUTTING_DOWN) {
+                actor->shutdown_continue();
+            } else if (unlink_requested) {
+                actor->do_shutdown();
+            }
+        }
     }
 }
 
@@ -112,10 +128,18 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
     if (servers_map.empty())
         return plugin_base_t::handle_shutdown(req);
 
-    auto &source_addr = actor->get_address();
-    for (auto it = servers_map.begin(); it != servers_map.end();) {
-        actor->send<payload::unlink_notify_t>(it->first, source_addr);
-        it = servers_map.erase(it);
+    try_forget_links(false);
+
+    if (!actor->access<to::link_server>()->has_clients()) {
+        auto &source_addr = actor->get_address();
+        for (auto it = servers_map.begin(); it != servers_map.end();) {
+            actor->send<payload::unlink_notify_t>(it->first, source_addr);
+            it = servers_map.erase(it);
+        }
     }
-    return plugin_base_t::handle_shutdown(req);
+
+    if (servers_map.empty())
+        return plugin_base_t::handle_shutdown(req);
+
+    return false;
 }

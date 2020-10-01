@@ -296,6 +296,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief non-owning pointer to lifetime plugin */
     plugin::lifetime_plugin_t *lifetime = nullptr;
 
+    /** \brief non-owning pointer to link_server plugin */
+    plugin::link_server_plugin_t *link_server = nullptr;
+
     /** \brief non-owning pointer to resources plugin */
     plugin::resources_plugin_t *resources = nullptr;
 

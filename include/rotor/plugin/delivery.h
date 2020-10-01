@@ -36,7 +36,7 @@ struct local_delivery_t {
  */
 struct inspected_local_delivery_t {
     /** \brief stringifies the message into human-readable debug form */
-    static std::string identify(message_base_t *message) noexcept;
+    static std::string identify(message_base_t *message, int32_t threshold) noexcept;
 
     /** \brief delivers the message to the recipients, possbily dumping it to console */
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;

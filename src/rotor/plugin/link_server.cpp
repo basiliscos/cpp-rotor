@@ -15,12 +15,14 @@ namespace to {
 struct state {};
 struct shutdown_request {};
 struct shutdown_timeout {};
+struct link_server {};
 } // namespace to
 } // namespace
 
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
+template <> auto &actor_base_t::access<to::link_server>() noexcept { return link_server; }
 
 const void *link_server_plugin_t::class_identity = static_cast<const void *>(typeid(link_server_plugin_t).name());
 
@@ -28,6 +30,7 @@ const void *link_server_plugin_t::identity() const noexcept { return class_ident
 
 void link_server_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
+    actor->access<to::link_server>() = this;
     subscribe(&link_server_plugin_t::on_link_request);
     subscribe(&link_server_plugin_t::on_unlink_response);
     subscribe(&link_server_plugin_t::on_unlink_notify);
@@ -85,7 +88,8 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
 
 void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {
     auto &ec = message.payload.ec;
-    if (ec) {
+    auto &shutdown_request = actor->access<to::shutdown_request>();
+    if (ec && shutdown_request) {
         actor->reply_with_error(*actor->access<to::shutdown_request>(), ec);
         return;
     }
@@ -102,7 +106,6 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
     linked_clients.erase(it);
 
     auto &state = actor->access<to::state>();
-    auto &shutdown_request = actor->access<to::shutdown_request>();
     if (state == state_t::SHUTTING_DOWN && shutdown_request)
         actor->shutdown_continue();
 }

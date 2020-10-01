@@ -24,3 +24,9 @@ void actor_test_t::force_cleanup() noexcept {
     }
     lifetime->access<to::points>().clear();
 }
+
+
+void actor_test_t::shutdown_finish() noexcept {
+    actor_base_t::shutdown_finish();
+    if (shutdowner) shutdowner(*this);
+}
