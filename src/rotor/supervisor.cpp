@@ -77,7 +77,11 @@ void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) no
 }
 
 void supervisor_t::on_child_init(actor_base_t *, const std::error_code &) noexcept {}
-void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) noexcept {}
+void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) noexcept {
+    if (state == state_t::SHUTTING_DOWN) {
+        shutdown_continue();
+    }
+}
 
 void supervisor_t::on_timer_trigger(request_id_t timer_id) {
     auto it = request_map.find(timer_id);

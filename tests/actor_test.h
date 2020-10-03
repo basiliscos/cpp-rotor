@@ -14,8 +14,8 @@ namespace rotor {
 namespace test {
 
 struct actor_test_t;
-using plugin_configurer_t = std::function<void(actor_test_t &self, plugin::plugin_base_t &)>;
-using shutdown_fn_t = std::function<void(actor_test_t& self)>;
+using plugin_configurer_t = std::function<void(actor_base_t &self, plugin::plugin_base_t &)>;
+using shutdown_fn_t = std::function<void(actor_test_t &self)>;
 
 struct actor_test_t : public actor_base_t {
     using actor_base_t::actor_base_t;

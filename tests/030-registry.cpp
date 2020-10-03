@@ -395,3 +395,38 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     }
 }
+
+TEST_CASE("no problems when supervisor registers self in a registry", "[registry][supervisor]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                   .timeout(rt::default_timeout)
+                   .create_registry(true)
+                   .configurer([](auto &actor, r::plugin::plugin_base_t &plugin) {
+                       plugin.with_casted<r::plugin::registry_plugin_t>(
+                           [&actor](auto &p) { p.register_name("service-name", actor.get_address()); });
+                   })
+                   .finish();
+
+    SECTION("single supervisor and it's registry") {
+        sup->do_process();
+        CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+    }
+
+    SECTION("supervisor + actor") {
+        sup->do_process();
+        CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+        auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        act->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::registry_plugin_t>(
+                [&](auto &p) { p.discover_name("service-name", act->service_addr, false).link(false); });
+        };
+
+        sup->do_process();
+        CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    }
+
+    sup->do_shutdown();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+}

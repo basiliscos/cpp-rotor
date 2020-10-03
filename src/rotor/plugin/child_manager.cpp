@@ -174,15 +174,16 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
             // do not do shutdown-request on self
             if (actor->access<to::state>() != state_t::SHUTTING_DOWN) {
                 actor->shutdown_start();
-                unsubscribe_all(true);
+                request_shutdown();
+                actor->shutdown_continue();
             }
         }
     } else {
         auto &actor_state = actors_map.at(source_addr);
-        if (!actor_state.shutdown_requesting) {
-            actor_state.shutdown_requesting = true;
+        if (actor_state.shutdown == request_state_t::NONE) {
             auto &timeout = actor->access<to::shutdown_timeout>();
             sup.request<payload::shutdown_request_t>(source_addr).send(timeout);
+            actor_state.shutdown = request_state_t::SENT;
         }
     }
 }
@@ -194,7 +195,7 @@ void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const std::er
 void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &message) noexcept {
     auto &source_addr = message.payload.req->address;
     auto &actor_state = actors_map.at(source_addr);
-    actor_state.shutdown_requesting = false;
+    actor_state.shutdown = request_state_t::CONFIRMED;
     auto &ec = message.payload.ec;
     auto child_actor = actor_state.actor;
     if (ec) {
@@ -233,30 +234,29 @@ bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept { r
 bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     /* prevent double sending req, i.e. from parent and from self */
     auto &self = actors_map.at(actor->get_address());
-    self.shutdown_requesting = true;
-    unsubscribe_all(false);
+    self.shutdown = request_state_t::CONFIRMED;
+    request_shutdown();
 
     /* only own actor left, which will be handled differently */
     return actors_map.size() == 1 && plugin_base_t::handle_shutdown(req);
 }
 
-void child_manager_plugin_t::unsubscribe_all(bool continue_shutdown) noexcept {
+void child_manager_plugin_t::request_shutdown() noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     for (auto &it : actors_map) {
         auto &actor_state = it.second;
-        if (!actor_state.shutdown_requesting) {
+        if (actor_state.shutdown == request_state_t::NONE) {
             auto &actor_addr = it.first;
             auto &address = static_cast<actor_base_t &>(sup).get_address();
             auto &parent = sup.access<to::parent>();
             if ((actor_addr != address) || parent) {
                 auto &timeout = actor->access<to::shutdown_timeout>();
                 sup.request<payload::shutdown_request_t>(actor_addr).send(timeout);
+                actor_state.shutdown = request_state_t::SENT;
+            } else {
+                actor_state.shutdown = request_state_t::CONFIRMED;
             }
-            actor_state.shutdown_requesting = true;
         }
-    }
-    if (continue_shutdown && actors_map.size() == 1) {
-        actor->shutdown_continue();
     }
 }
 

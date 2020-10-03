@@ -13,7 +13,7 @@ using namespace rotor::test;
 using namespace rotor;
 
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
-    : supervisor_t{config_}, locality{config_.locality} {}
+    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)} {}
 
 supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n", (void *)this, (void *)address.get()); }
 
@@ -57,4 +57,11 @@ size_t supervisor_test_t::get_children_count() noexcept { return manager->access
 
 supervisor_test_t &supervisor_test_t::get_leader() {
     return *static_cast<supervisor_test_t *>(access<to::locality_leader>());
+}
+
+void supervisor_test_t::configure(plugin::plugin_base_t &plugin) noexcept {
+    supervisor_t::configure(plugin);
+    if (configurer){
+        configurer(*this, plugin);
+    }
 }

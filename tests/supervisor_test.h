@@ -7,6 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
+#include "actor_test.h"
 #include <list>
 
 namespace rotor {
@@ -16,6 +17,7 @@ extern pt::time_duration default_timeout;
 
 struct supervisor_config_test_t : public supervisor_config_t {
     const void *locality = nullptr;
+    plugin_configurer_t configurer = plugin_configurer_t{};
 };
 
 template <typename Supervisor> struct supervisor_test_config_builder_t;
@@ -29,6 +31,7 @@ struct supervisor_test_t : public supervisor_t {
     supervisor_test_t(supervisor_config_test_t &config_);
     ~supervisor_test_t();
 
+    void configure(plugin::plugin_base_t &plugin) noexcept override;
     virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
     virtual void cancel_timer(request_id_t timer_id) noexcept override;
     request_id_t get_timer(std::size_t index) noexcept;
@@ -50,15 +53,22 @@ struct supervisor_test_t : public supervisor_t {
 
     const void *locality;
     timers_t active_timers;
+    plugin_configurer_t configurer;
 };
 using supervisor_test_ptr_t = rotor::intrusive_ptr_t<supervisor_test_t>;
 
 template <typename Supervisor> struct supervisor_test_config_builder_t : supervisor_config_builder_t<Supervisor> {
+    using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
     using parent_t = supervisor_config_builder_t<Supervisor>;
     using parent_t::parent_t;
 
-    supervisor_test_config_builder_t &&locality(const void *locality_) && {
+    builder_t &&locality(const void *locality_) && {
         parent_t::config.locality = locality_;
+        return std::move(*this);
+    }
+
+    builder_t &&configurer(plugin_configurer_t&& value) && {
+        parent_t::config.configurer = std::move(value);
         return std::move(*this);
     }
 };

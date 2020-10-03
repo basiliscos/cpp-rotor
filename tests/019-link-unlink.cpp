@@ -514,8 +514,8 @@ TEST_CASE("proper shutdown order, defined by linkage", "[actor]") {
     */
 
     std::uint32_t event_id = 1;
-    auto shutdowner = [&](auto& me) {
-        auto& self = static_cast<tracked_actor_t&>(me);
+    auto shutdowner = [&](auto &me) {
+        auto &self = static_cast<tracked_actor_t &>(me);
         self.shutdown_event = event_id++;
     };
     act_1->shutdowner = act_2->shutdowner = act_3->shutdowner = shutdowner;
@@ -527,9 +527,7 @@ TEST_CASE("proper shutdown order, defined by linkage", "[actor]") {
         });
     };
     act_2->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
-        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
-            p.link(act_3->get_address(), false);
-        });
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(act_3->get_address(), false); });
     };
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);

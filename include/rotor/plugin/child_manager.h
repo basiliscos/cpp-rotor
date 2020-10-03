@@ -98,7 +98,9 @@ struct child_manager_plugin_t : public plugin_base_t {
   private:
     bool has_initializing() const noexcept;
     void init_continue() noexcept;
-    void unsubscribe_all(bool continue_shutdown) noexcept;
+    void request_shutdown() noexcept;
+
+    enum class request_state_t { NONE, SENT, CONFIRMED };
 
     struct actor_state_t {
         /** \brief intrusive pointer to actor */
@@ -108,8 +110,7 @@ struct child_manager_plugin_t : public plugin_base_t {
 
         bool initialized = false;
         bool strated = false;
-        /** \brief whether the shutdown request is already sent */
-        bool shutdown_requesting = false;
+        request_state_t shutdown = request_state_t::NONE;
     };
 
     using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
