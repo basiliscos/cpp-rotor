@@ -35,6 +35,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ## Changelog
 
 ### 0.09 (03-Oct-2020)
+- the dedicated article with the highlights will be published soon 
 - [improvement] rewritten whole documentation
 - [improvement/breaking] plugin system where introduced for actors instead of
 behaviors
