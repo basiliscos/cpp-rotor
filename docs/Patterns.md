@@ -9,6 +9,52 @@ supervisors as different network IP-addresses (which might or might not belong t
 the same host), and actors as an opened ports (or as endpoints, i.e. as
 IP-address:port).
 
+## Multiple actor identities
+
+Every actor has it's "main" address; however it is possible for it to have multiple addresses.
+This makes it available to have "inside actor" routing, or polymorphism. This
+is useful when the **same type** of messages arrive in response to different queries.
+
+For example, let's assume that there is an "http-actor", which is able to "execute"
+http requests in generic way and return back the replies. If there is a SOAP/WSDL
+-webservice, the first query will be "get list of serices", and the second query
+will be "execute an action X". The both responses will be HTTP-replies.
+
+Something like the following can be done:
+
+~~~{.cpp}
+
+struct client_t: public r::actor_base_t {
+    r::address_ptr_t http_client;
+    r::address_ptr_t wsdl_addr;
+    r::address_ptr_t action_addr;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        ...
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            wsdl_addr = create_address();
+            action_addr = create_address();
+            p.subscribe_actor(&client_t::on_wsdl, wsdl_addr);
+            p.subscribe_actor(&client_t::on_action, action_add);
+        });
+    }
+    void on_wsdl(http_message_t& msg) noexcept {
+        ...
+    }
+
+    void on_action(http_message_t& msg) noexcept {
+        ...
+    }
+
+    void on_a_start() noexcept override {
+        auto timeout = r::pt::seconds(1);
+        request_via<htt::request_t>(http_client, wsdl_addr, /* request params */ ).send(timeout);
+        request_via<htt::request_t>(http_client, action_addr, /* request params */ ).send(timeout);
+    }
+}
+~~~
+
+
 ## Request/Responce
 
 While [request-response] approach is widely know, it has it's own specific
@@ -26,11 +72,15 @@ slightly enreached one; the same relates to the response (the "client" side).
 The second issues is solved via spawning a *timer*. Obviously, that the timer
 should be spawned on the client-side. In the case of timeout, the client-side
 should receive the response message with the timeout error (and if the response
-arrives in a moment later it should be discarded). All the underhood meachanics
+arrives in a moment later it should be discarded). All the underhood mechanics
 is performed by supervisor, and there is a need of generic request/response
 matching, which can be done by introducing some synthetic message id per request.
-Hence, the request can't be just original user-defined payload, it's needed
+Hence, the response can't be just original user-defined payload, it's needed
 to be enriched a little bit to.
+
+A little bit more of terminology: the regular messages, which are not request
+nor response might have different names to emphasize their role: signals,
+notifications, or triggers.
 
 `rotor` provides support for the [request-response] pattern.
 
@@ -57,8 +107,8 @@ Second, you need to wrap them to let `rotor` knows that this is request/response
 ~~~{.cpp}
 namespace message {
 
-using request_t = rotor::request_traits_t<payload::my_request_t>::request::message_t;
-using response_t = rotor::request_traits_t<payload::my_request_tt>::response::message_t;
+using request_t = r::request_traits_t<payload::my_request_t>::request::message_t;
+using response_t = r::request_traits_t<payload::my_request_t>::response::message_t;
 
 }
 ~~~
@@ -71,18 +121,21 @@ the user defined payload should be used, i.e.
 struct client_actor_t : public r::actor_base_t {
     r::address_ptr_t server_addr;
 
-    void init_start() noexcept override {
-        subscribe(&client_actor_t::on_reply);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&client_actor::on_response); });
     }
 
-    void on_start(r::message::start_trigger_t &msg) noexcept override {
+
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         auto timeout = r::pt::milliseconds{10};
-        request<payload::my_request_t>(server_addr /*, fields-forwaded-for-request-payload */)
+        request<payload::sample_req_t>(server_addr, /* fields-forwaded-for-request-payload */)
             .send(timeout);
     }
 
-    void on_reply(message::response_t& msg) noexcept override {
+    void on_response(message::response_t& msg) noexcept override {
         if (msg.payload.ec) {
             // react somehow to the error, i.e. timeout
             return;
@@ -99,9 +152,10 @@ Forth, on the server side the `reply_to` or `reply_with_error` methods should be
 struct server_actor_t : public r::actor_base_t {
     r::address_ptr_t server_addr;
 
-    void init_start() noexcept override {
-        subscribe(&server_actor_t::on_request);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&server_actor::on_request); });
     }
 
 
@@ -119,7 +173,7 @@ struct server_actor_t : public r::actor_base_t {
 
 However, the story does not end here. As you might already guess, the response
 message arrives to the client supervisor first, where it might be discarded
-(if timeout timer already triggered), or it migth be delivered further to the client.
+(if timeout timer already triggered), or it might be delivered further to the client.
 As the `rotor` library should not modify the user-defined message at will,
 the new response message is created *via copying* the original one. As this
 might be not desirable, rotor is able to handle that: instead of copying
@@ -145,6 +199,135 @@ struct my_request_t {
 That's way responses, with heavy to- copy payload might be created.
 See `examples/boost-asio/request-response.cpp` as the example.
 
+## Registry
+
+There is a known [get-actor-address] problem: how one actor should know the
+address of the other actor? Well known way is to carefully craft initialization
+taking addresses of just created actors and pass them in constructor to the
+other actors etc. The approach will work in the certain circumstances; however it
+leads to boilerplate and fragile code, which "smells bad", as some initialization
+is performed inside actors and some is outside; it also does not handle well
+the case of dynamic (virtual) addresses.
+
+The better solution is to have "the registry" actor, known to all other actors.
+Each actor, which provides some services registers it's main or virtual address
+in the registry via some application-known string names; upon the termination
+it undoes the registration. Each "client-actor" asks for the predefined service
+point by it's name in the actor initialization phase; once all addresses for
+the needed services are found, the initialization can continue and the actor
+then becomes "operational".
+
+Since the registry does not perform any I/O and can be implemented in loop-agnostic
+way, it was included in `rotor` since `v0.06`, however the most convenient usage
+comes with `v0.09`:
+
+
+~~~{.cpp}
+struct server_actor : public rotor::actor_base_t {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        ...
+        plugin.with_casted<rotor::plugin::registry_plugin_t>(
+            [&](auto &p) { p.register_name("server", get_address()); });
+    }
+    ...
+};
+
+
+struct client_actor : public rotor::actor_base_t {
+    rotor::address_ptr_t server_addr;
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        ...
+        plugin.with_casted<rotor::plugin::registry_plugin_t>(
+            [&](auto &p) { p.discover_name("server", server_addr, true).link(); });
+    }
+};
+
+...
+auto sup = system_context->create_supervisor<...>()
+           ...
+           .create_registry()
+           .finish();
+
+~~~
+
+Please note, to let the things work, the `registry` actor is created by
+supervisor, so all other child actors ("server" and "client") know the mediator.
+
+During initialization phase the client actor discovers server address into the
+`server_addr` variable, and when done, it links to it. If something goes wrong
+it will shutdown, otherwise it will become operational. Additional synchronization
+patterns are used here.
+
+## Synchronization patterns
+
+### Delayed discovery
+
+There is a race condition in the registry example: the server-actor might register
+self in the registry a little bit later than a client-actor asks for server-actor
+address. The registry will reply to the client-actor with error, which will cause
+client-actor to shutdown down.
+
+~~~{.cpp}
+    p.discover_name("server", server_addr, true);
+~~~
+
+The `true` parameter here asks the registry not to fail, but reply to the client-actor
+as soon as server actor will register self.
+
+What will happen, if the server-actor will never register self in the registry? Than
+in the client-actor discovery timeout will trigger and the client-actor will shutdown.
+
+### Linking actors
+
+When two actors performing an interaction via messages they need to stay **operational**,
+but they are some kind autonomous entities and can shut self down at any time. How
+to deal with that? The actor linking mechanism was invented: when a client-actor is
+linked to server-actor, and server actor is going to shutdown then it will ask the
+client-actor to unlink. That way the client actor will shutdown too, but it still
+have time to perform emergency cleaning (e.g. flush caches). Then a supervisor might
+restart client and server actors, according to its policy. The API looks like:
+
+
+~~~{.cpp}
+struct client_actor : public rotor::actor_base_t {
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        ...
+        plugin.with_casted<rotor::plugin::registry_plugin_t>(
+            [&](auto &p) { p.discover_name("server", server_addr, true).link(false); }); // (1)
+
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
+            p.link(addr_s, false, callback);                                            // (2)
+
+    }
+};
+~~~
+
+The `(1)` is convenient api to link after discovery, which the most likely you should use as
+it covers most use cases. The `(2)` is more low-level API, where it is possible to setup
+callback (it is available in `(1)` too), and the target actor address have to be specified.
+
+The special `bool` argument available in the both versions make postponed link confirmation,
+i.e. only upon server-actor start. Usually, this is have to be `false`.
+
+It should be noted, that it is possible to make a cycle of linked actors. While this will
+work, it will never shutdown properly. So, it is better to avoid cycles.
+
+### Synchronized start
+
+By default actor is started as soon as possible, i.e. once it confirmed initialization
+its supervisor sends it start trigger. However, this behavior is not always desirable,
+and there is need of barrier-like action, i.e. to let all child actors on a supervisor
+start simultaneously. The special option `synchronized_start` is response for that:
+
+~~~{.cpp}
+    auto sup = system_context.create_supervisor<rotor::ev::supervisor_ev_t>()
+                   .synchronize_start()
+                   .timeout(...)
+                   .finish();
+~~~
+
+
+
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
 A `message` is delivered to `address`, independently of subscriber or subscribers,
@@ -158,9 +341,9 @@ Never assume that, nor assume that the message will be delivered with some guara
 timeframe.
 
 Technically in `rotor` it is implemented the following way: `address` is produced
-by some `supervisor`. The sent to the addres message it is processed by
+by some `supervisor`. The sent to an address message is processed by
 the supervisor: if the actor-subscriber is *local* (i.e. created on the `supervisor`),
-then the message is delivered immediately to it, othewise the message is wrapped
+then the message is delivered immediately to it, otherwise the message is wrapped
 and forwarded to the supervisor of the actor (i.e. to some *foreign* supervisor),
 and then it is unwrapped and delivered to the actor.
 
@@ -169,54 +352,64 @@ and then it is unwrapped and delivered to the actor.
 Each `actor` has it's own `address`. Due to MPMC-feature above it is possible that
 first actor will receive messages for processing, and some other actor ( *foreign*
 actor) is able to subscribe to the same kind of messages and observe them (with some
-latency). It is possible observe even `rotor` "internal" messages, which are
-part of the API. In other words it is possible to do something like:
+latency). It is possible observe even `rotor` "internal" messages, however it is
+discouraged since there are more reliable synchronization approaches.
+
+Let's assume that server-actor via non-rotor I/O somehow generates data (e.g.
+it measures temperature once per second). Where should it send it if the consumers
+of the data are dynamic (e.g. connected from network)? The solution is to send
+metrics to itself, while dynamical clients should discover and link to the
+sensor actor, and then subscribe to metrics on the sensor actor address.
 
 ~~~{.cpp}
 namespace r = rotor;
 
-struct observer_t: public r::actor_base_t {
-    r::address_ptr_t observable;
-    void set_observable(r::address_ptr_t addr) { observable = std::move(addr); }
 
-    void init_start() noexcept override {
-        subscribe(&observer_t::on_target_initialize, observable);
-        subscribe(&observer_t::on_target_start, observable);
-        subscribe(&observer_t::on_target_shutdown, observable);
-        r::actor_base_t::init_start();
-    }
+namespace payload {
+    struct temperature_t { double value; };
+};
 
-    void on_target_initialize(r::message_t<r::payload::initialize_actor_t> &msg) noexcept {
-        // ...
-    }
+namespace message {
+    using temperature_notification_t = message_t<payload::temperature_t>;
+}
 
-    void on_target_start(r::message_t<r::payload::start_actor_t> &) noexcept {
-        // ...
-    }
-
-    void on_target_shutdown(r::message_t<r::payload::shutdown_request_t> &) noexcept {
-        // ...
+struct sensor_actor_t: public r::actor_base_t {
+    // registration "service::sensor" is omitted
+    void on_new_temperature(double value) {
+        // yep, send it to itself
+        send<payload::temperature_t>(address, value);
     }
 };
 
-int main() {
-    ...
-    auto observer = sup->create_actor<observer_t>();
-    auto target_actor = sup->create_actor<...>();
-    observer->set_observable(sample_actor->get_address());
-    ...
-}
+struct client_actor_t: public r::actor_base_t {
+    r::address_ptr_t sensor_addr;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
+            p.discover_name("service::sensor", sensor_addr)
+                .link()
+                .callback([&](auto phase, auto &ec) mutable {
+                    if (phase == r::plugin::registry_plugin_t::phase_t::linking && !ec) {
+                        auto subscriber = get_plugin(r::plugin::starter_plugin_t::class_identity);
+                        static_cast<r::plugin::starter_plugin_t*>(subscriber)->subscribe_actor(&client_actor_t::on_temperature);
+                    }
+                });
+        });
+    }
+
+    void on_temperature(message::temperature_notification_t& msg) noexcept {
+        ...
+    }
+};
 ~~~
 
-It should noted, that subscription request is regular `rotor` message, i.e. sequence
-of arrival of messages is undefined as soon as they are generated in different places;
-hence, an observer might be subscired *too late*, while the original
-messages has already been delivered to original recipient and the observer "misses" the
-message. See the pattern below how to synronize actors.
+That way it is possible to "spy" messages of the sensor actor. To avoid synchronization
+issues the client should discover and link to the sensor actor.
 
 The distinguish of *foreign and non-foreign* actors or MPMC pattern is completely
 **architectural** and application specific, i.e. whether it is known apriori that
-there are multiple subscribers (MPMC) or single subsciber and other subscribes
+there are multiple subscribers (MPMC) or single subscriber and other subscribes
 are are hidden from the original message flow. There is no difference between them
 at the `rotor` core, i.e.
 
@@ -234,242 +427,14 @@ at the `rotor` core, i.e.
     actor_d->set_c_addr(actor_c->get_address());
 ~~~
 
-Of course, actors can dynamically subscribe/unsubscribe from address at runtime
-
-## Multiple actor identities
-
-Every actor has it's "main" address; however it is possible for it to have multiple.
-This makes it available to have "inside actor" routing, or polymorphism. This
-is useful when the **same type** of messages arrive in response to different queries.
-
-For example, let's assume that there is an "http-actor", which is able to "execute"
-http requests in generic way and return back the replies. If there is a SOAP/WSDL
--webservice, the first query will be "get list of serices", and the second query
-will be "execute an action X". The both responses will be HTTP-replies.
-
-Something like the following can be done:
-
-~~~{.cpp}
-
-struct client_t: public r::actor_base_t {
-    r::address_ptr_t http_client;
-    r::address_ptr_t wsdl_addr;
-    r::address_ptr_t action_addr;
-
-    void init_start() noexcept override {
-        ...
-        wsdl_addr = create_address();
-        action_addr = create_address();
-        subscribe(&client_t::on_wsdl, wsdl_addr);
-        subscribe(&client_t::on_action, action_addr);
-
-    }
-
-    void on_wsdl(http_message_t& msg) noexcept {
-        ...
-        auto timeout = r::pt::seconds(1);
-        request_via<htt::request_t>(http_client, action_addr, /* request params */ ).send(timeout);
-    }
-
-    void on_action(http_message_t& msg) noexcept {
-        ...
-    }
-
-    void on_a_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        ...
-        auto timeout = r::pt::seconds(1);
-        request_via<htt::request_t>(http_client, wsdl_addr, /* request params */ ).send(timeout);
-    }
-}
-~~~
-
-## Registry
-
-There is a known [get-actor-address] problem: how one actor should know the
-address of the other actor? Well known way is to carefully craft initialization
-taking addresses of just created actors and pass them in constructor to the
-other actors etc. The approach will work in the certain circumstances; however it
-leads to boilerplate and fragile code, which "smells bad", as some initialization
-is performed inside actors and some is outside; it also does not handles well
-the case of dynamic (virtual) addresses.
-
-The better solution is to have "the registry" actor, known to all other actors.
-Each actor, which provides some services registers it's main or virtual address
-in the registry via some application-known string names; upon the termination
-it undoes the registration. Each "client-actor" asks for the predefined service
-point by it's name in the actor initialization phase; once all addresses for
-the needed services are found, the initialization can continue and the actor
-then becomes "operational".
-
-Since the registry does not perform any I/O and can be implemented in loop-agnostic
-way, it was included in `rotor` since `v0.06`.
-
-## check actor ready state (syncrhonizing stream)
-
-Let's assume there are two actors, which need to communicate:
-
-~~~{.cpp}
-
-namespace r = rotor;
-
-struct payload{};
-
-struct actor_A_t: public r::actor_base_t {
-
-  void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_start(msg);
-      subscribe(&actor_A_t::on_message);
-  }
-
-  void on_message(r::message_t<payload> &msg) noexcept {
-    //processing logic is here
-  }
-};
-
-struct actor_B_t : public r::actor_base_t {
-  void set_target_addr(const r::address_ptr_t &addr) { target_addr = addr; }
-
-  void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-      r::actor_base_t::on_start(msg);
-      send<payload>(target_addr);
-  }
-
-  r::address_ptr_t target_addr;
-};
-
-int main() {
-    ...;
-    auto supervisor = ...;
-    auto actor_a = supervisor->create_actor<actor_A_t>();
-    auto actor_b = supervisor->create_actor<actor_B_t>();
-
-    actor_b->set_target_addr(actor_b->get_address());
-    supervisor->start();
-    ...;
-};
-~~~
-
-However here is a problem: the message delivery order is source-actor sequenced,
-it migth happen `actor_b` started be before `actor_a`, and the message with payload
-will be lost.
-
-The following trick is possible:
-
-~~~{.cpp}
-struct actor_A_t: public r::actor_base_t {
-    // instead of on_start
-    void init_start() noexcept override {
-        subscribe(&actor_A_t::on_message);
-        r::actor_base_t::init_start()
-    }
-}
-~~~
-
-or even that way:
-
-~~~{.cpp}
-struct actor_A_t: public r::actor_base_t {
-    // instead of on_start / on_initialize
-    void do_initialize(r::system_context_t* ctx) noexcept override {
-        r::actor_base_t::do_initialize(ctx);
-        subscribe(&actor_A_t::on_message);
-    }
-}
-~~~
-
-That tricky way will definitely work under certain circumstances, i.e. when
-actors are created sequentially and they use the same supervisor etc.; however
-in general case there will be unavoidable race, and the approach will not
-work when different supervisors / event loops are used, or when some I/O
-is involved in the scheme (i.e. it needed to establish connection before
-subscription). This is not networking mindset neither.
-
-The more robust approach is to start `actor_b` as usual, observe `on_start` event
-from `on_initialize` and poll (request) the `actor_a` status. Then, `actor_b` will either
-first receive the `on_start` event from `actor_a`, which means that `actor_a` is ready,
-or it will receive `r::message::state_response_t` and further analysis
-should be checked (i.e. if status is `initialized` or `started` etc.).
-
-Further, if it is desirable to scale this pattern, then `actor_b` should not even start
-unless `actor_a` is started, then `actor_b` should suspend it's `init_start`
-message. The following code demonstrates this approach:
-
-~~~{.cpp}
-
-struct actor_A_t: public r::actor_base_t {
-    // we need to be ready to accept messages, when on_start message arrives
-    void init_start() noexcept override {
-        subscribe(&actor_A_t::on_message);
-        r::actor_base_t::init_start()
-    }
-}
-
-struct actor_B_t : public r::actor_base_t {
-    r::message_t<r::payload::initialize_actor_t> init_message;
-
-    void init_start() noexcept override {
-        // we are not finished initialization:
-        // r::actor_base_t::init_start();
-        subscribe(&actor_B_t::on_a_state);
-        subscribe(&actor_B_t::on_a_start, target_addr);
-        poll_a_state();
-    }
-
-    void poll_a_state() noexcept {
-        auto& sup_addr   = target_addr->supervisor.get_address();
-        auto reply_addr  = get_address();
-        // ask actor_a supervisor about actor_a state, and deliver reply back to me
-        auto timeout = r::pt::seconds{1};
-        request<r::payload::state_request_t>(sup_addr, target_addr).send(timeout);
-    }
-
-    void finish_init() noexcept {
-        r::actor_base_t::init_start()
-        unsubscribe(&actor_B_t::on_a_state);                // optional
-        unsubscribe(&actor_B_t::on_a_start, target_addr);   // optional
-    }
-
-    void on_a_state(r::message::state_response_t &msg) noexcept {
-        if (state == r::state_t::INITIALIZED) {
-            return; // we are already initialized
-        }
-        if (msg.payload.ec) {
-            return do_shutdown(); // something bad happen
-        }
-        auto target_state = msg.payload.res.state;
-        if (state == r::state_t::OPERATIONAL) {
-            finish_init();
-        } else {
-            poll_a_state();
-        }
-    }
-
-    void on_a_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        if (init_message) {
-            finish_init();
-        }
-    }
-}
-~~~
-
-We covered some cases, i.e. when there is no any actor is listening on the address, or
-when the supervisor does not replies with the certain timeframe - in that cases
-the `response_t` will contain error code with timeout. Howevere, a few things
-still need to be done: it should be prevented to from infinite polling. To do that
-it should use some finite couter; if all attemps failed, then initiate `actor_B`
-shutdown.
-
-The sample does not cover the case, when `actor_A` decided to shutdown,
-the `actor_B` should be notified and take appropriate actions. As it seems
-generic pattern (i.e. `actor_B` uses `actor_A` as a client), this pattern,
-probably, will be supported in the future version of `rotor` core.
+Of course, actors can dynamically subscribe/unsubscribe from address at runtime.
 
 ## Actor overload protection (workload balancing)
 
 [sobjectizer] ships with build-in message box protection, i.e. when inbound
 message queue hits certain threshold an predefined action can be performed:
 an message can be silently dropped (the newest one), it can be transformed to
-some other kind of message, or actor or application can be shutted down etc.
+some other kind of message, or actor or application can be shut down etc.
 
 In `rotor` there is no "inbound" queue, and the [sobjectizer]'s approach is
 not flexible enough: the overloading not always measured in number of
@@ -500,8 +465,8 @@ hence, provide application-specific load balancing.
 
 This is not yet started, however a lot of building blocks for networking are
 already here: the **location transparency**, message passing and reactiveness
-are here. The missing blocks are: service discovery, handshake, and message
-serialization.
+are here. The missing blocks are: handshake and message serialization, for
+which it is needed to have reflections in C++.
 
 The final goal is: the `send<payload>(destination_address, args...)` should
 send the message to some *local* `destination_address`, which is the representative
@@ -511,5 +476,5 @@ will be deserialized, processed and replied back and reverse procedure will
 happen.
 
 Whilst the actual network transmission cannot implemented in a event loop agnostic
-way, *I think* the abovementioned protocol seems quite an loop independent.
+way, *I think* the abovementioned protocol seems quite easy in a loop independent.
 This is the area of further `rotor` research & development.

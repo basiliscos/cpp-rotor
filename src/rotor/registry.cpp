@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,14 +9,18 @@
 
 using namespace rotor;
 
-registry_t::~registry_t() {}
-
-void registry_t::init_start() noexcept {
-    subscribe(&registry_t::on_reg);
-    subscribe(&registry_t::on_dereg);
-    subscribe(&registry_t::on_dereg_service);
-    subscribe(&registry_t::on_discovery);
-    actor_base_t::init_start();
+void registry_t::configure(plugin::plugin_base_t &plug) noexcept {
+    actor_base_t::configure(plug);
+    plug.with_casted<plugin::starter_plugin_t>(
+        [](auto &p) {
+            p.subscribe_actor(&registry_t::on_reg);
+            p.subscribe_actor(&registry_t::on_dereg);
+            p.subscribe_actor(&registry_t::on_dereg_service);
+            p.subscribe_actor(&registry_t::on_discovery);
+            p.subscribe_actor(&registry_t::on_promise);
+            p.subscribe_actor(&registry_t::on_cancel);
+        },
+        plugin::config_phase_t::PREINIT);
 }
 
 void registry_t::on_reg(message::registration_request_t &request) noexcept {
@@ -33,6 +37,14 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
     names.insert(name);
 
     reply_to(request);
+    auto it = promises_map.find(name);
+    if (it != promises_map.end()) {
+        auto &promises = it->second;
+        for (auto &promise_ptr : promises) {
+            reply_to(*promise_ptr, service_addr);
+        }
+        promises_map.erase(it);
+    }
 }
 
 void registry_t::on_dereg(message::deregistration_notify_t &message) noexcept {
@@ -66,5 +78,35 @@ void registry_t::on_discovery(message::discovery_request_t &request) noexcept {
     } else {
         auto ec = make_error_code(error_code_t::unknown_service);
         reply_with_error(request, ec);
+    }
+}
+
+void registry_t::on_promise(message::discovery_promise_t &request) noexcept {
+    auto &name = request.payload.request_payload.service_name;
+    auto it = registered_map.find(name);
+    if (it != registered_map.end()) {
+        auto &service_addr = it->second;
+        reply_to(request, service_addr);
+        return;
+    }
+
+    auto &promises = promises_map[name];
+    promises.emplace_back(&request);
+}
+
+void registry_t::on_cancel(message::discovery_cancel_t &notify) noexcept {
+    auto &name = notify.payload.service_name;
+    auto &client_addr = notify.payload.client_addr;
+    auto it_promises = promises_map.find(name);
+    auto predicate = [&](auto &msg) { return msg->payload.origin == client_addr; };
+    if (it_promises != promises_map.end()) {
+        auto &list = it_promises->second;
+        auto it = std::find_if(list.begin(), list.end(), predicate);
+        if (it != list.end()) {
+            list.erase(it);
+            if (list.empty()) {
+                promises_map.erase(it_promises);
+            }
+        }
     }
 }

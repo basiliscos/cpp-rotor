@@ -1,36 +1,20 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "address.hpp"
+#include "actor_config.h"
 #include "messages.hpp"
-#include "behavior.h"
 #include "state.h"
 #include "handler.hpp"
-#include <unordered_map>
-#include <list>
+#include "forward.hpp"
+#include <set>
 
 namespace rotor {
-
-struct supervisor_t;
-struct system_context_t;
-struct handler_base_t;
-
-/** \brief intrusive pointer for handler */
-using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
-
-/** \brief SFINAE handler detector
- *
- * Either handler can be constructed from  memeber-to-function-pointer or
- * it is already constructed and have a base `handler_base_t`
- */
-template <typename Handler>
-using is_handler =
-    std::enable_if_t<std::is_member_function_pointer_v<Handler> || std::is_base_of_v<handler_base_t, Handler>>;
 
 /** \struct actor_base_t
  *  \brief universal primitive of concurrent computation
@@ -54,18 +38,38 @@ using is_handler =
  *
  */
 struct actor_base_t : public arc_base_t<actor_base_t> {
-    /** \struct subscription_point_t
-     *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
-     */
-    struct subscription_point_t {
-        /** \brief intrusive pointer to messages' handler */
-        handler_ptr_t handler;
-        /** \brief intrusive pointer to address */
-        address_ptr_t address;
-    };
+    /** \brief injects an alias for actor_config_t */
+    using config_t = actor_config_t;
 
-    /** \brief alias to the list of {@link subscription_point_t} */
-    using subscription_points_t = std::list<subscription_point_t>;
+    /** \brief injects templated actor_config_builder_t */
+    template <typename Actor> using config_builder_t = actor_config_builder_t<Actor>;
+
+    /** \brief SFINAE handler detector
+     *
+     * Either handler can be constructed from  memeber-to-function-pointer or
+     * it is already constructed and have a base `handler_base_t`
+     */
+    template <typename Handler>
+    using is_handler =
+        std::enable_if_t<std::is_member_function_pointer_v<Handler> || std::is_base_of_v<handler_base_t, Handler>>;
+
+    // clang-format off
+    /** \brief the default list of plugins for an actor
+     *
+     * The order of plugins is very important, as they are initialized in the direct order
+     * and deinitilized in the reverse order.
+     *
+     */
+    using plugins_list_t = std::tuple<
+        plugin::address_maker_plugin_t,
+        plugin::lifetime_plugin_t,
+        plugin::init_shutdown_plugin_t,
+        plugin::link_server_plugin_t,
+        plugin::link_client_plugin_t,
+        plugin::registry_plugin_t,
+        plugin::resources_plugin_t,
+        plugin::starter_plugin_t>;
+    // clang-format on
 
     /** \brief constructs actor and links it's supervisor
      *
@@ -74,15 +78,14 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Sets internal actor state to `NEW`
      *
      */
-    actor_base_t(supervisor_t &supervisor_);
+    actor_base_t(config_t &cfg);
     virtual ~actor_base_t();
 
     /** \brief early actor initialization (pre-initialization)
      *
-     * Actor's "main" address is created, actor's behavior is created.
-     *
-     * Actor performs subsscription on all major methods, defined by
-     * `rotor` framework; sets internal actor state to `INITIALIZING`.
+     * Actor's plugins are activated, "main" address is created
+     * (via {@link plugin::address_maker_plugin_t}), state is set
+     * to `INITIALIZING` (via {@link plugin::init_shutdown_plugin_t}).
      *
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
@@ -90,74 +93,12 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief convenient method to send actor's supervisor shutdown trigger message */
     virtual void do_shutdown() noexcept;
 
-    /** \brief creates actor's address by delegating the call to supervisor */
-    virtual address_ptr_t create_address() noexcept;
-
-    /** \brief returns actor's "main" address (intrusive pointer) */
-    inline address_ptr_t get_address() const noexcept { return address; }
-
-    /** \brief returns actor's supervisor */
-    inline supervisor_t &get_supervisor() const noexcept { return supervisor; }
-
-    /** \brief returns actor's state */
-    inline state_t &get_state() noexcept { return state; }
-
-    /** \brief returns actor's subscription points */
-    inline subscription_points_t &get_subscription_points() noexcept { return points; }
-
-    /** \brief records init request and may be triggers actor initialization
+    /** \brief actor is fully initialized and it's supervisor has sent signal to start
      *
-     * After recoding the init request message, it invokes `init_start` method,
-     * which triggers initialization sequece (configured by
-     * {@link actor_behavior_t} ).
+     * The actor state is set to `OPERATIONAL`.
      *
      */
-    virtual void on_initialize(message::init_request_t &) noexcept;
-
-    /** \brief start confirmation from supervisor
-     *
-     * Sets internal actor state to `OPERATIONAL`.
-     *
-     */
-    virtual void on_start(message_t<payload::start_actor_t> &) noexcept;
-
-    /** \brief records shutdown request and may be triggers actor shutdown
-     *
-     * After recording the shutdown request it invokes the `shutdown_start`
-     * method, which triggers shutdown actions sequence (configured by
-     * {@link actor_behavior_t} ).
-     */
-    virtual void on_shutdown(message::shutdown_request_t &) noexcept;
-
-    /** \brief initiates actor's shutdown
-     *
-     * If there is a supervisor, the message is forwarded to it to
-     * send shutdown request.
-     *
-     */
-    virtual void on_shutdown_trigger(message::shutdown_trigger_t &) noexcept;
-
-    /** \brief records subsciption point */
-    virtual void on_subscription(message_t<payload::subscription_confirmation_t> &) noexcept;
-
-    /** \brief forgets the subscription point
-     *
-     * If there is no more subscription points, the on_unsubscription event is
-     * triggerred on {@link actor_behavior_t}.
-     *
-     */
-    virtual void on_unsubscription(message_t<payload::unsubscription_confirmation_t> &) noexcept;
-
-    /** \brief forgets the subscription point for external address
-     *
-     * The {@link payload::commit_unsubscription_t} is sent to the external {@link supervisor_t}
-     *  after removing the subscription .
-     *
-     * If there is no more subscription points, the on_unsubscription event is
-     * triggerred on {@link actor_behavior_t}.
-     *
-     */
-    virtual void on_external_unsubscription(message_t<payload::external_unsubscription_t> &) noexcept;
+    virtual void on_start() noexcept;
 
     /** \brief sends message to the destination address
      *
@@ -202,10 +143,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
-    template <typename Handler> handler_ptr_t subscribe(Handler &&h, address_ptr_t &addr) noexcept;
+    template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
 
     /** \brief subscribes actor's handler to process messages on the actor's "main" address */
-    template <typename Handler> handler_ptr_t subscribe(Handler &&h) noexcept;
+    template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h) noexcept;
 
     /** \brief unsubscribes actor's handler from process messages on the specified address */
     template <typename Handler, typename = is_handler<Handler>>
@@ -214,7 +155,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief unsubscribes actor's handler from processing messages on the actor's "main" address */
     template <typename Handler, typename = is_handler<Handler>> void unsubscribe(Handler &&h) noexcept;
 
-    /** \brief initiates handler unsubscription from the address
+    /* \brief initiates handler unsubscription from the address
      *
      * If the address is local, then unsubscription confirmation is sent immediately,
      * otherwise {@link payload::external_subscription_t} request is sent to the external
@@ -223,80 +164,161 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * The optional call can be providded to be called upon message destruction.
      *
      */
-    void unsubscribe(const handler_ptr_t &h, const address_ptr_t &addr, const payload::callback_ptr_t & = {}) noexcept;
 
     /** \brief initiates handler unsubscription from the default actor address */
-    inline void unsubscribe(const handler_ptr_t &h) noexcept { unsubscribe(h, address); }
+    inline void unsubscribe(const handler_ptr_t &h) noexcept { lifetime->unsubscribe(h, address); }
 
-  protected:
-    /** \brief constructs actor's behavior on early stage */
-    virtual actor_behavior_t *create_behavior() noexcept;
+    /** \brief starts plugins activation */
+    void activate_plugins() noexcept;
 
-    /** \brief removes the subscription point */
-    virtual void remove_subscription(const address_ptr_t &addr, const handler_ptr_t &handler) noexcept;
+    /** \brief finishes plugin activation, successful or not */
+    void commit_plugin_activation(plugin::plugin_base_t &plugin, bool success) noexcept;
 
-    /** \brief starts initialization
-     *
-     * Some resources might be acquired synchronously, if needed. If resources need
-     * to be acquired asynchronously this method should be overriden, and
-     * invoked only after resources acquisition.
-     *
-     * In internals it forwards initialization sequence to the behavior.
-     *
-     */
-    virtual void init_start() noexcept;
+    /** \brief starts plugins deactivation */
+    void deactivate_plugins() noexcept;
 
-    /** \brief finializes initialization  */
-    virtual void init_finish() noexcept;
+    /** \brief finishes plugin deactivation */
+    void commit_plugin_deactivation(plugin::plugin_base_t &plugin) noexcept;
 
-    /** \brief strart releasing acquired resources
+    /** \brief propaagtes subscription message to corresponding actors */
+    void on_subscription(message::subscription_t &message) noexcept;
+
+    /** \brief propaagtes unsubscription message to corresponding actors */
+    void on_unsubscription(message::unsubscription_t &message) noexcept;
+
+    /** \brief propaagtes external unsubscription message to corresponding actors */
+    void on_unsubscription_external(message::unsubscription_external_t &message) noexcept;
+
+    /** \brief creates new unique address for an actor (via address_maker plugin) */
+    address_ptr_t create_address() noexcept;
+
+    /** \brief starts shutdown procedure, e.g. upon receiving shutdown request
      *
-     * The method can be overriden in derived classes to initiate the
-     * release of resources, i.e. (asynchronously) close all opened
-     * sockets before confirm shutdown to supervisor.
-     *
-     * It actually forwards shutdown for the behavior
+     * The actor state is set to SHUTTING_DOWN.
      *
      */
     virtual void shutdown_start() noexcept;
 
-    /** \brief finalize shutdown, release aquired resources
+    /** \brief polls plugins for shutdown
+     *
+     * The poll is performed in the reverse order. If all plugins, with active
+     * shutdown reaction confirm they are ready to shutdown, then the
+     * `shutdown_finish` method is invoked.
+     *
+     */
+    void shutdown_continue() noexcept;
+
+    /** \brief finalizes shutdown
+     *
+     * The shutdown response is sent and actor state is set to SHUT_DOWN.
      *
      * This is the last action in the shutdown sequence.
-     * No further methods will be invoked.
+     * No further methods will be invoked on the actor
      *
      */
     virtual void shutdown_finish() noexcept;
 
-    /** \brief actor's execution / infrastructure context */
-    supervisor_t &supervisor;
-
-    /** \brief current actor state */
-    state_t state;
-
-    /** \brief actor's behavior, used for runtime customization of actors's
-     * behavioral aspects
+    /** \brief starts initialization procedure
+     *
+     * The actor state is set to INITIALIZING.
+     *
      */
-    actor_behavior_t *behavior;
+    virtual void init_start() noexcept;
 
-    /** \brief actor address */
-    address_ptr_t address;
+    /** \brief polls plugins whether they completed initialization.
+     *
+     * The poll is performed in the direct order. If all plugins, with active
+     * init reaction confirm they are ready, then the `init_finish` method
+     * is invoked.
+     *
+     */
+    void init_continue() noexcept;
 
-    /** \brief recorded subscription points (i.e. handler/address pairs) */
-    subscription_points_t points;
+    /** \brief finalizes initialization
+     *
+     * The init response is sent and actor state is set to INITIALIZED.
+     *
+     */
+    virtual void init_finish() noexcept;
 
+    /** \brief main callback for plugin configuration when it's ready */
+    virtual void configure(plugin::plugin_base_t &plugin) noexcept;
+
+    /** \brief generic non-public fields accessor */
+    template <typename T> auto &access() noexcept;
+
+    /** \brief generic non-public methods accessor */
+    template <typename T, typename... Args> auto access(Args... args) noexcept;
+
+    /** \brief generic non-public fields accessor */
+    template <typename T> auto &access() const noexcept;
+
+    /** \brief generic non-public methods accessor */
+    template <typename T, typename... Args> auto access(Args... args) const noexcept;
+
+    /** \brief returns actor's main address */
+    inline const address_ptr_t &get_address() const noexcept { return address; }
+
+    /** \brief returns actor's supervisor */
+    inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
+
+  protected:
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
     /** \brief suspended shutdown request message */
     intrusive_ptr_t<message::shutdown_request_t> shutdown_request;
 
-    friend struct actor_behavior_t;
+    /** \brief actor address */
+    address_ptr_t address;
+
+    /** \brief non-owning pointer to actor's execution / infrastructure context */
+    supervisor_t *supervisor;
+
+    /** \brief opaque plugins storage (owning) */
+    plugin_storage_ptr_t plugins_storage;
+
+    /** \brief non-ownling list of plugins */
+    plugins_t plugins;
+
+    /** \brief timeout for actor initialization (used by supervisor) */
+    pt::time_duration init_timeout;
+
+    /** \brief timeout for actor shutdown (used by supervisorr) */
+    pt::time_duration shutdown_timeout;
+
+    /** \brief current actor state */
+    state_t state;
+
+    /** \brief non-owning pointer to address_maker plugin */
+    plugin::address_maker_plugin_t *address_maker = nullptr;
+
+    /** \brief non-owning pointer to lifetime plugin */
+    plugin::lifetime_plugin_t *lifetime = nullptr;
+
+    /** \brief non-owning pointer to link_server plugin */
+    plugin::link_server_plugin_t *link_server = nullptr;
+
+    /** \brief non-owning pointer to resources plugin */
+    plugin::resources_plugin_t *resources = nullptr;
+
+    /** \brief finds plugin by plugin class identity
+     *
+     * `nullptr` is returned when plugin cannot be found
+     */
+    plugin::plugin_base_t *get_plugin(const void *identity) const noexcept;
+
+    /** \brief set of activating plugin identities */
+    std::set<const void *> activating_plugins;
+
+    /** \brief set of deactivating plugin identities */
+    std::set<const void *> deactivating_plugins;
+
+    friend struct plugin::plugin_base_t;
+    friend struct plugin::lifetime_plugin_t;
     friend struct supervisor_t;
     template <typename T> friend struct request_builder_t;
+    template <typename T, typename M> friend struct accessor_t;
 };
-
-/** \brief intrusive pointer for actor*/
-using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
 
 } // namespace rotor

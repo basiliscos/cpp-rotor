@@ -9,6 +9,7 @@
 #include "arc.hpp"
 #include "address.hpp"
 #include <typeindex>
+#include <deque>
 
 namespace rotor {
 
@@ -65,6 +66,9 @@ template <typename T> struct message_t : public message_base_t {
 
 /** \brief intrusive pointer for message */
 using message_ptr_t = intrusive_ptr_t<message_base_t>;
+
+/** \brief structure to hold messages (intrusive pointers) */
+using messages_queue_t = std::deque<message_ptr_t>;
 
 template <typename T> const void *message_t<T>::message_type = static_cast<const void *>(typeid(message_t<T>).name());
 

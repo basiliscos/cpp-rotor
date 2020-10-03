@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -12,6 +12,8 @@
 // The key point here is that request is timeout supervised, i.e.
 // if the server will not answer with the specified timeout,
 // the client will know that.
+
+// better version: with discovered & linked
 
 #include "rotor.hpp"
 #include "rotor/asio.hpp"
@@ -40,6 +42,12 @@ using response_t = rotor::request_traits_t<payload::sample_req_t>::response::mes
 struct server_actor : public rotor::actor_base_t {
     using rotor::actor_base_t::actor_base_t;
 
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&server_actor::on_request); });
+    }
+
     void on_request(message::request_t &req) noexcept {
         auto in = req.payload.request_payload.value;
         if (in >= 0) {
@@ -51,11 +59,6 @@ struct server_actor : public rotor::actor_base_t {
             reply_with_error(req, ec);
         }
     }
-
-    void init_start() noexcept override {
-        subscribe(&server_actor::on_request);
-        rotor::actor_base_t::init_start();
-    }
 };
 
 struct client_actor : public rotor::actor_base_t {
@@ -65,9 +68,10 @@ struct client_actor : public rotor::actor_base_t {
 
     void set_server(const rotor::address_ptr_t addr) { server_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&client_actor::on_response);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>(
+            [](auto &p) { p.subscribe_actor(&client_actor::on_response); });
     }
 
     void on_response(message::response_t &res) noexcept {
@@ -76,11 +80,11 @@ struct client_actor : public rotor::actor_base_t {
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";
         }
-        supervisor.do_shutdown(); // optional;
+        supervisor->do_shutdown(); // optional;
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-        rotor::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         auto timeout = rotor::pt::milliseconds{1};
         request<payload::sample_req_t>(server_addr, 25.0).send(timeout);
     }
@@ -89,12 +93,12 @@ struct client_actor : public rotor::actor_base_t {
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
-    auto stand = std::make_shared<asio::io_context::strand>(io_context);
+    auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = boost::posix_time::milliseconds{500};
-    rotor::asio::supervisor_config_asio_t conf{timeout, std::move(stand)};
-    auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>(conf);
-    auto server = sup->create_actor<server_actor>(timeout);
-    auto client = sup->create_actor<client_actor>(timeout);
+    auto sup =
+        system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
+    auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
+    auto client = sup->create_actor<client_actor>().timeout(timeout).finish();
     client->set_server(server->get_address());
     sup->do_process();
     return 0;

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -18,21 +18,42 @@ namespace wx {
 struct supervisor_config_wx_t : public supervisor_config_t {
     /** \brief the wx context, responsible for messages delivery
      *
-     * Actuall rotor-message delivery for actors runnion on the
+     * Actual rotor-message delivery for actors running on the
      * top of wx-loop is performed via wx-events, i.e. rotor-messages
      * are **wrapped**  into wx-events.
      *
      * The wx-supervisor subscribes to the `wx-events` and unswraps
      * the rotor-messages from the events.
      *
-     * The wx event handler is used as a transport medium
+     * The wx event handler is used as a transport medium.
      *
      */
     wxEvtHandler *handler;
 
-    /** \brief construct from shutdown timeout and non-owning wx event handler */
-    supervisor_config_wx_t(const rotor::pt::time_duration &shutdown_config_, wxEvtHandler *handler_)
-        : supervisor_config_t{shutdown_config_}, handler{handler_} {}
+    using supervisor_config_t::supervisor_config_t;
+};
+
+/** \brief config builder for wx supervisor */
+template <typename Supervisor> struct supervisor_config_wx_builder_t : supervisor_config_builder_t<Supervisor> {
+    /** \brief final builder class */
+    using builder_t = typename Supervisor::template config_builder_t<Supervisor>;
+
+    /** \brief parent config builder */
+    using parent_t = supervisor_config_builder_t<Supervisor>;
+    using parent_t::parent_t;
+
+    /** \brief bit mask for event handler validation */
+    constexpr static const std::uint32_t EVT_LOOP = 1 << 2;
+
+    /** \brief bit mask for all required fields */
+    constexpr static const std::uint32_t requirements_mask = parent_t::requirements_mask | EVT_LOOP;
+
+    /** \brief sets event handler */
+    builder_t &&handler(wxEvtHandler *handler_) && {
+        parent_t::config.handler = handler_;
+        parent_t::mask = (parent_t::mask & ~EVT_LOOP);
+        return std::move(*static_cast<builder_t *>(this));
+    }
 };
 
 } // namespace wx

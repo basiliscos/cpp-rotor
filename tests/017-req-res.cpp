@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 
 namespace r = rotor;
 namespace rt = r::test;
@@ -63,14 +64,15 @@ struct good_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&good_actor_t::on_request);
-        subscribe(&good_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&good_actor_t::on_request);
+            p.subscribe_actor(&good_actor_t::on_response);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request<request_sample_t>(address, 4).send(r::pt::seconds(1));
     }
 
@@ -90,10 +92,11 @@ struct bad_actor_t : public r::actor_base_t {
     std::error_code ec;
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
-    void init_start() noexcept override {
-        subscribe(&bad_actor_t::on_request);
-        subscribe(&bad_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&bad_actor_t::on_request);
+            p.subscribe_actor(&bad_actor_t::on_response);
+        });
     }
 
     void shutdown_start() noexcept override {
@@ -101,9 +104,9 @@ struct bad_actor_t : public r::actor_base_t {
         r::actor_base_t::shutdown_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<request_sample_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { req_msg.reset(&msg); }
@@ -123,15 +126,16 @@ struct bad_actor2_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&bad_actor2_t::on_request);
-        subscribe(&bad_actor2_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&bad_actor2_t::on_request);
+            p.subscribe_actor(&bad_actor2_t::on_response);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<request_sample_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept {
@@ -154,15 +158,16 @@ struct good_supervisor_t : rt::supervisor_test_t {
 
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void init_start() noexcept override {
-        subscribe(&good_supervisor_t::on_request);
-        subscribe(&good_supervisor_t::on_response);
-        rt::supervisor_test_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&good_supervisor_t::on_request);
+            p.subscribe_actor(&good_supervisor_t::on_response);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        rt::supervisor_test_t::on_start(msg);
-        request<request_sample_t>(this->address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        rt::supervisor_test_t::on_start();
+        request<request_sample_t>(this->address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -184,16 +189,17 @@ struct good_actor2_t : public r::actor_base_t {
     r::address_ptr_t reply_addr;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        reply_addr = supervisor.create_address();
-        subscribe(&good_actor2_t::on_request);
-        subscribe(&good_actor2_t::on_response, reply_addr);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([this](auto &p) {
+            reply_addr = create_address();
+            p.subscribe_actor(&good_actor2_t::on_response, reply_addr);
+            p.subscribe_actor(&good_actor2_t::on_request);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request_via<req2_t>(address, reply_addr, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request_via<req2_t>(address, reply_addr, 4).send(rt::default_timeout);
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -215,15 +221,16 @@ struct good_actor3_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&good_actor3_t::on_request);
-        subscribe(&good_actor3_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&good_actor3_t::on_response);
+            p.subscribe_actor(&good_actor3_t::on_request);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<req2_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<req2_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits2_t::request::message_t &msg) noexcept { reply_to(msg, 5); }
@@ -234,7 +241,7 @@ struct good_actor3_t : public r::actor_base_t {
         ec = msg.payload.ec;
         if (req_left) {
             --req_left;
-            request<req2_t>(address, 4).send(r::pt::seconds(1));
+            request<req2_t>(address, 4).send(rt::default_timeout);
         }
     }
 };
@@ -252,13 +259,14 @@ struct request_forwarder_t : public r::actor_base_t {
     r::request_id_t back_req2_id = 0;
     req_ptr_t req_ptr;
 
-    void init_start() noexcept override {
-        back_addr = supervisor.create_address();
-        subscribe(&request_forwarder_t::on_request_front);
-        subscribe(&request_forwarder_t::on_response_front);
-        subscribe(&request_forwarder_t::on_request_back, back_addr);
-        subscribe(&request_forwarder_t::on_response_back, back_addr);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([this](auto &p) {
+            back_addr = supervisor->create_address();
+            p.subscribe_actor(&request_forwarder_t::on_request_front);
+            p.subscribe_actor(&request_forwarder_t::on_response_front);
+            p.subscribe_actor(&request_forwarder_t::on_request_back, back_addr);
+            p.subscribe_actor(&request_forwarder_t::on_response_back, back_addr);
+        });
     }
 
     void shutdown_start() noexcept override {
@@ -266,9 +274,9 @@ struct request_forwarder_t : public r::actor_base_t {
         r::actor_base_t::shutdown_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<req2_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<req2_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request_front(traits2_t::request::message_t &msg) noexcept {
@@ -303,13 +311,14 @@ struct intrusive_actor_t : public r::actor_base_t {
     r::address_ptr_t back_addr;
     req_ptr_t req_ptr;
 
-    void init_start() noexcept override {
-        back_addr = supervisor.create_address();
-        subscribe(&intrusive_actor_t::on_request_front);
-        subscribe(&intrusive_actor_t::on_response_front);
-        subscribe(&intrusive_actor_t::on_request_back, back_addr);
-        subscribe(&intrusive_actor_t::on_response_back, back_addr);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([this](auto &p) {
+            back_addr = supervisor->create_address();
+            p.subscribe_actor(&intrusive_actor_t::on_request_front);
+            p.subscribe_actor(&intrusive_actor_t::on_response_front);
+            p.subscribe_actor(&intrusive_actor_t::on_request_back, back_addr);
+            p.subscribe_actor(&intrusive_actor_t::on_response_back, back_addr);
+        });
     }
 
     void shutdown_start() noexcept override {
@@ -317,8 +326,8 @@ struct intrusive_actor_t : public r::actor_base_t {
         r::actor_base_t::shutdown_start();
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request<req3_t>(address, 4).send(r::pt::seconds(1));
     }
 
@@ -348,15 +357,16 @@ struct duplicating_actor_t : public r::actor_base_t {
     int res_val = 0;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&duplicating_actor_t::on_request);
-        subscribe(&duplicating_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&duplicating_actor_t::on_request);
+            p.subscribe_actor(&duplicating_actor_t::on_response);
+        });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
-        request<request_sample_t>(address, 4).send(r::pt::seconds(1));
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        request<request_sample_t>(address, 4).send(rt::default_timeout);
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept {
@@ -374,15 +384,13 @@ struct duplicating_actor_t : public r::actor_base_t {
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
-    auto init_subs_count = sup->get_subscription().size();
+    auto init_subs_count = sup->get_subscription().access<rt::to::mine_handlers>().size();
     auto init_pts_count = sup->get_points().size();
 
-    auto actor = sup->create_actor<good_actor_t>(timeout);
+    auto actor = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -395,16 +403,16 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
     std::size_t delta = 1; /* + shutdown confirmation triggered on self */
     REQUIRE(sup->get_points().size() == init_pts_count + delta);
-    REQUIRE(sup->get_subscription().size() == init_subs_count + delta);
+    REQUIRE(sup->get_subscription().access<rt::to::mine_handlers>().size() == init_subs_count + delta);
 
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -412,11 +420,9 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
 TEST_CASE("request-response successfull delivery indentical message to 2 actors", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor1 = sup->create_actor<good_actor_t>(timeout);
-    auto actor2 = sup->create_actor<good_actor_t>(timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor1 = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
+    auto actor2 = sup->create_actor<good_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -430,11 +436,11 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -442,10 +448,8 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
 TEST_CASE("request-response timeout", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<bad_actor_t>(timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<bad_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(actor->req_val == 0);
@@ -461,6 +465,7 @@ TEST_CASE("request-response timeout", "[actor]") {
     REQUIRE(actor->res_val == 0);
     REQUIRE(actor->ec);
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ec.message() == std::string("request timeout"));
 
     sup->active_timers.clear();
 
@@ -473,20 +478,18 @@ TEST_CASE("request-response timeout", "[actor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
     REQUIRE(sup->active_timers.size() == 0);
 }
 
 TEST_CASE("response with custom error", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<bad_actor2_t>(timeout);
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<bad_actor2_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(actor->req_val == 4);
@@ -497,18 +500,16 @@ TEST_CASE("response with custom error", "[actor]") {
 
     sup->do_shutdown();
     sup->do_process();
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
 }
 
 TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<good_supervisor_t>(nullptr, config);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -519,11 +520,11 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -531,10 +532,8 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
 TEST_CASE("request-response successfull delivery, ref-counted response", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<good_actor2_t>(timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<good_actor2_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -545,11 +544,11 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -557,10 +556,8 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
 TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<good_actor3_t>(timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<good_actor3_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -571,11 +568,11 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -583,10 +580,8 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
 TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<duplicating_actor_t>(timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<duplicating_actor_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 0);
@@ -597,11 +592,11 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -609,10 +604,8 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
 TEST_CASE("ref-counted response forwarding", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<request_forwarder_t>(timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<request_forwarder_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -623,11 +616,11 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }
@@ -635,10 +628,8 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
 TEST_CASE("intrusive pointer request/responce", "[actor]") {
     r::system_context_t system_context;
 
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config(timeout, nullptr);
-    auto sup = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config);
-    auto actor = sup->create_actor<intrusive_actor_t>(timeout);
+    auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
+    auto actor = sup->create_actor<intrusive_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 
     REQUIRE(sup->active_timers.size() == 0);
@@ -648,11 +639,11 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
-    REQUIRE(sup->get_children().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+    REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
 }

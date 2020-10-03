@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -21,11 +21,16 @@ std::string error_code_category::message(int c) const {
         return "supervisor is already defined";
     case error_code_t::already_registered:
         return "service name is already registered";
+    case error_code_t::actor_misconfigured:
+        return "actor is misconfigured";
+    case error_code_t::actor_not_linkable:
+        return "actor is not linkeable";
+    case error_code_t::already_linked:
+        return "already linked";
     case error_code_t::unknown_service:
         return "the requested service name is not registered";
-    default:
-        return "unknown";
     }
+    return "unknown";
 }
 
 } // namespace details

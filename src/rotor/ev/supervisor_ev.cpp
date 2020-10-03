@@ -1,12 +1,10 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include <algorithm>
 #include "rotor/ev/supervisor_ev.h"
-#include <iostream>
 
 using namespace rotor::ev;
 
@@ -26,13 +24,15 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     sup->do_process();
 }
 
-supervisor_ev_t::supervisor_ev_t(supervisor_ev_t *parent_, const supervisor_config_ev_t &config_)
-    : supervisor_t{parent_, config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
+supervisor_ev_t::supervisor_ev_t(supervisor_config_ev_t &config_)
+    : supervisor_t{config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
     ev_async_init(&async_watcher, async_cb);
+}
 
+void supervisor_ev_t::do_initialize(system_context_t *ctx) noexcept {
     async_watcher.data = this;
-
     ev_async_start(loop, &async_watcher);
+    supervisor_t::do_initialize(ctx);
 }
 
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
@@ -81,10 +81,11 @@ void supervisor_ev_t::shutdown_finish() noexcept {
 }
 
 void supervisor_ev_t::shutdown() noexcept {
-    supervisor.enqueue(make_message<payload::shutdown_trigger_t>(supervisor.get_address(), address));
+    auto &sup_addr = supervisor->get_address();
+    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address));
 }
 
-void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer_id_t timer_id) noexcept {
+void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
     auto timer = std::make_unique<timer_t>();
     auto timer_ptr = timer.get();
     ev_tstamp ev_timeout = static_cast<ev_tstamp>(timeout.total_nanoseconds()) / 1000000000;
@@ -97,14 +98,14 @@ void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, timer
     timers_map.emplace(timer_id, std::move(timer));
 }
 
-void supervisor_ev_t::cancel_timer(timer_id_t timer_id) noexcept {
+void supervisor_ev_t::cancel_timer(request_id_t timer_id) noexcept {
     auto &timer = timers_map.at(timer_id);
     ev_timer_stop(loop, timer.get());
     timers_map.erase(timer_id);
     intrusive_ptr_release(this);
 }
 
-void supervisor_ev_t::on_timer_trigger(timer_id_t timer_id) noexcept {
+void supervisor_ev_t::on_timer_trigger(request_id_t timer_id) noexcept {
     intrusive_ptr_release(this);
     timers_map.erase(timer_id);
     supervisor_t::on_timer_trigger(timer_id);

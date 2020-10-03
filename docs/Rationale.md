@@ -6,7 +6,9 @@
 [so_5_loops]: https://github.com/eao197/so-5-5/issues/25
 [caf]: https://actor-framework.org/
 [qpcpp]: https://www.state-machine.com/qpcpp/
-[boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/
+[boost-asio]: https://www.boost.org/doc/libs/release/libs/asio
+[erlang-sup]: https://learnyousomeerlang.com/supervisors#supervisor-concepts
+[bas-suprevisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors
 
 There are few main actor frameworks in C++ world: [sobjectizer], [c++ actor framework][caf]
 and [QP/C++][qpcpp]. There is major a issue with them, as they offer some actor runtime, which
@@ -34,15 +36,22 @@ program.
 Another design feature of `rotor` is it's **testability**: as long as core application
 logic is I/O-pure (and no timeouts), the whole testing scenario is fully deterministic
 and without event loop. Rotor-based applications should have moderate complexity
-test-environment setup.
+test-environment setup. This can be achieved via two corner stones: unintrusivness
+(feature of `rotor`) and interface weakly coupling because actors just react on 
+incoming messages (common feature of all actor frameworks). 
 
 As the last point, it should be noted, that [sobjectizer] is not that intrusive as [caf],
 because it supports various [infrastructures][so_5_infra] and because there is an additional
-external module [so_5_extra], which already has [boost-asio] support. However [so_5_extra]
-has a different license (it uses dual-licensing scheme aGLPv3/commercial versus BSD
-license of [sobjectizer]). The external loop integration is still [non-trivial task][so_5_loops]
-compared to `rotor`, and I'm still not sure whether is is possible to integrate more
-than one event loop.
+external module [so_5_extra], which already has [boost-asio] support. The external loop 
+integration is still [non-trivial task][so_5_loops] compared to `rotor`, and I'm still not 
+sure whether is is possible to integrate more than one event loop.
+
+Since `v0.09` `rotor` was explicitly designed to let its actors have 
+**asynchronous and composeable lifetime**. That makes it possible to create erlang-like 
+hierarchies of supervisors, i.e. hierarchies of responsibilities. As far as I now neither
+[caf] nor [sobjectizer] have something similar. It is better to familiarize yourself
+with the original [erlang supervisros concepts][erlang-sup] or from my 
+[article][bas-suprevisors] explaining problems of supervisors related to C++ world.
 
 Eventually, `rotor` misses a lot of features of the named frameworks in the exchange for
-more *fine-gained* control.
+more *fine-gained* control and *lightweightness*.

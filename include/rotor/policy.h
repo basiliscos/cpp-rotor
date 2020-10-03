@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -17,7 +17,6 @@ enum class supervisor_policy_t {
 
     /** \brief shutdown a failed child and continue initialization */
     shutdown_failed,
-
 };
 
 } // namespace rotor

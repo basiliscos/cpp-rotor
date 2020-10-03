@@ -1,4 +1,5 @@
 add_library(rotor_test_lib
+    access.cpp
     actor_test.cpp
     supervisor_test.cpp
     test-main.cpp
@@ -7,6 +8,18 @@ target_link_libraries(rotor_test_lib rotor::core)
 add_library(rotor::test ALIAS rotor_test_lib)
 
 set(rotor_TEST_LIBS rotor::core rotor::test)
+
+add_executable(007-plugins 007-plugins.cpp)
+target_link_libraries(007-plugins ${rotor_TEST_LIBS})
+add_test(007-plugins "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/007-plugins")
+
+add_executable(008-config-builder 008-config-builder.cpp)
+target_link_libraries(008-config-builder ${rotor_TEST_LIBS})
+add_test(008-config-builder "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/008-config-builder")
+
+add_executable(009-system-context 009-system-context.cpp)
+target_link_libraries(009-system-context ${rotor_TEST_LIBS})
+add_test(009-system-context "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/009-system-context")
 
 add_executable(010-sup-start_stop 010-sup-start_stop.cpp)
 target_link_libraries(010-sup-start_stop ${rotor_TEST_LIBS})
@@ -43,6 +56,10 @@ add_test(017-req-res "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/017-req-res")
 add_executable(018-lambda-handlers 018-lambda-handlers.cpp)
 target_link_libraries(018-lambda-handlers ${rotor_TEST_LIBS})
 add_test(018-lambda-handlers "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/018-lambda-handlers")
+
+add_executable(019-link-unlink 019-link-unlink.cpp)
+target_link_libraries(019-link-unlink ${rotor_TEST_LIBS})
+add_test(019-link-unlink "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/019-link-unlink")
 
 add_executable(020-two-supervisors 020-two-supervisors.cpp)
 target_link_libraries(020-two-supervisors ${rotor_TEST_LIBS})

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -8,9 +8,14 @@
 #include "rotor/asio/forwarder.hpp"
 
 using namespace rotor::asio;
+using namespace rotor;
 
-supervisor_asio_t::supervisor_asio_t(supervisor_t *sup, const supervisor_config_asio_t &config_)
-    : supervisor_t{sup, config_}, strand{config_.strand} {}
+supervisor_asio_t::supervisor_asio_t(supervisor_config_asio_t &config_)
+    : supervisor_t{config_}, strand{config_.strand} {
+    if (config_.guard_context) {
+        guard = std::make_unique<guard_t>(asio::make_work_guard(strand->context()));
+    }
+}
 
 rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instantiate_address(strand.get()); }
 
@@ -18,8 +23,8 @@ void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t:
 
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 
-void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, std::uint32_t timer_id) noexcept {
-    auto timer = std::make_unique<timer_t>(timer_id, get_asio_context().get_io_context());
+void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
+    auto timer = std::make_unique<supervisor_asio_t::timer_t>(timer_id, strand->context());
     timer->expires_from_now(timeout);
 
     intrusive_ptr_t<supervisor_asio_t> self(this);
@@ -44,19 +49,19 @@ void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, std
     timers_map.emplace(timer_id, std::move(timer));
 }
 
-void supervisor_asio_t::cancel_timer(std::uint32_t timer_id) noexcept {
+void supervisor_asio_t::cancel_timer(request_id_t timer_id) noexcept {
     auto &timer = timers_map.at(timer_id);
     boost::system::error_code ec;
     timer->cancel(ec);
     if (ec) {
-        get_asio_context().on_error(ec);
+        context->on_error(ec);
     }
     timers_map.erase(timer_id);
 }
 
-void supervisor_asio_t::on_timer_error(std::uint32_t, const boost::system::error_code &ec) noexcept {
+void supervisor_asio_t::on_timer_error(request_id_t, const boost::system::error_code &ec) noexcept {
     if (ec != asio::error::operation_aborted) {
-        get_asio_context().on_error(ec);
+        context->on_error(ec);
     }
 }
 
@@ -70,4 +75,10 @@ void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
         sup.put(std::move(message));
         sup.do_process();
     });
+}
+
+void supervisor_asio_t::shutdown_finish() noexcept {
+    if (guard)
+        guard.reset();
+    supervisor_t::shutdown_finish();
 }

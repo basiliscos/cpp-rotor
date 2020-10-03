@@ -9,9 +9,10 @@
 
 `rotor` is event loop friendly C++ actor micro framework.
 
-[![Travis](https://img.shields.io/travis/basiliscos/cpp-rotor.svg)](https://travis-ci.org/basiliscos/cpp-rotor)
-[![Build status](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
-[![codecov](https://codecov.io/gh/basiliscos/cpp-rotor/badge.svg)](https://codecov.io/gh/basiliscos/cpp-rotor)
+[![Travis](https://api.travis-ci.org/basiliscos/cpp-rotor.svg?branch=master)](https://travis-ci.org/basiliscos/cpp-rotor)
+[![Build status](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43/branch/master?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
+[![codecov](https://codecov.io/gh/basiliscos/cpp-rotor/branch/master/graph/badge.svg)](https://codecov.io/gh/basiliscos/cpp-rotor)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b9fc6a0fd738473f8fa9084227cd7265)](https://www.codacy.com/manual/basiliscos/cpp-rotor?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=basiliscos/cpp-rotor&amp;utm_campaign=Badge_Grade)
 [![license](https://img.shields.io/github/license/basiliscos/cpp-rotor.svg)](https://github.com/basiliscos/cpp-rotor/blob/master/LICENSE)
 
 ## features
@@ -32,6 +33,27 @@ MIT
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
 
 ## Changelog
+
+### 0.09 (03-Oct-2020)
+- [improvement] rewritten whole documentation
+- [improvement/breaking] plugin system where introduced for actors instead of
+behaviors
+- [improvement] `actor_config_t` was introduced, which now holds pointer to
+supervisor, init and shutdown timeouts
+- [improvement] `builder` pattern was introduced to simplify actors construction
+- [breaking] `supervisor_config_t` was changed (inherited from `actor_config_t`)
+- [breaking] `actor_base_t` and `supervisor_t` constructors has changed - now
+appropriate config is taken as single parameter. All descendant classes should
+be changed
+- [breaking] if a custom config type is used for actors/supervisors, they
+should define `config_t` inside the class, and templated `config_builder_t`.
+- [breaking] supervisor in actor is now accessibe via pointer instead of
+refence
+- [bugfix] `supervisor_ev_t` not always correctly released EV-resources, which
+lead to leak
+- [bugfix] `actor_base_t` can be shutted down properly even if it did not
+started yet
+
 
 ### 0.08 (12-Apr-2020)
 

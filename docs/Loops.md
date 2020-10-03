@@ -38,10 +38,12 @@ should be derived from `supervisor_t`, and the following methods should be
 defined
 
 ~~~{.cpp}
-void start_timer(const rotor::pt::time_duration &, timer_id_t) noexcept override {}
-void cancel_timer(timer_id_t) noexcept override {}
+void start_timer(const pt::time_duration &send, ) noexcept override;
+void cancel_timer(request_id_t timer_id) noexcept override;
+
 void start() noexcept override {}
 void shutdown() noexcept override {}
+
 void enqueue(rotor::message_ptr_t) noexcept override {}
 ~~~
 
@@ -75,7 +77,7 @@ How to get loop and what method invoke on it, is the implementation-specific inf
 For example, loop refrence can be passed on `supervisor` constructor. The `invoke_later`
 (alternative names: `postpone`, `CallAfter`, `delay`, `dispatch`) is loop-specific
 method how to invoke something on in a thread-safe way. Please note, that `supervisor`
-instance is caputred via intrusive pointer to make sure it is alive in the loop context
+instance is captured via intrusive pointer to make sure it is alive in the loop context
 invocations.
 
 The timer-related methods are loop- or application-specific.

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -10,17 +10,13 @@
 #include "message.h"
 #include "state.h"
 #include "request.hpp"
+#include "subscription_point.h"
+#include "forward.hpp"
 
 namespace rotor {
 
-struct handler_base_t;
-using actor_ptr_t = intrusive_ptr_t<actor_base_t>;
-using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
-
+/// namespace for rotor core payloads
 namespace payload {
-
-using callback_t = std::function<void()>;
-using callback_ptr_t = std::shared_ptr<callback_t>;
 
 /** \struct initialize_confirmation_t
  *  \brief Message with this payload is sent from an actor to its supervisor to
@@ -35,27 +31,13 @@ struct initialize_confirmation_t {};
 struct initialize_actor_t {
     /** \brief link to response payload type */
     using response_t = initialize_confirmation_t;
-
-    /** \brief target actor address, which is asked for initialization
-     *
-     * The `actor_address` might be useful for observing the actor initialization
-     * in some other actor
-     */
-    address_ptr_t actor_address;
 };
 
 /** \struct start_actor_t
  *  \brief Message with this payload is sent from a supervisor to an actor as
  *  start confirmation
  */
-struct start_actor_t {
-    /** \brief target actor address, which is asked for start
-     *
-     * The `actor_address` might be useful for observing the actor start
-     * in some other actor
-     */
-    address_ptr_t actor_address;
-};
+struct start_actor_t {};
 
 /** \struct create_actor_t
  *  \brief Message with this payload is sent to supervisor when an actor is
@@ -83,7 +65,7 @@ struct create_actor_t {
  *
  */
 struct shutdown_trigger_t {
-    /** \brief the actor to be shutted down */
+    /** \brief the actor to be shut down */
     address_ptr_t actor_address;
 };
 
@@ -100,13 +82,6 @@ struct shutdown_confirmation_t {};
 struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
-
-    /** \brief source actor address, which has been shutted down
-     *
-     * The `actor_address` might be useful for observing the actor shutting down
-     * in some other actor
-     */
-    address_ptr_t actor_address;
 };
 
 /** \struct handler_call_t
@@ -141,11 +116,8 @@ struct handler_call_t {
  *
  */
 struct external_subscription_t {
-    /** \brief The target address for subscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    /** \brief subscription details */
+    subscription_point_t point;
 };
 
 /** \struct subscription_confirmation_t
@@ -156,11 +128,8 @@ struct external_subscription_t {
  *
  */
 struct subscription_confirmation_t {
-    /** \brief The target address for subscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    /** \brief subscription details */
+    subscription_point_t point;
 };
 
 /** \struct external_unsubscription_t
@@ -171,11 +140,8 @@ struct subscription_confirmation_t {
  *
  */
 struct external_unsubscription_t {
-    /** \brief The target address for unsubscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    /** \brief subscription details */
+    subscription_point_t point;
 };
 
 /** \struct commit_unsubscription_t
@@ -186,35 +152,17 @@ struct external_unsubscription_t {
  *
  */
 struct commit_unsubscription_t {
-    /** \brief The target address for unsubscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
+    /** \brief subscription details */
+    subscription_point_t point;
 };
 
 /** \struct unsubscription_confirmation_t
  *  \brief Message with this payload is sent from a supervisor to an actor with
- *  confirmation that `handler` is no longer subscribed to `target_address`
+ *  confirmation that `pooint` is no longer active (subscribed).`
  */
 struct unsubscription_confirmation_t {
-
-    /** \brief The target address for unsubscription */
-    address_ptr_t target_address;
-
-    /** \brief The handler (intrusive pointer) for processing message */
-    handler_ptr_t handler;
-
-    /** \brief the optional callback to be invoked once message is locally
-     *  delivered, i.e. when it is destroyed.
-     */
-    callback_ptr_t callback;
-
-    ~unsubscription_confirmation_t() {
-        if (callback) {
-            (*callback)();
-        }
-    }
+    /** \brief subscription details */
+    subscription_point_t point;
 };
 
 /** \struct state_response_t
@@ -271,7 +219,7 @@ struct deregistration_notify_t {
  *  \brief removes single service by name from a registry
  */
 struct deregistration_service_t {
-    /** \brief the  name of the sevice address to be remoed for a registry */
+    /** \brief the  name of the sevice address to be removed for a registry */
     std::string service_name;
 };
 
@@ -294,28 +242,154 @@ struct discovery_request_t {
     std::string service_name;
 };
 
+/** \struct discovery_future_t
+ *  \brief delayed discovery response as soon as an address has been registered
+ */
+struct discovery_future_t {
+    /**  \brief the service address found by name in a registry */
+    address_ptr_t service_addr;
+};
+
+/** \struct discovery_promise_t
+ *  \brief ask registry for {@link discovery_future_t} when the target
+ *  service name has been registered
+ */
+struct discovery_promise_t {
+    /** \brief link to discovery future payload type */
+    using response_t = discovery_future_t;
+    /**  \brief the service name to be looked in a registry */
+    std::string service_name;
+};
+
+/** \struct discovery_cancel_t
+ *  \brief cancels previously asked {@link discovery_future_t}
+ */
+struct discovery_cancel_t {
+    /** \brief client-actor address */
+    address_ptr_t client_addr;
+
+    /** \brief target service name */
+    std::string service_name;
+};
+
+/** \struct link_response_t
+ *  \brief successful confirmation to {@link link_request_t}
+ */
+struct link_response_t {};
+
+/** \struct link_request_t
+ *  \brief requests target actor to be linked with the current one
+ */
+struct link_request_t {
+    /** \brief link to link response payload type */
+    using response_t = link_response_t;
+
+    /** \brief wait until target server (actor) starts, only then reply to the source actor */
+    bool operational_only;
+};
+
+/** \struct unlink_notify_t
+ * \brief "client" notifies "server" that the connection has been closed
+ * from its side
+ */
+struct unlink_notify_t {
+    /** \brief client actor address in unlinking */
+    address_ptr_t client_addr;
+};
+
+/** \struct unlink_request_t
+ *  \brief "server" asks "client" for closing connection
+ */
+struct unlink_request_t {
+    /** \brief link to unlink response payload type */
+    using response_t = unlink_notify_t;
+
+    /** \brief server actor address in unlinking */
+    address_ptr_t server_addr;
+};
+
 } // namespace payload
 
+/// namespace for rotor core messages (which just transform payloads)
 namespace message {
 
+// subscription-related
+/** \brief unsubscription confirmation message */
+using unsubscription_t = message_t<payload::unsubscription_confirmation_t>;
+/** \brief external unsubscription message */
+using unsubscription_external_t = message_t<payload::external_unsubscription_t>;
+/** \brief subscription confirmation message */
+using subscription_t = message_t<payload::subscription_confirmation_t>;
+
+/** \brief external subscription message */
+using external_subscription_t = message_t<payload::external_subscription_t>;
+/** \brief unsubscription commit message */
+using commit_unsubscription_t = message_t<payload::commit_unsubscription_t>;
+
+/** \brief delivers foreign message to the actor's supervisor
+ *
+ * Unpon delivery the appropriate handler on the actor will be thread-safely
+ * called by it's supervisor
+ */
+using handler_call_t = message_t<payload::handler_call_t>;
+
+// lifetime-related
+/** \brief actor initialization request */
 using init_request_t = request_traits_t<payload::initialize_actor_t>::request::message_t;
+/** \brief actor initialization response */
 using init_response_t = request_traits_t<payload::initialize_actor_t>::response::message_t;
 
+/** \brief actor start trigger */
 using start_trigger_t = message_t<payload::start_actor_t>;
 
+/** \brief actor shutdown trigger */
 using shutdown_trigger_t = message_t<payload::shutdown_trigger_t>;
+/** \brief actor shutdown request */
 using shutdown_request_t = request_traits_t<payload::shutdown_request_t>::request::message_t;
+/** \brief actor shutdown response */
 using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::response::message_t;
 
-using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
-using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
+/** \brief supervisor's message upon actor instantiation */
+using create_actor_t = message_t<payload::create_actor_t>;
 
+// registry-related
+/** \brief name/address registration request */
 using registration_request_t = request_traits_t<payload::registration_request_t>::request::message_t;
+/** \brief name/address registration response */
 using registration_response_t = request_traits_t<payload::registration_request_t>::response::message_t;
+/** \brief deregistration notification (from client) */
 using deregistration_notify_t = message_t<payload::deregistration_notify_t>;
+/** \brief deregistration notification (from registry-server) */
 using deregistration_service_t = message_t<payload::deregistration_service_t>;
+
+/** \brief name discovery request */
 using discovery_request_t = request_traits_t<payload::discovery_request_t>::request::message_t;
+/** \brief name discovery response */
 using discovery_response_t = request_traits_t<payload::discovery_request_t>::response::message_t;
+/** \brief name discovery promise (aka get response when name will be available) */
+using discovery_promise_t = request_traits_t<payload::discovery_promise_t>::request::message_t;
+/** \brief name discovery future (reply to promise) */
+using discovery_future_t = request_traits_t<payload::discovery_promise_t>::response::message_t;
+/** \brief name discovery promise cancellation */
+using discovery_cancel_t = message_t<payload::discovery_cancel_t>;
+
+// link-related
+/** \brief actor link request */
+using link_request_t = request_traits_t<payload::link_request_t>::request::message_t;
+/** \brief actor link response */
+using link_response_t = request_traits_t<payload::link_request_t>::response::message_t;
+/** \brief unlink notification (client is no longer interested in the link) */
+using unlink_notify_t = message_t<payload::unlink_notify_t>;
+/** \brief unlink request (server is asking client to cancel link) */
+using unlink_request_t = request_traits_t<payload::unlink_request_t>::request::message_t;
+/** \brief unlink response (client confirms link cancellation) */
+using unlink_response_t = request_traits_t<payload::unlink_request_t>::response::message_t;
+
+// misc
+/** \brief actor state request */
+using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
+/** \brief actor state response */
+using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
 
 } // namespace message
 

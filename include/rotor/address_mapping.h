@@ -1,13 +1,13 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "arc.hpp"
-#include "actor_base.h"
+#include "subscription.h"
 #include <unordered_map>
 #include <vector>
 
@@ -26,12 +26,6 @@ namespace rotor {
  *
  */
 struct address_mapping_t {
-    /** \brief alias for actor's subscription point */
-    using point_t = typename actor_base_t::subscription_point_t;
-
-    /** \brief alias for vector of subscription points */
-    using points_t = std::vector<point_t>;
-
     /** \brief associates temporal destination point with actor's message type
      *
      * An actor is able to process message type indetified by `message`. So,
@@ -42,22 +36,30 @@ struct address_mapping_t {
      * supervisor's address.
      *
      */
-    void set(actor_base_t &actor, const void *message, const handler_ptr_t &handler,
-             const address_ptr_t &dest_addr) noexcept;
+    void set(actor_base_t &actor, const subscription_info_ptr_t &info) noexcept;
 
     /** \brief returns temporal destination address for the actor/message type */
-    address_ptr_t get_addr(actor_base_t &actor, const void *message) noexcept;
+    address_ptr_t get_mapped_address(actor_base_t &actor, const void *message) noexcept;
 
-    /** \brief returns all subscription points for the actor
-     *
-     * All subscription points are removed. This needed for clean-up, i.e. once
-     * an actor is removed, all related mappings for it should also be removed too.
-     *
-     */
-    points_t destructive_get(actor_base_t &actor) noexcept;
+    /** \brief iterates on all subscriptions for an actor */
+    template <typename Fn> void each_subscription(const actor_base_t &actor, Fn &&fn) const noexcept {
+        auto it_mappings = actor_map.find(static_cast<const void *>(&actor));
+        for (auto it : it_mappings->second) {
+            fn(it.second);
+        }
+    }
+
+    /** \brief checks whether an actor has any subscriptions */
+    bool has_subscriptions(const actor_base_t &actor) const noexcept;
+
+    /** \brief returns true if there is no any subscription for any actor */
+    bool empty() const noexcept { return actor_map.empty(); }
+
+    /** \brief forgets subscription point */
+    void remove(const subscription_point_t &point) noexcept;
 
   private:
-    using point_map_t = std::unordered_map<const void *, point_t>;
+    using point_map_t = std::unordered_map<const void *, subscription_info_ptr_t>;
     using actor_map_t = std::unordered_map<const void *, point_map_t>;
     actor_map_t actor_map;
 };

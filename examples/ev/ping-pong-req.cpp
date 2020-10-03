@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -26,12 +26,13 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void on_initialize(rotor::message::init_request_t &msg) noexcept override {
-        rotor::actor_base_t::on_initialize(msg);
-        subscribe(&pinger_t::on_pong);
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
         request<payload::ping_t>(ponger_addr).send(rotor::pt::seconds(1));
     }
 
@@ -42,7 +43,7 @@ struct pinger_t : public rotor::actor_base_t {
         } else {
             std::cout << "pong was NOT received: " << ec.message() << "\n";
         }
-        supervisor.do_shutdown();
+        supervisor->do_shutdown();
     }
 
     rotor::address_ptr_t ponger_addr;
@@ -56,11 +57,11 @@ struct ponger_t : public rotor::actor_base_t {
     generator_t gen;
     distrbution_t dist;
 
-    ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup}, gen(rd()) {}
+    explicit ponger_t(config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
 
-    void on_initialize(rotor::message::init_request_t &msg) noexcept override {
-        rotor::actor_base_t::on_initialize(msg);
-        subscribe(&ponger_t::on_ping);
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
     void on_ping(message::ping_t &req) noexcept {
@@ -75,15 +76,16 @@ struct ponger_t : public rotor::actor_base_t {
 int main() {
     try {
         auto *loop = ev_loop_new(0);
-        auto system_context = rotor::ev::system_context_ev_t::ptr_t{new rotor::ev::system_context_ev_t()};
+        auto system_context = rotor::ev::system_context_ptr_t{new rotor::ev::system_context_ev_t()};
         auto timeout = boost::posix_time::milliseconds{10};
-        auto conf = rotor::ev::supervisor_config_ev_t{
-            timeout, loop, true, /* let supervisor takes ownership on the loop */
-        };
-        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>(conf);
+        auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>()
+                       .loop(loop)
+                       .loop_ownership(true) /* let supervisor takes ownership on the loop */
+                       .timeout(timeout)
+                       .finish();
 
-        auto pinger = sup->create_actor<pinger_t>(timeout);
-        auto ponger = sup->create_actor<ponger_t>(timeout);
+        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
 
         sup->start();

@@ -1,14 +1,15 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include "handler.hpp"
-#include "message.h"
-#include <typeindex>
+#include "rotor/forward.hpp"
+#include "rotor/address.hpp"
+#include "rotor/subscription_point.h"
+#include "rotor/message.h"
 #include <map>
 #include <vector>
 
@@ -22,39 +23,64 @@ namespace rotor {
  *
  */
 struct subscription_t {
-    /** \struct classified_handlers_t
-     *  \brief Holds @{link handler_base_t} and flag wheher it belongs to the
-     * source supervisor
+    /** \brief alias for message type (i.e. stringized typeid) */
+    using message_type_t = const void *;
+
+    /** \brief vector of handler pointers */
+    using handlers_t = std::vector<handler_base_t *>;
+
+    /** \struct joint_handlers_t
+     *  \brief pair internal and external {@link handler_t}
      */
-    struct classified_handlers_t {
-        /** \brief intrusive pointer to the handler */
-        handler_ptr_t handler;
-        /** \brief true if the hanlder is local */
-        bool mine;
+    struct joint_handlers_t {
+        /** \brief internal handlers, i.e. those which belong to actors of the supervisor */
+        handlers_t internal;
+        /** \brief external handlers, i.e. those which belong to actors of other supervisor */
+        handlers_t external;
     };
-    /** \brief list of classified handlers */
-    using list_t = std::vector<classified_handlers_t>;
 
-    /** \brief alias for message type */
-    using slot_t = const void *;
+    /** \brief ctor from supervisor reference */
+    subscription_t(supervisor_t &supervisor) noexcept;
 
-    /** \brief constructor which takes the source @{link supervisor_t}  reference */
-    subscription_t(supervisor_t &sup);
+    /** \brief upgrades subscription_point_t into subscription_info smart pointer
+     *
+     * Performs the classification of the point, i.e. whether handler and address
+     * are internal or external, records the state subcription state and records
+     * the handler among address handlers.
+     *
+     */
+    subscription_info_ptr_t materialize(const subscription_point_t &point) noexcept;
 
-    /** \brief records the subscription for the handler */
-    void subscribe(handler_ptr_t handler);
+    /** \brief remove subscription_info from `internal_infos` and `mine_handlers` */
+    void forget(const subscription_info_ptr_t &info) noexcept;
 
-    /** \brief removes the recorded subscriptios and returns amount of left subscriptions */
-    std::size_t unsubscribe(handler_ptr_t handler);
+    /** \brief returns list of all handlers for the message (internal and external) */
+    const joint_handlers_t *get_recipients(const message_base_t &message) const noexcept;
 
-    /** \brief optioally returns classified list of subscribers to the message type */
-    list_t *get_recipients(const slot_t &slot) noexcept;
+    /** \brief generic non-public fields accessor */
+    template <typename T> auto &access() noexcept;
 
   private:
-    using map_t = std::map<slot_t, list_t>;
+    struct subscrption_key_t {
+        address_t *address;
+        message_type_t message_type;
+        inline bool operator==(const subscrption_key_t &other) const noexcept {
+            return address == other.address && message_type == other.message_type;
+        }
+    };
 
+    struct subscrption_key_hash_t {
+        inline std::size_t operator()(const subscrption_key_t &k) const noexcept {
+            return std::size_t(k.address) + 0x9e3779b9 + (size_t(k.message_type) << 6) + (size_t(k.message_type) >> 2);
+        }
+    };
+
+    using addressed_handlers_t = std::unordered_map<subscrption_key_t, joint_handlers_t, subscrption_key_hash_t>;
+
+    using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
     supervisor_t &supervisor;
-    map_t map;
+    info_container_t internal_infos;
+    addressed_handlers_t mine_handlers;
 };
 
 } // namespace rotor

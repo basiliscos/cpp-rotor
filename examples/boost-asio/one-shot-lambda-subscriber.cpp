@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,13 +42,14 @@ struct pinger_t : public rotor::actor_base_t {
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        rotor::actor_base_t::init_start();
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &) noexcept override {
-        std::cout << "ping\n";
+    void on_start() noexcept override {
+        rotor::actor_base_t::on_start();
+        std::cout << "ping (1)\n";
         auto timeout = rotor::pt::milliseconds{1};
         request<payload::ping_t>(ponger_addr).send(timeout);
     }
@@ -57,9 +58,9 @@ struct pinger_t : public rotor::actor_base_t {
         auto &ec = msg.payload.ec;
         if (ec) {
             std::cout << "pong error: " << ec.message() << "\n";
-            supervisor.do_shutdown();
+            supervisor->do_shutdown();
         } else {
-            std::cout << "ping\n";
+            std::cout << "ping (2)\n";
             auto timeout = rotor::pt::milliseconds{1};
             request<payload::ping_t>(ponger_addr).send(timeout);
         }
@@ -75,15 +76,21 @@ struct ponger_t : public rotor::actor_base_t {
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        auto lambda = rotor::lambda<message::ping_t>([this](auto &msg) {
-            std::cout << "pong\n";
-            unsubscribe(pong_handler);
-            pong_handler.reset(); // otherwise it will be memory leak
-            reply_to(msg);
+    void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
+        rotor::actor_base_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>([&](auto &p) {
+            auto lambda = rotor::lambda<message::ping_t>([&](auto &msg) {
+                std::cout << "pong\n";
+                unsubscribe(pong_handler);
+                reply_to(msg);
+            });
+            pong_handler = p.subscribe_actor(std::move(lambda));
         });
-        pong_handler = subscribe(std::move(lambda));
-        rotor::actor_base_t::init_start();
+    }
+
+    void shutdown_finish() noexcept override {
+        rotor::actor_base_t::shutdown_finish();
+        pong_handler.reset(); // otherwise it will be memory leak
     }
 
   private:
@@ -91,18 +98,17 @@ struct ponger_t : public rotor::actor_base_t {
 };
 
 int main() {
-
     asio::io_context io_context{1};
     try {
 
         auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-        auto stand = std::make_shared<asio::io_context::strand>(io_context);
+        auto strand = std::make_shared<asio::io_context::strand>(io_context);
         auto timeout = boost::posix_time::milliseconds{10};
-        ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
-        auto supervisor = system_context->create_supervisor<ra::supervisor_asio_t>(conf);
+        auto supervisor =
+            system_context->create_supervisor<ra::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
-        auto pinger = supervisor->create_actor<pinger_t>(timeout);
-        auto ponger = supervisor->create_actor<ponger_t>(timeout);
+        auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
+        auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
         ponger->set_pinger_addr(pinger->get_address());
 

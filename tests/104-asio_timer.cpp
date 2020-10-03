@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -8,8 +8,7 @@
 #include "rotor.hpp"
 #include "rotor/asio.hpp"
 #include "supervisor_asio_test.h"
-
-#include <iostream>
+#include "access.h"
 
 namespace r = rotor;
 namespace ra = rotor::asio;
@@ -28,19 +27,19 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     std::error_code ec;
 
-    void init_start() noexcept override {
-        subscribe(&bad_actor_t::on_response);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&bad_actor_t::on_response); });
     }
 
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         request<traits_t::request::type>(address).send(r::pt::milliseconds(1));
     }
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         ec = msg.payload.ec;
-        supervisor.do_shutdown();
+        supervisor->do_shutdown();
     }
 };
 
@@ -48,18 +47,21 @@ TEST_CASE("timer", "[supervisor][asio]") {
     asio::io_context io_context{1};
     auto timeout = r::pt::milliseconds{10};
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
-    auto stand = std::make_shared<asio::io_context::strand>(io_context);
-    ra::supervisor_config_asio_t conf{timeout, std::move(stand)};
-    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>(conf);
-    auto actor = sup->create_actor<bad_actor_t>(timeout);
+    auto strand = std::make_shared<asio::io_context::strand>(io_context);
+
+    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand).timeout(timeout).finish();
+    auto actor = sup->create_actor<bad_actor_t>().timeout(timeout).finish();
 
     sup->start();
     io_context.run();
 
     REQUIRE(actor->ec == r::error_code_t::request_timeout);
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
+    CHECK(rt::empty(sup->get_subscription()));
+
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
-    REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
 }

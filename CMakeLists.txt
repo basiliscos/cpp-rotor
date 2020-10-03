@@ -3,19 +3,20 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ROTOR_VERSION "0.07")
+set(ROTOR_VERSION "0.09")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 include(CMakePrintHelpers)
 
-option(BUILD_BOOST_ASIO    "Enable building with boost::asio support [default: OFF]"    OFF)
-option(BUILD_WX            "Enable building with wxWidgets support   [default: OFF]"    OFF)
-option(BUILD_EV            "Enable building with libev support   [default: OFF]"        OFF)
-option(BUILD_EXAMPLES      "Enable building examples [default: OFF]"                    OFF)
-option(BUILD_TESTS         "Enable building tests    [default: OFF]"                    OFF)
-option(BUILD_DOC           "Enable building documentation [default: OFF]"               OFF)
-option(BUILD_THREAD_UNSAFE "Enable building thead-unsafe library [default: OFF]"        OFF)
+option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
+option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
+option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
+option(BUILD_TESTS          "Enable building tests    [default: OFF]"                    OFF)
+option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
+option(BUILD_THREAD_UNSAFE  "Enable building thead-unsafe library [default: OFF]"        OFF)
+option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"            OFF)
 
 
 set(ROTOR_BOOST_COMPONENTS)
@@ -30,12 +31,25 @@ set(ROTOR_HEADERS_TO_INSTALL)
 add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/address_mapping.cpp
-    src/rotor/behavior.cpp
     src/rotor/error_code.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp
+    src/rotor/subscription_point.cpp
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
+    src/rotor/plugin/address_maker.cpp
+    src/rotor/plugin/child_manager.cpp
+    src/rotor/plugin/delivery.cpp
+    src/rotor/plugin/foreigners_support.cpp
+    src/rotor/plugin/init_shutdown.cpp
+    src/rotor/plugin/lifetime.cpp
+    src/rotor/plugin/link_client.cpp
+    src/rotor/plugin/link_server.cpp
+    src/rotor/plugin/locality.cpp
+    src/rotor/plugin/plugin_base.cpp
+    src/rotor/plugin/registry.cpp
+    src/rotor/plugin/resources.cpp
+    src/rotor/plugin/starter.cpp
 )
 target_include_directories(rotor
     PUBLIC
@@ -47,6 +61,9 @@ target_include_directories(rotor
 target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
 if (BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
+endif()
+if (ROTOR_DEBUG_DELIVERY)
+    target_compile_definitions(rotor PRIVATE "ROTOR_DEBUG_DELIVERY")
 endif()
 target_compile_features(rotor PUBLIC cxx_std_17)
 set_target_properties(rotor PROPERTIES

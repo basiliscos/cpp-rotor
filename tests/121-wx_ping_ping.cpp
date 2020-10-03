@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -10,7 +10,7 @@
 #include "supervisor_wx_test.h"
 #include <wx/evtloop.h>
 #include <wx/apptrait.h>
-#include <iostream>
+#include "access.h"
 
 IMPLEMENT_APP_NO_MAIN(rotor::test::RotorApp)
 
@@ -24,47 +24,47 @@ struct pong_t {};
 static std::uint32_t destroyed = 0;
 
 struct pinger_t : public r::actor_base_t {
-    std::uint32_t ping_sent;
-    std::uint32_t pong_received;
+    std::uint32_t ping_sent = 0;
+    std::uint32_t pong_received = 0;
     rotor::address_ptr_t ponger_addr;
 
-    explicit pinger_t(rotor::supervisor_t &sup) : r::actor_base_t{sup} { ping_sent = pong_received = 0; }
+    using r::actor_base_t::actor_base_t;
     ~pinger_t() { destroyed += 1; }
 
     void set_ponger_addr(const rotor::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
 
-    void on_start(rotor::message_t<rotor::payload::start_actor_t> &msg) noexcept override {
-        r::actor_base_t::on_start(msg);
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
         send<ping_t>(ponger_addr);
         ++ping_sent;
     }
 
     void on_pong(rotor::message_t<pong_t> &) noexcept {
         ++pong_received;
-        supervisor.shutdown();
+        supervisor->shutdown();
         auto loop = wxEventLoopBase::GetActive();
         loop->ScheduleExit();
     }
 };
 
 struct ponger_t : public r::actor_base_t {
-    std::uint32_t pong_sent;
-    std::uint32_t ping_received;
+    std::uint32_t pong_sent = 0;
+    std::uint32_t ping_received = 0;
     rotor::address_ptr_t pinger_addr;
 
-    explicit ponger_t(rotor::supervisor_t &sup) : rotor::actor_base_t{sup} { pong_sent = ping_received = 0; }
+    using r::actor_base_t::actor_base_t;
+
     ~ponger_t() { destroyed += 3; }
 
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {
@@ -84,14 +84,14 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     wxEventLoopBase::SetActive(loop);
     rx::system_context_ptr_t system_context{new rx::system_context_wx_t(app)};
     wxEvtHandler handler;
-    rx::supervisor_config_wx_t conf{timeout, &handler};
-    auto sup = system_context->create_supervisor<rt::supervisor_wx_test_t>(conf);
+    auto sup =
+        system_context->create_supervisor<rt::supervisor_wx_test_t>().handler(&handler).timeout(timeout).finish();
     sup->start();
 
-    auto pinger = sup->create_actor<pinger_t>(timeout);
-    auto ponger = sup->create_actor<ponger_t>(timeout);
-    pinger->set_ponger_addr(ponger->get_address());
-    ponger->set_pinger_addr(pinger->get_address());
+    auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+    auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
+    pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->get_address());
+    ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->get_address());
 
     sup->start();
     loop->Run();
@@ -105,10 +105,9 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     ponger.reset();
     REQUIRE(destroyed == 4);
 
-    REQUIRE(sup->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
-    REQUIRE(sup->get_points().size() == 0);
-    REQUIRE(sup->get_subscription().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
 
     delete app;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -10,13 +10,13 @@
 
 using namespace rotor;
 
-void address_mapping_t::set(actor_base_t &actor, const void *message, const handler_ptr_t &handler,
-                            const address_ptr_t &dest_addr) noexcept {
+void address_mapping_t::set(actor_base_t &actor, const subscription_info_ptr_t &info) noexcept {
     auto &point_map = actor_map[static_cast<const void *>(&actor)];
-    point_map.try_emplace(message, point_t{handler, dest_addr});
+    auto message_type = info->handler->message_type;
+    point_map.try_emplace(message_type, info);
 }
 
-address_ptr_t address_mapping_t::get_addr(actor_base_t &actor, const void *message) noexcept {
+address_ptr_t address_mapping_t::get_mapped_address(actor_base_t &actor, const void *message) noexcept {
     auto it_points = actor_map.find(static_cast<const void *>(&actor));
     if (it_points == actor_map.end()) {
         return address_ptr_t();
@@ -28,20 +28,36 @@ address_ptr_t address_mapping_t::get_addr(actor_base_t &actor, const void *messa
         return address_ptr_t();
     }
 
-    return it_subscription->second.address;
+    return it_subscription->second->address;
 }
 
-address_mapping_t::points_t address_mapping_t::destructive_get(actor_base_t &actor) noexcept {
-    auto it_points = actor_map.find(static_cast<const void *>(&actor));
-    if (it_points == actor_map.end()) {
-        return points_t{};
-    }
+void address_mapping_t::remove(const subscription_point_t &point) noexcept {
+    auto it_points = actor_map.find(point.owner_ptr);
+    assert(it_points != actor_map.end());
 
-    points_t points{};
-    auto &point_map = it_points->second;
-    for (auto it : point_map) {
-        points.push_back(it.second);
+    auto &subs = it_points->second;
+    for (auto it = subs.begin(); it != subs.end();) {
+        auto &info = *it->second;
+        if (info.handler.get() == point.handler.get() && info.address == point.address) {
+            subs.erase(it);
+            break;
+        } else {
+            ++it;
+        }
     }
-    actor_map.erase(it_points);
-    return points;
+    if (subs.empty()) {
+        actor_map.erase(it_points);
+    }
+}
+
+/*
+void address_mapping_t::clear(supervisor_t&) noexcept {
+    assert(actor_map.size() == 1);
+    actor_map.clear();
+}
+*/
+
+bool address_mapping_t::has_subscriptions(const actor_base_t &actor) const noexcept {
+    auto it = actor_map.find(static_cast<const void *>(&actor));
+    return it != actor_map.end();
 }

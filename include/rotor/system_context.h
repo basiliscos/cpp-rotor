@@ -1,12 +1,13 @@
 #pragma once
 
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "address.hpp"
+#include "supervisor_config.h"
 #include "error_code.h"
 #include <system_error>
 
@@ -22,9 +23,8 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
  */
 struct system_context_t : arc_base_t<system_context_t> {
   public:
-    /** \brief creates root supervior. `args` are forwared for supervisor constructor */
-    template <typename Supervisor = supervisor_t, typename... Args>
-    auto create_supervisor(Args &&... args) -> intrusive_ptr_t<Supervisor>;
+    /** \brief returns builder for root supervisor */
+    template <typename Supervisor = supervisor_t> auto create_supervisor();
 
     /** \brief returns root supervisor */
     inline supervisor_ptr_t get_supervisor() noexcept { return supervisor; }

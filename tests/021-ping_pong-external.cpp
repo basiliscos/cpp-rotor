@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -7,6 +7,7 @@
 #include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
+#include "access.h"
 #include <iostream>
 
 namespace r = rotor;
@@ -16,19 +17,16 @@ struct ping_t {};
 struct pong_t {};
 
 struct pinger_t : public r::actor_base_t {
-    std::uint32_t ping_sent;
-    std::uint32_t pong_received;
+    std::uint32_t ping_sent = 0;
+    std::uint32_t pong_received = 0;
 
-    explicit pinger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_sent = pong_received = 0; }
+    using r::actor_base_t::actor_base_t;
 
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&pinger_t::on_pong);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
     }
-
-    void on_start(r::message_t<r::payload::start_actor_t> &msg) noexcept override { r::actor_base_t::on_start(msg); }
 
     void on_pong(r::message_t<pong_t> &) noexcept { ++pong_received; }
 
@@ -43,28 +41,26 @@ struct pinger_t : public r::actor_base_t {
 struct pinger_autostart_t : public pinger_t {
     using pinger_t::pinger_t;
 
-    void init_start() noexcept override {
-        subscribe(&pinger_autostart_t::on_ponger_start, ponger_addr);
-        pinger_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        pinger_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>(
+            [this](auto &p) { p.subscribe_actor(&pinger_autostart_t::on_ponger_start, ponger_addr); });
     }
 
     void on_ponger_start(r::message_t<r::payload::start_actor_t> &) noexcept { do_send_ping(); }
 };
 
 struct ponger_t : public r::actor_base_t {
-    std::uint32_t ping_received;
-    std::uint32_t pong_sent;
+    std::uint32_t ping_received = 0;
+    std::uint32_t pong_sent = 0;
 
-    explicit ponger_t(r::supervisor_t &sup) : r::actor_base_t{sup} { ping_received = pong_sent = 0; }
+    using r::actor_base_t::actor_base_t;
 
     void set_pinger_addr(const r::address_ptr_t &addr) { pinger_addr = addr; }
 
-    void init_start() noexcept override {
-        subscribe(&ponger_t::on_ping);
-        r::actor_base_t::init_start();
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
-
-    void on_start(r::message_t<r::payload::start_actor_t> &) noexcept override { std::cout << "on_start\n"; }
 
     void on_ping(r::message_t<ping_t> &) noexcept {
         ++ping_received;
@@ -81,14 +77,14 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
 
     const char locality1[] = "l1";
     const char locality2[] = "l2";
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config1(timeout, locality1);
-    rt::supervisor_config_test_t config2(timeout, locality2);
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config1);
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, config2);
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>()
+                    .locality(locality1)
+                    .timeout(rt::default_timeout)
+                    .finish();
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>().locality(locality2).timeout(rt::default_timeout).finish();
 
-    auto pinger = sup1->create_actor<pinger_t>(timeout);
-    auto ponger = sup2->create_actor<ponger_t>(timeout);
+    auto pinger = sup1->create_actor<pinger_t>().timeout(rt::default_timeout).finish();
+    auto ponger = sup2->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
@@ -124,15 +120,15 @@ TEST_CASE("pinger & ponger on different supervisors, manually controlled", "[sup
         sup1->do_process();
         sup2->do_process();
     }
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
+    REQUIRE(rt::empty(sup2->get_subscription()));
 
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup1->get_leader_queue().size() == 0);
     REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().size() == 0);
+    REQUIRE(rt::empty(sup1->get_subscription()));
 }
 
 TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervisor]") {
@@ -140,14 +136,14 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
 
     const char locality1[] = "l1";
     const char locality2[] = "l2";
-    auto timeout = r::pt::milliseconds{1};
-    rt::supervisor_config_test_t config1(timeout, locality1);
-    rt::supervisor_config_test_t config2(timeout, locality2);
-    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>(nullptr, config1);
-    auto sup2 = sup1->create_actor<rt::supervisor_test_t>(timeout, config2);
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>()
+                    .locality(locality1)
+                    .timeout(rt::default_timeout)
+                    .finish();
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>().locality(locality2).timeout(rt::default_timeout).finish();
 
-    auto pinger = sup1->create_actor<pinger_autostart_t>(timeout);
-    auto ponger = sup2->create_actor<ponger_t>(timeout);
+    auto pinger = sup1->create_actor<pinger_autostart_t>().timeout(rt::default_timeout).finish();
+    auto ponger = sup2->create_actor<ponger_t>().timeout(rt::default_timeout).finish();
 
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
@@ -182,13 +178,13 @@ TEST_CASE("pinger & ponger on different supervisors, self controlled", "[supervi
         sup1->do_process();
         sup2->do_process();
     }
-    REQUIRE(sup2->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup2->get_leader_queue().size() == 0);
-    REQUIRE(sup2->get_points().size() == 0);
-    REQUIRE(sup2->get_subscription().size() == 0);
+    CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_leader_queue().size() == 0);
+    CHECK(sup2->get_points().size() == 0);
+    REQUIRE(rt::empty(sup2->get_subscription()));
 
-    REQUIRE(sup1->get_state() == r::state_t::SHUTTED_DOWN);
-    REQUIRE(sup1->get_leader_queue().size() == 0);
-    REQUIRE(sup1->get_points().size() == 0);
-    REQUIRE(sup1->get_subscription().size() == 0);
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup1->get_leader_queue().size() == 0);
+    CHECK(sup1->get_points().size() == 0);
+    REQUIRE(rt::empty(sup1->get_subscription()));
 }

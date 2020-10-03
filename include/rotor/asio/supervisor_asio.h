@@ -49,15 +49,21 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  */
 struct supervisor_asio_t : public supervisor_t {
 
+    /** \brief injects an alias for supervisor_config_asio_t */
+    using config_t = supervisor_config_asio_t;
+
+    /** \brief injects templated supervisor_config_asio_builder_t */
+    template <typename Supervisor> using config_builder_t = supervisor_config_asio_builder_t<Supervisor>;
+
     /** \struct timer_t
      * \brief boos::asio::deadline_timer with timer identity  */
     struct timer_t : public asio::deadline_timer {
 
         /** \brief timer identity */
-        timer_id_t timer_id;
+        request_id_t timer_id;
 
         /** \brief constructs timer using timer_id and boos asio io_context */
-        timer_t(timer_id_t timer_id_, asio::io_context &io_context)
+        timer_t(request_id_t timer_id_, asio::io_context &io_context)
             : asio::deadline_timer(io_context), timer_id{timer_id_} {}
     };
 
@@ -65,36 +71,22 @@ struct supervisor_asio_t : public supervisor_t {
     using timer_ptr_t = std::unique_ptr<timer_t>;
 
     /** \brief timer id to timer pointer mapping type */
-    using timers_map_t = std::unordered_map<std::uint32_t, timer_ptr_t>;
+    using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
-    /** \brief constructs new supervisor from parent supervisor, intrusive
-     * pointer to system context and supervisor config and
-
-     * the `parent` supervisor can be null
-     *
-     */
-    supervisor_asio_t(supervisor_t *sup, const supervisor_config_asio_t &config);
+    /** \brief constructs new supervisor from asio supervisor config */
+    supervisor_asio_t(supervisor_config_asio_t &config);
 
     virtual address_ptr_t make_address() noexcept override;
 
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, timer_id_t timer_id) noexcept override;
-    virtual void cancel_timer(timer_id_t timer_id) noexcept override;
+    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
+    virtual void cancel_timer(request_id_t timer_id) noexcept override;
+    virtual void shutdown_finish() noexcept override;
 
     /** \brief callback when an error happen on the timer, identified by timer_id */
-    virtual void on_timer_error(timer_id_t timer_id, const sys::error_code &ec) noexcept;
-
-    /** \brief creates an actor by forwaring `args` to it
-     *
-     * The newly created actor belogs to the current supervisor
-     *
-     */
-    template <typename Actor, typename... Args>
-    intrusive_ptr_t<Actor> create_actor(const pt::time_duration &timeout, Args &&... args) {
-        return make_actor<Actor>(*this, timeout, std::forward<Args>(args)...);
-    }
+    virtual void on_timer_error(request_id_t timer_id, const sys::error_code &ec) noexcept;
 
     /** \brief an helper for creation {@link forwarder_t} */
     template <typename Handler, typename ErrHandler>
@@ -107,21 +99,24 @@ struct supervisor_asio_t : public supervisor_t {
         return forwarder_t{*this, std::move(handler)};
     }
 
-    /** \brief retunrns an reference to boos::asio systerm context
-     *
-     * It might be useful to get `boost::asio::io_context&`, i.e. to create socket.
-     *
-     */
-    inline system_context_asio_t &get_asio_context() noexcept { return static_cast<system_context_asio_t &>(*context); }
-
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
+
+  protected:
+    /** \brief guard type : alias for asio executor_work_guard */
+    using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
+
+    /** \brief alias for a guard */
+    using guard_ptr_t = std::unique_ptr<guard_t>;
 
     /** \brief timer id to timer pointer mapping */
     timers_map_t timers_map;
 
     /** \brief config for the supervisor */
     supervisor_config_asio_t::strand_ptr_t strand;
+
+    /** \brief guard to control ownership of the io-context */
+    guard_ptr_t guard;
 };
 
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor) {
