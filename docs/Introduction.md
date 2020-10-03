@@ -295,8 +295,8 @@ method of the actor.
 
 ## request-response example (boost::asio)
 
-In the example the usage of request-response pattern is demonstrated
-the "server" actor takes the number from request and replies to  "client" actor
+In the example below the usage of request-response pattern is demonstrated.
+The "server" actor takes the number from request and replies to  "client" actor
 with square root if the value is >= 0, otherwise it replies with error.
 
 Contrary to the regular messages, request-response is a little bit more

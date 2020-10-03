@@ -1,6 +1,6 @@
 # Design & Notions
 
-[boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
+[boost_asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
 [Erlang]: https://en.wikipedia.org/wiki/Erlang_(programming_language)
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
@@ -53,15 +53,16 @@ distinguishing `replies`.
 i.e. responsible for spawning/terminating actors, interaction with loop (timeouts),
 and for message dispatching/delivering. All messages sent by spawned actors, are
 put into outbound queue of supervisor. `supervisor` was designed to represent
-*sequential execution context*, similar to `strand` from [boost-asio] (in fact `rotor-asio`
-has strand` object fo); in other words all messages are delivered sequentially
-within the context of an `supervisor`, and it is safe to call one some actor's method
-from some other actor, located on the same supervisor, if needed.
+*sequential execution context*, similar to `strand` from [boost_asio]
+(in fact `rotor-asio` supervisor holds `strand` object); in other words all messages
+are delivered sequentially within the context of an `supervisor`, and it is safe to 
+call one some actor's method from some other actor, located on the same supervisor,
+f needed.
 
 **locality** is rotor-specific marker of `sequential execution context`. An supervisor
 might have an independent locality, i.e. execute only on its own (`strand`); or a
 list of supervisors might share the same `locality`. For some event loops (i.e. other
-then [boost-asio]), it it the only option. In other words it is "thread affinity"
+then [boost_asio]), it it the only option. In other words it is "thread affinity"
 somewhat similar to [cpu-affinity].
 
 Supervisors might form a tree-like structure making some kind of hierarchy of responsibilities.
@@ -247,10 +248,13 @@ then the parent supervisor shutdown timeout *should be greater* then
 the corresponding timeout of any of its children. Probably, the easiest way
 to start is to use everywhere some fixed, but large enough, timeout (e.g. `100ms`)
 everywhere, and only later, if the problem occurs, tune individual timeouts
-on demand.
+on demand. Another technique for dealing with non-rotor asynchronous resources,
+is to spawn additional timer at `shutdown_start` and cancel all non-rotor I/O
+or move and send them to some other actor, which can deal with that.
 
 It is recommended to launch code under memory sanitizer tool like `valgrind`
-to make sure everything is correctly cleaned.
+to make sure everything is correctly cleaned. This relates to program 
+shutdown too.
 
 ### Debugging messaging
 

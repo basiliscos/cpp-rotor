@@ -135,12 +135,6 @@ struct client_actor_t : public r::actor_base_t {
             .send(timeout);
     }
 
-    void on_start(r::message::start_trigger_t &msg) noexcept override {
-        auto timeout = r::pt::milliseconds{10};
-        request<payload::my_request_t>(server_addr /* fields-forwaded-for-request-payload */)
-            .send(timeout);
-    }
-
     void on_response(message::response_t& msg) noexcept override {
         if (msg.payload.ec) {
             // react somehow to the error, i.e. timeout
@@ -212,7 +206,7 @@ address of the other actor? Well known way is to carefully craft initialization
 taking addresses of just created actors and pass them in constructor to the
 other actors etc. The approach will work in the certain circumstances; however it
 leads to boilerplate and fragile code, which "smells bad", as some initialization
-is performed inside actors and some is outside; it also does not handles well
+is performed inside actors and some is outside; it also does not handle well
 the case of dynamic (virtual) addresses.
 
 The better solution is to have "the registry" actor, known to all other actors.
@@ -315,6 +309,9 @@ callback (it is available in `(1)` too), and the target actor address have to be
 The special `bool` argument available in the both versions make postponed link confirmation,
 i.e. only upon server-actor start. Usually, this is have to be `false`.
 
+It should be noted, that it is possible to make a cycle of linked actors. While this will
+work, it will never shutdown properly. So, it is better to avoid cycles.
+
 ### Synchronized start
 
 By default actor is started as soon as possible, i.e. once it confirmed initialization
@@ -344,7 +341,7 @@ Never assume that, nor assume that the message will be delivered with some guara
 timeframe.
 
 Technically in `rotor` it is implemented the following way: `address` is produced
-by some `supervisor`. The sent to the addres message it is processed by
+by some `supervisor`. The sent to an address message is processed by
 the supervisor: if the actor-subscriber is *local* (i.e. created on the `supervisor`),
 then the message is delivered immediately to it, otherwise the message is wrapped
 and forwarded to the supervisor of the actor (i.e. to some *foreign* supervisor),

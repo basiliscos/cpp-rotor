@@ -4,27 +4,27 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.09 (xx-XX-xxxx)
+## 0.09 (03-Oct-2020)
 - [improvement] rewritten whole documentation
- - [improvement/breaking] plugin system where introduced for actors instead of 
+- [improvement/breaking] plugin system where introduced for actors instead of 
 behaviors
- - [improvement] `actor_config_t` was introduced, which now holds pointer to
+- [improvement] `actor_config_t` was introduced, which now holds pointer to
 supervisor, init and shutdown timeouts
- - [improvement] `builder` pattern was introduced to simplify actors construction
- - [breaking] `supervisor_config_t` was changed (inherited from `actor_config_t`)
- - [breaking] `actor_base_t` and `supervisor_t` constructors has changed - now
+- [improvement] `builder` pattern was introduced to simplify actors construction
+- [breaking] `supervisor_config_t` was changed (inherited from `actor_config_t`)
+- [breaking] `actor_base_t` and `supervisor_t` constructors has changed - now
 appropriate config is taken as single parameter. All descendant classes should
 be changed
- - [breaking] if a custom config type is used for actors/supervisors, they
+- [breaking] if a custom config type is used for actors/supervisors, they
 should define `config_t` inside the class, and templated `config_builder_t`.
- - [breaking] supervisor in actor is now accessibe via pointer instead of
+- [breaking] supervisor in actor is now accessibe via pointer instead of
 refence
- - [bugfix] `supervisor_ev_t` not always correctly released EV-resources, which
+- [bugfix] `supervisor_ev_t` not always correctly released EV-resources, which
 lead to leak
- - [bugfix] `actor_base_t` can be shutted down properly even if it did not
+- [bugfix] `actor_base_t` can be shutted down properly even if it did not
 started yet
 
-### 0.08 (12-Apr-2020)
+## 0.08 (12-Apr-2020)
 
 - [bugfix] message's arguments are more correctly forwarded
 - [bugfix] actor's arguments are more correctly forwarded in actor's
