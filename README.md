@@ -35,7 +35,8 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ## Changelog
 
 ### 0.09 (03-Oct-2020)
-- the dedicated article with the highlights will be published soon 
+- the dedicated article with highlights: [en](https://habr.com/ru/company/crazypanda/blog/522588/) and 
+[ru](https://habr.com/ru/company/crazypanda/blog/522892/)
 - [improvement] rewritten whole documentation
 - [improvement/breaking] plugin system where introduced for actors instead of
 behaviors
