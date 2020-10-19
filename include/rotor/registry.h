@@ -80,17 +80,14 @@ struct registry_t : public actor_base_t {
     /** \brief service address to registered names mapping type */
     using revese_map_t = std::unordered_map<address_ptr_t, registered_names_t>;
 
-    /** \brief service-name to list of promises map (type)*/
-    using promises_map_t = std::unordered_map<std::string, promises_list_t>;
-
     /** \brief name-to-address mapping */
     registered_map_t registered_map;
 
     /** \brief address-to-list_of_names mapping */
     revese_map_t revese_map;
 
-    /** \brief service-name to list of promises map */
-    promises_map_t promises_map;
+    /** \brief list of intrusive pointers to discovery promise messages */
+    promises_list_t promises;
 };
 
 } // namespace rotor

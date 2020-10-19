@@ -37,13 +37,11 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
     names.insert(name);
 
     reply_to(request);
-    auto it = promises_map.find(name);
-    if (it != promises_map.end()) {
-        auto &promises = it->second;
-        for (auto &promise_ptr : promises) {
-            reply_to(*promise_ptr, service_addr);
-        }
-        promises_map.erase(it);
+    auto predicate = [&](auto &msg) { return msg->payload.request_payload.service_name == name; };
+    auto it = std::find_if(promises.begin(), promises.end(), predicate);
+    while (it != promises.end()) {
+        reply_to(**it, service_addr);
+        it = promises.erase(it);
     }
 }
 
@@ -90,23 +88,18 @@ void registry_t::on_promise(message::discovery_promise_t &request) noexcept {
         return;
     }
 
-    auto &promises = promises_map[name];
     promises.emplace_back(&request);
 }
 
 void registry_t::on_cancel(message::discovery_cancel_t &notify) noexcept {
-    auto &name = notify.payload.service_name;
-    auto &client_addr = notify.payload.client_addr;
-    auto it_promises = promises_map.find(name);
-    auto predicate = [&](auto &msg) { return msg->payload.origin == client_addr; };
-    if (it_promises != promises_map.end()) {
-        auto &list = it_promises->second;
-        auto it = std::find_if(list.begin(), list.end(), predicate);
-        if (it != list.end()) {
-            list.erase(it);
-            if (list.empty()) {
-                promises_map.erase(it_promises);
-            }
-        }
+    auto &request_id = notify.payload.id;
+    auto &client_addr = notify.payload.source;
+    auto predicate = [&](auto &msg) { return msg->payload.id == request_id && msg->payload.origin == client_addr; };
+    auto rit = std::find_if(promises.rbegin(), promises.rend(), predicate);
+    if (rit != promises.rend()) {
+        auto it = --rit.base();
+        auto ec = make_error_code(error_code_t::cancelled);
+        reply_with_error(**it, ec);
+        promises.erase(it);
     }
 }

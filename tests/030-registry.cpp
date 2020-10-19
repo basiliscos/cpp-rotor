@@ -44,20 +44,19 @@ struct manual_actor_t : public r::actor_base_t {
     }
 
     void query_name(const std::string &name) {
-        auto timeout = r::pt::milliseconds{1};
-        request<r::payload::discovery_request_t>(registry_addr, name).send(timeout);
+        request<r::payload::discovery_request_t>(registry_addr, name).send(rt::default_timeout);
     }
 
-    void promise_name(const std::string &name) {
-        auto timeout = r::pt::milliseconds{1};
-        request<r::payload::discovery_promise_t>(registry_addr, name).send(timeout);
+    r::request_id_t promise_name(const std::string &name) {
+        return request<r::payload::discovery_promise_t>(registry_addr, name).send(rt::default_timeout);
     }
 
-    void cancel_name(const std::string &name) { send<r::payload::discovery_cancel_t>(registry_addr, address, name); }
+    void cancel_name(r::request_id_t request_id) {
+        using payload_t = r::message::discovery_cancel_t::payload_t;
+        send<payload_t>(registry_addr, request_id, address); }
 
     void register_name(const std::string &name) {
-        auto timeout = r::pt::milliseconds{1};
-        request<r::payload::registration_request_t>(registry_addr, name, address).send(timeout);
+        request<r::payload::registration_request_t>(registry_addr, name, address).send(rt::default_timeout);
     }
 
     void unregister_all() { send<r::payload::deregistration_notify_t>(registry_addr, address); }
@@ -220,6 +219,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
 
     SECTION("promise & future") {
         REQUIRE(!act->future_reply);
+
         SECTION("promise, register, future") {
             act->promise_name("s1");
             act->register_name("s1");
@@ -234,17 +234,21 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
             CHECK(act->future_reply);
             CHECK(act->future_reply->payload.res.service_addr.get() == act->get_address().get());
         }
+
         SECTION("cancel") {
-            act->promise_name("s1");
-            act->cancel_name("s1");
+            auto req_id = act->promise_name("s1");
+            act->cancel_name(req_id);
             sup->do_process();
             auto plugin = static_cast<r::actor_base_t *>(sup.get())->access<rt::to::get_plugin>(
                 r::plugin::child_manager_plugin_t::class_identity);
+            auto &reply = act->future_reply;
+            CHECK(reply->payload.ec);
+            CHECK(reply->payload.ec.message() == "request has been cancelled");
             auto &actors_map = static_cast<r::plugin::child_manager_plugin_t *>(plugin)->access<rt::to::actors_map>();
             auto actor_state = actors_map.find(act->registry_addr);
             auto &registry = actor_state->second.actor;
-            auto &promises_map = static_cast<r::registry_t *>(registry.get())->access<rt::to::promises_map>();
-            CHECK(promises_map.empty());
+            auto &promises = static_cast<r::registry_t *>(registry.get())->access<rt::to::promises>();
+            CHECK(promises.empty());
         }
     }
 
