@@ -79,7 +79,6 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/address.hpp
     include/rotor/address_mapping.h
     include/rotor/arc.hpp
-    include/rotor/behavior.h
     include/rotor/error_code.h
     include/rotor/handler.hpp
     include/rotor/message.h
