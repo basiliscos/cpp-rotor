@@ -4,6 +4,9 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.10 (xx-xxx-xxxx)
+- [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)
+
 ## 0.09 (03-Oct-2020)
 - [improvement] rewritten whole documentation
 - [improvement/breaking] plugin system where introduced for actors instead of 
