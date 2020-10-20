@@ -76,18 +76,35 @@ list(APPEND ROTOR_TARGETS_TO_INSTALL rotor)
 list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor.hpp
     include/rotor/actor_base.h
+    include/rotor/actor_config.h
     include/rotor/address.hpp
     include/rotor/address_mapping.h
     include/rotor/arc.hpp
     include/rotor/error_code.h
+    include/rotor/forward.hpp
     include/rotor/handler.hpp
     include/rotor/message.h
     include/rotor/messages.hpp
+    include/rotor/plugin/address_maker.h
+    include/rotor/plugin/child_manager.h
+    include/rotor/plugin/delivery.h
+    include/rotor/plugin/foreigners_support.h
+    include/rotor/plugin/init_shutdown.h
+    include/rotor/plugin/lifetime.h
+    include/rotor/plugin/link_client.h
+    include/rotor/plugin/link_server.h
+    include/rotor/plugin/locality.h
+    include/rotor/plugin/plugin_base.h
+    include/rotor/plugin/registry.h
+    include/rotor/plugin/resources.h
+    include/rotor/plugin/starter.h
+    include/rotor/plugins.h
     include/rotor/policy.h
     include/rotor/registry.h
     include/rotor/request.hpp
     include/rotor/state.h
     include/rotor/subscription.h
+    include/rotor/subscription_point.h
     include/rotor/supervisor.h
     include/rotor/supervisor_config.h
     include/rotor/system_context.h
