@@ -47,7 +47,9 @@ template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const 
     return get_plugin(identity);
 }
 
-template <> inline auto rotor::actor_base_t::access<test::to::on_timer_trigger, request_id_t, bool>(request_id_t request_id, bool cancelled) noexcept {
+template <>
+inline auto rotor::actor_base_t::access<test::to::on_timer_trigger, request_id_t, bool>(request_id_t request_id,
+                                                                                        bool cancelled) noexcept {
     on_timer_trigger(request_id, cancelled);
 }
 

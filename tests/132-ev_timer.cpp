@@ -33,6 +33,10 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();
+        start_timer(r::pt::milliseconds(1), *this, &bad_actor_t::delayed_start);
+    }
+
+    void delayed_start(r::request_id_t, bool) noexcept {
         request<traits_t::request::type>(address).send(r::pt::milliseconds(1));
     }
 

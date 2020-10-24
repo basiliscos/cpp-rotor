@@ -53,7 +53,8 @@ struct manual_actor_t : public r::actor_base_t {
 
     void cancel_name(r::request_id_t request_id) {
         using payload_t = r::message::discovery_cancel_t::payload_t;
-        send<payload_t>(registry_addr, request_id, address); }
+        send<payload_t>(registry_addr, request_id, address);
+    }
 
     void register_name(const std::string &name) {
         request<r::payload::registration_request_t>(registry_addr, name, address).send(rt::default_timeout);
