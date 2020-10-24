@@ -202,8 +202,7 @@ plugin_base_t *actor_base_t::get_plugin(const void *identity) const noexcept {
 }
 
 void actor_base_t::cancel_timer(request_id_t request_id) noexcept {
-    auto it = timers_map.find(request_id);
-    assert(it != timers_map.end() && "request does exist");
+    assert(timers_map.find(request_id) != timers_map.end() && "request does exist");
     supervisor->do_cancel_timer(request_id);
 }
 
