@@ -124,25 +124,6 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void commit_unsubscription(const subscription_info_ptr_t &info) noexcept;
 
-    /** \brief starts non-recurring timer, identified by `timer_id`
-     *
-     * Once timer triggers, it will invoke `on_timer_trigger(timer_id)` method;
-     * othewise, if it is no longer needed, it should be cancelled via
-     * `cancel_timer` method
-     *
-     */
-    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept = 0;
-
-    /** \brief cancels previously started timer */
-    virtual void cancel_timer(request_id_t timer_id) noexcept = 0;
-
-    /** \brief triggers an action associated with the timer
-     *
-     * Currently it just delivers response timeout, if any.
-     *
-     */
-    virtual void on_timer_trigger(request_id_t timer_id);
-
     /** \brief thread-safe version of `do_process`
      *
      * Starts supervisor to processing messages queue in safe thread/loop
@@ -243,10 +224,23 @@ struct supervisor_t : public actor_base_t {
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
 
-    /* \brief address-to-subscription map type */
-
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<request_id_t, request_curry_t>;
+
+    void on_request_trigger(request_id_t timer_id, bool cancelled) noexcept;
+
+    /* \brief starts non-recurring timer, identified by `timer_id`
+     *
+     * Once timer triggers, it will invoke `on_timer_trigger(timer_id)` method;
+     * othewise, if it is no longer needed, it should be cancelled via
+     * `cancel_timer` method
+     *
+     */
+
+    virtual void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept = 0;
+
+    /* \brief cancels previously started timer */
+    virtual void do_cancel_timer(request_id_t timer_id) noexcept = 0;
 
     /** \brief non-owning pointer to system context. */
     system_context_t *context;
@@ -288,6 +282,7 @@ struct supervisor_t : public actor_base_t {
     template <typename T> friend struct request_builder_t;
     template <typename Supervisor> friend struct actor_config_builder_t;
     friend struct plugin::delivery_plugin_base_t;
+    friend struct actor_base_t;
     template <typename T> friend struct plugin::delivery_plugin_t;
 
     inline request_id_t next_request_id() noexcept {
@@ -320,6 +315,22 @@ template <typename Supervisor> auto system_context_t::create_supervisor() {
 
 template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
     supervisor->put(make_message<M>(addr, std::forward<Args>(args)...));
+}
+
+template <typename Delegate, typename Method>
+void actor_base_t::start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
+                               Method method) noexcept {
+    using final_handler_t = timer_handler_t<Delegate, Method>;
+    auto handler = std::make_unique<final_handler_t>(this, request_id, &delegate, std::forward<Method>(method));
+    supervisor->do_start_timer(interval, *handler);
+    timers_map.emplace(request_id, std::move(handler));
+}
+
+template <typename Delegate, typename Method>
+request_id_t actor_base_t::start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept {
+    auto request_id = supervisor->next_request_id();
+    start_timer(request_id, interval, delegate, std::forward<Method>(method));
+    return request_id;
 }
 
 /** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
@@ -434,7 +445,7 @@ template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration 
     auto fn = &request_traits_t<T>::make_error_response;
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req});
     sup.put(req);
-    sup.start_timer(timeout, request_id);
+    sup.start_timer(request_id, timeout, sup, &supervisor_t::on_request_trigger);
     return request_id;
 }
 
@@ -443,10 +454,10 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
         auto request_id = msg.payload.request_id();
         auto it = supervisor->request_map.find(request_id);
         if (it != supervisor->request_map.end()) {
-            supervisor->cancel_timer(request_id);
             auto &orig_addr = it->second.origin;
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
             supervisor->request_map.erase(it);
+            supervisor->cancel_timer(request_id);
         }
         // if a response to request has arrived and no timer can be found
         // that means that either timeout timer already triggered

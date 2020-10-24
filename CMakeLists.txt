@@ -108,6 +108,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/supervisor.h
     include/rotor/supervisor_config.h
     include/rotor/system_context.h
+    include/rotor/timer_handler.hpp
 )
 
 if (BUILD_BOOST_ASIO)

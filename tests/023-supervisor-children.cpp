@@ -242,8 +242,9 @@ TEST_CASE("supervisor does not starts, if a children did not initialized", "[sup
 
     REQUIRE(sup->active_timers.size() == 2);
     auto act2_init_req = sup->get_timer(1);
-    sup->on_timer_trigger(act2_init_req);
+    sup->do_invoke_timer(act2_init_req);
     sup->do_process();
+
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(act1->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(act2->get_state() == r::state_t::SHUT_DOWN);
@@ -281,7 +282,7 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
     auto act_init_req = sup->get_timer(1);
-    sup->on_timer_trigger(act_init_req);
+    sup->do_invoke_timer(act_init_req);
     sup->do_process();
 
     sup->do_process();
@@ -303,7 +304,7 @@ TEST_CASE("shutdown_self policy", "[supervisor]") {
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
 
     auto act_init_req = sup->get_timer(1);
-    sup->on_timer_trigger(act_init_req);
+    sup->do_invoke_timer(act_init_req);
     sup->do_process();
 
     sup->do_process();
@@ -479,7 +480,8 @@ TEST_CASE("failed to shutdown actor (1)", "[supervisor]") {
     sup->do_process();
 
     CHECK(sup->active_timers.size() == 1);
-    sup->on_timer_trigger(*sup->active_timers.begin());
+    auto timer_it = *sup->active_timers.begin();
+    sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
     REQUIRE(system_context.ec == r::error_code_t::request_timeout);
@@ -521,7 +523,8 @@ TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
     sup->do_process();
 
     CHECK(sup->active_timers.size() == 1);
-    sup->on_timer_trigger(*sup->active_timers.begin());
+    auto timer_it = *sup->active_timers.begin();
+    sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
     REQUIRE(system_context.ec == r::error_code_t::request_timeout);

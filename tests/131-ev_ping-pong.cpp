@@ -21,7 +21,9 @@ struct supervisor_ev_test_t : public re::supervisor_ev_t {
 
     ~supervisor_ev_test_t() { destroyed += 4; }
 
-    auto &get_leader_queue() { return access<rt::to::locality_leader>()->access<rt::to::queue>(); }
+    auto get_leader_queue() {
+        return  static_cast<supervisor_t*>(this)->access<rt::to::locality_leader>()->access<rt::to::queue>();
+    }
     auto &get_subscription() noexcept { return subscription_map; }
 };
 

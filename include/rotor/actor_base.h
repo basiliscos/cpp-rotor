@@ -6,12 +6,13 @@
 // Distributed under the MIT Software License
 //
 
+#include "forward.hpp"
 #include "address.hpp"
 #include "actor_config.h"
 #include "messages.hpp"
 #include "state.h"
 #include "handler.hpp"
-#include "forward.hpp"
+#include "timer_handler.hpp"
 #include <set>
 
 namespace rotor {
@@ -262,7 +263,25 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief returns actor's supervisor */
     inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
 
+    template <typename Delegate, typename Method>
+    request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
+
+    void cancel_timer(request_id_t request_id) noexcept;
+
   protected:
+    using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
+
+    /* \brief triggers an action associated with the timer
+     *
+     * Currently it just delivers response timeout, if any.
+     *
+     */
+    void on_timer_trigger(request_id_t request_id, bool cancelled) noexcept;
+
+    template <typename Delegate, typename Method>
+    void start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
+                     Method method) noexcept;
+
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
@@ -313,6 +332,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief set of deactivating plugin identities */
     std::set<const void *> deactivating_plugins;
+
+    timers_map_t timers_map;
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;

@@ -130,8 +130,8 @@ TEST_CASE("link not possible (timeout) => shutdown", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
 
     REQUIRE(sup->active_timers.size() == 3);
-    auto timer_id = *(sup->active_timers.rbegin());
-    sup->on_timer_trigger(timer_id);
+    auto timer_it = *(sup->active_timers.rbegin());
+    sup->do_invoke_timer(timer_it->request_id);
 
     sup->do_process();
     REQUIRE(invoked);
@@ -186,7 +186,7 @@ TEST_CASE("unlink", "[actor]") {
         REQUIRE(sup1->active_timers.size() == 2);
 
         auto unlink_req = sup1->get_timer(1);
-        sup1->on_timer_trigger(unlink_req);
+        sup1->do_invoke_timer(unlink_req);
         sup1->do_process();
 
         REQUIRE(system_context.ec == r::error_code_t::request_timeout);

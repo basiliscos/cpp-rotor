@@ -23,7 +23,7 @@ struct supervisor_config_test_t : public supervisor_config_t {
 template <typename Supervisor> struct supervisor_test_config_builder_t;
 
 struct supervisor_test_t : public supervisor_t {
-    using timers_t = std::list<request_id_t>;
+    using timers_t = std::list<timer_handler_base_t*>;
 
     using config_t = supervisor_config_test_t;
     template <typename Supervisor> using config_builder_t = supervisor_test_config_builder_t<Supervisor>;
@@ -32,8 +32,9 @@ struct supervisor_test_t : public supervisor_t {
     ~supervisor_test_t();
 
     void configure(plugin::plugin_base_t &plugin) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
-    virtual void cancel_timer(request_id_t timer_id) noexcept override;
+    virtual void do_start_timer(const pt::time_duration &interval, timer_handler_base_t& handler) noexcept override;
+    virtual void do_cancel_timer(request_id_t timer_id) noexcept override;
+    void do_invoke_timer(request_id_t timer_id) noexcept;
     request_id_t get_timer(std::size_t index) noexcept;
     virtual void start() noexcept override {}
     virtual void shutdown() noexcept override {}

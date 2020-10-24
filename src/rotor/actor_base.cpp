@@ -200,3 +200,17 @@ plugin_base_t *actor_base_t::get_plugin(const void *identity) const noexcept {
     }
     return nullptr;
 }
+
+void actor_base_t::cancel_timer(request_id_t request_id) noexcept {
+    auto it = timers_map.find(request_id);
+    assert(it != timers_map.end() && "request does exist");
+    supervisor->do_cancel_timer(request_id);
+}
+
+void actor_base_t::on_timer_trigger(request_id_t request_id, bool cancelled) noexcept {
+    auto it = timers_map.find(request_id);
+    if (it != timers_map.end()) {
+        it->second->trigger(cancelled);
+        timers_map.erase(it);
+    }
+}

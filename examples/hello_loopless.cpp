@@ -19,8 +19,8 @@ struct hello_actor : public rotor::actor_base_t {
 struct dummy_supervisor : public rotor::supervisor_t {
     using rotor::supervisor_t::supervisor_t;
 
-    void start_timer(const rotor::pt::time_duration &, rotor::request_id_t) noexcept override {}
-    void cancel_timer(rotor::request_id_t) noexcept override {}
+    void do_start_timer(const rotor::pt::time_duration &, rotor::timer_handler_base_t &) noexcept override {}
+    void do_cancel_timer(rotor::request_id_t) noexcept override {}
     void start() noexcept override {}
     void shutdown() noexcept override {}
     void enqueue(rotor::message_ptr_t) noexcept override {}

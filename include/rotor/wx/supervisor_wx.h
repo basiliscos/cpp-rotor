@@ -52,9 +52,7 @@ struct supervisor_wx_t : public supervisor_t {
     void start() noexcept override;
     void shutdown() noexcept override;
     void enqueue(message_ptr_t message) noexcept override;
-    void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
-    void cancel_timer(request_id_t timer_id) noexcept override;
-    void on_timer_trigger(request_id_t timer_id) noexcept override;
+    // void on_timer_trigger(request_id_t timer_id) noexcept override;
 
     /** \brief returns pointer to the wx system context */
     inline system_context_wx_t *get_context() noexcept { return static_cast<system_context_wx_t *>(context); }
@@ -67,18 +65,22 @@ struct supervisor_wx_t : public supervisor_t {
         /** \brief alias for intrusive pointer for the supervisor */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_wx_t>;
 
-        /** \brief timer identity */
-        request_id_t timer_id;
+        timer_handler_base_t *handler;
 
         /** \brief intrusive pointer to the supervisor */
         supervisor_ptr_t sup;
 
         /** \brief constructs timer from wx supervisor */
-        timer_t(request_id_t timer_id, supervisor_ptr_t &&sup_);
+        timer_t(timer_handler_base_t *handler, supervisor_ptr_t &&sup_);
 
         /** \brief invokes `shutdown_timer_trigger` method if shutdown timer triggers*/
         virtual void Notify() noexcept override;
     };
+
+    friend struct timer_t;
+
+    void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept override;
+    void do_cancel_timer(request_id_t timer_id) noexcept override;
 
     /** \brief unique pointer to timer */
     using timer_ptr_t = std::unique_ptr<timer_t>;

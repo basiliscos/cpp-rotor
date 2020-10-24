@@ -6,7 +6,28 @@
 
 #include "rotor/ev/supervisor_ev.h"
 
+using namespace rotor;
 using namespace rotor::ev;
+
+namespace rotor::ev {
+namespace {
+namespace to {
+struct on_timer_trigger {};
+struct timers_map {};
+} // namespace to
+} // namespace
+} // namespace rotor::ev
+
+namespace rotor {
+template <>
+inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool>(request_id_t request_id,
+                                                                                  bool cancelled) noexcept {
+    on_timer_trigger(request_id, cancelled);
+}
+
+template <> inline auto &rotor::ev::supervisor_ev_t::access<to::timers_map>() noexcept { return timers_map; }
+
+} // namespace rotor
 
 void supervisor_ev_t::async_cb(struct ev_loop *, ev_async *w, int revents) noexcept {
     assert(revents & EV_ASYNC);
@@ -19,9 +40,17 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     assert(revents & EV_TIMER);
     (void)revents;
     auto *sup = static_cast<supervisor_ev_t *>(w->data);
+    intrusive_ptr_release(sup);
     auto timer = static_cast<supervisor_ev_t::timer_t *>(w);
-    sup->on_timer_trigger(timer->timer_id);
-    sup->do_process();
+    auto timer_id = timer->handler->request_id;
+    auto &timers_map = sup->access<to::timers_map>();
+    auto it = timers_map.find(timer_id);
+    if (it != timers_map.end()) {
+        auto actor_ptr = timer->handler->owner;
+        actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
+        timers_map.erase(it);
+        sup->do_process();
+    }
 }
 
 supervisor_ev_t::supervisor_ev_t(supervisor_config_ev_t &config_)
@@ -85,30 +114,29 @@ void supervisor_ev_t::shutdown() noexcept {
     supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address));
 }
 
-void supervisor_ev_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
+void supervisor_ev_t::do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
     auto timer = std::make_unique<timer_t>();
     auto timer_ptr = timer.get();
-    ev_tstamp ev_timeout = static_cast<ev_tstamp>(timeout.total_nanoseconds()) / 1000000000;
+    ev_tstamp ev_timeout = static_cast<ev_tstamp>(interval.total_nanoseconds()) / 1000000000;
     ev_timer_init(timer_ptr, timer_cb, ev_timeout, 0);
-    timer_ptr->timer_id = timer_id;
+    timer_ptr->handler = &handler;
     timer_ptr->data = this;
 
     ev_timer_start(loop, timer_ptr);
     intrusive_ptr_add_ref(this);
-    timers_map.emplace(timer_id, std::move(timer));
+    timers_map.emplace(handler.request_id, std::move(timer));
 }
 
-void supervisor_ev_t::cancel_timer(request_id_t timer_id) noexcept {
-    auto &timer = timers_map.at(timer_id);
-    ev_timer_stop(loop, timer.get());
-    timers_map.erase(timer_id);
-    intrusive_ptr_release(this);
-}
-
-void supervisor_ev_t::on_timer_trigger(request_id_t timer_id) noexcept {
-    intrusive_ptr_release(this);
-    timers_map.erase(timer_id);
-    supervisor_t::on_timer_trigger(timer_id);
+void supervisor_ev_t::do_cancel_timer(request_id_t timer_id) noexcept {
+    auto it = timers_map.find(timer_id);
+    if (it != timers_map.end()) {
+        auto &timer = timers_map.at(timer_id);
+        ev_timer_stop(loop, timer.get());
+        auto actor_ptr = it->second->handler->owner;
+        actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
+        timers_map.erase(it);
+        intrusive_ptr_release(this);
+    }
 }
 
 void supervisor_ev_t::on_async() noexcept {

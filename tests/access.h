@@ -14,6 +14,7 @@ namespace rotor::test {
 namespace {
 namespace to {
 struct get_plugin {};
+struct on_timer_trigger {};
 struct state {};
 struct internal_infos {};
 struct mine_handlers {};
@@ -44,6 +45,10 @@ template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { 
 
 template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const void *>(const void *identity) noexcept {
     return get_plugin(identity);
+}
+
+template <> inline auto rotor::actor_base_t::access<test::to::on_timer_trigger, request_id_t, bool>(request_id_t request_id, bool cancelled) noexcept {
+    on_timer_trigger(request_id, cancelled);
 }
 
 template <> inline auto &rotor::subscription_t::access<test::to::internal_infos>() noexcept { return internal_infos; }
