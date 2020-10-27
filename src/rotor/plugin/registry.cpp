@@ -130,8 +130,8 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
 
 bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
     if (!(plugin_state & CONFIGURED)) {
-        actor->configure(*this);
         plugin_state = plugin_state | CONFIGURED;
+        actor->configure(*this);
     }
     return discovery_map.empty() && !has_registering();
 }

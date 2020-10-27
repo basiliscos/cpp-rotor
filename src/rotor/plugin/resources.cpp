@@ -39,8 +39,8 @@ void resources_plugin_t::activate(actor_base_t *actor_) noexcept {
 
 bool resources_plugin_t::handle_init(message::init_request_t *) noexcept {
     if (!configured) {
-        actor->configure(*this);
         configured = true;
+        actor->configure(*this);
     }
     return !has_any();
 }

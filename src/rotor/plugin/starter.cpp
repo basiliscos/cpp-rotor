@@ -52,8 +52,8 @@ bool starter_plugin_t::handle_subscription(message::subscription_t &message) noe
 
 bool starter_plugin_t::handle_init(message::init_request_t *message) noexcept {
     if (!configured) {
-        actor->configure(*this);
         configured = true;
+        actor->configure(*this);
         if (tracked.empty()) {
             reaction_off(reaction_t::INIT);
             reaction_off(reaction_t::SUBSCRIPTION);

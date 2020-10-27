@@ -5,7 +5,10 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.10 (xx-xxx-xxxx)
+- [bugfix] avoid double configuration of a plugin in certain cases when interacting
+with resources plugin
 - [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)
+- [improvement] more debug information in message delivery plugin
 
 ## 0.09 (03-Oct-2020)
 - [improvement] rewritten whole documentation

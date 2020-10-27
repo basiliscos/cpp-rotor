@@ -115,8 +115,8 @@ void link_client_plugin_t::on_unlink_request(message::unlink_request_t &message)
 
 bool link_client_plugin_t::handle_init(message::init_request_t *) noexcept {
     if (!configured) {
-        actor->configure(*this);
         configured = true;
+        actor->configure(*this);
     }
     auto in_progress_predicate = [](auto it) { return it.second.state == link_state_t::LINKING; };
     bool not_linking = std::none_of(servers_map.begin(), servers_map.end(), in_progress_predicate);
