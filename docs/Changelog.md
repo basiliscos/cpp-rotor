@@ -5,6 +5,7 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.10 (xx-xxx-xxxx)
+- [documentation] Integration with event loops
 - [bugfix] avoid double configuration of a plugin in certain cases when interacting
 with resources plugin
 - [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)

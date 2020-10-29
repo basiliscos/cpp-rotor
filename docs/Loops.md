@@ -31,6 +31,44 @@ linux        | supported
 windows      | supported
 macos        | supported
 
+## Integration with event loops
+
+`rotor` is designed to be integrated with event loops, which actually perform some I/O, spawn and
+trigger timers and other asynchronous operations, which can be invoked from an actor or a supervisor.
+The key accessor here is a supervisor.
+
+First, the final (concrete) supervisor have to be obtained. Then, for safety, the intrusive pointer
+to the actor should be created(2), and then loop-specific async operation should be initiated(3), where the pointer
+should be moved(4). Finally, when the result of I/O operation is transformed into rotor message or messages(5),
+which should be sent, the supervisor should be asked to perform rotor mechanics, i.e.
+deliver message(s)(6). Let's illustrate it on timer using [boost-asio].
+
+~~~{.cpp}
+struct my_actor_t : r::actor_base_t {
+
+    using timer_ptr_t = std::unique_ptr<boost::asio::deadline_timer>;
+    timer_ptr_t timer;
+
+    void on_trigger(message::some_message_t&) noexcept {
+        using actor_ptr_t = r::intrusive_ptr_t<my_actor_t>;
+        auto sup = static_cast<r::asio::supervisor_asio_t*>(supervisor); // (1)
+        auto actor_ptr = actor_ptr_t(this); // (2)
+
+        // (3)
+        auto& strand = sup_ptr->get_strand();
+        timer = std::make_unique<boost::asio::deadline_timer>(strand);
+        timer->expires_from_now(timeout);
+        timer->async_wait([this, actor_ptr = std::move(actor_ptr)](auto& ec){ // (4)
+            ...;
+            send<message::io_result_t>(...); // (5)
+            get_supervisor()->do_process(); // (6)
+            (void)actor_ptr;
+        });
+    }
+};
+~~~
+
+
 ## Adding loop support guide
 
 Adding new event loop to `rotor` is rather simple: the new `supervisor` class
