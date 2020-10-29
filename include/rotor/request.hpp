@@ -94,6 +94,10 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     T request_payload;
 };
 
+/** \struct cancelation_t
+ * \brief Request cancellation payload
+ *
+ */
 template <typename T> struct cancelation_t {
     /** \brief unique (per supervisor) request id */
     request_id_t id;
@@ -342,8 +346,14 @@ template <typename R> struct request_traits_t {
         using message_ptr_t = intrusive_ptr_t<message_t>;
     };
 
+    /** \struct cancel
+     * \brief cancel request related types */
     struct cancel {
+
+        /** \brief the payload needed to cancel a request */
         using cancel_payload_t = cancelation_t<request_t>;
+
+        /** \brief request cancellaction message */
         using message_t = rotor::message_t<cancel_payload_t>;
     };
 

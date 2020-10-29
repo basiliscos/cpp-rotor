@@ -263,21 +263,38 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief returns actor's supervisor */
     inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
 
+    /** \brief spawns a new one-shot timer
+     *
+     * \param interval specifies amount of time, after which the timer will trigger.
+     * \param delegate is an object of arbitrary class.
+     * \param method is the pointer-to-member-function of the object, which will be
+     * invoked upon timer triggering or cancellation.
+     *
+     * The `method` parameter should have the following signature:
+     *
+     * void Delegate::on_timer(request_id_t, bool cancelled) noexcept;
+     *
+     * `start_timer` returns timer identity. It will be supplied to the specified callback,
+     * or the timer can be cancelled via it.
+     */
     template <typename Delegate, typename Method>
     request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
 
+    /** \brief cancels previously started timer
+     *
+     * If timer hasn't been triggered, then it is cancelled and the callback will be invoked
+     * with `true` to mark that it was cancelled.
+     */
     void cancel_timer(request_id_t request_id) noexcept;
 
   protected:
+    /** \brief timer-id to timer-handler map (type) */
     using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
 
-    /* \brief triggers an action associated with the timer
-     *
-     * Currently it just delivers response timeout, if any.
-     *
-     */
+    /** \brief triggers timer handler associated with the timer id */
     void on_timer_trigger(request_id_t request_id, bool cancelled) noexcept;
 
+    /** \brief starts timer with pre-forged timer id (aka request-id */
     template <typename Delegate, typename Method>
     void start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
                      Method method) noexcept;
