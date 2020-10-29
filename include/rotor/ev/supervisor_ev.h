@@ -43,8 +43,11 @@ struct supervisor_ev_t : public supervisor_t {
      * \brief inheritance of ev_timer, which holds rotor `timer_id`
      */
     struct timer_t : public ev_timer {
+
+        /** \brief intrusive pointer to ev supervistor (type) */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;
 
+        /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;
 
         /** \brief intrusive pointer to the supervisor */

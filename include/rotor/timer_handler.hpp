@@ -22,6 +22,7 @@ struct timer_handler_base_t {
     /** \brief timer identity (aka timer request id) */
     request_id_t request_id;
 
+    /** \brief constructs timer handler from non-owning pointer to timer and timer request id */
     timer_handler_base_t(actor_base_t *owner_, request_id_t request_id_) noexcept
         : owner{owner_}, request_id{request_id_} {}
 
@@ -41,9 +42,14 @@ using timer_handler_ptr_t = std::unique_ptr<timer_handler_base_t>;
  *
  */
 template <typename Object, typename Method> struct timer_handler_t : timer_handler_base_t {
+    /** \brief delegate object, i.e. that one on which the callback (method) will be invoked*/
     Object *object;
+
+    /** \brief timer callback */
     Method method;
 
+    /** \brief constructs timer handler from non-owning pointer to timer, timer request id, delegate and callback
+     * (object method) */
     timer_handler_t(actor_base_t *owner_, request_id_t request_id_, Object *object_, Method method_) noexcept
         : timer_handler_base_t{owner_, request_id_}, object{object_}, method{std::forward<Method>(method_)} {}
 

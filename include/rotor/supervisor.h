@@ -227,19 +227,13 @@ struct supervisor_t : public actor_base_t {
     /** \brief timer to response with timeout procuder type */
     using request_map_t = std::unordered_map<request_id_t, request_curry_t>;
 
+    /** \brief invoked as timer callback; creates response or just clean up for previously set request */
     void on_request_trigger(request_id_t timer_id, bool cancelled) noexcept;
 
-    /* \brief starts non-recurring timer, identified by `timer_id`
-     *
-     * Once timer triggers, it will invoke `on_timer_trigger(timer_id)` method;
-     * othewise, if it is no longer needed, it should be cancelled via
-     * `cancel_timer` method
-     *
-     */
-
+    /** \brief starts non-recurring timer (to be implemented in descendants) */
     virtual void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept = 0;
 
-    /* \brief cancels previously started timer */
+    /** \brief cancels timer (to be implemented in descendants) */
     virtual void do_cancel_timer(request_id_t timer_id) noexcept = 0;
 
     /** \brief non-owning pointer to system context. */

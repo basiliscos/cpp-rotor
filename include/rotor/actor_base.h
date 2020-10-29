@@ -350,6 +350,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief set of deactivating plugin identities */
     std::set<const void *> deactivating_plugins;
 
+    /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;
 
     friend struct plugin::plugin_base_t;

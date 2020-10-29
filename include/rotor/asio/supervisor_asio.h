@@ -87,6 +87,7 @@ struct supervisor_asio_t : public supervisor_t {
      * \brief boos::asio::deadline_timer with embedded timer handler */
     struct timer_t : public asio::deadline_timer {
 
+        /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;
 
         /** \brief constructs timer using timer handler and boost asio io_context */

@@ -65,6 +65,7 @@ struct supervisor_wx_t : public supervisor_t {
         /** \brief alias for intrusive pointer for the supervisor */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_wx_t>;
 
+        /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;
 
         /** \brief intrusive pointer to the supervisor */
