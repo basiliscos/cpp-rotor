@@ -15,17 +15,21 @@ add_executable(request-response-discovery request-response-discovery.cpp)
 target_link_libraries(request-response-discovery rotor_asio ${Boost_LIBRARIES})
 add_test(request-response-discovery "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/request-response-discovery")
 
-add_executable(ping_pong-single-simple ping_pong-single-simple.cpp)
-target_link_libraries(ping_pong-single-simple rotor_asio ${Boost_LIBRARIES})
-add_test(ping_pong-single-simple "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong-single-simple")
+add_executable(ping-pong-single-simple ping-pong-single-simple.cpp)
+target_link_libraries(ping-pong-single-simple rotor_asio ${Boost_LIBRARIES})
+add_test(ping-pong-single-simple "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-single-simple")
+
+add_executable(ping-pong-timer ping-pong-timer.cpp)
+target_link_libraries(ping-pong-timer rotor_asio ${Boost_LIBRARIES})
+add_test(ping-pong-timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-timer")
 
 add_executable(one-shot-lambda-subscriber one-shot-lambda-subscriber.cpp)
 target_link_libraries(one-shot-lambda-subscriber rotor_asio ${Boost_LIBRARIES})
 add_test(one-shot-lambda-subscriber "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/one-shot-lambda-subscriber")
 
-add_executable(ping_pong-2-theads ping_pong-2-theads.cpp)
-target_link_libraries(ping_pong-2-theads rotor_asio ${Boost_LIBRARIES})
-add_test(ping_pong-2-theads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong-2-theads")
+add_executable(ping-pong-2-theads ping-pong-2-theads.cpp)
+target_link_libraries(ping-pong-2-theads rotor_asio ${Boost_LIBRARIES})
+add_test(ping-pong-2-theads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-2-theads")
 
 add_executable(ping-pong-2-threads-preemt ping-pong-2-threads-preemt.cpp)
 target_link_libraries(ping-pong-2-threads-preemt rotor_asio ${Boost_LIBRARIES})
