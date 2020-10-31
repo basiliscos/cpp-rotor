@@ -77,14 +77,14 @@ struct pinger_t : public rotor::actor_base_t {
     void on_custom_timeout(rotor::request_id_t, bool cancelled) {
         resources->release(resource::timer);
         timer_id.reset();
-        std::cout << "pinger_t, on_custom_timeout, cancelled: " << cancelled << "\n";
+        std::cout << "pinger_t (" << (void *)this << "), on_custom_timeout, cancelled: " << cancelled << "\n";
         if (!cancelled) {
             do_shutdown();
         }
     }
 
     void shutdown_start() noexcept override {
-        std::cout << "pinger_t, shutdown_start() \n";
+        std::cout << "pinger_t, (" << (void *)this << ") shutdown_start() \n";
         if (request_id)
             send<message::cancel_t>(ponger_addr, get_address());
         if (timer_id)
@@ -93,7 +93,7 @@ struct pinger_t : public rotor::actor_base_t {
     }
 
     void shutdown_finish() noexcept override {
-        std::cout << "pinger_t, finished attempts done " << attempts << "\n";
+        std::cout << "pinger_t, (" << (void *)this << ") finished attempts done " << attempts << "\n";
         rotor::actor_base_t::shutdown_finish();
     }
 
@@ -101,11 +101,11 @@ struct pinger_t : public rotor::actor_base_t {
         resources->release(resource::ping);
         auto &ec = msg.payload.ec;
         if (!ec) {
-            std::cout << "success!, pong received, attemps : " << attempts << "\n";
+            std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attemps : " << attempts << "\n";
             cancel_timer(*timer_id);
             supervisor->do_shutdown();
         } else {
-            std::cout << "pong failed (" << attempts << ")\n";
+            std::cout << "pinger_t, (" << (void *)this << ") pong failed (" << attempts << ")\n";
             if (timer_id) {
                 do_ping();
             } else {
@@ -216,6 +216,7 @@ int main() {
                    .guard_context(false)
                    .finish();
 
+    // sup->create_actor<pinger_t>().timeout(timeout).finish();
     sup->create_actor<pinger_t>().timeout(timeout).finish();
     sup->create_actor<ponger_t>().timeout(timeout).finish();
 
