@@ -24,7 +24,7 @@ namespace pt = boost::posix_time;
 namespace ra = rotor::asio;
 
 namespace constants {
-static float win_probability = 0.97f;
+static float failure_probability = 0.97f;
 static pt::time_duration ping_timeout = pt::milliseconds{100};
 static pt::time_duration ping_reply_base = pt::milliseconds{50};
 static pt::time_duration check_interval = pt::milliseconds{3000};
@@ -77,7 +77,7 @@ struct pinger_t : public rotor::actor_base_t {
     void on_custom_timeout(rotor::request_id_t, bool cancelled) {
         resources->release(resource::timer);
         timer_id.reset();
-        std::cout << "pinger_t (" << (void *)this << "), on_custom_timeout, cancelled: " << cancelled << "\n";
+        std::cout << "pinger_t, (" << (void *)this << "), on_custom_timeout, cancelled: " << cancelled << "\n";
         if (!cancelled) {
             do_shutdown();
         }
@@ -87,8 +87,10 @@ struct pinger_t : public rotor::actor_base_t {
         std::cout << "pinger_t, (" << (void *)this << ") shutdown_start() \n";
         if (request_id)
             send<message::cancel_t>(ponger_addr, get_address());
-        if (timer_id)
+        if (timer_id) {
             cancel_timer(*timer_id);
+            timer_id.reset();
+        }
         rotor::actor_base_t::shutdown_start();
     }
 
@@ -99,17 +101,15 @@ struct pinger_t : public rotor::actor_base_t {
 
     void on_pong(message::pong_t &msg) noexcept {
         resources->release(resource::ping);
+        request_id.reset();
         auto &ec = msg.payload.ec;
         if (!ec) {
             std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attemps : " << attempts << "\n";
-            cancel_timer(*timer_id);
-            supervisor->do_shutdown();
+            do_shutdown();
         } else {
             std::cout << "pinger_t, (" << (void *)this << ") pong failed (" << attempts << ")\n";
             if (timer_id) {
                 do_ping();
-            } else {
-                do_shutdown();
             }
         }
     }
@@ -144,6 +144,12 @@ struct ponger_t : public rotor::actor_base_t {
     }
 
     void on_ping(message::ping_t &req) noexcept {
+        if (state != rotor::state_t::OPERATIONAL) {
+            auto ec = rotor::make_error_code(rotor::error_code_t::cancelled);
+            reply_with_error(req, ec);
+            return;
+        }
+
         auto dice = constants::ping_reply_scale * dist(gen);
         pt::time_duration reply_after = constants::ping_reply_base + pt::millisec{(int)dice};
 
@@ -154,24 +160,30 @@ struct ponger_t : public rotor::actor_base_t {
 
     void on_cancel(message::cancel_t &notify) noexcept {
         auto request_id = notify.payload.id;
+        auto &source = notify.payload.source;
         std::cout << "cancellation notify\n";
-        for (auto &it : requests) {
-            if (it.second->payload.id == request_id) {
-                cancel_timer(it.first);
-            }
+        auto predicate = [&](auto &it) {
+            return it.second->payload.id == request_id && it.second->payload.origin == source;
+        };
+        auto it = std::find_if(requests.begin(), requests.end(), predicate);
+        if (it != requests.end()) {
+            cancel_timer(it->first);
         }
     }
 
     void on_ping_timer(rotor::request_id_t timer_id, bool cancelled) noexcept {
         resources->release(resource::timer);
         auto it = requests.find(timer_id);
+
         if (!cancelled) {
             auto dice = dist(gen);
-            if (dice > constants::win_probability) {
+            if (dice > constants::failure_probability) {
                 auto &msg = it->second;
                 reply_to(*msg);
             }
         } else {
+            auto ec = rotor::make_error_code(rotor::error_code_t::cancelled);
+            reply_with_error(*it->second, ec);
         }
         requests.erase(it);
     }
@@ -204,11 +216,13 @@ struct custom_supervisor_t : ra::supervisor_asio_t {
     }
 };
 
+std::atomic_bool shutdown_flag = false;
+
 int main() {
     asio::io_context io_context;
     auto system_context = rotor::asio::system_context_asio_t::ptr_t{new rotor::asio::system_context_asio_t(io_context)};
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
-    auto timeout = pt::milliseconds{10};
+    auto timeout = pt::milliseconds{50};
     auto sup = system_context->create_supervisor<custom_supervisor_t>()
                    .strand(strand)
                    .create_registry()
@@ -221,6 +235,100 @@ int main() {
     sup->create_actor<ponger_t>().timeout(timeout).finish();
 
     sup->start();
+#ifndef _WIN32
+    struct sigaction act;
+    act.sa_handler = [](int) { shutdown_flag = true; };
+    if (sigaction(SIGINT, &act, nullptr) != 0) {
+        std::cout << "critical :: cannot set signal handler\n";
+        return -1;
+    }
+    auto console_thread = std::thread([&] {
+        while (!shutdown_flag) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        sup->shutdown();
+    });
+#endif
+
     io_context.run();
+
+#ifndef _WIN32
+    shutdown_flag = true;
+    console_thread.join();
+#endif
     return 0;
 }
+
+/* output samples:
+
+(all ping failed)
+./examples/boost-asio/ping-pong-timer
+pinger_t, (0x556d13bbd8a0) pong failed (1)
+pinger_t, (0x556d13bbd8a0) pong failed (2)
+pinger_t, (0x556d13bbd8a0) pong failed (3)
+pinger_t, (0x556d13bbd8a0) pong failed (4)
+pinger_t, (0x556d13bbd8a0) pong failed (5)
+pinger_t, (0x556d13bbd8a0) pong failed (6)
+pinger_t, (0x556d13bbd8a0) pong failed (7)
+pinger_t, (0x556d13bbd8a0) pong failed (8)
+pinger_t, (0x556d13bbd8a0) pong failed (9)
+pinger_t, (0x556d13bbd8a0) pong failed (10)
+pinger_t, (0x556d13bbd8a0) pong failed (11)
+pinger_t, (0x556d13bbd8a0) pong failed (12)
+pinger_t, (0x556d13bbd8a0) pong failed (13)
+pinger_t, (0x556d13bbd8a0) pong failed (14)
+pinger_t, (0x556d13bbd8a0) pong failed (15)
+pinger_t, (0x556d13bbd8a0) pong failed (16)
+pinger_t, (0x556d13bbd8a0) pong failed (17)
+pinger_t, (0x556d13bbd8a0) pong failed (18)
+pinger_t, (0x556d13bbd8a0) pong failed (19)
+pinger_t, (0x556d13bbd8a0) pong failed (20)
+pinger_t, (0x556d13bbd8a0) pong failed (21)
+pinger_t, (0x556d13bbd8a0) pong failed (22)
+pinger_t, (0x556d13bbd8a0) pong failed (23)
+pinger_t, (0x556d13bbd8a0) pong failed (24)
+pinger_t, (0x556d13bbd8a0) pong failed (25)
+pinger_t, (0x556d13bbd8a0) pong failed (26)
+pinger_t, (0x556d13bbd8a0) pong failed (27)
+pinger_t, (0x556d13bbd8a0) pong failed (28)
+pinger_t, (0x556d13bbd8a0) pong failed (29)
+pinger_t, (0x556d13bbd8a0), on_custom_timeout, cancelled: 0
+pinger_t, (0x556d13bbd8a0) shutdown_start()
+pinger_t, (0x556d13bbd8a0) pong failed (30)
+pinger_t, (0x556d13bbd8a0) finished attempts done 30
+ponger_t, shutdown_finish
+
+(11-th ping was successful)
+./examples/boost-asio/ping-pong-timer
+pinger_t, (0x55f9f90048a0) pong failed (1)
+pinger_t, (0x55f9f90048a0) pong failed (2)
+pinger_t, (0x55f9f90048a0) pong failed (3)
+pinger_t, (0x55f9f90048a0) pong failed (4)
+pinger_t, (0x55f9f90048a0) pong failed (5)
+pinger_t, (0x55f9f90048a0) pong failed (6)
+pinger_t, (0x55f9f90048a0) pong failed (7)
+pinger_t, (0x55f9f90048a0) pong failed (8)
+pinger_t, (0x55f9f90048a0) pong failed (9)
+pinger_t, (0x55f9f90048a0) pong failed (10)
+pinger_t, (0x55f9f90048a0) success!, pong received, attemps : 11
+pinger_t, (0x55f9f90048a0) shutdown_start()
+pinger_t, (0x55f9f90048a0), on_custom_timeout, cancelled: 1
+pinger_t, (0x55f9f90048a0) finished attempts done 11
+ponger_t, shutdown_finish
+
+(premature termination via CTRL+C pressing)
+./examples/boost-asio/ping-pong-timer
+pinger_t, (0x55d5d95d98a0) pong failed (1)
+pinger_t, (0x55d5d95d98a0) pong failed (2)
+pinger_t, (0x55d5d95d98a0) pong failed (3)
+pinger_t, (0x55d5d95d98a0) pong failed (4)
+pinger_t, (0x55d5d95d98a0) pong failed (5)
+pinger_t, (0x55d5d95d98a0) pong failed (6)
+^Cpinger_t, (0x55d5d95d98a0) shutdown_start()
+pinger_t, (0x55d5d95d98a0), on_custom_timeout, cancelled: 1
+pinger_t, (0x55d5d95d98a0) pong failed (7)
+pinger_t, (0x55d5d95d98a0) finished attempts done 7
+ponger_t, shutdown_finish
+
+
+*/

@@ -5,6 +5,10 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.10 (xx-xxx-xxxx)
+- [improvement] Request cancellation support
+- [improvement/breaking] Generic timers interface
+- [documentation] Requests cancellation and timers are demonstrated in the
+[Advanced Examples](Examples.md) section
 - [documentation] Integration with event loops
 - [bugfix] avoid double configuration of a plugin in certain cases when interacting
 with resources plugin

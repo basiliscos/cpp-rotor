@@ -811,6 +811,7 @@ INPUT                  =  @CMAKE_CURRENT_SOURCE_DIR@/docs/Introduction.md   \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Rationale.md      \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Compilation.md    \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Design.md         \
+                          @CMAKE_CURRENT_SOURCE_DIR@/docs/Examples.md       \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Loops.md          \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/Patterns.md       \
                           @CMAKE_CURRENT_SOURCE_DIR@/docs/License.md        \

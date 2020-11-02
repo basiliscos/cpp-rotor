@@ -18,8 +18,10 @@
 ## features
 
 - minimalistic loop agnostic core
+- [erlang-like](https://en.wikipedia.org/wiki/Erlang_(programming_language)#Supervisor_trees) hierarchical supervisors, see [blog-cpp-supervisors]
 - various event loops supported (wx, boost-asio, ev) or planned (uv, gtk, etc.)
 - asynchornous message passing interface
+- [request-response](https://en.wikipedia.org/wiki/Request%E2%80%93response) messaging with cancellation capabilities
 - MPMC (multiple producers mupltiple consumers) messaging, aka pub-sub
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
