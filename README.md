@@ -5,7 +5,7 @@
 [blog-cpp-supervisors]: https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/ "Trees of Supervisors in C++"
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
-
+[blog-cpp-req_res]: https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/
 
 `rotor` is event loop friendly C++ actor micro framework.
 
@@ -18,10 +18,12 @@
 ## features
 
 - minimalistic loop agnostic core
-- [erlang-like](https://en.wikipedia.org/wiki/Erlang_(programming_language)#Supervisor_trees) hierarchical supervisors, see [blog-cpp-supervisors]
+- [erlang-like](https://en.wikipedia.org/wiki/Erlang_(programming_language)#Supervisor_trees) hierarchical supervisors,
+[see](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 - various event loops supported (wx, boost-asio, ev) or planned (uv, gtk, etc.)
 - asynchornous message passing interface
-- [request-response](https://en.wikipedia.org/wiki/Request%E2%80%93response) messaging with cancellation capabilities
+- [request-response](https://en.wikipedia.org/wiki/Request%E2%80%93response) messaging with cancellation capabilities,
+[see](https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/)
 - MPMC (multiple producers mupltiple consumers) messaging, aka pub-sub
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
