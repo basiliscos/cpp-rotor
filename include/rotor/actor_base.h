@@ -141,7 +141,27 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&... args);
 
     /** \brief convenient method for constructing and sending error response to a request */
-    template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
+    template <typename Request> void reply_with_error(Request &message, const std::error_code &ec);
+
+    /** \brief makes response to the request, but does not send it.
+     *
+     * The return type is intrusive pointer to the message, not the message itself.
+     *
+     * It can be useful for delayed responses. The response can be dispatched later via
+     * supervisor->put(std::move(response_ptr));
+     *
+     */
+    template <typename Request, typename... Args> auto make_response(Request &message, Args &&... args);
+
+    /** \brief makes error response to the request, but does not send it.
+     *
+     * The return type is intrusive pointer to the message, not the message itself.
+     *
+     * It can be useful for delayed responses. The response can be dispatched later via
+     * supervisor->put(std::move(response_ptr));
+     *
+     */
+    template <typename Request> auto make_response(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;

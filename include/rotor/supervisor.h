@@ -488,20 +488,26 @@ actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &r
     return supervisor->do_request<request_t>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
 }
 
-template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
+template <typename Request> auto actor_base_t::make_response(Request &message, const std::error_code &ec) {
+    using payload_t = typename Request::payload_t::request_t;
+    using traits_t = request_traits_t<payload_t>;
+    return traits_t::make_error_response(message.payload.reply_to, message, ec);
+}
+
+template <typename Request, typename... Args> auto actor_base_t::make_response(Request &message, Args &&... args) {
     using payload_t = typename Request::payload_t::request_t;
     using traits_t = request_traits_t<payload_t>;
     using response_t = typename traits_t::response::wrapped_t;
     using request_ptr_t = typename traits_t::request::message_ptr_t;
-    send<response_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
+    return make_message<response_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
 }
 
-template <typename Request, typename... Args>
-void actor_base_t::reply_with_error(Request &message, const std::error_code &ec) {
-    using payload_t = typename Request::payload_t::request_t;
-    using traits_t = request_traits_t<payload_t>;
-    auto response = traits_t::make_error_response(message.payload.reply_to, message, ec);
-    supervisor->put(std::move(response));
+template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
+    supervisor->put(make_response<Request>(message, std::forward<Args>(args)...));
+}
+
+template <typename Request> void actor_base_t::reply_with_error(Request &message, const std::error_code &ec) {
+    supervisor->put(make_response<Request>(message, ec));
 }
 
 template <typename Actor>
