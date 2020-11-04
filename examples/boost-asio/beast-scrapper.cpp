@@ -26,17 +26,17 @@ where the parsed reply is put.
 2. The reply is intrusive pointer to the real http-response, i.e. to avoid unnecessary copying.
 
 3. The client makes as many requests as it needs, and the manager just for forwards them
-to free http-workers. The amounts of simultaneous requests and http-workers are "coordinated",
-as well as MAX_FAILURES = 1. If it is not desirable, it can be impoved:
+to free http-workers. The http-manager spawns workers on demand, i.e. it will be naturally
+coordinated with the load concurrency. If it is not desirable, it can be impoved:
 
 3.1. If MAX_FAILURES != 1, then it might be the case when timeout timer just has triggered
 on the client, but corresponding timer wasn't triggered on the manager. In the current code
 there is just an assert, but the situation where client asks more then http-manager is
 capable to serve can be handled, i.e. via queueing.
 
-3.2. If the pool size and client's simultaneous requests are uncoordinated, then http-manager
-can queue requests. However, some *back-pressure* mechanisms should be imposed into http-manager
-to prevent the queue to grow infinitely.
+3.2. If there is no need of spawning a lot of http workers, the http-manager can queue requests.
+However, some *back-pressure* mechanisms should be imposed into http-manager to prevent the
+queue to grow infinitely.
 
 3.3. The http-requests are stateless (i.e. no http/1.1). This cannot be improved whitout
 internal protocol change, as the socket should not be closed, the same http-client
@@ -45,24 +45,14 @@ should continue serving the requests on the same host from the client etc.
 3.4. The http-requests do not contain headers/cookies etc. It can be improved via additional
 fields in the http-requests.
 
-3.5. There is no cancellation facilities. Again, the protocol should be changed to support
-that: client have to know *what* to cancel (i.e. some work_id/request_id should be returned
-immediately from http-worker to http-client). As the result in the current code the
-client *have to wait* until all requests will be finished either successfully or via
-timeout triggering. The noticible delay in shutdown can be observed, and it is described
-here.
-
-However, workres are properly shutted down if ctrl+c is pressed (or if any other reason for
-whole system to shutdown has been triggered).
+3.5. Since v0.11 there are cancellation facilities. You can press ctrl+c on console,
+and everything will be cleanly shutted down, no leaks etc.
 
 3.6. Currenlty only single thread is used. However, it is not a problem to use all threads,
 just the actors architecture should be redesigend a litte bit, to let them be launched
 on different threads.
 
-4. The care should be taken to properly shut down the application: only when there is
-no I/O activities from client perspective, the shut down is initiated.
-
-5. There are 2 timers per request: the 1st one validates manager's responsibilities
+4. There are 2 timers per request: the 1st one validates manager's responsibilities
 on client, the 2nd one validates worker's responsibilities on manager.
 Technically, there could be only one timer per request, however, the main question
 is how reliable do you treat your actors. If they are unreliable (i.e. might have
@@ -70,7 +60,7 @@ bugs etc.), then there should be 2 timers. On the later stage of the development
 it might be switched to one timer per request if reliability has been proven
 and it is desirable to get rid of additional timer from performance point of view.
 
-6. There should be no crashes, no memory leaks
+5. There should be no crashes, no memory leaks, including on emergency shutdown (ctrl+c)
 
 The output sample for the localhost is:
 

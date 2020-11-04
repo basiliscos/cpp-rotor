@@ -5,15 +5,19 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.10 (xx-xxx-xxxx)
-- [improvement] Request cancellation support
 - [improvement/breaking] Generic timers interface
+- [improvement] Request cancellation support
+- [improvement] added `make_response` methods when message should be created, but
+send later delayed
+- [improvement] more debug information in message delivery plugin
+- [documentation] Integration with event loops
 - [documentation] Requests cancellation and timers are demonstrated in the
 [Advanced Examples](Examples.md) section
-- [documentation] Integration with event loops
+- [example] `examples/boost-asio/ping-pong-timer.cpp` (new)
+- [example] `examples/boost-asio/beast-scrapper.cpp` (updated)
 - [bugfix] avoid double configuration of a plugin in certain cases when interacting
 with resources plugin
 - [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)
-- [improvement] more debug information in message delivery plugin
 
 ## 0.09 (03-Oct-2020)
 - [improvement] rewritten whole documentation
