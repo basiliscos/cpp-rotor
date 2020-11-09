@@ -19,6 +19,7 @@ send later delayed
 with resources plugin
 - [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)
 
+
 ## 0.09 (03-Oct-2020)
 - the dedicated article with highlights: [en](https://habr.com/ru/company/crazypanda/blog/522588/) and 
 [ru](https://habr.com/ru/company/crazypanda/blog/522892/)
