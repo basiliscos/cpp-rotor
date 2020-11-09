@@ -46,7 +46,7 @@ send later delayed
 - [improvement] more debug information in message delivery plugin
 - [documentation] Integration with event loops
 - [documentation] Requests cancellation and timers are demonstrated in the
-[Advanced Examples](Examples.md) section
+[Advanced Examples](docs/Examples.md) section
 - [example] `examples/boost-asio/ping-pong-timer.cpp` (new)
 - [example] `examples/boost-asio/beast-scrapper.cpp` (updated)
 - [bugfix] avoid double configuration of a plugin in certain cases when interacting
