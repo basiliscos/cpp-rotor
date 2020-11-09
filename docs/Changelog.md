@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.10 (xx-xxx-xxxx)
+## 0.10 (09-Nov-2020)
 - [improvement/breaking] Generic timers interface
 - [improvement] Request cancellation support
 - [improvement] added `make_response` methods when message should be created, but
