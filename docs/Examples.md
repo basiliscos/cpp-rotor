@@ -21,7 +21,7 @@ Let enumerate the **rules of the simulator**. To simulate the unreliability, let
 not immediately upon `ping` request, but after some time and with some probability. "After some time" means
 that sometimes it will respond in time, and sometimes too late. The "some probability" will simulate I/O
 errors. As soon as `pinger` receives successful `pong` response it shuts down the entire simulator. However,
-if the `pinger` actor does not receives any successful `pong` response during some time despite of multiple
+if the `pinger` actor does not receive any successful `pong` response during some time despite multiple
 attempts, it should shut self down too. The rules are reified as the constants like:
 
 
@@ -35,12 +35,12 @@ static std::uint32_t ping_reply_scale = 70;
 } // namespace constants
 ```
 
-The `pinger` pings ponger durig `check_interval` or shuts self down. The ponger generate response during
+The `pinger` pings ponger during `check_interval` or shuts self down. The ponger generates response during
 `50 + rand(70)` milliseconds with the `1 - failure_probability`.
 
 
 Ok, let's go to the implementation. To make it reliable, we are going to use many patterns, but first of all,
-lets use the [request-response] one:
+let's use the [request-response] one:
 
 ~~~{.cpp}
 namespace payload {
@@ -94,7 +94,7 @@ auto sup = system_context->create_supervisor<custom_supervisor_t>()
                .finish();
 ~~~
 
-What should `pinger` do upon start? It should do `ping` of ponger and spawn a timer to shut
+What should `pinger` do upon start? It should do `ping` ponger and spawn a timer to shut
 self down upon timeout.
 
 ~~~{.cpp}
@@ -117,7 +117,7 @@ void on_custom_timeout(rotor::request_id_t, bool cancelled) {
 ~~~
 
 The `on_start` method is rather trivial, except the two nuances. First, it must record the `timer_id`,
-which may be needed for the timer cancellation on shutdown initiation. Second, it acquires the
+which may be necessary for the timer cancellation on shutdown initiation. Second, it acquires the
 timer *resource*, whose entire purpose is to delay shutdown (and, in general, the initialization) phase.
 Without the resource acquisition, the timer might trigger *after* actor shutdown, which usually is
 bad idea. In the timer handler (`on_custom_timeout`) it performs the reverse actions: the timer
@@ -144,7 +144,7 @@ void shutdown_start() noexcept override {
 
 It's quite trivial: if there is a pending ping request, let's cancel it. If there is an active timer,
 let's cancel it too. Otherwise, let's continue shutdown. It should be noted, that the acquired resources
-are not released here; instead the corresponding async operations are cancelled, and the resources
+are not released here; instead of the corresponding async operations are cancelled, and the resources
 will be released upon cancellation. The [rotor] internals knows about resources, so, it is safe
 to invoke `rotor::actor_base_t::shutdown_start()` here (and it should). Any further resource release
 will continue suspended shutdown or initialization (see more about that in `rotor::plugin::resources_plugin_t`).
@@ -177,11 +177,11 @@ void on_pong(message::pong_t &msg) noexcept {
 
 Again, it follows the same pattern: initiate async operation (request), acquire resource, record it; and, upon response,
 release the resource, forget the request. Upon shutdown (as it is shown above), cancel request if it exists. As for the
-request processing flow, according to the our rules, it does shut self down upon successful pong response; otherwise,
+request processing flow, according to our rules, it shuts self down upon successful pong response; otherwise,
 if the actor is still operational (i.e. `timer_id` does exist), it performs another ping attempt.
 
-Let's move the he `ponger` overview. As the actor plays the server role it usually does not have `on_start()` method.
-Since `ponger` does not reply immediately to ping requests, it should store them internally for further responses.
+Let's move the `ponger` overview. As the actor plays the server role it usually does not have `on_start()` method.
+As `ponger` does not reply immediately to ping requests, it should store them internally for further responses.
 
 ~~~{.cpp}
 struct ponger_t : public rotor::actor_base_t {
@@ -193,7 +193,7 @@ struct ponger_t : public rotor::actor_base_t {
 };
 ~~~
 
-The key in the `requests_map_t` is `rotor::request_id_t`, which represents timer for each delayed ping response. So,
+The key moment in the `requests_map_t` is `rotor::request_id_t`, which represents timer for each delayed ping response. So,
 when ping request arrives, timer is spawned and stored with the smart pointer to the original request:
 
 
@@ -212,7 +212,7 @@ void on_ping(message::ping_t &req) noexcept {
 ~~~
 
 As usual with async operations, the timer resource is acquired. However, there is additional check for the actor
-state, as we don't want even to start asyns operation (timer), when actor is shutting down; in the case actor
+state, as we don't want even to start asyns operation (timer), when actor is shutting down; in case actor
 replies immediately with error.
 
 The timer handler implementation isn't difficult:
@@ -238,7 +238,7 @@ void on_ping_timer(rotor::request_id_t timer_id, bool cancelled) noexcept {
 In other words, if the timer isn't cancelled, it *may be* replied with success, or, if it was cancelled
 it replies with corresponding error code. Again, the timer resource is released, and request is erased
 from the requests map. Actually, it can be implemented in a little bit more verbose way: respond with
-error upon unsuccessful dice roll; however this is *not necessary*, as the due to request-response
+error upon unsuccessful dice roll; however this is *not necessary*, due to the request-response
 pattern it is protected by timer on the request side (i.e. in `pinger`).
 
 Nonetheless it **does response with error** in the case of the cancellation, because the cancellation
@@ -249,7 +249,7 @@ it is rather shaky ground and it is not recommended to follow.
 
 The cancellation implementation is rather straightforward: it finds the timer/request pair by the
 the original request id and origin (actor address), and then cancels the found timer. It should
-noted, that timer might already be triggered and, hence, it is not found in the request map.
+be noted, that timer might have already been triggered and, hence, it is not found in the request map.
 
 ~~~{.cpp}
 void on_cancel(message::cancel_t &notify) noexcept {
@@ -294,14 +294,14 @@ struct custom_supervisor_t : ra::supervisor_asio_t {
         strand->context().stop();
     }
 };
+~~~
 
-
-What is the need of it? First, because as to our rules, when `pinger` shuts down, the entire
-system should shutdown too (Out of the box, in [rotor] a supervisor auto-shutdowns self only
+What is the need of it? First, because as for our rules, when `pinger` shuts down, the entire
+system should shutdown too (Out of the box, in [rotor] a supervisor automatically shut self down only
 if it's child has been shut down, while *the supervisor itself is in initialization stage*).
 Second, it should stop boost::asio event loop and exit from `main()` function.
 
-That it is. To my opinion it has moderate complexity, however the clean shutdown **scales well**,
+That it is. In my opinion it has moderate complexity, however the clean shutdown **scales well**,
 if every actor has clean shutdown. And here is the demonstration of the thesis: you can
 add many ping clients, and it still performs correctly the main logic as well as the clean
 shutdown. That can be checked with tools like valgrind or memory/UB-sanitizers etc.
