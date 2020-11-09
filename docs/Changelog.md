@@ -12,7 +12,7 @@ send later delayed
 - [improvement] more debug information in message delivery plugin
 - [documentation] Integration with event loops
 - [documentation] Requests cancellation and timers are demonstrated in the
-[Advanced Examples](Examples.md) section
+`Advanced Examples` section of docs
 - [example] `examples/boost-asio/ping-pong-timer.cpp` (new)
 - [example] `examples/boost-asio/beast-scrapper.cpp` (updated)
 - [bugfix] avoid double configuration of a plugin in certain cases when interacting
@@ -20,6 +20,8 @@ with resources plugin
 - [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)
 
 ## 0.09 (03-Oct-2020)
+- the dedicated article with highlights: [en](https://habr.com/ru/company/crazypanda/blog/522588/) and 
+[ru](https://habr.com/ru/company/crazypanda/blog/522892/)
 - [improvement] rewritten whole documentation
 - [improvement/breaking] plugin system where introduced for actors instead of 
 behaviors

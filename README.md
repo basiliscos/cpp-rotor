@@ -38,6 +38,21 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.10 (09-Nov-2020)
+- [improvement/breaking] Generic timers interface
+- [improvement] Request cancellation support
+- [improvement] added `make_response` methods when message should be created, but
+send later delayed
+- [improvement] more debug information in message delivery plugin
+- [documentation] Integration with event loops
+- [documentation] Requests cancellation and timers are demonstrated in the
+[Advanced Examples](Examples.md) section
+- [example] `examples/boost-asio/ping-pong-timer.cpp` (new)
+- [example] `examples/boost-asio/beast-scrapper.cpp` (updated)
+- [bugfix] avoid double configuration of a plugin in certain cases when interacting
+with resources plugin
+- [bugfix] more correct cmake installation (thanks to Jorge López Tello, @LtdJorge)
+
 ### 0.09 (03-Oct-2020)
 - the dedicated article with highlights: [en](https://habr.com/ru/company/crazypanda/blog/522588/) and 
 [ru](https://habr.com/ru/company/crazypanda/blog/522892/)
