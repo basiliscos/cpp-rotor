@@ -261,17 +261,6 @@ struct discovery_promise_t {
     std::string service_name;
 };
 
-/** \struct discovery_cancel_t
- *  \brief cancels previously asked {@link discovery_future_t}
- */
-struct discovery_cancel_t {
-    /** \brief client-actor address */
-    address_ptr_t client_addr;
-
-    /** \brief target service name */
-    std::string service_name;
-};
-
 /** \struct link_response_t
  *  \brief successful confirmation to {@link link_request_t}
  */
@@ -371,7 +360,7 @@ using discovery_promise_t = request_traits_t<payload::discovery_promise_t>::requ
 /** \brief name discovery future (reply to promise) */
 using discovery_future_t = request_traits_t<payload::discovery_promise_t>::response::message_t;
 /** \brief name discovery promise cancellation */
-using discovery_cancel_t = message_t<payload::discovery_cancel_t>;
+using discovery_cancel_t = request_traits_t<payload::discovery_promise_t>::cancel::message_t;
 
 // link-related
 /** \brief actor link request */

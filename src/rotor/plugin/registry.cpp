@@ -119,7 +119,8 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
             if (!task.delayed) {
                 actor->request<payload::discovery_request_t>(registry_addr, task.service_name).send(timeout);
             } else {
-                actor->request<payload::discovery_promise_t>(registry_addr, task.service_name).send(timeout);
+                task.request_id =
+                    actor->request<payload::discovery_promise_t>(registry_addr, task.service_name).send(timeout);
             }
         }
     } else {
@@ -129,8 +130,8 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
 
 bool registry_plugin_t::handle_init(message::init_request_t *) noexcept {
     if (!(plugin_state & CONFIGURED)) {
-        actor->configure(*this);
         plugin_state = plugin_state | CONFIGURED;
+        actor->configure(*this);
     }
     return discovery_map.empty() && !has_registering();
 }
@@ -152,7 +153,9 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexce
         for (auto it = discovery_map.begin(); it != discovery_map.end(); ++it) {
             auto &task = it->second;
             if (task.delayed && task.requested) {
-                actor->send<payload::discovery_cancel_t>(registry_addr, actor->get_address(), task.service_name);
+                using payload_t = rotor::message::discovery_cancel_t::payload_t;
+                auto &request_id = task.request_id;
+                actor->send<payload_t>(registry_addr, request_id, actor->get_address());
             }
         }
         discovery_map.clear();

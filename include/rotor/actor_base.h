@@ -6,12 +6,13 @@
 // Distributed under the MIT Software License
 //
 
+#include "forward.hpp"
 #include "address.hpp"
 #include "actor_config.h"
 #include "messages.hpp"
 #include "state.h"
 #include "handler.hpp"
-#include "forward.hpp"
+#include "timer_handler.hpp"
 #include <set>
 
 namespace rotor {
@@ -140,7 +141,27 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&... args);
 
     /** \brief convenient method for constructing and sending error response to a request */
-    template <typename Request, typename... Args> void reply_with_error(Request &message, const std::error_code &ec);
+    template <typename Request> void reply_with_error(Request &message, const std::error_code &ec);
+
+    /** \brief makes response to the request, but does not send it.
+     *
+     * The return type is intrusive pointer to the message, not the message itself.
+     *
+     * It can be useful for delayed responses. The response can be dispatched later via
+     * supervisor->put(std::move(response_ptr));
+     *
+     */
+    template <typename Request, typename... Args> auto make_response(Request &message, Args &&... args);
+
+    /** \brief makes error response to the request, but does not send it.
+     *
+     * The return type is intrusive pointer to the message, not the message itself.
+     *
+     * It can be useful for delayed responses. The response can be dispatched later via
+     * supervisor->put(std::move(response_ptr));
+     *
+     */
+    template <typename Request> auto make_response(Request &message, const std::error_code &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
@@ -262,7 +283,42 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief returns actor's supervisor */
     inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
 
+    /** \brief spawns a new one-shot timer
+     *
+     * \param interval specifies amount of time, after which the timer will trigger.
+     * \param delegate is an object of arbitrary class.
+     * \param method is the pointer-to-member-function of the object, which will be
+     * invoked upon timer triggering or cancellation.
+     *
+     * The `method` parameter should have the following signature:
+     *
+     * void Delegate::on_timer(request_id_t, bool cancelled) noexcept;
+     *
+     * `start_timer` returns timer identity. It will be supplied to the specified callback,
+     * or the timer can be cancelled via it.
+     */
+    template <typename Delegate, typename Method>
+    request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
+
+    /** \brief cancels previously started timer
+     *
+     * If timer hasn't been triggered, then it is cancelled and the callback will be invoked
+     * with `true` to mark that it was cancelled.
+     */
+    void cancel_timer(request_id_t request_id) noexcept;
+
   protected:
+    /** \brief timer-id to timer-handler map (type) */
+    using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
+
+    /** \brief triggers timer handler associated with the timer id */
+    void on_timer_trigger(request_id_t request_id, bool cancelled) noexcept;
+
+    /** \brief starts timer with pre-forged timer id (aka request-id */
+    template <typename Delegate, typename Method>
+    void start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
+                     Method method) noexcept;
+
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
@@ -313,6 +369,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief set of deactivating plugin identities */
     std::set<const void *> deactivating_plugins;
+
+    /** \brief timer-id to timer-handler map */
+    timers_map_t timers_map;
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;

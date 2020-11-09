@@ -139,7 +139,8 @@ TEST_CASE("fail shutdown test", "[actor]") {
     sup->do_process();
     REQUIRE(sup->active_timers.size() == 1); // "init child + shutdown children"
 
-    sup->on_timer_trigger(*sup->active_timers.begin());
+    auto timer_it = *sup->active_timers.begin();
+    sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
     REQUIRE(sup->get_children_count() == 1);
@@ -181,7 +182,8 @@ TEST_CASE("fail initialize test", "[actor]") {
     REQUIRE(act->get_state() == r::state_t::INITIALIZING);
     REQUIRE(sup->active_timers.size() == 1);
 
-    sup->on_timer_trigger(*sup->active_timers.begin());
+    auto timer_it = *sup->active_timers.begin();
+    sup->do_invoke_timer(timer_it->request_id);
     act->access<rt::to::resources>()->release();
     sup->do_process();
     REQUIRE(sup->get_children_count() == 1); // just sup

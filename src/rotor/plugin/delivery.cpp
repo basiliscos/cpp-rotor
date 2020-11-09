@@ -84,6 +84,10 @@ std::string inspected_local_delivery_t::identify(message_base_t *message, std::i
     } else if (auto m = dynamic_cast<message::commit_unsubscription_t *>(message); m) {
         level = 9;
         info += dump_point(m->payload.point);
+    } else if (auto m = dynamic_cast<message::deregistration_service_t *>(message); m) {
+        level = 0;
+        info += ", service = ";
+        info += m->payload.service_name;
     }
 
     if (level > threshold)

@@ -456,9 +456,10 @@ TEST_CASE("request-response timeout", "[actor]") {
     REQUIRE(actor->res_val == 0);
     REQUIRE(sup->active_timers.size() == 1);
     REQUIRE(!actor->ec);
-    auto timer_id = *(sup->active_timers.begin());
 
-    sup->on_timer_trigger(timer_id);
+    auto timer_it = *sup->active_timers.begin();
+    ((r::actor_base_t *)sup.get())
+        ->access<rt::to::on_timer_trigger, r::request_id_t, bool>(timer_it->request_id, false);
     sup->do_process();
     REQUIRE(actor->req_msg);
     REQUIRE(actor->req_val == 4);

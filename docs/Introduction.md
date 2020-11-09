@@ -4,8 +4,9 @@
 [wx-widgets]: https://www.wxwidgets.org/ "wxWidgets"
 [actor-model]: https://en.wikipedia.org/wiki/Actor_model "Actor Model"
 [sobjectizer]: https://github.com/Stiffstream/sobjectizer
+[rotor]: https://github.com/basiliscos/cpp-rotor
 
-`rotor` is event loop friendly C++ actor micro framework.
+[rotor] is event loop friendly C++ actor micro framework.
 
 That means, that rotor is probably useless without **event loop**, e.g.
 [boost-asio] or [wx-widgets] event loop; as a **framework** rotor imposes
@@ -15,20 +16,20 @@ hence it is **micro** framework.
 As actor model and event loops are asynchronous by their nature, the underlying
 intuition is to uplift the low level *events* of an event loop into high level
 messages between actors, making high-level messages abstracted from the event loop;
-hence `rotor` should provide message passing facilities between actors
+hence [rotor] should provide message passing facilities between actors
 *independently* from the used event loop(s).
 
-`rotor` can be used in the applications, where different loop engines are used
+[rotor] can be used in the applications, where different loop engines are used
 together and it is desirable to write some loop-agnostic logic still having
 message passing interface. The library can be used as lightweight loop abstraction
 with actor-like flavor.
 
-`rotor` should be considered **experimental** project, i.e. no stability in
+[rotor] should be considered **experimental** project, i.e. no stability in
 API is guaranteed.
 
-`rotor` is licensed on *MIT* license.
+[rotor] is licensed on *MIT* license.
 
-`rotor` is influenced by [sobjectizer].
+[rotor] is influenced by [sobjectizer].
 
 ## Hello World (loop-less)
 
@@ -103,14 +104,14 @@ int main() {
 ~~~
 
 It is obvious that the actor code is the same in both cases, however the system environment
-and supervisors are different. In the last example the important property of `rotor` is
+and supervisors are different. In the last example the important property of [rotor] is
 shown : it is **not intrusive** to event loops, i.e. an event loop runs on by itself, not
 introducing additional environment/thread; as the consequence, rotor actor can be seamlessly
 integrated with loops.
 
 The `supervisor.do_shutdown()` just sends message to supervisor to perform shutdown procedure.
 Then, in the code `io_context.run()` loop terminates, as long as *there are no any pending
-event*. `rotor` does not make run loop endlessly.
+event*. [rotor] does not make run loop endlessly.
 
 The `timeout` variable is used to spawn timers for actor initialization and shutdown requests.
 As the actor does not do any I/O the operations will be executed immediately, and timeout
@@ -514,3 +515,8 @@ int main() {
     return 0;
 }
 ~~~
+
+## there is more...
+
+There is more rotor capabilities, like requests cancellations, and generalized timer
+spawning interface. Read on in the [Advanced Examples](Examples.md) section.

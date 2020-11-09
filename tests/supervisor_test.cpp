@@ -19,14 +19,17 @@ supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n",
 
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
-void supervisor_test_t::start_timer(const pt::time_duration &, request_id_t timer_id) noexcept {
-    active_timers.emplace_back(timer_id);
+void supervisor_test_t::do_start_timer(const pt::time_duration &, timer_handler_base_t& handler) noexcept {
+    active_timers.emplace_back(&handler);
 }
 
-void supervisor_test_t::cancel_timer(request_id_t timer_id) noexcept {
+void supervisor_test_t::do_cancel_timer(request_id_t timer_id) noexcept {
     auto it = active_timers.begin();
     while (it != active_timers.end()) {
-        if (*it == timer_id) {
+        auto& handler = *it;
+        if (handler->request_id == timer_id) {
+            auto& actor_ptr = handler->owner;
+            actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
             active_timers.erase(it);
             return;
         } else {
@@ -35,6 +38,17 @@ void supervisor_test_t::cancel_timer(request_id_t timer_id) noexcept {
     }
     assert(0 && "should not happen");
 }
+
+void supervisor_test_t::do_invoke_timer(request_id_t timer_id) noexcept {
+    auto predicate = [&](auto& handler) { return handler->request_id == timer_id;  };
+    auto it = std::find_if(active_timers.begin(), active_timers.end(), predicate);
+    assert(it != active_timers.end());
+    auto& handler = *it;
+    auto& actor_ptr = handler->owner;
+    actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
+    active_timers.erase(it);
+}
+
 
 subscription_container_t &supervisor_test_t::get_points() noexcept {
     auto plugin = get_plugin(plugin::lifetime_plugin_t::class_identity);
@@ -46,7 +60,7 @@ request_id_t supervisor_test_t::get_timer(std::size_t index) noexcept {
     for (std::size_t i = 0; i < index; ++i) {
         ++it;
     }
-    return *it;
+    return (*it)->request_id;
 }
 
 void supervisor_test_t::enqueue(message_ptr_t message) noexcept { get_leader().queue.emplace_back(std::move(message)); }

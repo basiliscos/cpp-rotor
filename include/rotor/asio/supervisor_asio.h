@@ -55,24 +55,6 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief injects templated supervisor_config_asio_builder_t */
     template <typename Supervisor> using config_builder_t = supervisor_config_asio_builder_t<Supervisor>;
 
-    /** \struct timer_t
-     * \brief boos::asio::deadline_timer with timer identity  */
-    struct timer_t : public asio::deadline_timer {
-
-        /** \brief timer identity */
-        request_id_t timer_id;
-
-        /** \brief constructs timer using timer_id and boos asio io_context */
-        timer_t(request_id_t timer_id_, asio::io_context &io_context)
-            : asio::deadline_timer(io_context), timer_id{timer_id_} {}
-    };
-
-    /** \brief unique pointer to timer */
-    using timer_ptr_t = std::unique_ptr<timer_t>;
-
-    /** \brief timer id to timer pointer mapping type */
-    using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
-
     /** \brief constructs new supervisor from asio supervisor config */
     supervisor_asio_t(supervisor_config_asio_t &config);
 
@@ -81,8 +63,6 @@ struct supervisor_asio_t : public supervisor_t {
     virtual void start() noexcept override;
     virtual void shutdown() noexcept override;
     virtual void enqueue(message_ptr_t message) noexcept override;
-    virtual void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
-    virtual void cancel_timer(request_id_t timer_id) noexcept override;
     virtual void shutdown_finish() noexcept override;
 
     /** \brief callback when an error happen on the timer, identified by timer_id */
@@ -103,6 +83,27 @@ struct supervisor_asio_t : public supervisor_t {
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
   protected:
+    /** \struct timer_t
+     * \brief boos::asio::deadline_timer with embedded timer handler */
+    struct timer_t : public asio::deadline_timer {
+
+        /** \brief non-owning pointer to timer handler */
+        timer_handler_base_t *handler;
+
+        /** \brief constructs timer using timer handler and boost asio io_context */
+        timer_t(timer_handler_base_t *handler_, asio::io_context &io_context)
+            : asio::deadline_timer(io_context), handler{handler_} {}
+    };
+
+    /** \brief unique pointer to timer */
+    using timer_ptr_t = std::unique_ptr<timer_t>;
+
+    /** \brief timer id to timer pointer mapping type */
+    using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
+
+    void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept override;
+    void do_cancel_timer(request_id_t timer_id) noexcept override;
+
     /** \brief guard type : alias for asio executor_work_guard */
     using guard_t = asio::executor_work_guard<asio::io_context::executor_type>;
 

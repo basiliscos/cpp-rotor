@@ -14,6 +14,7 @@ namespace rotor::test {
 namespace {
 namespace to {
 struct get_plugin {};
+struct on_timer_trigger {};
 struct state {};
 struct internal_infos {};
 struct mine_handlers {};
@@ -27,7 +28,7 @@ struct own_subscriptions {};
 struct request_map {};
 struct resources {};
 struct last_req_id {};
-struct promises_map {};
+struct promises {};
 struct discovery_map {};
 struct forget_link {};
 } // namespace to
@@ -46,6 +47,12 @@ template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const 
     return get_plugin(identity);
 }
 
+template <>
+inline auto rotor::actor_base_t::access<test::to::on_timer_trigger, request_id_t, bool>(request_id_t request_id,
+                                                                                        bool cancelled) noexcept {
+    on_timer_trigger(request_id, cancelled);
+}
+
 template <> inline auto &rotor::subscription_t::access<test::to::internal_infos>() noexcept { return internal_infos; }
 template <> inline auto &rotor::subscription_t::access<test::to::mine_handlers>() noexcept { return mine_handlers; }
 template <> inline auto &rotor::plugin::plugin_base_t::access<test::to::own_subscriptions>() noexcept {
@@ -62,6 +69,6 @@ template <> inline auto &rotor::supervisor_t::access<test::to::registry>() noexc
 template <> inline auto &rotor::supervisor_t::access<test::to::queue>() noexcept { return queue; }
 template <> inline auto &rotor::supervisor_t::access<test::to::request_map>() noexcept { return request_map; }
 template <> inline auto &rotor::supervisor_t::access<test::to::last_req_id>() noexcept { return last_req_id; }
-template <> inline auto &rotor::registry_t::access<test::to::promises_map>() noexcept { return promises_map; }
+template <> inline auto &rotor::registry_t::access<test::to::promises>() noexcept { return promises; }
 
 } // namespace rotor

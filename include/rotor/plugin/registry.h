@@ -66,6 +66,7 @@ struct registry_plugin_t : public plugin_base_t {
         bool link_on_discovery = false;
         bool operational_only = false;
         bool requested = false;
+        request_id_t request_id = 0;
         callback_t task_callback;
 
         friend struct registry_plugin_t;

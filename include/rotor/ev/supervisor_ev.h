@@ -43,8 +43,15 @@ struct supervisor_ev_t : public supervisor_t {
      * \brief inheritance of ev_timer, which holds rotor `timer_id`
      */
     struct timer_t : public ev_timer {
-        /** \brief local timer identifier within the scrope of the supervisor */
-        request_id_t timer_id;
+
+        /** \brief intrusive pointer to ev supervistor (type) */
+        using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;
+
+        /** \brief non-owning pointer to timer handler */
+        timer_handler_base_t *handler;
+
+        /** \brief intrusive pointer to the supervisor */
+        supervisor_ptr_t sup;
     };
 
     /** \brief an alias for unique pointer, holding `timer_t` */
@@ -58,9 +65,6 @@ struct supervisor_ev_t : public supervisor_t {
     void start() noexcept override;
     void shutdown() noexcept override;
     void enqueue(message_ptr_t message) noexcept override;
-    void start_timer(const pt::time_duration &send, request_id_t timer_id) noexcept override;
-    void cancel_timer(request_id_t timer_id) noexcept override;
-    void on_timer_trigger(request_id_t timer_id) noexcept override;
     void shutdown_finish() noexcept override;
 
     /** \brief retuns ev-loop associated with the supervisor */
@@ -69,12 +73,18 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief returns pointer to the ev system context */
     inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
 
+    /** \brief generic non-public fields accessor */
+    template <typename T> auto &access() noexcept;
+
   protected:
     /** \brief a type for mapping `timer_id` to timer pointer */
     using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
+
+    void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept override;
+    void do_cancel_timer(request_id_t timer_id) noexcept override;
 
     /** \brief Process external messages (from inbound queue).
      *

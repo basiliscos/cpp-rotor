@@ -10,6 +10,22 @@
 using namespace rotor::asio;
 using namespace rotor;
 
+namespace rotor::asio {
+namespace {
+namespace to {
+struct on_timer_trigger {};
+} // namespace to
+} // namespace
+} // namespace rotor::asio
+
+namespace rotor {
+template <>
+inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool>(request_id_t request_id,
+                                                                                  bool cancelled) noexcept {
+    on_timer_trigger(request_id, cancelled);
+}
+} // namespace rotor
+
 supervisor_asio_t::supervisor_asio_t(supervisor_config_asio_t &config_)
     : supervisor_t{config_}, strand{config_.strand} {
     if (config_.guard_context) {
@@ -23,25 +39,40 @@ void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t:
 
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
 
-void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, request_id_t timer_id) noexcept {
-    auto timer = std::make_unique<supervisor_asio_t::timer_t>(timer_id, strand->context());
-    timer->expires_from_now(timeout);
+void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
+    auto timer = std::make_unique<supervisor_asio_t::timer_t>(&handler, strand->context());
+    timer->expires_from_now(interval);
 
     intrusive_ptr_t<supervisor_asio_t> self(this);
+    request_id_t timer_id = handler.request_id;
     timer->async_wait([self = std::move(self), timer_id = timer_id](const boost::system::error_code &ec) {
         auto &strand = self->get_strand();
         if (ec) {
             asio::defer(strand, [self = std::move(self), timer_id = timer_id, ec = ec]() {
                 auto &sup = *self;
-                sup.timers_map.erase(timer_id);
-                sup.on_timer_error(timer_id, ec);
-                sup.do_process();
+                auto &timers_map = sup.timers_map;
+                auto it = timers_map.find(timer_id);
+                if (it != timers_map.end()) {
+                    bool cancelled = ec == asio::error::operation_aborted;
+                    if (cancelled) {
+                        auto actor_ptr = it->second->handler->owner;
+                        actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
+                    } else {
+                        sup.on_timer_error(timer_id, ec);
+                    }
+                    timers_map.erase(it);
+                    sup.do_process();
+                }
             });
         } else {
             asio::defer(strand, [self = std::move(self), timer_id = timer_id]() {
                 auto &sup = *self;
-                sup.on_timer_trigger(timer_id);
-                sup.timers_map.erase(timer_id);
+                auto &timers_map = sup.timers_map;
+                auto it = timers_map.find(timer_id);
+                assert(it != timers_map.end());
+                auto actor_ptr = it->second->handler->owner;
+                actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
+                timers_map.erase(it);
                 sup.do_process();
             });
         }
@@ -49,20 +80,18 @@ void supervisor_asio_t::start_timer(const rotor::pt::time_duration &timeout, req
     timers_map.emplace(timer_id, std::move(timer));
 }
 
-void supervisor_asio_t::cancel_timer(request_id_t timer_id) noexcept {
-    auto &timer = timers_map.at(timer_id);
+void supervisor_asio_t::do_cancel_timer(request_id_t timer_id) noexcept {
+    auto it = timers_map.find(timer_id);
+    assert(it != timers_map.end());
+    auto &timer = it->second;
     boost::system::error_code ec;
     timer->cancel(ec);
-    if (ec) {
-        context->on_error(ec);
-    }
-    timers_map.erase(timer_id);
+    // ignore the possible error, caused the case when timer is not cancelleable
+    // if (ec) { ... }
 }
 
 void supervisor_asio_t::on_timer_error(request_id_t, const boost::system::error_code &ec) noexcept {
-    if (ec != asio::error::operation_aborted) {
-        context->on_error(ec);
-    }
+    context->on_error(ec);
 }
 
 void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
