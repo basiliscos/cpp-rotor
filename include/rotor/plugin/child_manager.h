@@ -96,10 +96,6 @@ struct child_manager_plugin_t : public plugin_base_t {
     template <typename T> auto &access() noexcept;
 
   private:
-    bool has_initializing() const noexcept;
-    void init_continue() noexcept;
-    void request_shutdown() noexcept;
-
     enum class request_state_t { NONE, SENT, CONFIRMED };
 
     struct actor_state_t {
@@ -112,6 +108,12 @@ struct child_manager_plugin_t : public plugin_base_t {
         bool strated = false;
         request_state_t shutdown = request_state_t::NONE;
     };
+
+    bool has_initializing() const noexcept;
+    void init_continue() noexcept;
+    void request_shutdown() noexcept;
+    void cancel_init(const actor_base_t *child) noexcept;
+    void request_shutdown(actor_state_t &actor_state) noexcept;
 
     using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
 

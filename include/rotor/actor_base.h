@@ -281,7 +281,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     inline const address_ptr_t &get_address() const noexcept { return address; }
 
     /** \brief returns actor's supervisor */
-    inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
+    inline supervisor_t &get_supervisor() const noexcept { return *supervisor; }
 
     /** \brief spawns a new one-shot timer
      *

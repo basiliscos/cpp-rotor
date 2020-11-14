@@ -20,10 +20,12 @@ supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n",
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
 void supervisor_test_t::do_start_timer(const pt::time_duration &, timer_handler_base_t& handler) noexcept {
+    printf("starting timer %lu (%p)\n", handler.request_id, this);
     active_timers.emplace_back(&handler);
 }
 
 void supervisor_test_t::do_cancel_timer(request_id_t timer_id) noexcept {
+    printf("cancelling timer %lu (%p)\n", timer_id, this);
     auto it = active_timers.begin();
     while (it != active_timers.end()) {
         auto& handler = *it;
@@ -40,6 +42,7 @@ void supervisor_test_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_test_t::do_invoke_timer(request_id_t timer_id) noexcept {
+    printf("invoking timer %lu (%p)\n", timer_id, this);
     auto predicate = [&](auto& handler) { return handler->request_id == timer_id;  };
     auto it = std::find_if(active_timers.begin(), active_timers.end(), predicate);
     assert(it != active_timers.end());

@@ -21,6 +21,7 @@ enum class error_code_t {
     actor_misconfigured,
     actor_not_linkable,
     already_linked,
+    failure_escalation,
     unknown_service,
 };
 

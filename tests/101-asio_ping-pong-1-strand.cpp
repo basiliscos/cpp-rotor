@@ -94,6 +94,8 @@ TEST_CASE("ping/pong ", "[supervisor][asio]") {
 
     pinger.reset();
     ponger.reset();
-    REQUIRE(sup->get_timers_map().size() == 0);
-    REQUIRE(destroyed == 4);
+
+    io_context.run();
+    CHECK(sup->get_timers_map().size() == 0);
+    CHECK(destroyed == 4);
 }

@@ -29,6 +29,8 @@ std::string error_code_category::message(int c) const {
         return "actor is not linkeable";
     case error_code_t::already_linked:
         return "already linked";
+    case error_code_t::failure_escalation:
+        return "failure escalation (child actor died)";
     case error_code_t::unknown_service:
         return "the requested service name is not registered";
     }

@@ -37,8 +37,8 @@ void init_shutdown_plugin_t::activate(actor_base_t *actor_) noexcept {
 
 void init_shutdown_plugin_t::on_init(message::init_request_t &msg) noexcept {
     /* it could be shutdown, then ignore it */
+    actor->access<to::init_request>().reset(&msg);
     if (actor->access<to::state>() == state_t::INITIALIZING) {
-        actor->access<to::init_request>().reset(&msg);
         plugin_base_t::activate(actor);
         actor->init_continue();
     }
