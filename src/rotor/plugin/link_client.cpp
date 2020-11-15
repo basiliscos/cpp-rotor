@@ -12,6 +12,7 @@ using namespace rotor::plugin;
 
 namespace {
 namespace to {
+struct discard_request {};
 struct init_request {};
 struct init_timeout {};
 struct state {};
@@ -20,6 +21,9 @@ struct link_server {};
 } // namespace to
 } // namespace
 
+template <> auto supervisor_t::access<to::discard_request, request_id_t>(request_id_t request_id) noexcept {
+    return discard_request(request_id);
+}
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
@@ -135,7 +139,7 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
             actor->send<payload::unlink_notify_t>(it->first, source_addr);
             auto &record = it->second;
             if (record.state == link_state_t::LINKING) {
-                actor->get_supervisor().cancel_timer(it->second.request_id);
+                actor->get_supervisor().access<to::discard_request>(it->second.request_id);
             }
             it = servers_map.erase(it);
         }

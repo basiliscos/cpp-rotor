@@ -14,6 +14,7 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct address_mapping {};
+struct discard_request {};
 struct init_request {};
 struct init_timeout {};
 struct lifetime {};
@@ -30,6 +31,9 @@ struct timers_map {};
 } // namespace
 
 template <> auto &supervisor_t::access<to::address_mapping>() noexcept { return address_mapping; }
+template <> auto supervisor_t::access<to::discard_request, request_id_t>(request_id_t request_id) noexcept {
+    return discard_request(request_id);
+}
 template <> auto &actor_base_t::access<to::init_request>() const noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
@@ -76,7 +80,6 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.get_address());
     assert(it_actor != actors_map.end());
     bool child_started = it_actor->second.strated;
-    actors_map.erase(it_actor);
     auto &state = actor->access<to::state>();
 
     bool init_self = false;
@@ -98,6 +101,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
         }
     }
     cancel_init(&child);
+    actors_map.erase(it_actor);
 
     if (state == state_t::SHUTTING_DOWN && (actors_map.size() <= 1)) {
         actor->shutdown_continue();
@@ -202,11 +206,7 @@ void child_manager_plugin_t::cancel_init(const actor_base_t *child) noexcept {
         // or forget the init-request.
         auto &timer_id = init_request->payload.id;
         if (sup.access<to::timers_map>().count(timer_id)) {
-            child->get_supervisor().cancel_timer(timer_id);
-            auto &request_map = sup.access<to::request_map>();
-            auto it = request_map.find(init_request->payload.id);
-            if (it != request_map.end())
-                request_map.erase(it);
+            sup.access<to::discard_request, request_id_t>(timer_id);
         }
     }
 }

@@ -279,6 +279,8 @@ struct supervisor_t : public actor_base_t {
     friend struct actor_base_t;
     template <typename T> friend struct plugin::delivery_plugin_t;
 
+    void discard_request(request_id_t request_id) noexcept;
+
     inline request_id_t next_request_id() noexcept {
         request_map_t::iterator it;
         do {
@@ -450,8 +452,7 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
         if (it != supervisor->request_map.end()) {
             auto &orig_addr = it->second.origin;
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
-            supervisor->request_map.erase(it);
-            supervisor->cancel_timer(request_id);
+            supervisor->discard_request(request_id);
         }
         // if a response to request has arrived and no timer can be found
         // that means that either timeout timer already triggered
