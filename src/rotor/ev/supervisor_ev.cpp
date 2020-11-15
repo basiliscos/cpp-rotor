@@ -70,12 +70,14 @@ void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
         auto leader = static_cast<supervisor_ev_t *>(locality_leader);
         auto &inbound = leader->inbound;
         std::lock_guard<std::mutex> lock(leader->inbound_mutex);
-        if (!leader->pending) {
-            // async events are "compressed" by EV. Need to do only once
-            intrusive_ptr_add_ref(this);
+        if (leader->state < state_t::SHUT_DOWN) {
+            if (!leader->pending) {
+                // async events are "compressed" by EV. Need to do only once
+                intrusive_ptr_add_ref(this);
+            }
+            inbound.emplace_back(std::move(message));
+            ok = true;
         }
-        inbound.emplace_back(std::move(message));
-        ok = true;
     } catch (const std::system_error &err) {
         context->on_error(err.code());
     }
@@ -107,6 +109,15 @@ void supervisor_ev_t::start() noexcept {
 void supervisor_ev_t::shutdown_finish() noexcept {
     supervisor_t::shutdown_finish();
     ev_async_stop(loop, &async_watcher);
+
+    auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+    std::lock_guard<std::mutex> lock(leader->inbound_mutex);
+    if (leader->pending) {
+        auto &inbound = leader->inbound;
+        auto &queue = leader->queue;
+        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
+        inbound.clear();
+    }
 }
 
 void supervisor_ev_t::shutdown() noexcept {
