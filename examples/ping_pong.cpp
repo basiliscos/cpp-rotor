@@ -5,6 +5,7 @@
 //
 
 #include "rotor.hpp"
+#include "dummy_supervisor.h"
 #include <iostream>
 
 struct ping_t {};
@@ -49,16 +50,6 @@ struct ponger_t : public rotor::actor_base_t {
 
   private:
     rotor::address_ptr_t pinger_addr;
-};
-
-struct dummy_supervisor : public rotor::supervisor_t {
-    using rotor::supervisor_t::supervisor_t;
-
-    void do_start_timer(const rotor::pt::time_duration &, rotor::timer_handler_base_t &) noexcept override {}
-    void do_cancel_timer(rotor::request_id_t) noexcept override {}
-    void start() noexcept override {}
-    void shutdown() noexcept override {}
-    void enqueue(rotor::message_ptr_t) noexcept override {}
 };
 
 int main() {

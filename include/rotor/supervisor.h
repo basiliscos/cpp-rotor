@@ -137,6 +137,8 @@ struct supervisor_t : public actor_base_t {
 
     void do_shutdown() noexcept override;
 
+    void shutdown_finish() noexcept override;
+
     /** \brief supervisor hook for reaction on child actor init */
     virtual void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept;
 

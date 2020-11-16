@@ -98,8 +98,12 @@ void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noe
 }
 
 void supervisor_t::discard_request(request_id_t request_id) noexcept {
-    auto it = request_map.find(request_id);
-    assert(it != request_map.end());
+    assert(request_map.find(request_id) != request_map.end());
     cancel_timer(request_id);
     request_map.erase(request_id);
+}
+
+void supervisor_t::shutdown_finish() noexcept {
+    assert(request_map.size() == 0);
+    actor_base_t::shutdown_finish();
 }
