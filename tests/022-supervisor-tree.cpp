@@ -67,6 +67,13 @@ struct ponger_t : public r::actor_base_t {
     }
 };
 
+struct custom_sup : rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    void on_child_init(actor_base_t *, const std::error_code &ec) noexcept override { error_code = ec; }
+    std::error_code error_code;
+};
+
 /*
  * Let's have the following tree of supervisors
  *
@@ -127,4 +134,22 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     REQUIRE(sup_A1->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup_B1->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup_root->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("failure escalation") {
+    r::system_context_t system_context;
+    auto sup_root =
+        system_context.create_supervisor<custom_sup>().timeout(rt::default_timeout).create_registry().finish();
+    auto sup_child = sup_root->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    r::address_ptr_t dummy_addr;
+    auto act = sup_child->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+    act->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) { p.discover_name("service-name", dummy_addr); });
+    };
+    sup_root->do_process();
+
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup_child->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup_root->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup_root->error_code.message() == "failure escalation (child actor died)");
 }
