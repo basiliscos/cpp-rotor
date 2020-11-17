@@ -78,10 +78,6 @@ void supervisor_asio_t::do_cancel_timer(request_id_t timer_id) noexcept {
     // if (ec) { ... }
 }
 
-void supervisor_asio_t::on_timer_error(request_id_t, const boost::system::error_code &ec) noexcept {
-    context->on_error(ec);
-}
-
 void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
     auto actor_ptr = supervisor_ptr_t(this);
     // std::cout << "deferring on " << this << ", stopped : " << strand.get_io_context().stopped() << "\n";
