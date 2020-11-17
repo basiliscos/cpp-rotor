@@ -93,8 +93,8 @@ void supervisor_ev_t::start() noexcept {
         auto leader = static_cast<supervisor_ev_t *>(locality_leader);
         std::lock_guard<std::mutex> lock(leader->inbound_mutex);
         if (!leader->pending) {
-            leader->pending = true;
             intrusive_ptr_add_ref(leader);
+            leader->pending = true;
         }
         ok = true;
     } catch (const std::system_error &err) {
@@ -109,15 +109,7 @@ void supervisor_ev_t::start() noexcept {
 void supervisor_ev_t::shutdown_finish() noexcept {
     supervisor_t::shutdown_finish();
     ev_async_stop(loop, &async_watcher);
-
-    auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-    std::lock_guard<std::mutex> lock(leader->inbound_mutex);
-    if (leader->pending) {
-        auto &inbound = leader->inbound;
-        auto &queue = leader->queue;
-        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
-        inbound.clear();
-    }
+    move_inbound_queue();
 }
 
 void supervisor_ev_t::shutdown() noexcept {
@@ -151,22 +143,9 @@ void supervisor_ev_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_ev_t::on_async() noexcept {
-    bool ok{false};
-    try {
-        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-        auto &inbound = leader->inbound;
-        auto &queue = leader->queue;
-        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
-        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
-        inbound.clear();
-        leader->pending = false;
-        intrusive_ptr_release(leader);
-        ok = true;
-    } catch (const std::system_error &err) {
-        context->on_error(err.code());
-    }
-
-    if (ok) {
+    auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+    intrusive_ptr_release(leader);
+    if (move_inbound_queue()) {
         do_process();
     }
 }
@@ -175,4 +154,21 @@ supervisor_ev_t::~supervisor_ev_t() {
     if (loop_ownership) {
         ev_loop_destroy(loop);
     }
+}
+
+bool supervisor_ev_t::move_inbound_queue() noexcept {
+    bool ok{false};
+    auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+    try {
+        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
+        auto &inbound = leader->inbound;
+        auto &queue = leader->queue;
+        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
+        inbound.clear();
+        leader->pending = false;
+        ok = true;
+    } catch (const std::system_error &err) {
+        context->on_error(err.code());
+    }
+    return ok;
 }
