@@ -21,7 +21,6 @@ struct lifetime {};
 struct manager {};
 struct parent {};
 struct policy {};
-struct request_map {};
 struct shutdown_timeout {};
 struct state {};
 struct system_context {};
@@ -41,7 +40,6 @@ template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetim
 template <> auto &supervisor_t::access<to::manager>() noexcept { return manager; }
 template <> auto &supervisor_t::access<to::parent>() noexcept { return parent; }
 template <> auto &supervisor_t::access<to::policy>() noexcept { return policy; }
-template <> auto &supervisor_t::access<to::request_map>() noexcept { return request_map; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &supervisor_t::access<to::system_context>() noexcept { return context; }
@@ -82,7 +80,6 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     bool child_started = it_actor->second.strated;
     auto &state = actor->access<to::state>();
 
-    bool init_self = false;
     if (state == state_t::INITIALIZING) {
         if (!child_started) {
             auto &policy = static_cast<supervisor_t *>(actor)->access<to::policy>();
@@ -96,8 +93,6 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
                     init_request.reset();
                 }
             }
-        } else {
-            init_self = true;
         }
     }
     cancel_init(&child);
