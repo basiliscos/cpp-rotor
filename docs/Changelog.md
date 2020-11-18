@@ -4,6 +4,17 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.11 (xx-xx-xxxx)
+- [improvement] when supervisor shuts self down due to child initi failure,
+the supervisor init error code is "failure escalation"
+- [documentation] updated `Advanced examples`,
+- [bugfix] when actor shuts self down all its timers are properly
+cancelled
+- [bugfix] in rare case supervisor starts, event if child failed to init
+- [bugfix] asio: more correct timers cancellation implementation
+- [bugfix] ev: more correct shutdown (avoid memory leaks in rare cases)
+
+
 ## 0.10 (09-Nov-2020)
 - [improvement/breaking] Generic timers interface
 - [improvement] Request cancellation support
@@ -21,10 +32,10 @@ with resources plugin
 
 
 ## 0.09 (03-Oct-2020)
-- the dedicated article with highlights: [en](https://habr.com/ru/company/crazypanda/blog/522588/) and 
+- the dedicated article with highlights: [en](https://habr.com/ru/company/crazypanda/blog/522588/) and
 [ru](https://habr.com/ru/company/crazypanda/blog/522892/)
 - [improvement] rewritten whole documentation
-- [improvement/breaking] plugin system where introduced for actors instead of 
+- [improvement/breaking] plugin system where introduced for actors instead of
 behaviors
 - [improvement] `actor_config_t` was introduced, which now holds pointer to
 supervisor, init and shutdown timeouts

@@ -304,6 +304,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      * If timer hasn't been triggered, then it is cancelled and the callback will be invoked
      * with `true` to mark that it was cancelled.
+     *
+     * Upon cancellation the timer callback will be invoked immediately, in the context of caller.
      */
     void cancel_timer(request_id_t request_id) noexcept;
 

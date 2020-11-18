@@ -266,14 +266,16 @@ void on_cancel(message::cancel_t &notify) noexcept {
 }
 ~~~
 
-The `ponger` shutdown procedure is trivial: it just cancels all pending ping responses:
+The `ponger` shutdown procedure is trivial: it just cancels all pending ping responses;
+responces are deleted during cancellation callback invocation.
 
 ~~~{.cpp}
     void shutdown_start() noexcept override {
-        rotor::actor_base_t::shutdown_start();
-        for (auto &it : requests) {
-            cancel_timer(it.first);
+        while (!requests.empty()) {
+            auto &timer_id = requests.begin()->first;
+            cancel_timer(timer_id);
         }
+        rotor::actor_base_t::shutdown_start();
     }
 ~~~
 
