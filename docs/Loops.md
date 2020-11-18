@@ -73,16 +73,16 @@ struct my_actor_t : r::actor_base_t {
 
 Adding new event loop to `rotor` is rather simple: the new `supervisor` class
 should be derived from `supervisor_t`, and the following methods should be
-defined
+implemented:
 
 ~~~{.cpp}
-void start_timer(const pt::time_duration &send, ) noexcept override;
-void cancel_timer(request_id_t timer_id) noexcept override;
+void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept override;
+void do_cancel_timer(request_id_t timer_id) noexcept override;
 
-void start() noexcept override {}
-void shutdown() noexcept override {}
+void start() noexcept override;
+void shutdown() noexcept override;
 
-void enqueue(rotor::message_ptr_t) noexcept override {}
+void enqueue(rotor::message_ptr_t) noexcept override;
 ~~~
 
 The `enqueue` method is responsible for puting an `message` into `supervisor`
@@ -96,6 +96,12 @@ context.
 The `start` and `shutdown` are just convenient methods to start processing
 messages in event loop context (for `start`) and send a shutdown messages
 and process event loop in event loop context .
+
+`do_start_timer` should strate a new timer, whose id (request_id_t) can be
+get via the `timer_handler_base_t`. The `do_cancel_timer` should cancel
+timer and **immediately** invoke the timer_handler with `cancelled = true`.
+The backend timer cancel implementation can be delayed, but that's actually
+outsize of `rotor`.
 
 Here is an skeleton example for `enqueue`:
 
