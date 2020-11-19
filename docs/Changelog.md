@@ -5,7 +5,7 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.11 (xx-xx-xxxx)
-- [improvement] when supervisor shuts self down due to child initi failure,
+- [improvement] when supervisor shuts self down due to child init failure,
 the supervisor init error code is "failure escalation"
 - [documentation] updated `Advanced examples`,
 - [bugfix] when actor shuts self down all its timers are properly

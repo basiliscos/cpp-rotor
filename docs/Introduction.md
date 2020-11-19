@@ -38,6 +38,7 @@ as the supervisor does not uses any event loop:
 
 ~~~{.cpp}
 #include "rotor.hpp"
+#include "dummy_supervisor.h"
 #include <iostream>
 
 struct hello_actor : public rotor::actor_base_t {
@@ -49,25 +50,19 @@ struct hello_actor : public rotor::actor_base_t {
     }
 };
 
-struct dummy_supervisor : public rotor::supervisor_t {
-    using rotor::supervisor_t::supervisor_t;
-
-    void start_timer(const rotor::pt::time_duration &, rotor::request_id_t) noexcept override {}
-    void cancel_timer(rotor::request_id_t) noexcept override {}
-    void start() noexcept override {}
-    void shutdown() noexcept override {}
-    void enqueue(rotor::message_ptr_t) noexcept override {}
-};
-
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
+    auto sup = ctx.create_supervisor<dummy_supervisor_t>().timeout(timeout).finish();
     sup->create_actor<hello_actor>().timeout(timeout).finish();
     sup->do_process();
     return 0;
 }
 ~~~
+
+It prints "hello world" and exits. The example uses `dummy_supervisor_t` (sources ommited),
+which does almost nothing, but gives you idea what supervisor should do. The code with "real"
+supervisor is shown below, however for pure messaging the kind of supervisor does not matter. 
 
 ## Hello World (boost::asio loop)
 
@@ -111,7 +106,7 @@ integrated with loops.
 
 The `supervisor.do_shutdown()` just sends message to supervisor to perform shutdown procedure.
 Then, in the code `io_context.run()` loop terminates, as long as *there are no any pending
-event*. [rotor] does not make run loop endlessly.
+event*. [rotor] does not make loop run endlessly.
 
 The `timeout` variable is used to spawn timers for actor initialization and shutdown requests.
 As the actor does not do any I/O the operations will be executed immediately, and timeout
@@ -123,6 +118,7 @@ The following example demonstrates how to send messages between actors.
 
 ~~~{.cpp}
 #include "rotor.hpp"
+#include "dummy_supervisor.h"
 #include <iostream>
 
 struct ping_t {};
@@ -169,20 +165,10 @@ struct ponger_t : public rotor::actor_base_t {
     rotor::address_ptr_t pinger_addr;
 };
 
-struct dummy_supervisor : public rotor::supervisor_t {
-    using rotor::supervisor_t::supervisor_t;
-
-    void start_timer(const rotor::pt::time_duration &, rotor::request_id_t) noexcept override {}
-    void cancel_timer(rotor::request_id_t) noexcept override {}
-    void start() noexcept override {}
-    void shutdown() noexcept override {}
-    void enqueue(rotor::message_ptr_t) noexcept override {}
-};
-
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
+    auto sup = ctx.create_supervisor<dummy_supervisor_t>().timeout(timeout).finish();
 
     auto pinger = sup->create_actor<pinger_t>().init_timeout(timeout).shutdown_timeout(timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish(); // shortcut for init/shutdown
@@ -211,6 +197,7 @@ different supervisors and loops, can subscribe to any kind of message on any add
 
 ~~~{.cpp}
 #include "rotor.hpp"
+#include "dummy_supervisor.h"
 #include <iostream>
 
 namespace r = rotor;
@@ -248,19 +235,10 @@ struct sub_t : public r::actor_base_t {
     r::address_ptr_t pub_addr;
 };
 
-struct dummy_supervisor : public rotor::supervisor_t {
-    using rotor::supervisor_t::supervisor_t;
-    void start_timer(const rotor::pt::time_duration &, r::request_id_t) noexcept override {}
-    void cancel_timer(r::request_id_t) noexcept override {}
-    void start() noexcept override {}
-    void shutdown() noexcept override {}
-    void enqueue(rotor::message_ptr_t) noexcept override {}
-};
-
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
+    auto sup = ctx.create_supervisor<dummy_supervisor_t>().timeout(timeout).finish();
 
     auto pub_addr = sup->create_address(); // (1)
     auto pub = sup->create_actor<pub_t>().timeout(timeout).finish();

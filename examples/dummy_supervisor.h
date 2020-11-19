@@ -16,7 +16,7 @@ inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool
 }
 } // namespace rotor
 
-struct dummy_supervisor : public rotor::supervisor_t {
+struct dummy_supervisor_t : public rotor::supervisor_t {
     using rotor::supervisor_t::supervisor_t;
     using timers_map_t = std::unordered_map<rotor::request_id_t, rotor::timer_handler_base_t *>;
 

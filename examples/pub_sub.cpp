@@ -46,7 +46,7 @@ struct sub_t : public r::actor_base_t {
 int main() {
     rotor::system_context_t ctx{};
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
-    auto sup = ctx.create_supervisor<dummy_supervisor>().timeout(timeout).finish();
+    auto sup = ctx.create_supervisor<dummy_supervisor_t>().timeout(timeout).finish();
 
     auto pub_addr = sup->create_address(); // (1)
     auto pub = sup->create_actor<pub_t>().timeout(timeout).finish();
