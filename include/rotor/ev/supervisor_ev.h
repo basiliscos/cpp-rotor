@@ -126,6 +126,9 @@ struct supervisor_ev_t : public supervisor_t {
     timers_map_t timers_map;
 
     friend struct supervisor_ev_shutdown_t;
+
+  private:
+    bool move_inbound_queue() noexcept;
 };
 
 } // namespace ev

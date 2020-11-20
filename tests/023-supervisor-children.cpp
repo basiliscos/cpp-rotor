@@ -44,6 +44,15 @@ struct fail_start_actor_t : public rt::actor_test_t {
 
     void on_start() noexcept override {
         rt::actor_test_t::on_start();
+        do_shutdown();
+    }
+};
+
+struct fail_start_actor2_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void on_start() noexcept override {
+        rt::actor_test_t::on_start();
         supervisor->do_shutdown();
     }
 };
@@ -312,7 +321,7 @@ TEST_CASE("shutdown_self policy", "[supervisor]") {
     REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
 }
 
-TEST_CASE("actor shutdown's self during start => supervisor is not affected", "[supervisor]") {
+TEST_CASE("actor shuts self down during start => supervisor is not affected", "[supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_start_actor_t>().timeout(rt::default_timeout).finish();
@@ -323,6 +332,16 @@ TEST_CASE("actor shutdown's self during start => supervisor is not affected", "[
 
     sup->do_shutdown();
     sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("actor shuts supervisor down during start") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_start_actor2_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 

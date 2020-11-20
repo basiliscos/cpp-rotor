@@ -47,33 +47,17 @@ void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_
     request_id_t timer_id = handler.request_id;
     timer->async_wait([self = std::move(self), timer_id = timer_id](const boost::system::error_code &ec) {
         auto &strand = self->get_strand();
-        if (ec) {
-            asio::defer(strand, [self = std::move(self), timer_id = timer_id, ec = ec]() {
-                auto &sup = *self;
-                auto &timers_map = sup.timers_map;
-                auto it = timers_map.find(timer_id);
-                if (it != timers_map.end()) {
-                    bool cancelled = ec == asio::error::operation_aborted;
-                    if (cancelled) {
-                        auto actor_ptr = it->second->handler->owner;
-                        actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
-                    } else {
-                        sup.on_timer_error(timer_id, ec);
-                    }
-                    timers_map.erase(it);
-                    sup.do_process();
-                }
-            });
-        } else {
+        if (!ec) {
             asio::defer(strand, [self = std::move(self), timer_id = timer_id]() {
                 auto &sup = *self;
                 auto &timers_map = sup.timers_map;
                 auto it = timers_map.find(timer_id);
-                assert(it != timers_map.end());
-                auto actor_ptr = it->second->handler->owner;
-                actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
-                timers_map.erase(it);
-                sup.do_process();
+                if (it != timers_map.end()) {
+                    auto &actor_ptr = it->second->handler->owner;
+                    actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
+                    timers_map.erase(it);
+                    sup.do_process();
+                }
             });
         }
     });
@@ -86,12 +70,12 @@ void supervisor_asio_t::do_cancel_timer(request_id_t timer_id) noexcept {
     auto &timer = it->second;
     boost::system::error_code ec;
     timer->cancel(ec);
+
+    auto &actor_ptr = it->second->handler->owner;
+    actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
+    timers_map.erase(it);
     // ignore the possible error, caused the case when timer is not cancelleable
     // if (ec) { ... }
-}
-
-void supervisor_asio_t::on_timer_error(request_id_t, const boost::system::error_code &ec) noexcept {
-    context->on_error(ec);
 }
 
 void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {

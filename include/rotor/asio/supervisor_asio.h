@@ -65,9 +65,6 @@ struct supervisor_asio_t : public supervisor_t {
     virtual void enqueue(message_ptr_t message) noexcept override;
     virtual void shutdown_finish() noexcept override;
 
-    /** \brief callback when an error happen on the timer, identified by timer_id */
-    virtual void on_timer_error(request_id_t timer_id, const sys::error_code &ec) noexcept;
-
     /** \brief an helper for creation {@link forwarder_t} */
     template <typename Handler, typename ErrHandler>
     auto create_forwarder(Handler &&handler, ErrHandler &&err_handler) {

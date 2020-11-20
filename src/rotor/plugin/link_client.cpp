@@ -12,6 +12,7 @@ using namespace rotor::plugin;
 
 namespace {
 namespace to {
+struct discard_request {};
 struct init_request {};
 struct init_timeout {};
 struct state {};
@@ -20,6 +21,9 @@ struct link_server {};
 } // namespace to
 } // namespace
 
+template <> auto supervisor_t::access<to::discard_request, request_id_t>(request_id_t request_id) noexcept {
+    return discard_request(request_id);
+}
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
@@ -41,10 +45,10 @@ void link_client_plugin_t::activate(actor_base_t *actor_) noexcept {
 void link_client_plugin_t::link(const address_ptr_t &address, bool operational_only,
                                 const link_callback_t &callback) noexcept {
     assert(servers_map.count(address) == 0);
-    servers_map.emplace(address, server_record_t{callback, link_state_t::LINKING});
     reaction_on(reaction_t::INIT);
     auto &timeout = actor->access<to::init_timeout>();
-    actor->request<payload::link_request_t>(address, operational_only).send(timeout);
+    auto request_id = actor->request<payload::link_request_t>(address, operational_only).send(timeout);
+    servers_map.emplace(address, server_record_t{callback, link_state_t::LINKING, request_id});
 }
 
 void link_client_plugin_t::on_link_response(message::link_response_t &message) noexcept {
@@ -133,6 +137,10 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
         auto &source_addr = actor->get_address();
         for (auto it = servers_map.begin(); it != servers_map.end();) {
             actor->send<payload::unlink_notify_t>(it->first, source_addr);
+            auto &record = it->second;
+            if (record.state == link_state_t::LINKING) {
+                actor->get_supervisor().access<to::discard_request>(it->second.request_id);
+            }
             it = servers_map.erase(it);
         }
     }

@@ -281,7 +281,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     inline const address_ptr_t &get_address() const noexcept { return address; }
 
     /** \brief returns actor's supervisor */
-    inline supervisor_t &get_supervisor() noexcept { return *supervisor; }
+    inline supervisor_t &get_supervisor() const noexcept { return *supervisor; }
 
     /** \brief spawns a new one-shot timer
      *
@@ -304,6 +304,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      * If timer hasn't been triggered, then it is cancelled and the callback will be invoked
      * with `true` to mark that it was cancelled.
+     *
+     * Upon cancellation the timer callback will be invoked immediately, in the context of caller.
      */
     void cancel_timer(request_id_t request_id) noexcept;
 

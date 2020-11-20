@@ -10,7 +10,7 @@
 using namespace rotor;
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
-    : actor_base_t(config), last_req_id{1}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
+    : actor_base_t(config), last_req_id{0}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
       create_registry(config.create_registry), synchronize_start(config.synchronize_start),
       registry_address(config.registry_address), policy{config.policy} {
     if (!supervisor) {
@@ -95,4 +95,15 @@ void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noe
         }
         request_map.erase(it);
     }
+}
+
+void supervisor_t::discard_request(request_id_t request_id) noexcept {
+    assert(request_map.find(request_id) != request_map.end());
+    cancel_timer(request_id);
+    request_map.erase(request_id);
+}
+
+void supervisor_t::shutdown_finish() noexcept {
+    assert(request_map.size() == 0);
+    actor_base_t::shutdown_finish();
 }

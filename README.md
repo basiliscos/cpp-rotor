@@ -38,6 +38,16 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.11 (20-Nov-2020)
+- [improvement] when supervisor shuts self down due to child init failure,
+the supervisor init error code is "failure escalation"
+- [documentation] updated `Advanced examples`,
+- [bugfix] when actor shuts self down all its timers are properly
+cancelled
+- [bugfix] in rare case supervisor starts, event if child failed to init
+- [bugfix] asio: more correct timers cancellation implementation
+- [bugfix] ev: more correct shutdown (avoid memory leaks in rare cases)
+
 ### 0.10 (09-Nov-2020)
 - [improvement/breaking] Generic timers interface
 - [improvement] Request cancellation support

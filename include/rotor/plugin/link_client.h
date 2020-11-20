@@ -78,6 +78,7 @@ struct link_client_plugin_t : public plugin_base_t {
     struct server_record_t {
         link_callback_t callback;
         link_state_t state;
+        request_id_t request_id;
     };
     using servers_map_t = std::unordered_map<address_ptr_t, server_record_t>;
     using unlink_req_t = intrusive_ptr_t<message::unlink_request_t>;

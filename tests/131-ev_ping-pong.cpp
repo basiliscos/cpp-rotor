@@ -19,7 +19,10 @@ static std::uint32_t destroyed = 0;
 struct supervisor_ev_test_t : public re::supervisor_ev_t {
     using re::supervisor_ev_t::supervisor_ev_t;
 
-    ~supervisor_ev_test_t() { destroyed += 4; }
+    ~supervisor_ev_test_t() {
+        destroyed += 4;
+        printf("~supervisor_ev_test_t\n");
+    }
 
     auto get_leader_queue() {
         return static_cast<supervisor_t *>(this)->access<rt::to::locality_leader>()->access<rt::to::queue>();
@@ -105,9 +108,11 @@ struct ponger_t : public r::actor_base_t {
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    void on_start() noexcept override { supervisor->do_shutdown(); }
+    void on_start() noexcept override { supervisor->shutdown(); }
 
     void shutdown_finish() noexcept override {}
+
+    ~bad_actor_t() { printf("~bad_actor_t\n"); }
 };
 
 TEST_CASE("ping/pong", "[supervisor][ev]") {
@@ -147,6 +152,7 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
 }
 
 TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
+    auto destroyed_start = destroyed;
     auto *loop = ev_loop_new(0);
     auto system_context = r::intrusive_ptr_t<system_context_ev_test_t>{new system_context_ev_test_t()};
     auto timeout = r::pt::milliseconds{10};
@@ -162,11 +168,13 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
 
     REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
 
-    // actor->force_cleanup();
+    // act->force_cleanup();
     sup->shutdown();
     ev_run(loop);
-
+    sup.reset();
     system_context.reset();
+    auto destroyed_end = destroyed;
+    CHECK(destroyed_end == destroyed_start + 4);
 }
 
 TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {

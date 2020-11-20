@@ -189,10 +189,11 @@ struct ponger_t : public rotor::actor_base_t {
     }
 
     void shutdown_start() noexcept override {
-        rotor::actor_base_t::shutdown_start();
-        for (auto &it : requests) {
-            cancel_timer(it.first);
+        while (!requests.empty()) {
+            auto &timer_id = requests.begin()->first;
+            cancel_timer(timer_id);
         }
+        rotor::actor_base_t::shutdown_start();
     }
 
     void shutdown_finish() noexcept override {
