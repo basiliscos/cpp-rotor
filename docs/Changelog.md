@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.11 (xx-xx-xxxx)
+## 0.11 (20-Nov-2020)
 - [improvement] when supervisor shuts self down due to child init failure,
 the supervisor init error code is "failure escalation"
 - [documentation] updated `Advanced examples`,
