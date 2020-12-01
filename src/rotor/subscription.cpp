@@ -6,7 +6,7 @@
 
 #include "rotor/subscription.h"
 #include "rotor/supervisor.h"
-#include "rotor/handler.hpp"
+#include "rotor/handler.h"
 
 using namespace rotor;
 
@@ -35,6 +35,23 @@ subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &
     }
 
     return info;
+}
+
+void subscription_t::update(subscription_point_t &point, handler_ptr_t &new_handler) noexcept {
+    auto &address = point.address;
+    auto &handler = point.handler;
+    bool internal_address = &address->supervisor == &supervisor;
+    bool internal_handler = &handler->actor_ptr->get_supervisor() == &supervisor;
+    if (internal_address) {
+        auto it = mine_handlers.find({address.get(), handler->message_type});
+        assert(it != mine_handlers.end());
+        auto &joint_handlers = it->second;
+        auto &handlers = internal_handler ? joint_handlers.internal : joint_handlers.external;
+        auto it_handler = std::find(handlers.begin(), handlers.end(), handler.get());
+        assert(it_handler != handlers.end());
+        *it_handler = new_handler.get();
+    }
+    point.handler = new_handler;
 }
 
 const subscription_t::joint_handlers_t *subscription_t::get_recipients(const message_base_t &message) const noexcept {
@@ -68,8 +85,9 @@ void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {
     auto &joint_handlers = it->second;
     auto &handlers = info->internal_handler ? joint_handlers.internal : joint_handlers.external;
     auto &misc_handlers = !info->internal_handler ? joint_handlers.internal : joint_handlers.external;
-    auto handler_it =
-        std::find_if(handlers.begin(), handlers.end(), [&handler_ptr](auto &item) { return item == handler_ptr; });
+    auto predicate = [&handler_ptr](auto &item) { return item == handler_ptr; };
+    auto handler_it = std::find_if(handlers.begin(), handlers.end(), predicate);
+    assert(handler_it != handlers.end());
     handlers.erase(handler_it);
     if (handlers.empty() && misc_handlers.empty()) {
         mine_handlers.erase(it);

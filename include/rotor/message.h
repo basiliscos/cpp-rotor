@@ -54,7 +54,7 @@ template <typename T> struct message_t : public message_base_t {
 
     /** \brief forwards `args` for payload construction */
     template <typename... Args>
-    message_t(const address_ptr_t &addr, Args &&... args)
+    message_t(const address_ptr_t &addr, Args &&...args)
         : message_base_t{message_type, addr}, payload{std::forward<Args>(args)...} {}
 
     /** \brief user-defined payload */
@@ -73,7 +73,7 @@ using messages_queue_t = std::deque<message_ptr_t>;
 template <typename T> const void *message_t<T>::message_type = static_cast<const void *>(typeid(message_t<T>).name());
 
 /** \brief constucts message by constructing it's payload; intrusive pointer for the message is returned */
-template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&... args) -> message_ptr_t {
+template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&...args) -> message_ptr_t {
     return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
 }
 

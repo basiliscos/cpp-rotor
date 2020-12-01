@@ -7,7 +7,7 @@
 //
 
 #include "actor_base.h"
-#include "handler.hpp"
+#include "handler.h"
 #include "message.h"
 #include "messages.hpp"
 #include "subscription.h"
@@ -158,6 +158,8 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
+    virtual void intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept;
+
     /** \brief puts a message into internal supevisor queue for further processing
      *
      * This is thread-unsafe method. The `enqueue` method should be used to put
@@ -191,7 +193,7 @@ struct supervisor_t : public actor_base_t {
      */
     template <typename T, typename... Args>
     request_builder_t<T> do_request(actor_base_t &actor, const address_ptr_t &dest_addr, const address_ptr_t &reply_to,
-                                    Args &&... args) noexcept {
+                                    Args &&...args) noexcept {
         return request_builder_t<T>(*this, actor, dest_addr, reply_to, std::forward<Args>(args)...);
     }
     /**
@@ -311,7 +313,7 @@ template <typename Supervisor> auto system_context_t::create_supervisor() {
         *this);
 }
 
-template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&... args) {
+template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&...args) {
     supervisor->put(make_message<M>(addr, std::forward<Args>(args)...));
 }
 
@@ -366,20 +368,20 @@ template <typename Handler> subscription_info_ptr_t plugin_base_t::subscribe(Han
 
 template <> inline auto &plugin_base_t::access<plugin::starter_plugin_t>() noexcept { return own_subscriptions; }
 
-template <typename Handler> handler_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler) noexcept {
+template <typename Handler> subscription_info_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler) noexcept {
     auto &address = actor->get_address();
     return subscribe_actor(std::forward<Handler>(handler), address);
 }
 
 template <typename Handler>
-handler_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
+subscription_info_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept {
     auto wrapped_handler = wrap_handler(*actor, std::move(handler));
     auto info = actor->get_supervisor().subscribe(wrapped_handler, addr, actor, owner_tag_t::PLUGIN);
     assert(std::count_if(tracked.begin(), tracked.end(), [&](auto &it) { return *it == *info; }) == 0 &&
            "already subscribed");
     tracked.emplace_back(info);
-    access<starter_plugin_t>().emplace_back(std::move(info));
-    return wrapped_handler;
+    access<starter_plugin_t>().emplace_back(info);
+    return info;
 }
 
 template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process() noexcept {
@@ -419,7 +421,7 @@ void actor_base_t::unsubscribe(Handler &&h, address_ptr_t &addr) noexcept {
 template <typename T>
 template <typename... Args>
 request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_, const address_ptr_t &destination_,
-                                        const address_ptr_t &reply_to_, Args &&... args)
+                                        const address_ptr_t &reply_to_, Args &&...args)
     : sup{sup_}, actor{actor_}, request_id{sup.next_request_id()}, destination{destination_}, reply_to{reply_to_},
       do_install_handler{false} {
     auto addr = sup.address_mapping.get_mapped_address(actor_, response_message_t::message_type);
@@ -473,7 +475,7 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
  */
 template <typename Request, typename... Args>
 request_builder_t<typename request_wrapper_t<Request>::request_t> actor_base_t::request(const address_ptr_t &dest_addr,
-                                                                                        Args &&... args) {
+                                                                                        Args &&...args) {
     using request_t = typename request_wrapper_t<Request>::request_t;
     return supervisor->do_request<request_t>(*this, dest_addr, address, std::forward<Args>(args)...);
 }
@@ -486,7 +488,7 @@ request_builder_t<typename request_wrapper_t<Request>::request_t> actor_base_t::
  */
 template <typename Request, typename... Args>
 request_builder_t<typename request_wrapper_t<Request>::request_t>
-actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args) {
+actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&...args) {
     using request_t = typename request_wrapper_t<Request>::request_t;
     return supervisor->do_request<request_t>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
 }
@@ -497,7 +499,7 @@ template <typename Request> auto actor_base_t::make_response(Request &message, c
     return traits_t::make_error_response(message.payload.reply_to, message, ec);
 }
 
-template <typename Request, typename... Args> auto actor_base_t::make_response(Request &message, Args &&... args) {
+template <typename Request, typename... Args> auto actor_base_t::make_response(Request &message, Args &&...args) {
     using payload_t = typename Request::payload_t::request_t;
     using traits_t = request_traits_t<payload_t>;
     using response_t = typename traits_t::response::wrapped_t;
@@ -505,7 +507,7 @@ template <typename Request, typename... Args> auto actor_base_t::make_response(R
     return make_message<response_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
 }
 
-template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&... args) {
+template <typename Request, typename... Args> void actor_base_t::reply_to(Request &message, Args &&...args) {
     supervisor->put(make_response<Request>(message, std::forward<Args>(args)...));
 }
 

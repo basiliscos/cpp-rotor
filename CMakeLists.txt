@@ -32,6 +32,7 @@ add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/address_mapping.cpp
     src/rotor/error_code.cpp
+    src/rotor/handler.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp
     src/rotor/subscription_point.cpp
@@ -82,7 +83,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/arc.hpp
     include/rotor/error_code.h
     include/rotor/forward.hpp
-    include/rotor/handler.hpp
+    include/rotor/handler.h
     include/rotor/message.h
     include/rotor/messages.hpp
     include/rotor/plugin/address_maker.h

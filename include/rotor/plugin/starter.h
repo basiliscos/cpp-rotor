@@ -28,10 +28,11 @@ struct starter_plugin_t : public plugin_base_t {
     void deactivate() noexcept override;
 
     /** \brief subscribes *actor* handler on main actor address */
-    template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler) noexcept;
+    template <typename Handler> subscription_info_ptr_t subscribe_actor(Handler &&handler) noexcept;
 
     /** \brief subscribes *actor* handler on arbitrary address */
-    template <typename Handler> handler_ptr_t subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
+    template <typename Handler>
+    subscription_info_ptr_t subscribe_actor(Handler &&handler, const address_ptr_t &addr) noexcept;
 
     bool handle_init(message::init_request_t *) noexcept override;
     void handle_start(message::start_trigger_t *message) noexcept override;

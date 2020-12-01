@@ -87,7 +87,7 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
     template <typename... Args>
-    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_, Args &&... args)
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_, Args &&...args)
         : request_base_t{id_, reply_to_, origin_}, request_payload{std::forward<Args>(args)...} {}
 
     /** \brief original, user-supplied payload */
@@ -132,7 +132,7 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
     /** \brief constructs wrapper for user-supplied payload from request-id and
      * and destination reply address */
     template <typename... Args, typename E = std::enable_if_t<std::is_constructible_v<raw_request_t, Args...>>>
-    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_, Args &&... args)
+    wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_, Args &&...args)
         : request_base_t{id_, reply_to_, origin_}, request_payload{new raw_request_t{std::forward<Args>(args)...}} {}
 
     /** \brief intrusive pointer to user-supplied payload */
@@ -147,7 +147,7 @@ template <typename Responce> struct response_helper_t {
     using response_t = Responce;
 
     /** \brief constructs user defined response payload */
-    template <typename... Args> static Responce construct(Args &&... args) {
+    template <typename... Args> static Responce construct(Args &&...args) {
         return Responce{std::forward<Args>(args)...};
     }
 };
@@ -164,7 +164,7 @@ template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>>
     using response_t = Responce;
 
     /** \brief constructs intrusive pointer to user defined response payload */
-    template <typename... Args> static res_ptr_t construct(Args &&... args) {
+    template <typename... Args> static res_ptr_t construct(Args &&...args) {
         return res_ptr_t{new Responce{std::forward<Args>(args)...}};
     }
 
@@ -284,7 +284,7 @@ template <typename Request> struct wrapped_response_t {
     template <typename Req, typename... Args,
               typename E1 = std::enable_if_t<std::is_same_v<req_message_ptr_t, std::remove_cv_t<Req>>>,
               typename E2 = std::enable_if_t<details::is_constructible_v<unwrapped_response_t, Args...>>>
-    wrapped_response_t(Req &&message_, Args &&... args)
+    wrapped_response_t(Req &&message_, Args &&...args)
         : ec{make_error_code(error_code_t::success)}, req{std::forward<Req>(message_)},
           res{res_helper_t::construct(std::forward<Args>(args)...)} {}
 
@@ -376,8 +376,8 @@ template <typename T> struct [[nodiscard]] request_builder_t {
 
     /** \brief constructs request message but still does not dispath it */
     template <typename... Args>
-    request_builder_t(supervisor_t & sup_, actor_base_t & actor_, const address_ptr_t &destination_,
-                      const address_ptr_t &reply_to_, Args &&... args);
+    request_builder_t(supervisor_t &sup_, actor_base_t &actor_, const address_ptr_t &destination_,
+                      const address_ptr_t &reply_to_, Args &&...args);
 
     /** \brief actually dispatches requests and spawns timeout timer
      *

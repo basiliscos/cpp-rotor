@@ -15,6 +15,12 @@ namespace rotor {
 
 struct actor_base_t;
 
+namespace tags {
+
+extern const void *io;
+
+}
+
 /** \brief who owns the subscription point
  *
  * - plugin (i.e. subscription was invoked from plugin)
@@ -81,6 +87,8 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
     inline bool operator==(const subscription_point_t &point) const noexcept {
         return (subscription_point_t &)(*this) == point;
     }
+
+    void tag_io() noexcept;
 
     /** \brief whether the subscription point (info) belongs to internal address, i.e. to the "my" supervisor */
     bool internal_address;
