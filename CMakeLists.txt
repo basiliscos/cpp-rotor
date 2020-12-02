@@ -12,6 +12,7 @@ include(CMakePrintHelpers)
 option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
 option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
 option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(BUILD_THREAD         "Enable building with thread support  [default: ON]"          ON)
 option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
 option(BUILD_TESTS          "Enable building tests    [default: OFF]"                    OFF)
 option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
@@ -162,6 +163,22 @@ if (BUILD_EV)
         include/rotor/ev/supervisor_config_ev.h
         include/rotor/ev/supervisor_ev.h
         include/rotor/ev/system_context_ev.h
+    )
+endif()
+
+if (BUILD_THREAD)
+    find_package(Threads REQUIRED)
+    add_library(rotor_thread
+        src/rotor/thread/supervisor_thread.cpp
+        src/rotor/thread/system_context_thread.cpp
+    )
+    target_link_libraries(rotor_thread PUBLIC rotor Threads::Threads)
+    add_library(rotor::thread ALIAS rotor_thread)
+    list(APPEND ROTOR_TARGETS_TO_INSTALL rotor_thread)
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/thread.hpp
+        include/rotor/thread/supervisor_thread.h
+        include/rotor/thread/supervisor_thread.h
     )
 endif()
 

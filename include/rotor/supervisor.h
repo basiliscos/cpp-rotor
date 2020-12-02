@@ -288,9 +288,9 @@ struct supervisor_t : public actor_base_t {
     inline request_id_t next_request_id() noexcept {
         request_map_t::iterator it;
         do {
-            it = request_map.find(++last_req_id);
-        } while (it != request_map.end());
-        return last_req_id;
+            it = locality_leader->request_map.find(++locality_leader->last_req_id);
+        } while (it != locality_leader->request_map.end());
+        return locality_leader->last_req_id;
     }
 };
 

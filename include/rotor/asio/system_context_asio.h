@@ -7,7 +7,6 @@
 //
 
 #include "rotor/arc.hpp"
-#include "rotor/asio/supervisor_config_asio.h"
 #include "rotor/system_context.h"
 #include <boost/asio.hpp>
 
