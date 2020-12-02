@@ -84,7 +84,7 @@ void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) no
     }
 }
 
-void supervisor_t::intercept(message_ptr_t &, const void *tag, const continuation_t &cont) noexcept { cont(); }
+void supervisor_t::intercept(message_ptr_t &, const void *, const continuation_t &cont) noexcept { cont(); }
 
 void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noexcept {
     auto it = request_map.find(timer_id);
