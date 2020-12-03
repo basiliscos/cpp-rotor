@@ -21,31 +21,28 @@ inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool
     on_timer_trigger(request_id, cancelled);
 }
 
-using mks_t = std::chrono::microseconds;
 using clock_t = std::chrono::steady_clock;
 
 void system_context_thread_t::run() noexcept {
+    using time_unit_t = clock_t::duration;
     using std::chrono::duration_cast;
     auto &root_sup = *get_supervisor();
     while (root_sup.access<to::state>() != state_t::SHUT_DOWN) {
         root_sup.do_process();
-        // no more messages
         std::unique_lock<std::mutex> lock(mutex);
-        mks_t max_wait = timer_nodes.empty() ? mks_t::max() : duration_cast<mks_t>(timer_nodes.front().deadline - now);
+        // / 16 is because sanitizer complains on overflow. No idea why, but seems enough
+        time_unit_t max_wait = timer_nodes.empty() ? time_unit_t::max() / 16 : (timer_nodes.front().deadline - now);
         auto predicate = [&]() -> bool { return !inbound.empty(); };
         auto r = cv.wait_for(lock, max_wait, predicate);
         if (r) {
             auto &queue = root_sup.access<to::queue>();
-            lock.lock();
             std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
             inbound.clear();
-            lock.unlock();
         }
+        lock.unlock();
         update_time();
+        root_sup.do_process();
     }
-    // post-mortem
-    update_time();
-    root_sup.do_process();
 }
 
 void system_context_thread_t::update_time() noexcept {
