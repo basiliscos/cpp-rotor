@@ -19,6 +19,7 @@ struct supervisor_thread_t : public supervisor_t {
     void shutdown() noexcept override;
     void enqueue(message_ptr_t message) noexcept override;
     void intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept override;
+    void updat_time() noexcept;
 
     void do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept override;
     void do_cancel_timer(request_id_t timer_id) noexcept override;

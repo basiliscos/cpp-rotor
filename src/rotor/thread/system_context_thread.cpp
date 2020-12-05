@@ -23,6 +23,8 @@ inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool
 
 using clock_t = std::chrono::steady_clock;
 
+system_context_thread_t::system_context_thread_t() noexcept { update_time(); };
+
 void system_context_thread_t::run() noexcept {
     using time_unit_t = clock_t::duration;
     using std::chrono::duration_cast;
@@ -56,14 +58,22 @@ void system_context_thread_t::update_time() noexcept {
 }
 
 void system_context_thread_t::start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
+    if (intercepting)
+        update_time();
     auto deadline = now + std::chrono::microseconds{interval.total_microseconds()};
     auto it = timer_nodes.begin();
-    for (; (it != timer_nodes.end()) && (it->deadline > deadline); ++it)
-        ;
+    printf("starting timer %d\n", handler.request_id);
+    for (; it != timer_nodes.end(); ++it) {
+        if (it->deadline > deadline) {
+            break;
+        }
+    }
     timer_nodes.insert(it, deadline_info_t{&handler, deadline});
 }
 
 void system_context_thread_t::cancel_timer(request_id_t timer_id) noexcept {
+    if (intercepting)
+        update_time();
     for (auto it = timer_nodes.begin(); it != timer_nodes.end(); ++it) {
         if (it->handler->request_id == timer_id) {
             auto &actor_ptr = it->handler->owner;

@@ -32,10 +32,10 @@ struct system_context_thread_t : public system_context_t {
     using ptr_t = rotor::intrusive_ptr_t<system_context_thread_t>;
 
     /* \brief construct the context from `boost::asio::io_context` reference */
-    system_context_thread_t() noexcept {};
+    system_context_thread_t() noexcept;
 
     virtual void run() noexcept;
-    virtual void update_time() noexcept;
+    void update_time() noexcept;
 
   protected:
     using clock_t = std::chrono::steady_clock;

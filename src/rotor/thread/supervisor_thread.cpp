@@ -25,6 +25,7 @@ void supervisor_thread_t::intercept(message_ptr_t &message, const void *tag,
     auto ctx = static_cast<system_context_thread_t *>(context);
     if (tag == rotor::tags::io) {
         ctx->intercepting = true;
+        ctx->update_time();
         supervisor_t::intercept(message, tag, continuation);
         ctx->intercepting = false;
         ctx->update_time();
@@ -41,4 +42,9 @@ void supervisor_thread_t::do_start_timer(const pt::time_duration &interval, time
 void supervisor_thread_t::do_cancel_timer(request_id_t timer_id) noexcept {
     auto ctx = static_cast<system_context_thread_t *>(context);
     ctx->cancel_timer(timer_id);
+}
+
+void supervisor_thread_t::updat_time() noexcept {
+    auto ctx = static_cast<system_context_thread_t *>(context);
+    ctx->update_time();
 }
