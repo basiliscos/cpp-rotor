@@ -62,7 +62,6 @@ void system_context_thread_t::start_timer(const pt::time_duration &interval, tim
         update_time();
     auto deadline = now + std::chrono::microseconds{interval.total_microseconds()};
     auto it = timer_nodes.begin();
-    printf("starting timer %d\n", handler.request_id);
     for (; it != timer_nodes.end(); ++it) {
         if (it->deadline > deadline) {
             break;
