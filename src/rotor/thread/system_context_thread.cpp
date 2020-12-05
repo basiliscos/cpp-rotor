@@ -21,12 +21,9 @@ inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool
     on_timer_trigger(request_id, cancelled);
 }
 
-using clock_t = std::chrono::steady_clock;
-
 system_context_thread_t::system_context_thread_t() noexcept { update_time(); }
 
 void system_context_thread_t::run() noexcept {
-    using time_unit_t = clock_t::duration;
     using std::chrono::duration_cast;
     auto &root_sup = *get_supervisor();
     auto condition = [&]() -> bool { return root_sup.access<to::state>() != state_t::SHUT_DOWN; };
