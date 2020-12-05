@@ -19,11 +19,15 @@ struct sample_res_t {};
 struct sample_req_t {
     using response_t = sample_res_t;
 };
+
+struct trigger_t {};
+
 } // namespace payload
 
 namespace message {
 using sample_req_t = r::request_traits_t<payload::sample_req_t>::request::message_t;
 using sample_res_t = r::request_traits_t<payload::sample_req_t>::response::message_t;
+using trigger_t = r::message_t<payload::trigger_t>;
 } // namespace message
 
 using req_ptr_t = r::intrusive_ptr_t<message::sample_req_t>;
@@ -40,7 +44,7 @@ struct bad_actor_t : public r::actor_base_t {
     void on_start() noexcept override {
         r::actor_base_t::on_start();
         // for coverage
-        auto sup = static_cast<rth::supervisor_thread_t*>(supervisor);
+        auto sup = static_cast<rth::supervisor_thread_t *>(supervisor);
         sup->updat_time();
         start_timer(r::pt::milliseconds(1), *this, &bad_actor_t::delayed_start);
     }
@@ -72,7 +76,6 @@ struct io_actor1_t : public r::actor_base_t {
     void on_start() noexcept override {
         r::actor_base_t::on_start();
         request<payload::sample_req_t>(address).send(r::pt::milliseconds(9));
-        // std::this_thread::sleep_for(std::chrono::milliseconds(8));
     }
 
     void on_request(message::sample_req_t &msg) noexcept {
@@ -81,6 +84,49 @@ struct io_actor1_t : public r::actor_base_t {
     }
 
     void on_timeout(r::request_id_t, bool) noexcept { reply_to(*req); }
+
+    void on_response(message::sample_res_t &msg) noexcept {
+        ec = msg.payload.ec;
+        supervisor->do_shutdown();
+    }
+};
+
+struct io_actor2_t : public r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    std::error_code ec;
+    r::request_id_t req_id;
+    bool cancel_it = false;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&io_actor2_t::on_request);
+            p.subscribe_actor(&io_actor2_t::on_response);
+            p.subscribe_actor(&io_actor2_t::on_trigger);
+        });
+    }
+
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        start_timer(r::pt::milliseconds(10), *this, &io_actor2_t::on_timeout);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        send<payload::trigger_t>(address);
+    }
+
+    void on_trigger(message::trigger_t &) noexcept {
+        req_id = request<payload::sample_req_t>(address).send(r::pt::milliseconds(7));
+    }
+
+    void on_request(message::sample_req_t &msg) noexcept {
+        if (cancel_it) {
+            reply_with_error(msg, r::make_error_code(r::error_code_t::cancelled));
+            return;
+        }
+        reply_to(msg);
+    }
+
+    void on_timeout(r::request_id_t, bool) noexcept { cancel_it = true; }
 
     void on_response(message::sample_res_t &msg) noexcept {
         ec = msg.payload.ec;
@@ -106,6 +152,19 @@ TEST_CASE("correct timeout triggering", "[supervisor][thread]") {
     auto timeout = r::pt::milliseconds{10};
     auto sup = system_context.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
     auto actor = sup->create_actor<io_actor1_t>().timeout(timeout).finish();
+
+    sup->start();
+    system_context.run();
+
+    REQUIRE(actor->ec == r::error_code_t::success);
+    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("no I/O tag, incorrect timers", "[supervisor][thread]") {
+    auto system_context = rth::system_context_thread_t();
+    auto timeout = r::pt::milliseconds{10};
+    auto sup = system_context.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
+    auto actor = sup->create_actor<io_actor2_t>().timeout(timeout).finish();
 
     sup->start();
     system_context.run();

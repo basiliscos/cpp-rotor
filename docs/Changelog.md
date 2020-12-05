@@ -4,6 +4,9 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.12 (xx-xx-xxxx)
+- [bugfix] active timers, if any, are cancelled upon actor shutdown finish
+
 ## 0.11 (20-Nov-2020)
 - [improvement] when supervisor shuts self down due to child init failure,
 the supervisor init error code is "failure escalation"
