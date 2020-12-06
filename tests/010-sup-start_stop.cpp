@@ -74,6 +74,30 @@ struct init_shutdown_plugin_t : r::plugin::init_shutdown_plugin_t {
     }
 };
 
+struct sample_plugin_t : r::plugin::plugin_base_t {
+    using parent_t = r::plugin::plugin_base_t;
+
+    static const void *class_identity;
+
+    const void *identity() const noexcept override { return  class_identity; }
+
+    void activate(r::actor_base_t *actor_) noexcept override {
+        parent_t::activate(actor_);
+        subscribe(&sample_plugin_t::on_message)->tag_io();
+    }
+
+    void deactivate() noexcept override { parent_t::deactivate(); }
+
+    void on_message(message::sample_payload_t& ) noexcept {
+        message_received = true;
+    }
+
+    bool message_received = false;
+};
+
+const void *sample_plugin_t::class_identity = &sample_plugin_t::class_identity;
+
+
 struct sample_sup2_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
 
@@ -208,6 +232,32 @@ struct sample_actor4_t : public rt::actor_test_t {
     void on_message(message::sample_payload_t &) noexcept { ++received; }
     std::size_t received = 0;
 };
+
+struct sample_actor5_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    // clang-format off
+    using plugins_list_t = std::tuple<
+        r::plugin::address_maker_plugin_t,
+        r::plugin::lifetime_plugin_t,
+        r::plugin::init_shutdown_plugin_t,
+        r::plugin::link_server_plugin_t,
+        r::plugin::link_client_plugin_t,
+        r::plugin::registry_plugin_t,
+        r::plugin::resources_plugin_t,
+        r::plugin::starter_plugin_t,
+        sample_plugin_t
+    >;
+    // clang-format on
+
+    void on_start() noexcept override {
+        rt::actor_test_t::on_start();
+        send<payload::sample_payload_t>(get_address());
+        send<payload::sample_payload_t>(get_address());
+    }
+
+};
+
 
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
     destroyed = 0;
@@ -388,3 +438,23 @@ TEST_CASE("io tagging & intercepting", "[actor]") {
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
+
+TEST_CASE("io tagging (in plugin) & intercepting", "[actor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<sample_sup4_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor5_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    CHECK(sup->counter == 2);
+    auto plugin = act->access<rt::to::get_plugin>(sample_plugin_t::class_identity);
+    CHECK(plugin);
+    CHECK(static_cast<sample_plugin_t*>(plugin)->message_received);
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
