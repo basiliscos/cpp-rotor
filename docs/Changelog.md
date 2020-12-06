@@ -5,13 +5,15 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.12 (xx-xx-xxxx)
+- [improvement] added `std::thread` backend (supervisor)
 - [bugfix] active timers, if any, are cancelled upon actor shutdown finish
+- [documentation] updated `Event loops & platforms`
 - [deprecated] state_response_t, state_request_t will be removed in v0.13
 
 ## 0.11 (20-Nov-2020)
 - [improvement] when supervisor shuts self down due to child init failure,
 the supervisor init error code is "failure escalation"
-- [documentation] updated `Advanced examples`,
+- [documentation] updated `Advanced examples`
 - [bugfix] when actor shuts self down all its timers are properly
 cancelled
 - [bugfix] in rare case supervisor starts, event if child failed to init

@@ -12,6 +12,11 @@ if (BUILD_BOOST_ASIO AND BUILD_EV)
     add_test(ping-pong-ev_and_asio "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-ev_and_asio")
 endif()
 
+if (BUILD_THREAD)
+    add_subdirectory("thread")
+endif()
+
+
 add_executable(hello_loopless hello_loopless.cpp)
 target_link_libraries(hello_loopless rotor)
 add_test(hello_loopless "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hello_loopless")
