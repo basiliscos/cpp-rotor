@@ -77,7 +77,7 @@ void system_context_thread_t::start_timer(const pt::time_duration &interval, tim
 void system_context_thread_t::cancel_timer(request_id_t timer_id) noexcept {
     if (intercepting)
         update_time();
-    auto predicate = [&](auto& info) { return info.handler->request_id == timer_id; };
+    auto predicate = [&](auto &info) { return info.handler->request_id == timer_id; };
     auto it = std::find_if(timer_nodes.begin(), timer_nodes.end(), predicate);
     assert(it != timer_nodes.end() && "timer has been found");
     auto &actor_ptr = it->handler->owner;

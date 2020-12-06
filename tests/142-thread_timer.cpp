@@ -155,9 +155,14 @@ struct io_actor3_t : public r::actor_base_t {
 
     void on_trigger(message::trigger_t &) noexcept {
         req_id = request<payload::sample_req_t>(address).send(r::pt::milliseconds(7));
+        // for coverability
+        auto id = start_timer(r::pt::milliseconds(10), *this, &io_actor3_t::dummy_timer);
+        cancel_timer(id);
     }
 
     void on_timeout(r::request_id_t, bool) noexcept { cancel_event = ++event_id; }
+
+    void dummy_timer(r::request_id_t, bool) noexcept { }
 
     void on_response(message::sample_res_t &msg) noexcept {
         ec = msg.payload.ec;
