@@ -6,6 +6,7 @@
 
 ## 0.12 (xx-xx-xxxx)
 - [bugfix] active timers, if any, are cancelled upon actor shutdown finish
+- [deprecated] state_response_t, state_request_t will be removed in v0.13
 
 ## 0.11 (20-Nov-2020)
 - [improvement] when supervisor shuts self down due to child init failure,

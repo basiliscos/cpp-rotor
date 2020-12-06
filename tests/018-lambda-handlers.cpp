@@ -12,10 +12,10 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-static const void* my_tag = &my_tag;
+static const void *my_tag = &my_tag;
 
 struct payload {
-    const void* data;
+    const void *data;
 };
 using message_t = r::message_t<payload>;
 
@@ -25,8 +25,9 @@ struct sample_actor_t : public r::actor_base_t {
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([this](auto &p) {
-            r::subscription_info_ptr_t info = p.subscribe_actor(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
-            info->access<rt::to::tag, const void*>(my_tag);
+            r::subscription_info_ptr_t info =
+                p.subscribe_actor(r::lambda<message_t>([this](message_t &) noexcept { received = true; }));
+            info->access<rt::to::tag, const void *>(my_tag);
         });
     }
 
@@ -40,9 +41,9 @@ TEST_CASE("lambda handler + interceptor", "[actor]") {
     r::system_context_t system_context;
 
     bool intercepted = false;
-    rt::interceptor_t interceptor = [&](auto& msg, const void* tag, const auto& cont) {
+    rt::interceptor_t interceptor = [&](auto &msg, const void *tag, const auto &cont) {
         if (tag == my_tag) {
-            auto my_msg = static_cast<message_t*>(msg.get());
+            auto my_msg = static_cast<message_t *>(msg.get());
             if (my_msg->payload.data == my_tag) {
                 intercepted = true;
             }
@@ -50,9 +51,9 @@ TEST_CASE("lambda handler + interceptor", "[actor]") {
         cont();
     };
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
-            .interceptor(std::move(interceptor))
-            .timeout(rt::default_timeout)
-            .finish();
+                   .interceptor(std::move(interceptor))
+                   .timeout(rt::default_timeout)
+                   .finish();
     auto actor = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
     sup->do_process();
 

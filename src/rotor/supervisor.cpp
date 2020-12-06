@@ -118,6 +118,6 @@ void supervisor_t::discard_request(request_id_t request_id) noexcept {
 }
 
 void supervisor_t::shutdown_finish() noexcept {
-    assert(request_map.size() == 0);
     actor_base_t::shutdown_finish();
+    assert(request_map.size() == 0);
 }

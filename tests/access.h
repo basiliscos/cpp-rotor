@@ -32,6 +32,7 @@ struct promises {};
 struct discovery_map {};
 struct forget_link {};
 struct tag {};
+struct timers_map {};
 } // namespace to
 } // namespace
 
@@ -41,6 +42,7 @@ bool empty(rotor::subscription_t &subs) noexcept;
 
 namespace rotor {
 
+template <> inline auto &actor_base_t::access<test::to::timers_map>() noexcept { return timers_map; }
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
 template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }
 
