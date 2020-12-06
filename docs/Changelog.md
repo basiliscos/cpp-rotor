@@ -7,6 +7,8 @@
 ## 0.12 (xx-xx-xxxx)
 - [improvement] added `std::thread` backend (supervisor)
 - [bugfix] active timers, if any, are cancelled upon actor shutdown finish
+- [bugfix] supervisor shutdown message is lost in rare cases right after 
+child actor start
 - [documentation] updated `Event loops & platforms`
 - [deprecated] state_response_t, state_request_t will be removed in v0.13
 

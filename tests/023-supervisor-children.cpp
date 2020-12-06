@@ -15,6 +15,14 @@
 namespace r = rotor;
 namespace rt = r::test;
 
+namespace payload {
+struct trigger_t {};
+} // namespace payload
+
+namespace message {
+using trigger_t = r::message_t<payload::trigger_t>;
+}
+
 namespace {
 namespace to {
 struct init_request {};
@@ -55,6 +63,23 @@ struct fail_start_actor2_t : public rt::actor_test_t {
         rt::actor_test_t::on_start();
         supervisor->do_shutdown();
     }
+};
+
+struct fail_start_actor3_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        r::actor_base_t::configure(plugin);
+        plugin.with_casted<r::plugin::starter_plugin_t>(
+            [&](auto &p) { p.subscribe_actor(&fail_start_actor3_t::on_trigger); });
+    }
+
+    void on_start() noexcept override {
+        rt::actor_test_t::on_start();
+        send<payload::trigger_t>(address);
+    }
+
+    void on_trigger(message::trigger_t &) noexcept { supervisor->do_shutdown(); }
 };
 
 struct custom_init_plugin2_t;
@@ -339,6 +364,16 @@ TEST_CASE("actor shuts supervisor down during start") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<fail_start_actor2_t>().timeout(rt::default_timeout).finish();
+
+    sup->do_process();
+    REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("actor shuts supervisor down during start(2)") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<fail_start_actor3_t>().timeout(rt::default_timeout).finish();
 
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);

@@ -12,10 +12,12 @@ using namespace rotor::plugin;
 
 namespace {
 namespace to {
+struct state {};
 struct plugins {};
 } // namespace to
 } // namespace
 
+template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::plugins>() noexcept { return plugins; }
 
 const void *starter_plugin_t::class_identity = static_cast<const void *>(typeid(starter_plugin_t).name());
@@ -68,6 +70,11 @@ void starter_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept 
 }
 
 void starter_plugin_t::on_start(message::start_trigger_t &message) noexcept {
+    // ignore, e.g. if we are shutting down
+    if (actor->access<to::state>() != state_t::INITIALIZED) {
+        return;
+    }
+
     auto &plugins = actor->access<to::plugins>();
     for (auto rit = plugins.rbegin(); rit != plugins.rend(); ++rit) {
         auto plugin = *rit;
