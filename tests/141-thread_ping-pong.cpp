@@ -15,6 +15,7 @@ namespace pt = boost::posix_time;
 namespace rt = r::test;
 
 static std::uint32_t destroyed = 0;
+static const void *custom_tag = &custom_tag;
 
 struct supervisor_thread_test_t : public rth::supervisor_thread_t {
     using rth::supervisor_thread_t::supervisor_thread_t;
@@ -28,6 +29,16 @@ struct supervisor_thread_test_t : public rth::supervisor_thread_t {
         return static_cast<supervisor_t *>(this)->access<rt::to::locality_leader>()->access<rt::to::queue>();
     }
     auto &get_subscription() noexcept { return subscription_map; }
+
+    void intercept(r::message_ptr_t &message, const void *tag,
+                   const r::continuation_t &continuation) noexcept override {
+        if (tag == custom_tag) {
+            intercepted = true;
+        }
+        rth::supervisor_thread_t::intercept(message, tag, continuation);
+    }
+
+    bool intercepted = false;
 };
 
 struct self_shutdowner_sup_t : public rth::supervisor_thread_t {
@@ -91,8 +102,11 @@ struct ponger_t : public r::actor_base_t {
     void set_pinger_addr(const rotor::address_ptr_t &addr) { pinger_addr = addr; }
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::starter_plugin_t>(
-            [](auto &p) { p.subscribe_actor(&ponger_t::on_ping)->tag_io(); });
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            r::subscription_info_ptr_t info = p.subscribe_actor(&ponger_t::on_ping);
+            info->tag_io();
+            info->access<rt::to::tag, const void *>(custom_tag);
+        });
     }
 
     void on_ping(rotor::message_t<ping_t> &) noexcept {
@@ -133,9 +147,10 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     pinger.reset();
     ponger.reset();
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
-    REQUIRE(sup->get_leader_queue().size() == 0);
+    CHECK(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
+    CHECK(sup->intercepted);
 
     sup.reset();
     system_context.reset();

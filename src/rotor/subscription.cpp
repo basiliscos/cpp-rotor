@@ -10,6 +10,16 @@
 
 using namespace rotor;
 
+namespace {
+namespace to {
+struct internal_address {};
+struct internal_handler {};
+} // namespace to
+} // namespace
+
+template <> auto &subscription_info_t::access<to::internal_address>() noexcept { return internal_address; }
+template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
+
 subscription_info_t::~subscription_info_t() {}
 
 subscription_t::subscription_t(supervisor_t &sup_) noexcept : supervisor{sup_} {}
@@ -65,7 +75,7 @@ const subscription_t::joint_handlers_t *subscription_t::get_recipients(const mes
 }
 
 void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {
-    if (!info->internal_address)
+    if (!info->access<to::internal_address>())
         return;
 
     auto &info_container = internal_infos;
@@ -83,8 +93,9 @@ void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {
     auto handler_ptr = info->handler.get();
     auto it = mine_handlers.find({info->address.get(), handler_ptr->message_type});
     auto &joint_handlers = it->second;
-    auto &handlers = info->internal_handler ? joint_handlers.internal : joint_handlers.external;
-    auto &misc_handlers = !info->internal_handler ? joint_handlers.internal : joint_handlers.external;
+    auto internal_handler = info->access<to::internal_handler>();
+    auto &handlers = internal_handler ? joint_handlers.internal : joint_handlers.external;
+    auto &misc_handlers = !internal_handler ? joint_handlers.internal : joint_handlers.external;
     auto predicate = [&handler_ptr](auto &item) { return item == handler_ptr; };
     auto handler_it = std::find_if(handlers.begin(), handlers.end(), predicate);
     assert(handler_it != handlers.end());

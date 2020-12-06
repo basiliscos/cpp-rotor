@@ -162,7 +162,7 @@ struct io_actor3_t : public r::actor_base_t {
 
     void on_timeout(r::request_id_t, bool) noexcept { cancel_event = ++event_id; }
 
-    void dummy_timer(r::request_id_t, bool) noexcept { }
+    void dummy_timer(r::request_id_t, bool) noexcept {}
 
     void on_response(message::sample_res_t &msg) noexcept {
         ec = msg.payload.ec;

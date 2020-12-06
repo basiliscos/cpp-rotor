@@ -88,7 +88,16 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
         return (subscription_point_t &)(*this) == point;
     }
 
-    void tag_io() noexcept;
+    inline void tag_io() noexcept { tag(tags::io); }
+
+    /** \brief generic non-public fields accessor */
+    template <typename T> auto &access() noexcept;
+
+    /** \brief generic non-public methods accessor */
+    template <typename T, typename... Args> auto access(Args... args) noexcept;
+
+  private:
+    void tag(const void *t) noexcept;
 
     /** \brief whether the subscription point (info) belongs to internal address, i.e. to the "my" supervisor */
     bool internal_address;

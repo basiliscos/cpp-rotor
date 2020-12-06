@@ -36,8 +36,8 @@ subscription_container_t::iterator subscription_container_t::find(const subscrip
     return --rit.base();
 }
 
-void subscription_info_t::tag_io() noexcept {
-    auto new_handler = handler->upgrade(tags::io);
+void subscription_info_t::tag(const void *t) noexcept {
+    auto new_handler = handler->upgrade(t);
     auto &sup = handler->actor_ptr->get_supervisor();
     auto &sm = sup.access<to::subscription_map>();
     sm.update(*this, new_handler);
