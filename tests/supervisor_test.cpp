@@ -13,7 +13,7 @@ using namespace rotor::test;
 using namespace rotor;
 
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
-    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)} {}
+    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)}, interceptor{std::move(config_.interceptor)} {}
 
 supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n", (void *)this, (void *)address.get()); }
 
@@ -81,4 +81,11 @@ void supervisor_test_t::configure(plugin::plugin_base_t &plugin) noexcept {
     if (configurer){
         configurer(*this, plugin);
     }
+}
+
+void supervisor_test_t::intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept {
+    if (interceptor) {
+        return interceptor(message, tag, continuation);
+    }
+    continuation();
 }
