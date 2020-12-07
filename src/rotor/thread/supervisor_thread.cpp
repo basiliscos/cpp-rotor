@@ -25,10 +25,10 @@ void supervisor_thread_t::intercept(message_ptr_t &message, const void *tag,
     auto ctx = static_cast<system_context_thread_t *>(context);
     if (tag == rotor::tags::io) {
         ctx->intercepting = true;
-        ctx->update_time();
+        ctx->check();
         supervisor_t::intercept(message, tag, continuation);
         ctx->intercepting = false;
-        ctx->update_time();
+        ctx->check();
     } else {
         supervisor_t::intercept(message, tag, continuation);
     }

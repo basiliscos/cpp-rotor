@@ -30,9 +30,9 @@ void system_context_thread_t::run() noexcept {
     while (condition()) {
         root_sup.do_process();
         if (condition()) {
-            std::unique_lock<std::mutex> lock(mutex);
             auto predicate = [&]() -> bool { return !inbound.empty(); };
             bool r = false;
+            std::unique_lock<std::mutex> lock(mutex);
             if (!timer_nodes.empty()) {
                 r = cv.wait_until(lock, timer_nodes.begin()->deadline, predicate);
             } else {
@@ -49,6 +49,17 @@ void system_context_thread_t::run() noexcept {
             root_sup.do_process();
         }
     }
+}
+
+void system_context_thread_t::check() noexcept {
+    auto &root_sup = *get_supervisor();
+    auto &queue = root_sup.access<to::queue>();
+    do {
+        std::scoped_lock<std::mutex> lock(mutex);
+        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
+        inbound.clear();
+    } while (0);
+    update_time();
 }
 
 void system_context_thread_t::update_time() noexcept {

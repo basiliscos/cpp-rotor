@@ -4,6 +4,24 @@
 // Distributed under the MIT Software License
 //
 
+/*
+ * This is an example how to implement interruptible blocking operations using
+ * std::thread backend. Here, as blocking I/O operation the the reading disk
+ * file and calculating its sha512 digest is used.
+ *
+ * The whole work is split into pieces, and once a piece is complete the
+ * continuation message (with the whole job state) is send to the next
+ * piece to be processed and so on. Between continuation messages other
+ * messages might appear (in the case, the shutdown message) or timers
+ * might be triggered.
+ *
+ * This is an example of blocking messages multiplexing pattern.
+ *
+ * The "ctrl+c" can be anytime pressed on the terminal, and the program
+ * will correctly shutdown (including sanitizer build). Try it!
+ *
+ */
+
 #include "rotor.hpp"
 #include "rotor/thread.hpp"
 #include <cstdint>
@@ -11,7 +29,12 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <atomic>
 #include <openssl/sha.h>
+
+#ifndef _WIN32
+#include <signal.h>
+#endif
 
 namespace r = rotor;
 namespace rth = rotor::thread;
@@ -174,6 +197,10 @@ struct sha_actor_t : public r::actor_base_t {
     }
 };
 
+#ifndef _WIN32
+std::atomic_bool shutdown_flag = false;
+#endif
+
 int main(int argc, char **argv) {
     std::string path = argv[0];
     if (argc < 2) {
@@ -196,7 +223,28 @@ int main(int argc, char **argv) {
     auto sup = ctx.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
     auto act = sup->create_actor<sha_actor_t>().block_size(block_size).path(path).timeout(timeout).finish();
 
+#ifndef _WIN32
+    struct sigaction action;
+    action.sa_handler = [](int) { shutdown_flag = true; };
+    if (sigaction(SIGINT, &action, nullptr) != 0) {
+        std::cout << "critical :: cannot set signal handler\n";
+        return -1;
+    }
+    auto console_thread = std::thread([&] {
+        while (!shutdown_flag) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        std::cout << "going to terminate...\n";
+        sup->shutdown();
+    });
+#endif
+
     ctx.run();
+
+#ifndef _WIN32
+    shutdown_flag = true;
+    console_thread.join();
+#endif
 
     std::cout << "normal exit\n";
     return 0;

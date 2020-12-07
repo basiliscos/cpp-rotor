@@ -35,7 +35,7 @@ struct system_context_thread_t : public system_context_t {
     system_context_thread_t() noexcept;
 
     virtual void run() noexcept;
-    void update_time() noexcept;
+    void check() noexcept;
 
   protected:
     using clock_t = std::chrono::steady_clock;
@@ -46,6 +46,7 @@ struct system_context_thread_t : public system_context_t {
     };
     using list_t = std::list<deadline_info_t>;
 
+    void update_time() noexcept;
     void start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept;
     void cancel_timer(request_id_t timer_id) noexcept;
 
