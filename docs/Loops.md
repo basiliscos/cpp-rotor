@@ -55,6 +55,8 @@ wait either external message message or until nearest timout occurs. To let the 
 work properly, the message handlers with blocking operations should specially marked
 (`tag_io()`), to correctly update timers before, after and inside the handler.
 
+See, `Blocking I/O multiplexing` in `Patterns`.
+
 ## Integration with event loops
 
 `rotor` is designed to be integrated with event loops, which actually perform some I/O, spawn and

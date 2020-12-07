@@ -11,6 +11,7 @@
 child actor start
 - [example] `examples/thread/sha512.cpp` (new)
 - [documentation] updated `Event loops & platforms`
+- [documentation] updated `Patterns` with `Blocking I/O multiplexing`
 - [deprecated] state_response_t, state_request_t will be removed in v0.13
 
 ## 0.11 (20-Nov-2020)
