@@ -131,18 +131,41 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
      */
     virtual void call(message_ptr_t &) noexcept = 0;
 
+    /** \brief "upgrades" handler by tagging it
+     *
+     * Conceptually it intercepts handler call and does tag-specific actions
+     *
+     */
     virtual handler_ptr_t upgrade(const void *tag) noexcept;
 
     virtual inline ~handler_base_t() {}
+
+    /** \brief returns `true` if the message can be handled by the handler */
     virtual bool select(message_ptr_t &) noexcept = 0;
+
+    /** \brief unconditionlally invokes the handler for the message
+     *
+     * It assumes that the handler is able to handle the message. See
+     * `select` method.
+     *
+     */
     virtual void call_no_check(message_ptr_t &) noexcept = 0;
 };
 
+/** \struct continuation_t
+ * \brief continue handler invocation (used for intercepting)
+ */
 struct continuation_t {
+
+    /** \brief continue handler invocation */
     virtual void operator()() const noexcept = 0;
 };
 
+/** \struct handler_intercepted_t
+ * \brief proxies call to the original hanlder, applying tag-specific actions
+ */
 struct handler_intercepted_t : public handler_base_t {
+    /** \brief constructs `handler_intercepted_t` by proxying original hander */
     handler_intercepted_t(handler_ptr_t backend_, const void *tag_) noexcept;
 
     handler_ptr_t upgrade(const void *tag) noexcept override;

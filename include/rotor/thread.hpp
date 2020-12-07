@@ -15,7 +15,7 @@
 
 namespace rotor {
 
-/// namespace for wxWidgets adapters for `rotor`
+/// namespace for pure thread backend (supervisor) for `rotor`
 namespace thread {}
 
 } // namespace rotor
