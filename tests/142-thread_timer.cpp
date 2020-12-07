@@ -45,7 +45,7 @@ struct bad_actor_t : public r::actor_base_t {
         r::actor_base_t::on_start();
         // for coverage
         auto sup = static_cast<rth::supervisor_thread_t *>(supervisor);
-        sup->updat_time();
+        sup->update_time();
         start_timer(r::pt::milliseconds(1), *this, &bad_actor_t::delayed_start);
         start_timer(r::pt::minutes(1), *this, &bad_actor_t::delayed_start); // to be cancelled
     }

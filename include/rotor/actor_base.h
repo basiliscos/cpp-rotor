@@ -29,7 +29,7 @@ namespace rotor {
  *
  * Every actor belong to some {@link supervisor_t}, which "injects" the thread-safe
  * execution context, in a sense, that the actor can call it's own methods as well
- * as supervirors without any need of synchonization.
+ * as supervisors without any need of synchonization.
  *
  * All actor methods are thread-unsafe, i.e. should not be called with except of
  * it's own supervisor. Communication with actor should be performed via messages.

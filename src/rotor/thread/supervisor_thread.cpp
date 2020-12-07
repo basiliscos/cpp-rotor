@@ -44,7 +44,7 @@ void supervisor_thread_t::do_cancel_timer(request_id_t timer_id) noexcept {
     ctx->cancel_timer(timer_id);
 }
 
-void supervisor_thread_t::updat_time() noexcept {
+void supervisor_thread_t::update_time() noexcept {
     auto ctx = static_cast<system_context_thread_t *>(context);
     ctx->update_time();
 }

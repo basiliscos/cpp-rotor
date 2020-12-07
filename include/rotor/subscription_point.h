@@ -88,6 +88,11 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
         return (subscription_point_t &)(*this) == point;
     }
 
+    /** \brief marks handler for blocking operations
+     *
+     * It is suitable for thread backend.
+     *
+     */
     inline void tag_io() noexcept { tag(tags::io); }
 
     /** \brief generic non-public fields accessor */

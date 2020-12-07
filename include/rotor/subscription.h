@@ -51,6 +51,7 @@ struct subscription_t {
      */
     subscription_info_ptr_t materialize(const subscription_point_t &point) noexcept;
 
+    /** \brief sets new handler for the subscription point */
     void update(subscription_point_t &point, handler_ptr_t &new_handler) noexcept;
 
     /** \brief remove subscription_info from `internal_infos` and `mine_handlers` */

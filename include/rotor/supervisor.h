@@ -158,8 +158,6 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
-    virtual void intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept;
-
     /** \brief puts a message into internal supevisor queue for further processing
      *
      * This is thread-unsafe method. The `enqueue` method should be used to put
@@ -239,6 +237,9 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief cancels timer (to be implemented in descendants) */
     virtual void do_cancel_timer(request_id_t timer_id) noexcept = 0;
+
+    /** \brief intercepts message delivery for the tagged handler */
+    virtual void intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept;
 
     /** \brief non-owning pointer to system context. */
     system_context_t *context;

@@ -8,6 +8,18 @@
 
 using namespace rotor;
 
+namespace {
+namespace to {
+struct intercept {};
+} // namespace to
+} // namespace
+
+template <>
+inline auto rotor::supervisor_t::access<to::intercept, message_ptr_t &, const void *, const continuation_t &>(
+    message_ptr_t &msg, const void *tag, const continuation_t &continuation) noexcept {
+    return intercept(msg, tag, continuation);
+}
+
 struct continuation_impl_t : continuation_t {
     handler_intercepted_t &handler;
     message_ptr_t &message;
@@ -38,7 +50,7 @@ void handler_intercepted_t::call(message_ptr_t &message) noexcept {
     if (select(message)) {
         auto &sup = actor_ptr->get_supervisor();
         continuation_impl_t continuation(*this, message);
-        sup.intercept(message, tag, continuation);
+        sup.access<to::intercept, message_ptr_t &, const void *, const continuation_t &>(message, tag, continuation);
     }
 }
 
