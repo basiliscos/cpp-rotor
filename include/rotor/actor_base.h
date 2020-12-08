@@ -11,7 +11,7 @@
 #include "actor_config.h"
 #include "messages.hpp"
 #include "state.h"
-#include "handler.hpp"
+#include "handler.h"
 #include "timer_handler.hpp"
 #include <set>
 
@@ -29,7 +29,7 @@ namespace rotor {
  *
  * Every actor belong to some {@link supervisor_t}, which "injects" the thread-safe
  * execution context, in a sense, that the actor can call it's own methods as well
- * as supervirors without any need of synchonization.
+ * as supervisors without any need of synchonization.
  *
  * All actor methods are thread-unsafe, i.e. should not be called with except of
  * it's own supervisor. Communication with actor should be performed via messages.
@@ -106,7 +106,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Internally it just constructs new message in supervisor's outbound queue.
      *
      */
-    template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&... args);
+    template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&...args);
 
     /** \brief returns request builder for destination address using the "main" actor address
      *
@@ -116,8 +116,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Supervisor will spawn timeout timer upon `timeout` method.
      */
     template <typename R, typename... Args>
-    request_builder_t<typename request_wrapper_t<R>::request_t> request(const address_ptr_t &dest_addr,
-                                                                        Args &&... args);
+    request_builder_t<typename request_wrapper_t<R>::request_t> request(const address_ptr_t &dest_addr, Args &&...args);
 
     /** \brief returns request builder for destination address using the specified address for reply
      *
@@ -132,13 +131,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     template <typename R, typename... Args>
     request_builder_t<typename request_wrapper_t<R>::request_t>
-    request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&... args);
+    request_via(const address_ptr_t &dest_addr, const address_ptr_t &reply_addr, Args &&...args);
 
     /** \brief convenient method for constructing and sending response to a request
      *
      * `args` are forwarded to response payload constuction
      */
-    template <typename Request, typename... Args> void reply_to(Request &message, Args &&... args);
+    template <typename Request, typename... Args> void reply_to(Request &message, Args &&...args);
 
     /** \brief convenient method for constructing and sending error response to a request */
     template <typename Request> void reply_with_error(Request &message, const std::error_code &ec);
@@ -151,7 +150,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * supervisor->put(std::move(response_ptr));
      *
      */
-    template <typename Request, typename... Args> auto make_response(Request &message, Args &&... args);
+    template <typename Request, typename... Args> auto make_response(Request &message, Args &&...args);
 
     /** \brief makes error response to the request, but does not send it.
      *

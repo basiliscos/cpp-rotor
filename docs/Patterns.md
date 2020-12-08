@@ -327,6 +327,34 @@ start simultaneously. The special option `synchronized_start` is response for th
 ~~~
 
 
+### Blocking I/O multiplexing
+
+This is mostly related to `thread` backend. When there is a need to perform long/blocking
+/synchronous work, like disk I/O or interraction with database, or matrices computation
+etc., still there is need of **being reactive**, i.e. actor should respond on other
+messages or timers should fire.
+
+Implementing blocking I/O naively, i.e. doing all work at once will make an actor (and
+the entire thread) unresponsible. So, the solution is the following: break the whole
+job into smaller pieces (read from disk a by a few megabytes chunks, read/write a
+thousands of rows into DB or multiply a few colums/rows in matrices) and pack
+whole job into a message. Then, send a message to an actor. The actor will process
+the message, and if the job has yet not being complete, send it as a message to
+self again, asking to process the next chunk etc. Other messages will be processed
+between work-messages.
+
+To let it work, the blocking I/O message handler, should be tagged specially, i.e.
+
+~~~{.cpp}
+void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+    ...
+    plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+        p.subscribe_actor(&my_actor::on_my_work_message)->tag_io(); // important
+    });
+}
+~~~
+
+There is an example demostrating the technique, see `examples/thread/sha512.cpp`.
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 

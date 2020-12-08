@@ -44,9 +44,6 @@ template <typename M, typename F> constexpr lambda_holder_t<M, F> lambda(F &&fn)
     return lambda_holder_t<M, F>(std::forward<F>(fn));
 }
 
-/** \brief intrusive pointer for supervisor */
-using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
-
 /** \struct handler_traits
  *  \brief Helper class to extract final actor class and message type from pointer-to-member function
  */
@@ -120,12 +117,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief constructs `handler_base_t` from raw pointer to actor, raw
      * pointer to message type and raw pointer to handler type
      */
-    explicit handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_)
-        : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor}, raw_actor_ptr{&actor} {
-        auto h1 = reinterpret_cast<std::size_t>(handler_type);
-        auto h2 = reinterpret_cast<std::size_t>(&actor);
-        precalc_hash = h1 ^ (h2 << 1);
-    }
+    explicit handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_) noexcept;
 
     /** \brief compare two handler for equality */
     inline bool operator==(const handler_base_t &rhs) const noexcept {
@@ -139,10 +131,52 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
      */
     virtual void call(message_ptr_t &) noexcept = 0;
 
+    /** \brief "upgrades" handler by tagging it
+     *
+     * Conceptually it intercepts handler call and does tag-specific actions
+     *
+     */
+    virtual handler_ptr_t upgrade(const void *tag) noexcept;
+
     virtual inline ~handler_base_t() {}
+
+    /** \brief returns `true` if the message can be handled by the handler */
+    virtual bool select(message_ptr_t &) noexcept = 0;
+
+    /** \brief unconditionlally invokes the handler for the message
+     *
+     * It assumes that the handler is able to handle the message. See
+     * `select` method.
+     *
+     */
+    virtual void call_no_check(message_ptr_t &) noexcept = 0;
 };
 
-using handler_ptr_t = intrusive_ptr_t<handler_base_t>;
+/** \struct continuation_t
+ * \brief continue handler invocation (used for intercepting)
+ */
+struct continuation_t {
+
+    /** \brief continue handler invocation */
+    virtual void operator()() const noexcept = 0;
+};
+
+/** \struct handler_intercepted_t
+ * \brief proxies call to the original hanlder, applying tag-specific actions
+ */
+struct handler_intercepted_t : public handler_base_t {
+    /** \brief constructs `handler_intercepted_t` by proxying original hander */
+    handler_intercepted_t(handler_ptr_t backend_, const void *tag_) noexcept;
+
+    handler_ptr_t upgrade(const void *tag) noexcept override;
+    void call(message_ptr_t &) noexcept override;
+    bool select(message_ptr_t &message) noexcept override;
+    void call_no_check(message_ptr_t &message) noexcept override;
+
+  private:
+    handler_ptr_t backend;
+    const void *tag;
+};
 
 namespace details {
 
@@ -188,7 +222,6 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
         : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
-        using backend_t = typename traits::backend_t;
         if (message->type_index == final_message_t::message_type) {
             auto final_message = static_cast<final_message_t *>(message.get());
             auto &final_obj = static_cast<backend_t &>(*actor_ptr);
@@ -196,8 +229,19 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
         }
     }
 
+    bool select(message_ptr_t &message) noexcept override {
+        return message->type_index == final_message_t::message_type;
+    }
+
+    void call_no_check(message_ptr_t &message) noexcept override {
+        auto final_message = static_cast<final_message_t *>(message.get());
+        auto &final_obj = static_cast<backend_t &>(*actor_ptr);
+        (final_obj.*handler)(*final_message);
+    }
+
   private:
     using traits = handler_traits<Handler>;
+    using backend_t = typename traits::backend_t;
     using final_message_t = typename traits::message_t;
 };
 
@@ -225,7 +269,6 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
           plugin{plugin_}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
-        using backend_t = typename traits::backend_t;
         if (message->type_index == final_message_t::message_type) {
             auto final_message = static_cast<final_message_t *>(message.get());
             auto &final_obj = static_cast<backend_t &>(plugin);
@@ -233,8 +276,19 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
         }
     }
 
+    bool select(message_ptr_t &message) noexcept override {
+        return message->type_index == final_message_t::message_type;
+    }
+
+    void call_no_check(message_ptr_t &message) noexcept override {
+        auto final_message = static_cast<final_message_t *>(message.get());
+        auto &final_obj = static_cast<backend_t &>(plugin);
+        (final_obj.*handler)(*final_message);
+    }
+
   private:
     using traits = handler_traits<Handler>;
+    using backend_t = typename traits::backend_t;
     using final_message_t = typename traits::message_t;
 };
 
@@ -267,6 +321,15 @@ struct handler_t<lambda_holder_t<Handler, M>,
             auto final_message = static_cast<final_message_t *>(message.get());
             handler.fn(*final_message);
         }
+    }
+
+    bool select(message_ptr_t &message) noexcept override {
+        return message->type_index == final_message_t::message_type;
+    }
+
+    void call_no_check(message_ptr_t &message) noexcept override {
+        auto final_message = static_cast<final_message_t *>(message.get());
+        handler.fn(*final_message);
     }
 
   private:

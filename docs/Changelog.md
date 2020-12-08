@@ -4,10 +4,20 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.12 (08-Dec-2020)
+- [improvement] added `std::thread` backend (supervisor)
+- [bugfix] active timers, if any, are cancelled upon actor shutdown finish
+- [bugfix] supervisor shutdown message is lost in rare cases right after 
+child actor start
+- [example] `examples/thread/sha512.cpp` (new)
+- [documentation] updated `Event loops & platforms`
+- [documentation] updated `Patterns` with `Blocking I/O multiplexing`
+- [deprecated] state_response_t, state_request_t will be removed in v0.13
+
 ## 0.11 (20-Nov-2020)
 - [improvement] when supervisor shuts self down due to child init failure,
 the supervisor init error code is "failure escalation"
-- [documentation] updated `Advanced examples`,
+- [documentation] updated `Advanced examples`
 - [bugfix] when actor shuts self down all its timers are properly
 cancelled
 - [bugfix] in rare case supervisor starts, event if child failed to init

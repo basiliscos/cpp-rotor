@@ -1,11 +1,12 @@
 # Event loops & platforms
 
-## Event loops
+## Event loops & backends
 
 [boost-asio]: https://www.boost.org/doc/libs/release/libs/asio/ "Boost Asio"
 [wx-widgets]: https://www.wxwidgets.org/ "wxWidgets"
 [ev]: http://software.schmorp.de/pkg/libev.html
 [libevent]: https://libevent.org/
+[std-thread]: https://en.cppreference.com/w/cpp/thread/thread
 [libuv]: https://libuv.org/
 [gtk]: https://www.gtk.org/
 [qt]: https://www.qt.io/
@@ -16,6 +17,7 @@
 [boost-asio]  | supported
 [wx-widgets]  | supported
 [ev]          | supported
+[std-thread]  | supported
 [libevent]    | planned
 [libuv]       | planned
 [gtk]         | planned
@@ -30,6 +32,30 @@ event loop   | support status
 linux        | supported
 windows      | supported
 macos        | supported
+
+
+## Notes on std::thread backend
+
+This backend was developed to support **blocking** operations,  which have the same
+effect as `std::this_thread::sleep_for` invocation. This is suitable for disk I/O
+operations, working with database or using third-party libraries with synchronous
+semantics.
+
+It should be noted, that using blocking operations have some consequences, e.g.
+actors on a thread, which executes blocking operation, will not be able to respond
+to messages, namely, to cancellation requests. There is no universal remedy, however,
+this can be smoothed: split long I/O operation into "continuation-message" with series
+of smaller I/O chunks and when the current chunk is complete, just send self a message with
+all work and index of the next chunk. It will make an actor more responsive, giving
+it some breadth to pull external messages, trigger timeouts, and, finally, give it a
+chance to react to cancellation notice.
+
+When there are no messages, the backend uses `sleep_for` / `sleep_until` functions to
+wait either external message message or until nearest timout occurs. To let the things
+work properly, the message handlers with blocking operations should specially marked
+(`tag_io()`), to correctly update timers before, after and inside the handler.
+
+See, `Blocking I/O multiplexing` in `Patterns`.
 
 ## Integration with event loops
 

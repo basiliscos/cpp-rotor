@@ -3,7 +3,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ROTOR_VERSION "0.09")
+set(ROTOR_VERSION "0.12")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -12,6 +12,7 @@ include(CMakePrintHelpers)
 option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
 option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
 option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(BUILD_THREAD         "Enable building with thread support  [default: ON]"          ON)
 option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
 option(BUILD_TESTS          "Enable building tests    [default: OFF]"                    OFF)
 option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
@@ -32,6 +33,7 @@ add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/address_mapping.cpp
     src/rotor/error_code.cpp
+    src/rotor/handler.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp
     src/rotor/subscription_point.cpp
@@ -82,7 +84,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/arc.hpp
     include/rotor/error_code.h
     include/rotor/forward.hpp
-    include/rotor/handler.hpp
+    include/rotor/handler.h
     include/rotor/message.h
     include/rotor/messages.hpp
     include/rotor/plugin/address_maker.h
@@ -161,6 +163,22 @@ if (BUILD_EV)
         include/rotor/ev/supervisor_config_ev.h
         include/rotor/ev/supervisor_ev.h
         include/rotor/ev/system_context_ev.h
+    )
+endif()
+
+if (BUILD_THREAD)
+    find_package(Threads REQUIRED)
+    add_library(rotor_thread
+        src/rotor/thread/supervisor_thread.cpp
+        src/rotor/thread/system_context_thread.cpp
+    )
+    target_link_libraries(rotor_thread PUBLIC rotor Threads::Threads)
+    add_library(rotor::thread ALIAS rotor_thread)
+    list(APPEND ROTOR_TARGETS_TO_INSTALL rotor_thread)
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/thread.hpp
+        include/rotor/thread/supervisor_thread.h
+        include/rotor/thread/supervisor_thread.h
     )
 endif()
 

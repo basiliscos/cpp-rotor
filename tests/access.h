@@ -31,6 +31,8 @@ struct last_req_id {};
 struct promises {};
 struct discovery_map {};
 struct forget_link {};
+struct tag {};
+struct timers_map {};
 } // namespace to
 } // namespace
 
@@ -40,6 +42,7 @@ bool empty(rotor::subscription_t &subs) noexcept;
 
 namespace rotor {
 
+template <> inline auto &actor_base_t::access<test::to::timers_map>() noexcept { return timers_map; }
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
 template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }
 
@@ -53,6 +56,9 @@ inline auto rotor::actor_base_t::access<test::to::on_timer_trigger, request_id_t
     on_timer_trigger(request_id, cancelled);
 }
 
+template <> inline auto rotor::subscription_info_t::access<test::to::tag, const void *>(const void *arg) noexcept {
+    return tag(arg);
+}
 template <> inline auto &rotor::subscription_t::access<test::to::internal_infos>() noexcept { return internal_infos; }
 template <> inline auto &rotor::subscription_t::access<test::to::mine_handlers>() noexcept { return mine_handlers; }
 template <> inline auto &rotor::plugin::plugin_base_t::access<test::to::own_subscriptions>() noexcept {

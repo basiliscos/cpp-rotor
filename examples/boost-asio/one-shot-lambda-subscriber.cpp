@@ -84,7 +84,8 @@ struct ponger_t : public rotor::actor_base_t {
                 unsubscribe(pong_handler);
                 reply_to(msg);
             });
-            pong_handler = p.subscribe_actor(std::move(lambda));
+            rotor::subscription_info_ptr_t info = p.subscribe_actor(std::move(lambda));
+            pong_handler = info->handler;
         });
     }
 

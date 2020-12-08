@@ -5,9 +5,21 @@
 //
 
 #include "rotor/subscription.h"
-#include "rotor/handler.hpp"
+#include "rotor/supervisor.h"
 
-using namespace rotor;
+namespace rotor {
+
+namespace to {
+struct subscription_map {};
+} // namespace to
+
+template <> auto &supervisor_t::access<to::subscription_map>() noexcept { return subscription_map; }
+
+namespace tags {
+
+const void *io = &io;
+
+}
 
 bool subscription_point_t::operator==(const subscription_point_t &other) const noexcept {
     return address == other.address && (*handler == *other.handler);
@@ -23,3 +35,12 @@ subscription_container_t::iterator subscription_container_t::find(const subscrip
     }
     return --rit.base();
 }
+
+void subscription_info_t::tag(const void *t) noexcept {
+    auto new_handler = handler->upgrade(t);
+    auto &sup = handler->actor_ptr->get_supervisor();
+    auto &sm = sup.access<to::subscription_map>();
+    sm.update(*this, new_handler);
+}
+
+} // namespace rotor

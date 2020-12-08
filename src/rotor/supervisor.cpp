@@ -7,7 +7,18 @@
 #include "rotor/supervisor.h"
 #include "rotor/registry.h"
 #include <assert.h>
+
 using namespace rotor;
+
+namespace {
+namespace to {
+struct internal_address {};
+struct internal_handler {};
+} // namespace to
+} // namespace
+
+template <> auto &subscription_info_t::access<to::internal_address>() noexcept { return internal_address; }
+template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), last_req_id{0}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
@@ -59,13 +70,13 @@ subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, co
     subscription_point_t point(handler, addr, owner_ptr, owner_tag);
     auto sub_info = subscription_map.materialize(point);
 
-    if (sub_info->internal_address) {
+    if (sub_info->access<to::internal_address>()) {
         send<payload::subscription_confirmation_t>(handler->actor_ptr->address, point);
     } else {
         send<payload::external_subscription_t>(addr->supervisor.address, point);
     }
 
-    if (sub_info->internal_handler) {
+    if (sub_info->access<to::internal_handler>()) {
         handler->actor_ptr->lifetime->initate_subscription(sub_info);
     }
 
@@ -77,11 +88,14 @@ void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) no
 }
 
 void supervisor_t::on_child_init(actor_base_t *, const std::error_code &) noexcept {}
+
 void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) noexcept {
     if (state == state_t::SHUTTING_DOWN) {
         shutdown_continue();
     }
 }
+
+void supervisor_t::intercept(message_ptr_t &, const void *, const continuation_t &cont) noexcept { cont(); }
 
 void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noexcept {
     auto it = request_map.find(timer_id);
@@ -104,6 +118,6 @@ void supervisor_t::discard_request(request_id_t request_id) noexcept {
 }
 
 void supervisor_t::shutdown_finish() noexcept {
-    assert(request_map.size() == 0);
     actor_base_t::shutdown_finish();
+    assert(request_map.size() == 0);
 }

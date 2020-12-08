@@ -15,9 +15,13 @@ namespace test {
 
 extern pt::time_duration default_timeout;
 
+using interceptor_t = std::function<void(message_ptr_t &, const void *, const continuation_t &)>;
+
+
 struct supervisor_config_test_t : public supervisor_config_t {
     const void *locality = nullptr;
     plugin_configurer_t configurer = plugin_configurer_t{};
+    interceptor_t interceptor = interceptor_t{};
 };
 
 template <typename Supervisor> struct supervisor_test_config_builder_t;
@@ -40,6 +44,7 @@ struct supervisor_test_t : public supervisor_t {
     virtual void shutdown() noexcept override {}
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;
     virtual address_ptr_t make_address() noexcept override;
+    void intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept override;
 
     state_t &get_state() noexcept { return state; }
     messages_queue_t &get_leader_queue() { return get_leader().queue; }
@@ -55,6 +60,7 @@ struct supervisor_test_t : public supervisor_t {
     const void *locality;
     timers_t active_timers;
     plugin_configurer_t configurer;
+    interceptor_t interceptor;
 };
 using supervisor_test_ptr_t = rotor::intrusive_ptr_t<supervisor_test_t>;
 
@@ -70,6 +76,11 @@ template <typename Supervisor> struct supervisor_test_config_builder_t : supervi
 
     builder_t &&configurer(plugin_configurer_t&& value) && {
         parent_t::config.configurer = std::move(value);
+        return std::move(*this);
+    }
+
+    builder_t &&interceptor(interceptor_t&& value) && {
+        parent_t::config.interceptor = std::move(value);
         return std::move(*this);
     }
 };

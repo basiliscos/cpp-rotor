@@ -125,3 +125,13 @@ if (BUILD_EV)
     target_link_libraries(132-ev_timer rotor::test rotor::ev)
     add_test(132-ev_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/132-ev_timer")
 endif()
+
+if (BUILD_THREAD)
+    add_executable(141-thread_ping-pong 141-thread_ping-pong.cpp)
+    target_link_libraries(141-thread_ping-pong rotor::test rotor::thread)
+    add_test(141-thread_ping-pong "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/141-thread_ping-pong")
+
+    add_executable(142-thread_timer 142-thread_timer.cpp)
+    target_link_libraries(142-thread_timer rotor::test rotor::thread)
+    add_test(142-thread_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/142-thread_timer")
+endif()

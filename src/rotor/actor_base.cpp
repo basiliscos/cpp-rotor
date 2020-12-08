@@ -84,7 +84,9 @@ void actor_base_t::shutdown_finish() noexcept {
 
     // maybe delete plugins here?
     assert(deactivating_plugins.empty() && "plugin was not deactivated");
-    assert(timers_map.size() == 0 && "no active timers");
+    while (!timers_map.empty()) {
+        cancel_timer(timers_map.begin()->first);
+    }
     /*
     if (!deactivating_plugins.empty()) {
         auto p = *deactivating_plugins.begin();

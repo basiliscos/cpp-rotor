@@ -27,7 +27,7 @@ before_build:
     - echo %PATH%
 
 build_script:
-  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_builds -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
+  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_builds -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
 #  -DBOOST_LIBRARYDIR="%BOOST_LIBRARYDIR%"
 #  -DCMAKE_CXX_FLAGS="-DBOOST_ALL_DYN_LINK"
   - cmake --build _builds

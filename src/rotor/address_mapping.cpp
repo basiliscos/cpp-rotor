@@ -5,7 +5,7 @@
 //
 
 #include "rotor/address_mapping.h"
-#include "rotor/handler.hpp"
+#include "rotor/handler.h"
 #include <cassert>
 
 using namespace rotor;
