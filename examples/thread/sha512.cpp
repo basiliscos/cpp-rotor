@@ -142,7 +142,7 @@ struct sha_actor_t : public r::actor_base_t {
     using config_t = sah_actor_config;
     template <typename Actor> using config_builder_t = sah_actor_config_builder_t<Actor>;
 
-    sha_actor_t(config_t &cfg) : r::actor_base_t{cfg}, path{cfg.path}, block_size{cfg.block_size} {}
+    explicit sha_actor_t(config_t &cfg) : r::actor_base_t{cfg}, path{cfg.path}, block_size{cfg.block_size} {}
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
