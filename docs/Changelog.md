@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.12 (xx-xx-xxxx)
+## 0.12 (08-Dec-2020)
 - [improvement] added `std::thread` backend (supervisor)
 - [bugfix] active timers, if any, are cancelled upon actor shutdown finish
 - [bugfix] supervisor shutdown message is lost in rare cases right after 
