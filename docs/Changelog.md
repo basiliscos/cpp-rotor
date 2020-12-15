@@ -4,6 +4,9 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.13 (xx-xx-xxxx)
+ - [bugfix] root supervisor is not shutdown properly when it is linked as "server"
+
 ## 0.12 (08-Dec-2020)
 - [improvement] added `std::thread` backend (supervisor)
 - [bugfix] active timers, if any, are cancelled upon actor shutdown finish

@@ -81,15 +81,14 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
     linked_clients.erase(it);
 
     auto &state = actor->access<to::state>();
-    auto &shutdown_request = actor->access<to::shutdown_request>();
-    if (state == state_t::SHUTTING_DOWN && shutdown_request)
+    if (state == state_t::SHUTTING_DOWN)
         actor->shutdown_continue();
 }
 
 void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {
     auto &ec = message.payload.ec;
-    auto &shutdown_request = actor->access<to::shutdown_request>();
-    if (ec && shutdown_request) {
+    auto &state = actor->access<to::state>();
+    if (ec && state == state_t::SHUTTING_DOWN) {
         actor->reply_with_error(*actor->access<to::shutdown_request>(), ec);
         return;
     }
@@ -105,8 +104,7 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
     */
     linked_clients.erase(it);
 
-    auto &state = actor->access<to::state>();
-    if (state == state_t::SHUTTING_DOWN && shutdown_request)
+    if (state == state_t::SHUTTING_DOWN)
         actor->shutdown_continue();
 }
 

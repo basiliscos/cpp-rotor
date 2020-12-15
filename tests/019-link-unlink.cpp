@@ -540,3 +540,41 @@ TEST_CASE("proper shutdown order, defined by linkage", "[actor]") {
     CHECK(act_2->shutdown_event == 2);
     CHECK(act_3->shutdown_event == 3);
 }
+
+TEST_CASE("unlink of root supervisor", "[actor]") {
+    rt::system_context_test_t ctx;
+
+    rt::system_context_test_t ctx1;
+    rt::system_context_test_t ctx2;
+
+    const char l1[] = "abc";
+    const char l2[] = "def";
+
+    auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l1).finish();
+    auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
+
+    sup2->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(sup1->get_address(), false, [&](auto &) {}); });
+    };
+
+    auto process_12 = [&]() {
+        while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+            sup1->do_process();
+            sup2->do_process();
+        }
+    };
+
+    process_12();
+
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+
+    sup1->do_shutdown();
+    sup1->do_process();
+
+    sup2->do_shutdown();
+    process_12();
+
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
+}
