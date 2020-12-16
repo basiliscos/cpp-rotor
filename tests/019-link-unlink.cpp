@@ -554,7 +554,8 @@ TEST_CASE("unlink of root supervisor", "[actor]") {
     auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality(l2).finish();
 
     sup2->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
-        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(sup1->get_address(), false, [&](auto &) {}); });
+        plugin.with_casted<r::plugin::link_client_plugin_t>(
+            [&](auto &p) { p.link(sup1->get_address(), false, [&](auto &) {}); });
     };
 
     auto process_12 = [&]() {

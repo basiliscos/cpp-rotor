@@ -5,6 +5,8 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.13 (xx-xx-xxxx)
+ - [bugfix] starter_plugin_t sometimes crashed when subscription confirmation message
+arrives when actor is in non-initializing phase (i.e. shutting down)
  - [bugfix] root supervisor is not shutdown properly when it is linked as "server"
 
 ## 0.12 (08-Dec-2020)

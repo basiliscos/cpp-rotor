@@ -45,7 +45,7 @@ bool starter_plugin_t::handle_subscription(message::subscription_t &message) noe
     if (it != tracked.end()) {
         tracked.erase(it);
     }
-    if (configured && tracked.empty()) {
+    if (configured && tracked.empty() && actor->access<to::state>() == state_t::INITIALIZING) {
         actor->init_continue();
         return true;
     }

@@ -266,6 +266,25 @@ struct sample_actor6_t : public rt::actor_test_t {
     bool cancelled = false;
 };
 
+struct sample_actor7_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+    r::message_ptr_t msg;
+
+    void on_start() noexcept override {
+        rt::actor_test_t::on_start();
+        subscribe(&sample_actor7_t::on_message);
+        do_shutdown();
+    }
+
+    void shutdown_start() noexcept override {
+        auto sup = static_cast<rt::supervisor_test_t *>(supervisor);
+        sup->get_leader_queue().push_back(std::move(msg));
+        rt::actor_test_t::shutdown_start();
+    }
+
+    void on_message(message::sample_payload_t &) noexcept {}
+};
+
 TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[supervisor]") {
     destroyed = 0;
     r::system_context_t *system_context = new r::system_context_t{};
@@ -480,4 +499,25 @@ TEST_CASE("timers cancellation", "[actor]") {
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(act->access<rt::to::timers_map>().empty());
+}
+
+TEST_CASE("subscription confirmation arrives on non-init phase", "[actor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor7_t>().timeout(rt::default_timeout).finish();
+
+    auto act_configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            p.subscribe_actor(r::lambda<message::sample_payload_t>([](message::sample_payload_t &) noexcept { ; }));
+            auto req = sup->get_leader_queue().back();
+            sup->get_leader_queue().pop_back();
+            act->msg = std::move(req);
+            act->do_shutdown();
+        });
+    };
+    act->configurer = act_configurer;
+
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
