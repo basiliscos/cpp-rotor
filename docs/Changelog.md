@@ -5,6 +5,9 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.13 (xx-xx-xxxx)
+ - [improvement] delivery plugin in debug mode dumps discarded messages
+ - [bugfix] link_client_plugin_t did not notified linked server-actors, if its actor is
+going to shutdown; now server-actors are requested to unlink
  - [bugfix] starter_plugin_t sometimes crashed when subscription confirmation message
 arrives when actor is in non-initializing phase (i.e. shutting down)
  - [bugfix] root supervisor is not shutdown properly when it is linked as "server"

@@ -49,6 +49,9 @@ struct link_server_plugin_t : public plugin_base_t {
     /** \brief returns true if there is any connected client */
     virtual bool has_clients() noexcept { return !linked_clients.empty(); }
 
+    /** \brief let clients know that the actor is going to shut self down */
+    virtual void notify_shutdown() noexcept;
+
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
@@ -61,6 +64,7 @@ struct link_server_plugin_t : public plugin_base_t {
         link_state_t state;
         link_request_ptr_t request;
         request_option_t unlink_request;
+        bool shutdown_notified = false;
     };
 
     using linked_clients_t = std::unordered_map<address_ptr_t, link_info_t>;

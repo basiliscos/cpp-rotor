@@ -385,7 +385,7 @@ subscription_info_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler, con
     return info;
 }
 
-template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process() noexcept {
+template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() noexcept {
     while (queue->size()) {
         auto message = queue->front();
         auto &dest = message->address;
@@ -393,17 +393,45 @@ template <typename LocalDelivery> void delivery_plugin_t<LocalDelivery>::process
         auto &dest_sup = dest->supervisor;
         auto internal = &dest_sup == actor;
         if (internal) { /* subscriptions are handled by me */
-            auto *local_recipients = subscription_map->get_recipients(*message);
+            auto local_recipients = subscription_map->get_recipients(*message);
             if (local_recipients) {
-                LocalDelivery::delivery(message, *local_recipients);
+                plugin::local_delivery_t::delivery(message, *local_recipients);
             }
         } else if (dest_sup.address->same_locality(*address)) {
-            auto *local_recipients = dest_sup.subscription_map.get_recipients(*message);
+            auto local_recipients = dest_sup.subscription_map.get_recipients(*message);
             if (local_recipients) {
-                LocalDelivery::delivery(message, *local_recipients);
+                plugin::local_delivery_t::delivery(message, *local_recipients);
             }
         } else {
             dest_sup.enqueue(std::move(message));
+        }
+    }
+}
+
+template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::process() noexcept {
+    while (queue->size()) {
+        auto message = queue->front();
+        auto &dest = message->address;
+        queue->pop_front();
+        auto &dest_sup = dest->supervisor;
+        auto internal = &dest_sup == actor;
+        const subscription_t::joint_handlers_t *local_recipients = nullptr;
+        bool delivery_attempt = false;
+        if (internal) { /* subscriptions are handled by me */
+            local_recipients = subscription_map->get_recipients(*message);
+            delivery_attempt = true;
+        } else if (dest_sup.address->same_locality(*address)) {
+            local_recipients = dest_sup.subscription_map.get_recipients(*message);
+            delivery_attempt = true;
+        } else {
+            dest_sup.enqueue(std::move(message));
+        }
+        if (local_recipients) {
+            plugin::inspected_local_delivery_t::delivery(message, *local_recipients);
+        } else {
+            if (delivery_attempt) {
+                plugin::inspected_local_delivery_t::discard(message);
+            }
         }
     }
 }

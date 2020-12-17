@@ -110,24 +110,28 @@ void link_server_plugin_t::on_unlink_response(message::unlink_response_t &messag
 }
 
 bool link_server_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
-    for (auto &it : linked_clients) {
-        if (it.second.state == link_state_t::OPERATIONAL) {
-            auto &self = actor->get_address();
-            auto &timeout = actor->access<to::shutdown_timeout>();
-            auto request_id = actor->request<payload::unlink_request_t>(it.first, self).send(timeout);
-            it.second.state = link_state_t::UNLINKING;
-            it.second.unlink_request = request_id;
-        }
-    }
+    notify_shutdown();
     return linked_clients.empty() && plugin_base_t::handle_shutdown(req);
 }
 
 void link_server_plugin_t::handle_start(message::start_trigger_t *trigger) noexcept {
-    for (auto it : linked_clients) {
+    for (auto &it : linked_clients) {
         if (it.second.state == link_state_t::PENDING) {
             actor->reply_to(*it.second.request);
             it.second.state = link_state_t::OPERATIONAL;
         }
     }
     return plugin_base_t::handle_start(trigger);
+}
+
+void link_server_plugin_t::notify_shutdown() noexcept {
+    for (auto& [address, link_info] : linked_clients) {
+        if (link_info.state == link_state_t::OPERATIONAL) {
+            auto &self = actor->get_address();
+            auto &timeout = actor->access<to::shutdown_timeout>();
+            auto request_id = actor->request<payload::unlink_request_t>(address, self).send(timeout);
+            link_info.state = link_state_t::UNLINKING;
+            link_info.unlink_request = request_id;
+        }
+    }
 }

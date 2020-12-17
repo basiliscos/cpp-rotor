@@ -12,17 +12,28 @@ using namespace rotor::plugin;
 
 namespace {
 namespace to {
+struct state {};
 struct init_request {};
 struct init_timeout {};
 struct get_plugin {};
+struct on_discovery {};
 } // namespace to
 } // namespace
 
+template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto actor_base_t::access<to::get_plugin, const void *>(const void *identity) noexcept {
     return get_plugin(identity);
 }
+
+template <>
+auto registry_plugin_t::discovery_task_t::access<to::on_discovery, address_ptr_t *, const std::error_code &>(
+    address_ptr_t *address, const std::error_code &ec) noexcept {
+    return on_discovery(address, ec);
+}
+
+template <typename Message> void process_discovery(registry_plugin_t::discovery_map_t &dm, Message &message) noexcept;
 
 const void *registry_plugin_t::class_identity = static_cast<const void *>(typeid(registry_plugin_t).name());
 
@@ -79,9 +90,13 @@ void registry_plugin_t::on_registration(message::registration_response_t &messag
     }
 }
 
-void registry_plugin_t::on_discovery(message::discovery_response_t &message) noexcept { process_discovery(message); }
+void registry_plugin_t::on_discovery(message::discovery_response_t &message) noexcept {
+    process_discovery(discovery_map, message);
+}
 
-void registry_plugin_t::on_future(message::discovery_future_t &message) noexcept { process_discovery(message); }
+void registry_plugin_t::on_future(message::discovery_future_t &message) noexcept {
+    process_discovery(discovery_map, message);
+}
 
 void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
     auto &init_request = actor->access<to::init_request>();
@@ -114,14 +129,7 @@ void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
             actor->request<payload::registration_request_t>(registry_addr, it.first, it.second.address).send(timeout);
         }
         for (auto &it : discovery_map) {
-            auto &task = it.second;
-            task.requested = true;
-            if (!task.delayed) {
-                actor->request<payload::discovery_request_t>(registry_addr, task.service_name).send(timeout);
-            } else {
-                task.request_id =
-                    actor->request<payload::discovery_promise_t>(registry_addr, task.service_name).send(timeout);
-            }
+            it.second.do_discover();
         }
     } else {
         // no-op as linked_client plugin should already reply with error to init-request
@@ -149,16 +157,16 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexce
     }
 
     if (!discovery_map.empty()) {
-        auto &registry_addr = actor->get_supervisor().get_registry_address();
-        for (auto it = discovery_map.begin(); it != discovery_map.end(); ++it) {
-            auto &task = it->second;
-            if (task.delayed && task.requested) {
-                using payload_t = rotor::message::discovery_cancel_t::payload_t;
-                auto &request_id = task.request_id;
-                actor->send<payload_t>(registry_addr, request_id, actor->get_address());
+        for (auto it = discovery_map.begin(); it != discovery_map.end();) {
+            if (it->second.do_cancel()) {
+                it = discovery_map.erase(it);
+            } else {
+                ++it;
             }
         }
-        discovery_map.clear();
+        if (!discovery_map.empty())
+            return false;
+        // discovery_map.clear();
     }
     return plugin_base_t::handle_shutdown(req);
 }
@@ -168,29 +176,76 @@ bool registry_plugin_t::has_registering() noexcept {
     return !std::none_of(register_map.begin(), register_map.end(), in_progress_predicate);
 }
 
-void registry_plugin_t::discovery_task_t::on_discovery(const std::error_code &ec) noexcept {
-    if (task_callback)
-        task_callback(phase_t::discovering, ec);
-    if (!ec) {
-        auto p = plugin.actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
-        auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
-        link_plugin.link(*address, operational_only, [this](auto &ec) {
-            if (task_callback)
-                task_callback(phase_t::linking, ec);
-            continue_init(ec);
-        });
-        return;
-    }
-    continue_init(ec);
+template <typename Message> void process_discovery(registry_plugin_t::discovery_map_t &dm, Message &message) noexcept {
+    auto &service = message.payload.req->payload.request_payload.service_name;
+    auto &ec = message.payload.ec;
+    auto it = dm.find(service);
+    assert(it != dm.end());
+    address_ptr_t *address_value = ec ? nullptr : &message.payload.res.service_addr;
+    it->second.template access<to::on_discovery, address_ptr_t *, const std::error_code &>(address_value, ec);
 }
 
-void registry_plugin_t::discovery_task_t::continue_init(const std::error_code &ec) noexcept {
+void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_addr,
+                                                       const std::error_code &ec) noexcept {
+    if (!ec) {
+        *address = *service_addr;
+        if (task_callback) {
+            task_callback(phase_t::discovering, ec);
+        }
+    }
+
+    auto actor_state = plugin.actor->access<to::state>();
+    if (actor_state == rotor::state_t::INITIALIZING) {
+        if (!ec) {
+            auto p = plugin.actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
+            auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
+            link_plugin.link(*address, operational_only, [this](auto &ec) {
+                if (task_callback)
+                    task_callback(phase_t::linking, ec);
+                post_discovery(ec);
+            });
+            return;
+        }
+    }
+    post_discovery(ec);
+}
+
+void registry_plugin_t::discovery_task_t::post_discovery(const std::error_code &ec) noexcept {
     auto &plugin = this->plugin;
     auto &dm = plugin.discovery_map;
     auto it = dm.find(service_name);
     assert(it != dm.end());
     dm.erase(it);
     if (dm.empty() || ec) {
-        plugin.continue_init(ec);
+        auto actor_state = plugin.actor->access<to::state>();
+        if (actor_state == rotor::state_t::INITIALIZING) {
+            plugin.continue_init(ec);
+        } else {
+            plugin.actor->shutdown_continue();
+        }
     }
+}
+
+void registry_plugin_t::discovery_task_t::do_discover() noexcept {
+    state = state_t::DISCOVERING;
+    auto &actor = plugin.actor;
+    auto &registry_addr = actor->get_supervisor().get_registry_address();
+    auto timeout = actor->access<to::init_timeout>();
+    if (!delayed) {
+        actor->request<payload::discovery_request_t>(registry_addr, service_name).send(timeout);
+    } else {
+        request_id = actor->request<payload::discovery_promise_t>(registry_addr, service_name).send(timeout);
+    }
+}
+
+bool registry_plugin_t::discovery_task_t::do_cancel() noexcept {
+    if (delayed && state == state_t::DISCOVERING) {
+        using payload_t = rotor::message::discovery_cancel_t::payload_t;
+        auto &actor = plugin.actor;
+        auto &registry_addr = actor->get_supervisor().get_registry_address();
+        actor->send<payload_t>(registry_addr, request_id, actor->get_address());
+        state = state_t::CANCELLING;
+        return false;
+    }
+    return true;
 }
