@@ -83,7 +83,9 @@ struct sample_plugin_t : r::plugin::plugin_base_t {
 
     void activate(r::actor_base_t *actor_) noexcept override {
         parent_t::activate(actor_);
-        subscribe(&sample_plugin_t::on_message)->tag_io();
+        auto info = subscribe(&sample_plugin_t::on_message);
+        info->tag_io();
+        info->tag_io(); // for better coverage
     }
 
     void deactivate() noexcept override { parent_t::deactivate(); }
