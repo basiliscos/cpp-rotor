@@ -17,6 +17,21 @@ static size_t destroyed = 0;
 struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
+    // clang-format off
+    using plugins_list_t = std::tuple<
+        r::plugin::address_maker_plugin_t,
+        r::plugin::locality_plugin_t,
+        r::plugin::delivery_plugin_t<r::plugin::local_delivery_t>,  // for coverage
+        r::plugin::lifetime_plugin_t,
+        r::plugin::init_shutdown_plugin_t,
+        r::plugin::foreigners_support_plugin_t,
+        r::plugin::child_manager_plugin_t,
+        r::plugin::link_server_plugin_t,
+        r::plugin::link_client_plugin_t,
+        r::plugin::registry_plugin_t,
+        r::plugin::starter_plugin_t>;
+    // clang-format on
+
     void init_start() noexcept override {
         rt::supervisor_test_t::init_start();
         assert(state == r::state_t::INITIALIZING);
