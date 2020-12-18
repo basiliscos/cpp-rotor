@@ -6,6 +6,8 @@
 
 ## 0.13 (xx-xx-xxxx)
  - [improvement] delivery plugin in debug mode dumps discarded messages
+ - [bugfix] foreigners_support_plugin_t did not deactivated self properly, caused
+assertion fail on supervisor shutdown, when there was foreign subscriptions
  - [bugfix] link_client_plugin_t did not notified linked server-actors, if its actor is
 going to shutdown; now server-actors are requested to unlink
  - [bugfix] starter_plugin_t sometimes crashed when subscription confirmation message

@@ -125,7 +125,7 @@ void link_server_plugin_t::handle_start(message::start_trigger_t *trigger) noexc
 }
 
 void link_server_plugin_t::notify_shutdown() noexcept {
-    for (auto& [address, link_info] : linked_clients) {
+    for (auto &[address, link_info] : linked_clients) {
         if (link_info.state == link_state_t::OPERATIONAL) {
             auto &self = actor->get_address();
             auto &timeout = actor->access<to::shutdown_timeout>();
