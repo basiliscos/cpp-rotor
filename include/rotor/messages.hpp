@@ -165,28 +165,6 @@ struct unsubscription_confirmation_t {
     subscription_point_t point;
 };
 
-/** \struct state_response_t
- *  \brief Message with this payload is sent to an actor, which
- * asked for the state of the subject actor (represented by it's address)
- *
- */
-struct state_response_t {
-    /** \brief The state of the asked actor */
-    state_t state;
-};
-
-/** \struct state_request_t
- *  \brief Message with this payload is sent to supervisor to query
- * actor (defined by it's address - `subject_addr`).
- */
-struct state_request_t {
-    /** \brief link to response payload type */
-    using response_t = state_response_t;
-
-    /** \brief The actor address in question */
-    address_ptr_t subject_addr;
-};
-
 /** \struct registration_response_t
  *  \brief Successful registraction response (no content)
  */
@@ -373,12 +351,6 @@ using unlink_notify_t = message_t<payload::unlink_notify_t>;
 using unlink_request_t = request_traits_t<payload::unlink_request_t>::request::message_t;
 /** \brief unlink response (client confirms link cancellation) */
 using unlink_response_t = request_traits_t<payload::unlink_request_t>::response::message_t;
-
-// misc
-/** \brief actor state request */
-using state_request_t = request_traits_t<payload::state_request_t>::request::message_t;
-/** \brief actor state response */
-using state_response_t = request_traits_t<payload::state_request_t>::response::message_t;
 
 } // namespace message
 

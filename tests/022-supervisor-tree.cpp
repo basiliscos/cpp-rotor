@@ -23,34 +23,16 @@ struct pinger_t : public r::actor_base_t {
     void set_ponger_addr(const r::address_ptr_t &addr) { ponger_addr = addr; }
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_state); });
+        plugin.with_casted<rotor::plugin::registry_plugin_t>(
+            [&](auto &p) { p.discover_name("ponger", ponger_addr, true).link(true); });
     }
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();
-        request_status();
+        send<ping_t>(ponger_addr);
+        ping_sent++;
     }
 
-    void request_status() noexcept {
-        auto &sup_addr = static_cast<r::actor_base_t &>(ponger_addr->supervisor).get_address();
-        request<r::payload::state_request_t>(sup_addr, ponger_addr).send(r::pt::seconds{1});
-        ++attempts;
-    }
-
-    void on_state(r::message::state_response_t &msg) noexcept {
-        auto &state = msg.payload.res.state;
-        if (state == r::state_t::OPERATIONAL) {
-            send<ping_t>(ponger_addr);
-            ponger_addr.reset();
-            ping_sent++;
-        } else if (attempts > 10) {
-            do_shutdown();
-        } else {
-            request_status();
-        }
-    }
-
-    std::uint32_t attempts = 0;
     r::address_ptr_t ponger_addr;
 };
 
@@ -58,6 +40,8 @@ struct ponger_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<rotor::plugin::registry_plugin_t>(
+            [&](auto &p) { p.register_name("ponger", get_address()); });
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&ponger_t::on_ping); });
     }
 
@@ -104,6 +88,7 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     auto sup_root = system_context.create_supervisor<rt::supervisor_test_t>()
                         .locality(locality)
                         .timeout(rt::default_timeout)
+                        .create_registry()
                         .finish();
     auto sup_A1 =
         sup_root->create_actor<rt::supervisor_test_t>().locality(locality).timeout(rt::default_timeout).finish();
@@ -121,10 +106,10 @@ TEST_CASE("supervisor/locality tree ", "[supervisor]") {
     pinger->set_ponger_addr(ponger->get_address());
     sup_A2->do_process();
 
-    REQUIRE(sup_A2->get_children_count() == 1 + 1);
-    REQUIRE(sup_B2->get_children_count() == 1);
-    REQUIRE(ping_sent == 1);
-    REQUIRE(ping_received == 1);
+    CHECK(sup_A2->get_children_count() == 1);
+    CHECK(sup_B2->get_children_count() == 1);
+    CHECK(ping_sent == 1);
+    CHECK(ping_received == 1);
 
     sup_root->do_shutdown();
     sup_root->do_process();

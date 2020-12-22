@@ -57,7 +57,6 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&child_manager_plugin_t::on_init);
     subscribe(&child_manager_plugin_t::on_shutdown_trigger);
     subscribe(&child_manager_plugin_t::on_shutdown_confirm);
-    subscribe(&child_manager_plugin_t::on_state_request);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SHUTDOWN);
     reaction_on(reaction_t::START);
@@ -229,18 +228,6 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &m
     if (child_actor.get() != actor) {
         sup.on_child_shutdown(child_actor.get(), ec);
     }
-}
-
-void child_manager_plugin_t::on_state_request(message::state_request_t &message) noexcept {
-    auto &addr = message.payload.request_payload.subject_addr;
-    state_t target_state = state_t::UNKNOWN;
-    auto it = actors_map.find(addr);
-    if (it != actors_map.end()) {
-        auto &state = it->second;
-        auto &actor = state.actor;
-        target_state = actor->access<to::state>();
-    }
-    actor->reply_to(message, target_state);
 }
 
 bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept { return !has_initializing(); }
