@@ -7,6 +7,8 @@
 ## 0.13 (xx-xx-xxxx)
  - [improvement] delivery plugin in debug mode dumps discarded messages
  - [breaking] `state_response_t` has been removed
+ - [bugfix] allow to acquire & release resources in via `resources_plugin_t`, during
+other plugin configuration
  - [bugfix] foreigners_support_plugin_t did not deactivated self properly, caused
 assertion fail on supervisor shutdown, when there was foreign subscriptions
  - [bugfix] link_client_plugin_t did not notified linked server-actors, if its actor is

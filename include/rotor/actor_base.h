@@ -308,6 +308,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void cancel_timer(request_id_t request_id) noexcept;
 
+    static const constexpr std::uint32_t PROGRESS_INIT = 1 << 0;
+    static const constexpr std::uint32_t PROGRESS_SHUTDOWN = 1 << 1;
+
   protected:
     /** \brief timer-id to timer-handler map (type) */
     using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
@@ -373,6 +376,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;
+
+    std::uint32_t continuation_mask = 0;
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;

@@ -41,6 +41,10 @@ add_executable(014-lifetime-observer 014-lifetime-observer.cpp)
 target_link_libraries(014-lifetime-observer ${rotor_TEST_LIBS})
 add_test(014-lifetime-observer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/014-lifetime-observer")
 
+add_executable(015-resources 015-resources.cpp)
+target_link_libraries(015-resources ${rotor_TEST_LIBS})
+add_test(015-resources "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/015-resources")
+
 add_executable(016-pub_sub 016-pub_sub.cpp)
 target_link_libraries(016-pub_sub ${rotor_TEST_LIBS})
 add_test(016-pub_sub "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/016-pub_sub")
