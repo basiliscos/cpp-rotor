@@ -39,6 +39,7 @@ struct registry_plugin_t : public plugin_base_t {
         /** \brief callback for the discovery progress */
         using callback_t = std::function<void(phase_t phase, const std::error_code &)>;
 
+        /** \brief stat of the discovery task */
         enum class state_t { PASSIVE, DISCOVERING, LINKING, OPERATIONAL, CANCELLING };
 
         /** \brief sets that linking should be performed on operational-only discovered address */
@@ -122,6 +123,7 @@ struct registry_plugin_t : public plugin_base_t {
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
+    /** \brief service name to task mapping */
     using discovery_map_t = std::unordered_map<std::string, discovery_task_t>;
 
   private:

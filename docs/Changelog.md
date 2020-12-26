@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.13 (xx-xx-xxxx)
+## 0.13 (26-Dec-2020)
  - [improvement] delivery plugin in debug mode dumps discarded messages
  - [breaking] `state_response_t` has been removed
  - [bugfix] allow to acquire & release resources in via `resources_plugin_t`, during

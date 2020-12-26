@@ -45,6 +45,7 @@ struct inspected_local_delivery_t {
     /** \brief delivers the message to the recipients, possbily dumping it to console */
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
 
+    /** \brief dumps discarded message */
     static void discard(message_ptr_t &message) noexcept;
 };
 
