@@ -13,6 +13,18 @@
 namespace rotor {
 namespace test {
 
+namespace payload {
+
+struct sample_t {
+    int value;
+};
+
+} // namespace payload
+
+namespace message {
+using sample_t = rotor::message_t<payload::sample_t>;
+}
+
 struct actor_test_t;
 using plugin_configurer_t = std::function<void(actor_base_t &self, plugin::plugin_base_t &)>;
 using shutdown_fn_t = std::function<void(actor_test_t &self)>;

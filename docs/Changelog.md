@@ -4,6 +4,19 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.13 (26-Dec-2020)
+ - [improvement] delivery plugin in debug mode dumps discarded messages
+ - [breaking] `state_response_t` has been removed
+ - [bugfix] allow to acquire & release resources in via `resources_plugin_t`, during
+other plugin configuration
+ - [bugfix] foreigners_support_plugin_t did not deactivated self properly, caused
+assertion fail on supervisor shutdown, when there was foreign subscriptions
+ - [bugfix] link_client_plugin_t did not notified linked server-actors, if its actor is
+going to shutdown; now server-actors are requested to unlink
+ - [bugfix] starter_plugin_t sometimes crashed when subscription confirmation message
+arrives when actor is in non-initializing phase (i.e. shutting down)
+ - [bugfix] root supervisor is not shutdown properly when it is linked as "server"
+
 ## 0.12 (08-Dec-2020)
 - [improvement] added `std::thread` backend (supervisor)
 - [bugfix] active timers, if any, are cancelled upon actor shutdown finish

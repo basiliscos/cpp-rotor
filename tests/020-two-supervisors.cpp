@@ -17,6 +17,21 @@ static size_t destroyed = 0;
 struct my_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
+    // clang-format off
+    using plugins_list_t = std::tuple<
+        r::plugin::address_maker_plugin_t,
+        r::plugin::locality_plugin_t,
+        r::plugin::delivery_plugin_t<r::plugin::local_delivery_t>,  // for coverage
+        r::plugin::lifetime_plugin_t,
+        r::plugin::init_shutdown_plugin_t,
+        r::plugin::foreigners_support_plugin_t,
+        r::plugin::child_manager_plugin_t,
+        r::plugin::link_server_plugin_t,
+        r::plugin::link_client_plugin_t,
+        r::plugin::registry_plugin_t,
+        r::plugin::starter_plugin_t>;
+    // clang-format on
+
     void init_start() noexcept override {
         rt::supervisor_test_t::init_start();
         assert(state == r::state_t::INITIALIZING);
@@ -174,6 +189,44 @@ TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]")
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(rt::empty(sup2->get_subscription()));
+}
+
+TEST_CASE("two supervisors & external subscription", "[supervisor]") {
+    r::system_context_t ctx1;
+    r::system_context_t ctx2;
+
+    auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>()
+                    .configurer([&](auto &, r::plugin::plugin_base_t &plugin) {
+                        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+                            using message_t = rt::message::sample_t;
+                            auto lambda = r::lambda<message_t>([](message_t &) noexcept { ; });
+                            p.subscribe_actor(lambda, sup1->get_address());
+                        });
+                    })
+                    .timeout(rt::default_timeout)
+                    .finish();
+
+    auto process_12 = [&]() {
+        while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
+            sup1->do_process();
+            sup2->do_process();
+        }
+    };
+
+    process_12();
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+
+    sup1->do_shutdown();
+    process_12();
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_state() == r::state_t::OPERATIONAL);
+
+    sup2->do_shutdown();
+    process_12();
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
 }
 
 TEST_CASE("two supervisors, same locality", "[supervisor]") {

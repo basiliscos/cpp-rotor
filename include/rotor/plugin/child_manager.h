@@ -75,17 +75,6 @@ struct child_manager_plugin_t : public plugin_base_t {
     /** \brief reacion on shutdown confirmation (i.e. perform some cleanings) */
     virtual void on_shutdown_confirm(message::shutdown_response_t &message) noexcept;
 
-    /** \brief answers about actor's state, identified by it's address
-     *
-     * If there is no information about the address (including the case when an actor
-     * is not yet created or already destroyed), then it replies with `UNKNOWN` status.
-     *
-     * It replies to the address specified to the `reply_addr` specified in
-     * the message {@link payload::state_request_t}.
-     *
-     */
-    virtual void on_state_request(message::state_request_t &message) noexcept;
-
     bool handle_init(message::init_request_t *) noexcept override;
     bool handle_shutdown(message::shutdown_request_t *) noexcept override;
     void handle_start(message::start_trigger_t *message) noexcept override;

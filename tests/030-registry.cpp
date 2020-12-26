@@ -401,6 +401,39 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
     }
 }
 
+TEST_CASE("notify linked clients about going to shutdown", "[registry][supervisor]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
+                   .timeout(rt::default_timeout)
+                   .create_registry(true)
+                   .finish();
+
+    auto act1 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    act1->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::registry_plugin_t>([&act1](auto &p) {
+            p.register_name("my-actor", act1->get_address());
+            p.discover_name("non-existing-service", act1->service_addr, true);
+        });
+    };
+    auto act2 = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+    act2->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::registry_plugin_t>(
+            [&act1](auto &p) { p.discover_name("my-actor", act1->service_addr, true).link(false); });
+    };
+
+    sup->do_process();
+    REQUIRE(act1->get_state() == r::state_t::INITIALIZING);
+    REQUIRE(act2->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup->get_state() == r::state_t::INITIALIZING);
+
+    act1->do_shutdown();
+    sup->do_process();
+
+    CHECK(act1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(act2->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
 TEST_CASE("no problems when supervisor registers self in a registry", "[registry][supervisor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()

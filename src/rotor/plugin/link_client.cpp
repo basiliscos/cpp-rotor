@@ -133,7 +133,8 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
 
     try_forget_links(false);
 
-    if (!actor->access<to::link_server>()->has_clients()) {
+    auto link_server = actor->access<to::link_server>();
+    if (!link_server->has_clients()) {
         auto &source_addr = actor->get_address();
         for (auto it = servers_map.begin(); it != servers_map.end();) {
             actor->send<payload::unlink_notify_t>(it->first, source_addr);
@@ -143,10 +144,13 @@ bool link_client_plugin_t::handle_shutdown(message::shutdown_request_t *req) noe
             }
             it = servers_map.erase(it);
         }
+    } else {
+        link_server->notify_shutdown();
     }
 
-    if (servers_map.empty())
+    if (servers_map.empty()) {
         return plugin_base_t::handle_shutdown(req);
+    }
 
     return false;
 }

@@ -39,6 +39,9 @@ struct registry_plugin_t : public plugin_base_t {
         /** \brief callback for the discovery progress */
         using callback_t = std::function<void(phase_t phase, const std::error_code &)>;
 
+        /** \brief stat of the discovery task */
+        enum class state_t { PASSIVE, DISCOVERING, LINKING, OPERATIONAL, CANCELLING };
+
         /** \brief sets that linking should be performed on operational-only discovered address */
         discovery_task_t &link(bool operational_only_ = true) noexcept {
             link_on_discovery = true;
@@ -51,23 +54,29 @@ struct registry_plugin_t : public plugin_base_t {
             task_callback = std::forward<Callback>(cb);
         }
 
+        /** \brief generic non-public methods accessor */
+        template <typename T, typename... Args> auto access(Args... args) noexcept;
+
       private:
         discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_, bool delayed_)
-            : plugin{plugin_}, address(address_), service_name{service_name_}, delayed{delayed_} {}
+            : plugin{plugin_},
+              address(address_), service_name{service_name_}, delayed{delayed_}, state{state_t::PASSIVE} {}
         operator bool() const noexcept { return address; }
 
-        void on_discovery(const std::error_code &ec) noexcept;
-        void continue_init(const std::error_code &ec) noexcept;
+        void do_discover() noexcept;
+        void on_discovery(address_ptr_t *service_addr, const std::error_code &ec) noexcept;
+        bool do_cancel() noexcept;
+        void post_discovery(const std::error_code &ec) noexcept;
 
         registry_plugin_t &plugin;
         address_ptr_t *address;
         std::string service_name;
         bool delayed;
-        bool link_on_discovery = false;
-        bool operational_only = false;
-        bool requested = false;
+        state_t state;
         request_id_t request_id = 0;
         callback_t task_callback;
+        bool link_on_discovery = false;
+        bool operational_only = false;
 
         friend struct registry_plugin_t;
     };
@@ -114,25 +123,16 @@ struct registry_plugin_t : public plugin_base_t {
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
-  private:
-    template <typename Message> void process_discovery(Message &message) noexcept {
-        auto &service = message.payload.req->payload.request_payload.service_name;
-        auto &ec = message.payload.ec;
-        auto it = discovery_map.find(service);
-        assert(it != discovery_map.end());
-        if (!ec) {
-            *it->second.address = message.payload.res.service_addr;
-        }
-        it->second.on_discovery(ec);
-    }
+    /** \brief service name to task mapping */
+    using discovery_map_t = std::unordered_map<std::string, discovery_task_t>;
 
+  private:
     enum class state_t { REGISTERING, LINKING, OPERATIONAL, UNREGISTERING };
     struct register_info_t {
         address_ptr_t address;
         state_t state;
     };
     using register_map_t = std::unordered_map<std::string, register_info_t>;
-    using discovery_map_t = std::unordered_map<std::string, discovery_task_t>;
 
     enum plugin_state_t : std::uint32_t {
         CONFIGURED = 1 << 0,

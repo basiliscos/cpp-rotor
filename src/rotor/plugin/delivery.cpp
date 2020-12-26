@@ -39,12 +39,12 @@ void local_delivery_t::delivery(message_ptr_t &message,
     }
 }
 
-std::string inspected_local_delivery_t::identify(message_base_t *message, std::int32_t threshold) noexcept {
+std::string inspected_local_delivery_t::identify(const message_base_t *message, std::int32_t threshold) noexcept {
     using boost::core::demangle;
     using T = owner_tag_t;
     std::string info = demangle((const char *)message->type_index);
     std::int32_t level = 0;
-    auto dump_point = [](subscription_point_t &p) -> std::string {
+    auto dump_point = [](const subscription_point_t &p) -> std::string {
         std::stringstream out;
         out << " [";
         switch (p.owner_tag) {
@@ -69,22 +69,22 @@ std::string inspected_local_delivery_t::identify(message_base_t *message, std::i
         return out.str();
     };
 
-    if (auto m = dynamic_cast<message::unsubscription_t *>(message); m) {
+    if (auto m = dynamic_cast<const message::unsubscription_t *>(message); m) {
         level = 9;
         info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<message::subscription_t *>(message); m) {
+    } else if (auto m = dynamic_cast<const message::subscription_t *>(message); m) {
         level = 9;
         info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<message::unsubscription_external_t *>(message); m) {
+    } else if (auto m = dynamic_cast<const message::unsubscription_external_t *>(message); m) {
         level = 9;
         info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<message::external_subscription_t *>(message); m) {
+    } else if (auto m = dynamic_cast<const message::external_subscription_t *>(message); m) {
         level = 9;
         info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<message::commit_unsubscription_t *>(message); m) {
+    } else if (auto m = dynamic_cast<const message::commit_unsubscription_t *>(message); m) {
         level = 9;
         info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<message::deregistration_service_t *>(message); m) {
+    } else if (auto m = dynamic_cast<const message::deregistration_service_t *>(message); m) {
         level = 0;
         info += ", service = ";
         info += m->payload.service_name;
@@ -95,15 +95,21 @@ std::string inspected_local_delivery_t::identify(message_base_t *message, std::i
     return info;
 }
 
-void inspected_local_delivery_t::delivery(message_ptr_t &message,
-                                          const subscription_t::joint_handlers_t &local_recipients) noexcept {
+static void dump_message(const char *prefix, const message_ptr_t &message) noexcept {
     auto var = std::getenv("ROTOR_INSPECT_DELIVERY");
     if (var) {
         int threshold = atoi(var);
-        auto dump = identify(message.get(), threshold);
+        auto dump = inspected_local_delivery_t::identify(message.get(), threshold);
         if (dump.size() > 0) {
-            std::cout << ">> " << dump << " for " << message->address.get() << "\n";
+            std::cout << prefix << dump << " for " << message->address.get() << "\n";
         }
     }
+}
+
+void inspected_local_delivery_t::delivery(message_ptr_t &message,
+                                          const subscription_t::joint_handlers_t &local_recipients) noexcept {
+    dump_message(">> ", message);
     local_delivery_t::delivery(message, local_recipients);
 }
+
+void inspected_local_delivery_t::discard(message_ptr_t &message) noexcept { dump_message("<DISCARDED> ", message); }

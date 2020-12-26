@@ -9,6 +9,10 @@
 #include "plugin_base.h"
 #include <string>
 
+#if !defined(NDEBUG) && !defined(ROTOR_DEBUG_DELIVERY)
+#define ROTOR_DO_DELIVERY_DEBUG 1
+#endif
+
 namespace rotor::plugin {
 
 /** \struct local_delivery_t
@@ -36,13 +40,16 @@ struct local_delivery_t {
  */
 struct inspected_local_delivery_t {
     /** \brief stringifies the message into human-readable debug form */
-    static std::string identify(message_base_t *message, int32_t threshold) noexcept;
+    static std::string identify(const message_base_t *message, int32_t threshold) noexcept;
 
     /** \brief delivers the message to the recipients, possbily dumping it to console */
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
+
+    /** \brief dumps discarded message */
+    static void discard(message_ptr_t &message) noexcept;
 };
 
-#if defined(NDEBUG) || defined(ROTOR_DEBUG_DELIVERY)
+#if !defined(ROTOR_DO_DELIVERY_DEBUG)
 using default_local_delivery_t = local_delivery_t;
 #else
 using default_local_delivery_t = inspected_local_delivery_t;
@@ -79,7 +86,7 @@ template <typename LocalDelivery = local_delivery_t> struct delivery_plugin_t : 
     /** The plugin unique identity to allow further static_cast'ing*/
     static const void *class_identity;
     const void *identity() const noexcept override { return class_identity; }
-    void process() noexcept override;
+    inline void process() noexcept override;
 };
 
 template <typename LocalDelivery>

@@ -15,11 +15,13 @@ namespace {
 namespace to {
 struct state {};
 struct resources {};
+struct continuation_mask {};
 } // namespace to
 } // namespace
 
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::resources>() noexcept { return resources; }
+template <> auto &actor_base_t::access<to::continuation_mask>() noexcept { return continuation_mask; }
 
 const void *resources_plugin_t::class_identity = static_cast<const void *>(typeid(resources_plugin_t).name());
 
@@ -70,11 +72,11 @@ bool resources_plugin_t::release(resource_id_t id) noexcept {
     auto state = actor->access<to::state>();
     bool has_acquired = has_any();
     if (state == state_t::INITIALIZING) {
-        if (!has_acquired) {
+        if (!has_acquired && !(actor->access<to::continuation_mask>() & actor_base_t::PROGRESS_INIT)) {
             actor->init_continue();
         }
     } else if (state == state_t::SHUTTING_DOWN) {
-        if (!has_acquired) {
+        if (!has_acquired && !(actor->access<to::continuation_mask>() & actor_base_t::PROGRESS_SHUTDOWN)) {
             actor->shutdown_continue();
         }
     }

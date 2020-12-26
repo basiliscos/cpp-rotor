@@ -31,16 +31,16 @@ void foreigners_support_plugin_t::activate(actor_base_t *actor_) noexcept {
     subscribe(&foreigners_support_plugin_t::on_call);
     subscribe(&foreigners_support_plugin_t::on_unsubscription);
     subscribe(&foreigners_support_plugin_t::on_subscription_external);
+
     return plugin_base_t::activate(actor_);
 }
 
 void foreigners_support_plugin_t::deactivate() noexcept {
-    if (foreign_points.empty())
-        return plugin_base_t::deactivate();
     auto lifetime = actor->access<to::lifetime>();
     for (auto &info : foreign_points) {
         lifetime->unsubscribe(info);
     }
+    return plugin_base_t::deactivate();
 }
 
 void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noexcept {

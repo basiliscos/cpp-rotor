@@ -16,7 +16,7 @@ template <> auto &plugin_base_t::access<actor_base_t>() noexcept { return actor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
-      shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW} {
+      shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW}, continuation_mask{0} {
     plugins_storage = cfg.plugins_constructor();
     plugins = plugins_storage->get_plugins();
     for (auto plugin : plugins) {
@@ -101,6 +101,7 @@ void actor_base_t::init_continue() noexcept {
     assert(state == state_t::INITIALIZING);
     assert(init_request);
 
+    continuation_mask = continuation_mask | PROGRESS_INIT;
     std::size_t in_progress = plugins.size();
     for (size_t i = 0; i < plugins.size(); ++i) {
         auto plugin = plugins[i];
@@ -114,6 +115,7 @@ void actor_base_t::init_continue() noexcept {
         }
         --in_progress;
     }
+    continuation_mask = continuation_mask & ~PROGRESS_INIT;
     if (in_progress == 0) {
         init_finish();
     }
@@ -125,6 +127,7 @@ void actor_base_t::shutdown_continue() noexcept {
     assert(state == state_t::SHUTTING_DOWN);
 
     std::size_t in_progress = plugins.size();
+    continuation_mask = continuation_mask | PROGRESS_SHUTDOWN;
     for (size_t i = plugins.size(); i > 0; --i) {
         auto plugin = plugins[i - 1];
         if (plugin->get_reaction() & plugin_base_t::SHUTDOWN) {
@@ -137,6 +140,7 @@ void actor_base_t::shutdown_continue() noexcept {
         }
         --in_progress;
     }
+    continuation_mask = continuation_mask & ~PROGRESS_SHUTDOWN;
     if (in_progress == 0) {
         shutdown_finish();
     }
