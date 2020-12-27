@@ -107,7 +107,8 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
 void child_manager_plugin_t::init_continue() noexcept {
     if (actor->access<to::state>() == state_t::INITIALIZING) {
         auto &init_request = actor->access<to::init_request>();
-        if (init_request) {
+        if (init_request && !has_initializing()) {
+            reaction_off(reaction_t::INIT);
             actor->init_continue();
         }
     }
@@ -120,7 +121,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     sup.send<payload::create_actor_t>(actor->get_address(), child, timeout);
     actors_map.emplace(child->get_address(), actor_state_t(child));
     if (static_cast<actor_base_t &>(sup).access<to::state>() == state_t::INITIALIZING) {
-        postponed_init = true;
+        reaction_on(reaction_t::INIT);
     }
 }
 
@@ -173,7 +174,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             }
         }
     }
-    if (continue_init && postponed_init) {
+    if (continue_init) {
         init_continue();
     }
     // no need of treating self as a child

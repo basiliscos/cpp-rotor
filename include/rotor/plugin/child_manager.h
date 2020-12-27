@@ -109,7 +109,6 @@ struct child_manager_plugin_t : public plugin_base_t {
     /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
     using initializing_actors_t = std::unordered_set<address_ptr_t>;
 
-    bool postponed_init = false;
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
 };
