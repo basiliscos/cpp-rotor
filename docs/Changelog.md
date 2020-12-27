@@ -4,6 +4,10 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.14 (xx-xxx-202x)
+ - [bugfix] `link_client_plugin_t` do not invoke custom callback, before erasing request
+in case of failure
+
 ## 0.13 (26-Dec-2020)
  - [improvement] delivery plugin in debug mode dumps discarded messages
  - [breaking] `state_response_t` has been removed

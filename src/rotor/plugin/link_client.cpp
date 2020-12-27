@@ -57,12 +57,16 @@ void link_client_plugin_t::on_link_response(message::link_response_t &message) n
     auto it = servers_map.find(address);
     assert(it != servers_map.end());
 
-    auto &callback = it->second.callback;
-    if (callback)
-        callback(ec);
-
     if (ec) {
         servers_map.erase(it);
+    }
+
+    auto &callback = it->second.callback;
+    if (callback) {
+        callback(ec);
+    }
+
+    if (ec) {
         auto &init_request = actor->access<to::init_request>();
         if (init_request) {
             actor->reply_with_error(*init_request, ec);
