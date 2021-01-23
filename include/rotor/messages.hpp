@@ -12,6 +12,7 @@
 #include "request.hpp"
 #include "subscription_point.h"
 #include "forward.hpp"
+#include "extended_error.h"
 
 namespace rotor {
 
@@ -67,6 +68,8 @@ struct create_actor_t {
 struct shutdown_trigger_t {
     /** \brief the actor to be shut down */
     address_ptr_t actor_address;
+
+    // extended_error_ptr_t reason;
 };
 
 /** \struct shutdown_confirmation_t
@@ -82,6 +85,8 @@ struct shutdown_confirmation_t {};
 struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
+
+    // extended_error_ptr_t reason;
 };
 
 /** \struct handler_call_t

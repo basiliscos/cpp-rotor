@@ -12,6 +12,7 @@
 
 namespace r = rotor;
 namespace rt = rotor::test;
+using namespace Catch::Matchers;
 
 static std::uint32_t destroyed = 0;
 
@@ -191,7 +192,10 @@ struct sample_actor2_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) { alternative = p.create_address(); });
+        plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) {
+            alternative = p.create_address();
+            p.set_identity("specific_name", false);
+        });
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
             p.subscribe_actor(&sample_actor2_t::on_link, alternative);
             send<payload::sample_payload_t>(alternative);
@@ -294,6 +298,8 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
 
     REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
+    auto& identity = static_cast<r::actor_base_t*>(sup.get())->access<rt::to::identity>();
+    CHECK_THAT(identity, StartsWith("supervisor"));
 
     sup->do_process();
     CHECK(sup->init_invoked == 1);
@@ -360,6 +366,8 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
+    CHECK_THAT(act->access<rt::to::identity>(), StartsWith("actor"));
+
     /* for better coverage */
     auto last = sup->access<rt::to::last_req_id>();
     auto &request_map = sup->access<rt::to::request_map>();
@@ -422,6 +430,9 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor2_t>().timeout(rt::default_timeout).finish();
+
+    CHECK(act->access<rt::to::identity>() == "specific_name");
+
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->get_state() == r::state_t::OPERATIONAL);

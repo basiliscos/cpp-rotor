@@ -32,12 +32,16 @@ struct address_maker_plugin_t : public plugin_base_t {
     void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
 
+    void set_identity(std::string_view name, bool append_addr = true) noexcept;
+
     /** \brief creates additional actor address (on demand)
      *
      * This is just a shortcut method to create_address() of supervisor
      *
      */
     virtual address_ptr_t create_address() noexcept;
+
+    virtual void generate_identity() noexcept;
 };
 
 } // namespace rotor::plugin

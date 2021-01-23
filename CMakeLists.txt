@@ -33,6 +33,7 @@ add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/address_mapping.cpp
     src/rotor/error_code.cpp
+    src/rotor/extended_error.cpp
     src/rotor/handler.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp

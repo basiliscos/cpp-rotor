@@ -13,6 +13,7 @@ namespace rotor::test {
 
 namespace {
 namespace to {
+struct identity {};
 struct get_plugin {};
 struct on_timer_trigger {};
 struct state {};
@@ -44,6 +45,7 @@ namespace rotor {
 
 template <> inline auto &actor_base_t::access<test::to::timers_map>() noexcept { return timers_map; }
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
+template <> inline auto &actor_base_t::access<test::to::identity>() noexcept { return identity; }
 template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }
 
 template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const void *>(const void *identity) noexcept {

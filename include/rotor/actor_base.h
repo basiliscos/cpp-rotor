@@ -335,6 +335,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief actor address */
     address_ptr_t address;
 
+    /** \brief actor identity, wich might have some meaning for developers */
+    std::string identity;
+
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
 
