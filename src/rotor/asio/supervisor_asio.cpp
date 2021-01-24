@@ -37,7 +37,7 @@ rotor::address_ptr_t supervisor_asio_t::make_address() noexcept { return instant
 
 void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t::do_process)(); }
 
-void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::do_shutdown)(); }
+void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::invoke_shutdown)(); }
 
 void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
     auto timer = std::make_unique<supervisor_asio_t::timer_t>(&handler, strand->context());
@@ -94,4 +94,10 @@ void supervisor_asio_t::shutdown_finish() noexcept {
     if (guard)
         guard.reset();
     supervisor_t::shutdown_finish();
+}
+
+void supervisor_asio_t::invoke_shutdown() noexcept {
+    auto ec = make_error_code(shutdown_code_t::normal);
+    auto reason = make_error(identity, ec);
+    do_shutdown(reason);
 }

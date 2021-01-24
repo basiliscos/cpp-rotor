@@ -115,6 +115,9 @@ struct supervisor_asio_t : public supervisor_t {
 
     /** \brief guard to control ownership of the io-context */
     guard_ptr_t guard;
+
+  private:
+    void invoke_shutdown() noexcept;
 };
 
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor) {
