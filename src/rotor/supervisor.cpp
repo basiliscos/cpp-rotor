@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -12,11 +12,13 @@ using namespace rotor;
 
 namespace {
 namespace to {
+struct identity {};
 struct internal_address {};
 struct internal_handler {};
 } // namespace to
 } // namespace
 
+template <> auto &actor_base_t::access<to::identity>() noexcept { return identity; }
 template <> auto &subscription_info_t::access<to::internal_address>() noexcept { return internal_address; }
 template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
 
@@ -58,10 +60,10 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     }
 }
 
-void supervisor_t::do_shutdown() noexcept {
+void supervisor_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     if (state < state_t::SHUTTING_DOWN) {
         auto upstream_sup = parent ? parent : this;
-        send<payload::shutdown_trigger_t>(upstream_sup->address, address);
+        send<payload::shutdown_trigger_t>(upstream_sup->address, address, reason);
     }
 }
 
@@ -87,9 +89,9 @@ void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) no
     subscription_map.forget(info);
 }
 
-void supervisor_t::on_child_init(actor_base_t *, const std::error_code &) noexcept {}
+void supervisor_t::on_child_init(actor_base_t *, const extended_error_ptr_t &) noexcept {}
 
-void supervisor_t::on_child_shutdown(actor_base_t *, const std::error_code &) noexcept {
+void supervisor_t::on_child_shutdown(actor_base_t *, const extended_error_ptr_t &) noexcept {
     if (state == state_t::SHUTTING_DOWN) {
         shutdown_continue();
     }
@@ -104,7 +106,9 @@ void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noe
             auto &request_curry = it->second;
             message_ptr_t &request = request_curry.request_message;
             auto ec = make_error_code(error_code_t::request_timeout);
-            auto timeout_message = request_curry.fn(request_curry.origin, *request, std::move(ec));
+            auto &source = it->second.source->access<to::identity>();
+            auto reason = make_error(source, ec);
+            auto timeout_message = request_curry.fn(request_curry.origin, *request, reason);
             put(std::move(timeout_message));
         }
         request_map.erase(it);

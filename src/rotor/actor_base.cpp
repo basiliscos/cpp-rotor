@@ -28,9 +28,15 @@ actor_base_t::~actor_base_t() { assert(deactivating_plugins.empty()); }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins(); }
 
-void actor_base_t::do_shutdown() noexcept {
+void actor_base_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     if (state < state_t::SHUTTING_DOWN) {
-        send<payload::shutdown_trigger_t>(supervisor->address, address);
+        send<payload::shutdown_trigger_t>(supervisor->address, address, std::move(reason));
+    }
+}
+
+void actor_base_t::do_shutdown(std::error_code &ec, const extended_error_ptr_t &cause) noexcept {
+    if (state < state_t::SHUTTING_DOWN) {
+        do_shutdown(make_error(identity, ec, cause));
     }
 }
 
@@ -218,5 +224,11 @@ void actor_base_t::on_timer_trigger(request_id_t request_id, bool cancelled) noe
     if (it != timers_map.end()) {
         it->second->trigger(cancelled);
         timers_map.erase(it);
+    }
+}
+
+void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept {
+    if (!shutdown_reason) {
+        shutdown_reason = reason;
     }
 }

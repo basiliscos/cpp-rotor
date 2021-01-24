@@ -8,7 +8,7 @@
 
 #include "address.hpp"
 #include "message.h"
-#include "error_code.h"
+#include "extended_error.h"
 #include "forward.hpp"
 #include <unordered_map>
 
@@ -224,7 +224,7 @@ template <typename T, typename... Args> inline constexpr bool is_constructible_v
 
 } // namespace details
 
-/** \struct wrapped_response_t
+/* \struct wrapped_response_t
  * \brief trackable templated response which holds user-supplied response payload.
  *
  * In addition to user-supplied response payload, the class contains `error_code`
@@ -252,8 +252,8 @@ template <typename Request> struct wrapped_response_t {
 
     static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
 
-    /** \brief error code of processing request, i.e. `error_code_t::request_timeout` */
-    std::error_code ec;
+    /* \brief error code of processing request, i.e. `error_code_t::request_timeout` */
+    extended_error_ptr_t ec;
 
     /** \brief original request message, which contains request_id for request/response matching */
     req_message_ptr_t req;
@@ -262,7 +262,8 @@ template <typename Request> struct wrapped_response_t {
     response_t res;
 
     /** \brief error-response constructor (response payload is empty) */
-    wrapped_response_t(const std::error_code &ec_, req_message_ptr_t message_) : ec{ec_}, req{std::move(message_)} {}
+    wrapped_response_t(const extended_error_ptr_t &ec_, req_message_ptr_t message_)
+        : ec{ec_}, req{std::move(message_)} {}
 
     /** \brief "forward-constructor"
      *
@@ -271,7 +272,7 @@ template <typename Request> struct wrapped_response_t {
      *
      */
     template <typename Responce, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Responce>>>>
-    wrapped_response_t(req_message_ptr_t message_, const std::error_code &ec_, Responce &&res_)
+    wrapped_response_t(req_message_ptr_t message_, const extended_error_ptr_t &ec_, Responce &&res_)
         : ec{ec_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
 
     /** \brief successful-response constructor.
@@ -285,8 +286,7 @@ template <typename Request> struct wrapped_response_t {
               typename E1 = std::enable_if_t<std::is_same_v<req_message_ptr_t, std::remove_cv_t<Req>>>,
               typename E2 = std::enable_if_t<details::is_constructible_v<unwrapped_response_t, Args...>>>
     wrapped_response_t(Req &&message_, Args &&...args)
-        : ec{make_error_code(error_code_t::success)}, req{std::forward<Req>(message_)},
-          res{res_helper_t::construct(std::forward<Args>(args)...)} {}
+        : ec{}, req{std::forward<Req>(message_)}, res{res_helper_t::construct(std::forward<Args>(args)...)} {}
 
     /** \brief returns request id of the original request */
     inline request_id_t request_id() const noexcept { return req->payload.id; }
@@ -294,7 +294,7 @@ template <typename Request> struct wrapped_response_t {
 
 /** \brief free function type, which produces error response to the original request */
 typedef message_ptr_t(error_producer_t)(const address_ptr_t &reply_to, message_base_t &msg,
-                                        const std::error_code &ec) noexcept;
+                                        const extended_error_ptr_t &ec) noexcept;
 
 /** \struct request_curry_t
  * \brief the recorded context, which is needed to produce error response to the original request */
@@ -307,6 +307,8 @@ struct request_curry_t {
 
     /** \brief the original request message */
     message_ptr_t request_message;
+
+    actor_base_t *source;
 };
 
 /** \struct request_traits_t
@@ -359,7 +361,7 @@ template <typename R> struct request_traits_t {
 
     /** \brief helper free function to produce error reply to the original request */
     static message_ptr_t make_error_response(const address_ptr_t &reply_to, message_base_t &message,
-                                             const std::error_code &ec) noexcept {
+                                             const extended_error_ptr_t &ec) noexcept {
         using reply_message_t = typename response::message_t;
         using request_message_ptr = typename request::message_ptr_t;
         auto &request = static_cast<typename request::message_t &>(message);

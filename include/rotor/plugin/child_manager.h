@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -47,7 +47,7 @@ struct child_manager_plugin_t : public plugin_base_t {
      *
      * By default it is forwarded to system context, which terminates program by default
      */
-    virtual void on_shutdown_fail(actor_base_t &actor, const std::error_code &ec) noexcept;
+    virtual void on_shutdown_fail(actor_base_t &actor, const extended_error_ptr_t &ec) noexcept;
 
     /** \brief sends initialization request upon actor creation message */
     virtual void on_create(message::create_actor_t &message) noexcept;
@@ -100,9 +100,9 @@ struct child_manager_plugin_t : public plugin_base_t {
 
     bool has_initializing() const noexcept;
     void init_continue() noexcept;
-    void request_shutdown() noexcept;
+    void request_shutdown(const extended_error_ptr_t &ec) noexcept;
     void cancel_init(const actor_base_t *child) noexcept;
-    void request_shutdown(actor_state_t &actor_state) noexcept;
+    void request_shutdown(actor_state_t &actor_state, const extended_error_ptr_t &ec) noexcept;
 
     using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
 

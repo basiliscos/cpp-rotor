@@ -12,6 +12,7 @@
 #include "messages.hpp"
 #include "state.h"
 #include "handler.h"
+#include "extended_error.h"
 #include "timer_handler.hpp"
 #include <set>
 
@@ -91,8 +92,17 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /** \brief convenient method to send actor's supervisor shutdown trigger message */
-    virtual void do_shutdown() noexcept;
+    /** \brief convenient method to send actor's supervisor shutdown trigger message
+     *
+     * The reason will be send "as is"
+     */
+    virtual void do_shutdown(const extended_error_ptr_t &reason) noexcept;
+
+    /** \brief convenient method to send actor's supervisor shutdown trigger message
+     *
+     *  The context will be set to the current actor identity
+     */
+    void do_shutdown(std::error_code &ec, const extended_error_ptr_t &cause = {}) noexcept;
 
     /** \brief actor is fully initialized and it's supervisor has sent signal to start
      *
@@ -140,7 +150,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&...args);
 
     /** \brief convenient method for constructing and sending error response to a request */
-    template <typename Request> void reply_with_error(Request &message, const std::error_code &ec);
+    template <typename Request> void reply_with_error(Request &message, const extended_error_ptr_t &ec);
 
     /** \brief makes response to the request, but does not send it.
      *
@@ -160,7 +170,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * supervisor->put(std::move(response_ptr));
      *
      */
-    template <typename Request> auto make_response(Request &message, const std::error_code &ec);
+    template <typename Request> auto make_response(Request &message, const extended_error_ptr_t &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
@@ -326,6 +336,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
                      Method method) noexcept;
 
+    void assign_shutdown_reason(extended_error_ptr_t reason) noexcept;
+
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
@@ -391,6 +403,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     std::uint32_t continuation_mask = 0;
+
+    extended_error_ptr_t shutdown_reason;
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;

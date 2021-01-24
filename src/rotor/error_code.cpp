@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,7 +42,9 @@ std::string error_code_category::message(int c) const {
 
 namespace rotor {
 
-const static details::error_code_category category;
-const details::error_code_category &error_code_category() { return category; }
+const static details::error_code_category error_category;
+const static details::shutdown_code_category shutdown_category;
+const details::error_code_category &error_code_category() { return error_category; }
+const details::shutdown_code_category &shutdown_code_category() { return shutdown_category; }
 
 } // namespace rotor

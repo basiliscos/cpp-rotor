@@ -1,14 +1,14 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "address.hpp"
 #include "supervisor_config.h"
-#include "error_code.h"
+#include "extended_error.h"
 #include <system_error>
 
 namespace rotor {
@@ -42,7 +42,9 @@ struct system_context_t : arc_base_t<system_context_t> {
      * implementation is to output the error to `std::err` and invoke `std::abort()`.
      *
      */
-    virtual void on_error(const std::error_code &ec) noexcept;
+    virtual void on_error(const extended_error_ptr_t &ec) noexcept;
+
+    virtual std::string identity() noexcept;
 
   private:
     friend struct supervisor_t;

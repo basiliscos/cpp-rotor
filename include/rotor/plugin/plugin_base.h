@@ -169,6 +169,8 @@ struct plugin_base_t {
      */
     actor_base_t *actor;
 
+    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
+
   private:
     subscription_container_t own_subscriptions;
     std::size_t reaction = 0;

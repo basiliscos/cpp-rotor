@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,6 +14,7 @@
 #include "system_context.h"
 #include "supervisor_config.h"
 #include "address_mapping.h"
+#include "error_code.h"
 
 #include <functional>
 #include <unordered_map>
@@ -135,15 +136,15 @@ struct supervisor_t : public actor_base_t {
      * let it be processed by the supervisor */
     virtual void shutdown() noexcept = 0;
 
-    void do_shutdown() noexcept override;
+    void do_shutdown(const extended_error_ptr_t &reason) noexcept override;
 
     void shutdown_finish() noexcept override;
 
     /** \brief supervisor hook for reaction on child actor init */
-    virtual void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept;
+    virtual void on_child_init(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept;
 
     /** \brief supervisor hook for reaction on child actor shutdown */
-    virtual void on_child_shutdown(actor_base_t *actor, const std::error_code &ec) noexcept;
+    virtual void on_child_shutdown(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept;
 
     /** \brief enqueues messages thread safe way and triggers processing
      *
@@ -304,7 +305,8 @@ template <typename Supervisor> auto system_context_t::create_supervisor() {
     return builder_t(
         [this](auto &actor) {
             if (supervisor) {
-                on_error(make_error_code(error_code_t::supervisor_defined));
+                auto ec = make_error_code(error_code_t::supervisor_defined);
+                on_error(make_error(identity(), ec));
                 actor.reset();
             } else {
                 this->supervisor = actor;
@@ -472,7 +474,7 @@ template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration 
         install_handler();
     }
     auto fn = &request_traits_t<T>::make_error_response;
-    sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req});
+    sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req, &actor});
     sup.put(req);
     sup.start_timer(request_id, timeout, sup, &supervisor_t::on_request_trigger);
     return request_id;
@@ -522,7 +524,7 @@ actor_base_t::request_via(const address_ptr_t &dest_addr, const address_ptr_t &r
     return supervisor->do_request<request_t>(*this, dest_addr, reply_addr, std::forward<Args>(args)...);
 }
 
-template <typename Request> auto actor_base_t::make_response(Request &message, const std::error_code &ec) {
+template <typename Request> auto actor_base_t::make_response(Request &message, const extended_error_ptr_t &ec) {
     using payload_t = typename Request::payload_t::request_t;
     using traits_t = request_traits_t<payload_t>;
     return traits_t::make_error_response(message.payload.reply_to, message, ec);
@@ -540,7 +542,7 @@ template <typename Request, typename... Args> void actor_base_t::reply_to(Reques
     supervisor->put(make_response<Request>(message, std::forward<Args>(args)...));
 }
 
-template <typename Request> void actor_base_t::reply_with_error(Request &message, const std::error_code &ec) {
+template <typename Request> void actor_base_t::reply_with_error(Request &message, const extended_error_ptr_t &ec) {
     supervisor->put(make_response<Request>(message, ec));
 }
 
@@ -555,7 +557,7 @@ template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::
     intrusive_ptr_t<Actor> actor_ptr;
     if (!validate()) {
         auto ec = make_error_code(error_code_t::actor_misconfigured);
-        system_context.on_error(ec);
+        system_context.on_error(make_error(system_context.identity(), ec));
     } else {
         auto &cfg = static_cast<typename builder_t::config_t &>(config);
         auto actor = new Actor(cfg);

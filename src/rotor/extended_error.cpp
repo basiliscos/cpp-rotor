@@ -7,7 +7,7 @@
 #include "rotor/extended_error.h"
 #include <sstream>
 
-using namespace rotor;
+namespace rotor {
 
 std::string extended_error_t::message() const noexcept {
     std::stringstream out;
@@ -17,3 +17,10 @@ std::string extended_error_t::message() const noexcept {
     }
     return out.str();
 }
+
+extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
+                                const extended_error_ptr_t &next_) noexcept {
+    return new extended_error_t(context_, ec_, next_);
+}
+
+} // namespace rotor

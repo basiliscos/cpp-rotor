@@ -69,7 +69,7 @@ struct shutdown_trigger_t {
     /** \brief the actor to be shut down */
     address_ptr_t actor_address;
 
-    // extended_error_ptr_t reason;
+    extended_error_ptr_t reason;
 };
 
 /** \struct shutdown_confirmation_t
@@ -86,7 +86,7 @@ struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
 
-    // extended_error_ptr_t reason;
+    extended_error_ptr_t reason;
 };
 
 /** \struct handler_call_t

@@ -21,9 +21,13 @@ struct extended_error_t : arc_base_t<extended_error_t> {
     std::error_code ec;
     extended_error_ptr_t next;
 
-    extended_error_t(std::string context_, std::error_code ec_, extended_error_ptr_t next_ = {}) noexcept
+    extended_error_t(const std::string &context_, const std::error_code &ec_,
+                     const extended_error_ptr_t &next_ = {}) noexcept
         : context{context_}, ec{ec_}, next{next_} {}
     std::string message() const noexcept;
 };
+
+extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
+                                const extended_error_ptr_t &next_ = {}) noexcept;
 
 } // namespace rotor

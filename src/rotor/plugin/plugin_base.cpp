@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,11 +14,13 @@ namespace {
 namespace to {
 struct lifetime {};
 struct state {};
+struct identity {};
 } // namespace to
 } // namespace
 
 template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
+template <> auto &actor_base_t::access<to::identity>() noexcept { return identity; }
 
 plugin_base_t::~plugin_base_t() {}
 
@@ -89,4 +91,8 @@ bool plugin_base_t::handle_unsubscription(const subscription_point_t &point, boo
         return ok;
     }
     return forget_subscription(point);
+}
+
+extended_error_ptr_t plugin_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next) noexcept {
+    return ::make_error(actor->access<to::identity>(), ec, next);
 }
