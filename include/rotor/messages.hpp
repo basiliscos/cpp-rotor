@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -70,6 +70,10 @@ struct shutdown_trigger_t {
     address_ptr_t actor_address;
 
     extended_error_ptr_t reason;
+
+    template <typename Address, typename Reason>
+    shutdown_trigger_t(Address &&address_, Reason &&reason_) noexcept
+        : actor_address(std::forward<Address>(address_)), reason(std::forward<Reason>(reason_)) {}
 };
 
 /** \struct shutdown_confirmation_t
@@ -86,6 +90,7 @@ struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
 
+    template <typename Reason> shutdown_request_t(Reason &&reason_) noexcept : reason(std::forward<Reason>(reason_)) {}
     extended_error_ptr_t reason;
 };
 
