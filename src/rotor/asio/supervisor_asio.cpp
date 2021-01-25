@@ -98,6 +98,6 @@ void supervisor_asio_t::shutdown_finish() noexcept {
 
 void supervisor_asio_t::invoke_shutdown() noexcept {
     auto ec = make_error_code(shutdown_code_t::normal);
-    auto reason = make_error(identity, ec);
+    auto reason = make_error(ec);
     do_shutdown(reason);
 }
