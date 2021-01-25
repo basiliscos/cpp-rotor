@@ -90,7 +90,8 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
         if (!child_started) {
             auto &policy = static_cast<supervisor_t *>(actor)->access<to::policy>();
             if (policy == supervisor_policy_t::shutdown_failed) {
-                shutdown_reason = make_error(make_error_code(shutdown_code_t::child_init_failed), {});
+                auto ec = make_error_code(shutdown_code_t::child_init_failed);
+                shutdown_reason = make_error(ec);
             } else {
                 auto &init_request = actor->access<to::init_request>();
                 if (init_request) {

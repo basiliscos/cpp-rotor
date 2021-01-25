@@ -36,7 +36,7 @@ void actor_base_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
 
 void actor_base_t::do_shutdown(std::error_code &ec, const extended_error_ptr_t &cause) noexcept {
     if (state < state_t::SHUTTING_DOWN) {
-        do_shutdown(make_error(identity, ec, cause));
+        do_shutdown(make_error(ec, cause));
     }
 }
 
@@ -231,4 +231,8 @@ void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept 
     if (!shutdown_reason) {
         shutdown_reason = reason;
     }
+}
+
+extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next) noexcept {
+    return ::make_error(identity, ec, next);
 }

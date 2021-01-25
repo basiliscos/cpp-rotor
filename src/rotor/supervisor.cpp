@@ -107,7 +107,7 @@ void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noe
             message_ptr_t &request = request_curry.request_message;
             auto ec = make_error_code(error_code_t::request_timeout);
             auto &source = it->second.source->access<to::identity>();
-            auto reason = make_error(source, ec);
+            auto reason = ::make_error(source, ec);
             auto timeout_message = request_curry.fn(request_curry.origin, *request, reason);
             put(std::move(timeout_message));
         }

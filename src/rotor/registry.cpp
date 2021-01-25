@@ -27,7 +27,7 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
     auto &name = request.payload.request_payload.service_name;
     if (registered_map.find(name) != registered_map.end()) {
         auto ec = make_error_code(error_code_t::already_registered);
-        auto reason = make_error(name, ec);
+        auto reason = ::make_error(name, ec);
         reply_with_error(request, reason);
         return;
     }
@@ -76,7 +76,7 @@ void registry_t::on_discovery(message::discovery_request_t &request) noexcept {
         reply_to(request, service_addr);
     } else {
         auto ec = make_error_code(error_code_t::unknown_service);
-        auto reason = make_error(name, ec);
+        auto reason = ::make_error(name, ec);
         reply_with_error(request, reason);
     }
 }
@@ -102,7 +102,7 @@ void registry_t::on_cancel(message::discovery_cancel_t &notify) noexcept {
         auto it = --rit.base();
         auto &name = (*it)->payload.request_payload.service_name;
         auto ec = make_error_code(error_code_t::cancelled);
-        auto reason = make_error(name, ec);
+        auto reason = ::make_error(name, ec);
         reply_with_error(**it, reason);
         promises.erase(it);
     }

@@ -169,6 +169,8 @@ struct plugin_base_t {
      */
     actor_base_t *actor;
 
+    extended_error_ptr_t make_error(const std::string &context, const std::error_code &ec,
+                                    const extended_error_ptr_t &next = {}) noexcept;
     extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
 
   private:

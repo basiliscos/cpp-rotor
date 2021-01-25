@@ -338,6 +338,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     void assign_shutdown_reason(extended_error_ptr_t reason) noexcept;
 
+    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
+
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
