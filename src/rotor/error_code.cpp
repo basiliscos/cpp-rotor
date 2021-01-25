@@ -10,6 +10,7 @@ namespace rotor {
 namespace details {
 
 const char *error_code_category::name() const noexcept { return "rotor_error"; }
+const char *shutdown_code_category::name() const noexcept { return "rotor_shutdown"; }
 
 std::string error_code_category::message(int c) const {
     switch (static_cast<error_code_t>(c)) {
