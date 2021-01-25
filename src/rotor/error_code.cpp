@@ -34,8 +34,32 @@ std::string error_code_category::message(int c) const {
         return "failure escalation (child actor died)";
     case error_code_t::unknown_service:
         return "the requested service name is not registered";
+    case error_code_t::discovery_failed:
+        return "discovery has been failed";
+    case error_code_t::registration_failed:
+        return "registration has been failed";
     }
     return "unknown";
+}
+
+std::string shutdown_code_category::message(int c) const {
+    switch (static_cast<shutdown_code_t>(c)) {
+    case shutdown_code_t::normal:
+        return "normal shutdown";
+    case shutdown_code_t::supervisor_shutdown:
+        return "actor shutdown has been requested by supervisor";
+    case shutdown_code_t::child_init_failed:
+        return "supervisor shutdown due to child init failure";
+    case shutdown_code_t::child_down:
+        return "supervisor shutdown due to child shutdown policy";
+    case shutdown_code_t::init_failed:
+        return "actor shutdown due to init failure";
+    case shutdown_code_t::link_failed:
+        return "actor shutdown due to link failure";
+    case shutdown_code_t::unlink_requested:
+        return "actor shutdown due to unlink request";
+    }
+    return "unknown shutdown reason";
 }
 
 } // namespace details

@@ -90,7 +90,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
         if (!child_started) {
             auto &policy = static_cast<supervisor_t *>(actor)->access<to::policy>();
             if (policy == supervisor_policy_t::shutdown_failed) {
-                auto ec = make_error_code(shutdown_code_t::child_init_failed);
+                auto ec = make_error_code(shutdown_code_t::child_down);
                 shutdown_reason = make_error(ec);
             } else {
                 auto &init_request = actor->access<to::init_request>();
@@ -282,7 +282,9 @@ void child_manager_plugin_t::request_shutdown(actor_state_t &actor_state, const 
         } else {
             auto &address = source_actor->get_address();
             auto &timeout = source_actor->access<to::shutdown_timeout>();
-            sup.request<payload::shutdown_request_t>(address).send(timeout);
+            auto ec = make_error_code(shutdown_code_t::supervisor_shutdown);
+            auto ee = make_error(ec, reason);
+            sup.request<payload::shutdown_request_t>(address, ee).send(timeout);
             actor_state.shutdown = request_state_t::SENT;
         }
         actor_state.shutdown = request_state_t::SENT;
