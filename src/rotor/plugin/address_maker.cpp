@@ -59,8 +59,7 @@ void address_maker_plugin_t::set_identity(std::string_view name, bool append_add
     }
     std::stringstream out;
     auto &addr = actor->access<to::address>();
-    out << name;
-    out << " 0x";
+    out << name << " ";
     out << std::hex << (const void *)addr.get();
     actor->access<to::identity>() = out.str();
 }
