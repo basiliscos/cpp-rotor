@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -41,6 +41,7 @@ struct actor_test_t : public actor_base_t {
     auto get_activating_plugins() noexcept { return this->activating_plugins; }
     auto get_deactivating_plugins() noexcept { return this->deactivating_plugins; }
 
+    void shutdown() noexcept;
     auto &get_state() noexcept { return state; }
 
     void shutdown_finish() noexcept override;

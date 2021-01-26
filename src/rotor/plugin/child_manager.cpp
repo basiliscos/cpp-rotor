@@ -242,7 +242,7 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &m
     }
     // no need of treating self as a child
     if (child_actor.get() != actor) {
-        sup.on_child_shutdown(child_actor.get(), ec);
+        sup.on_child_shutdown(child_actor.get());
     }
 }
 

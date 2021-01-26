@@ -91,7 +91,7 @@ void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) no
 
 void supervisor_t::on_child_init(actor_base_t *, const extended_error_ptr_t &) noexcept {}
 
-void supervisor_t::on_child_shutdown(actor_base_t *, const extended_error_ptr_t &) noexcept {
+void supervisor_t::on_child_shutdown(actor_base_t *) noexcept {
     if (state == state_t::SHUTTING_DOWN) {
         shutdown_continue();
     }

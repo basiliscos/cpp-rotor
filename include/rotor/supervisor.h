@@ -144,7 +144,7 @@ struct supervisor_t : public actor_base_t {
     virtual void on_child_init(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept;
 
     /** \brief supervisor hook for reaction on child actor shutdown */
-    virtual void on_child_shutdown(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept;
+    virtual void on_child_shutdown(actor_base_t *actor) noexcept;
 
     /** \brief enqueues messages thread safe way and triggers processing
      *

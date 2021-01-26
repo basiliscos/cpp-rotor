@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -29,4 +29,10 @@ void actor_test_t::shutdown_finish() noexcept {
     actor_base_t::shutdown_finish();
     if (shutdowner)
         shutdowner(*this);
+}
+
+void actor_test_t::shutdown() noexcept {
+    auto ec = rotor::make_error_code(rotor::shutdown_code_t::normal);
+    auto reason = make_error(ec);
+    do_shutdown(reason);
 }

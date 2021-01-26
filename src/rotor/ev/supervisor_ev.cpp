@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -79,7 +79,7 @@ void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
             ok = true;
         }
     } catch (const std::system_error &err) {
-        context->on_error(err.code());
+        context->on_error(make_error(err.code()));
     }
 
     if (ok) {
@@ -98,7 +98,7 @@ void supervisor_ev_t::start() noexcept {
         }
         ok = true;
     } catch (const std::system_error &err) {
-        context->on_error(err.code());
+        context->on_error(make_error(err.code()));
     }
 
     if (ok) {
@@ -114,7 +114,9 @@ void supervisor_ev_t::shutdown_finish() noexcept {
 
 void supervisor_ev_t::shutdown() noexcept {
     auto &sup_addr = supervisor->get_address();
-    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address));
+    auto ec = make_error_code(shutdown_code_t::normal);
+    auto reason = make_error(ec);
+    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address, reason));
 }
 
 void supervisor_ev_t::do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
@@ -168,7 +170,7 @@ bool supervisor_ev_t::move_inbound_queue() noexcept {
         leader->pending = false;
         ok = true;
     } catch (const std::system_error &err) {
-        context->on_error(err.code());
+        context->on_error(make_error(err.code()));
     }
     return ok;
 }

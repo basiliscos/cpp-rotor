@@ -11,6 +11,7 @@ using namespace rotor;
 
 void registry_t::configure(plugin::plugin_base_t &plug) noexcept {
     actor_base_t::configure(plug);
+    plug.with_casted<plugin::address_maker_plugin_t>([&](auto &p) { p.set_identity("coordinator", true); });
     plug.with_casted<plugin::starter_plugin_t>(
         [](auto &p) {
             p.subscribe_actor(&registry_t::on_reg);

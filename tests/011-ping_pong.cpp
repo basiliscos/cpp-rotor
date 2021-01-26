@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -80,7 +80,7 @@ TEST_CASE("ping-pong", "[supervisor]") {
     REQUIRE(ponger->pong_sent == 1);
     REQUIRE(ponger->ping_received == 1);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);

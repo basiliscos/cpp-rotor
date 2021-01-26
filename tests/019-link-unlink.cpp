@@ -189,7 +189,7 @@ TEST_CASE("unlink", "[actor]") {
         sup1->do_invoke_timer(unlink_req);
         sup1->do_process();
 
-        REQUIRE(system_context.ec == r::error_code_t::request_timeout);
+        REQUIRE(system_context.reason == r::error_code_t::request_timeout);
         REQUIRE(act_s->get_state() == r::state_t::SHUTTING_DOWN);
         act_s->force_cleanup();
     }

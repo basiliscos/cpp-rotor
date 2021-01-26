@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -17,6 +17,7 @@ struct identity {};
 struct get_plugin {};
 struct on_timer_trigger {};
 struct state {};
+struct shutdown_reason {};
 struct internal_infos {};
 struct mine_handlers {};
 struct actors_map {};
@@ -44,6 +45,7 @@ bool empty(rotor::subscription_t &subs) noexcept;
 namespace rotor {
 
 template <> inline auto &actor_base_t::access<test::to::timers_map>() noexcept { return timers_map; }
+template <> inline auto &actor_base_t::access<test::to::shutdown_reason>() noexcept { return shutdown_reason; }
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
 template <> inline auto &actor_base_t::access<test::to::identity>() noexcept { return identity; }
 template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }

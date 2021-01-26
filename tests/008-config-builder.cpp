@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -35,7 +35,7 @@ TEST_CASE("direct builder configuration", "[config_builder]") {
     REQUIRE(sup);
     REQUIRE(sup->locality == &system_context);
     sup->do_process();
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     sup->do_process();
     CHECK(rt::empty(sup->get_subscription()));
@@ -50,7 +50,7 @@ TEST_CASE("indirect builder configuration", "[config_builder]") {
     REQUIRE(sup);
     REQUIRE(sup->locality == &system_context);
     sup->do_process();
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
 }
 
@@ -65,10 +65,10 @@ TEST_CASE("validation", "[config_builder]") {
     SECTION("custom validator failed") {
         auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         REQUIRE(!act);
-        REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
+        REQUIRE(system_context.reason->ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
     }
 
     sup->do_process();
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
 }

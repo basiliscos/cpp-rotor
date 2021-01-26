@@ -538,7 +538,7 @@ TEST_CASE("failed to shutdown actor (1)", "[supervisor]") {
     sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
-    REQUIRE(system_context.ec == r::error_code_t::request_timeout);
+    REQUIRE(system_context.reason == r::error_code_t::request_timeout);
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
@@ -556,7 +556,7 @@ TEST_CASE("failed to shutdown actor (2)", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(system_context.ec == r::error_code_t::actor_misconfigured);
+    REQUIRE(system_context.reason == r::error_code_t::actor_misconfigured);
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
@@ -581,7 +581,7 @@ TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
     sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
-    REQUIRE(system_context.ec == r::error_code_t::request_timeout);
+    REQUIRE(system_context.reason == r::error_code_t::request_timeout);
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);

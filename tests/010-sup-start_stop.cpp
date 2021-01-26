@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -108,8 +108,7 @@ struct sample_sup2_t : public rt::supervisor_test_t {
     r::address_ptr_t shutdown_addr;
     actor_base_t *init_child = nullptr;
     actor_base_t *shutdown_child = nullptr;
-    std::error_code init_ec;
-    std::error_code shutdown_ec;
+    r::extended_error_ptr_t init_ec;
 
     using rt::supervisor_test_t::supervisor_test_t;
 
@@ -130,14 +129,13 @@ struct sample_sup2_t : public rt::supervisor_test_t {
         rt::supervisor_test_t::shutdown_finish();
     }
 
-    void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept override {
+    void on_child_init(actor_base_t *actor, const r::extended_error_ptr_t &ec) noexcept override {
         init_child = actor;
         init_ec = ec;
     }
 
-    void on_child_shutdown(actor_base_t *actor, const std::error_code &ec) noexcept override {
+    void on_child_shutdown(actor_base_t *actor) noexcept override {
         shutdown_child = actor;
-        shutdown_ec = ec;
     }
 };
 
@@ -279,7 +277,7 @@ struct sample_actor7_t : public rt::actor_test_t {
     void on_start() noexcept override {
         rt::actor_test_t::on_start();
         subscribe(&sample_actor7_t::on_message);
-        do_shutdown();
+        shutdown();
     }
 
     void shutdown_start() noexcept override {
@@ -308,7 +306,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     CHECK(sup->active_timers.size() == 0);
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     REQUIRE(sup->shutdown_started == 1);
     REQUIRE(sup->shutdown_finished == 1);
@@ -342,7 +340,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     REQUIRE(sup->shutdown_finished == 1);
     REQUIRE(sup->active_timers.size() == 0);
@@ -384,12 +382,19 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     CHECK(!sup->init_ec);
     CHECK(sup->shutdown_child == nullptr);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(act->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(sup->shutdown_child == act.get());
-    CHECK(!sup->shutdown_ec);
+
+    auto& reason = sup->shutdown_child->access<rt::to::shutdown_reason>();
+    REQUIRE(reason);
+    CHECK(reason->ec.value() == static_cast<int>(r::shutdown_code_t::supervisor_shutdown));
+    auto& root = reason->next;
+    CHECK(root);
+    CHECK(root->ec.value() == static_cast<int>(r::shutdown_code_t::normal));
+    CHECK(!root->next);
 }
 
 TEST_CASE("custom subscription", "[supervisor]") {
@@ -402,7 +407,7 @@ TEST_CASE("custom subscription", "[supervisor]") {
     sup->do_process();
     CHECK(sup->received == 1);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
@@ -410,7 +415,7 @@ TEST_CASE("custom subscription", "[supervisor]") {
 TEST_CASE("shutdown immediately", "[supervisor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<sample_sup3_t>().timeout(rt::default_timeout).finish();
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
@@ -421,7 +426,7 @@ TEST_CASE("self unsubscriber", "[actor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
@@ -438,7 +443,7 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     CHECK(act->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->received == 1);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -451,7 +456,7 @@ TEST_CASE("acquire resources on shutdown start", "[actor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
@@ -471,7 +476,7 @@ TEST_CASE("io tagging & intercepting", "[actor]") {
     CHECK(act->received == 1);
     CHECK(sup->counter == 2);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
 
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -490,7 +495,7 @@ TEST_CASE("io tagging (in plugin) & intercepting", "[actor]") {
     CHECK(plugin);
     CHECK(static_cast<sample_plugin_t *>(plugin)->message_received);
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
 
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -506,7 +511,7 @@ TEST_CASE("timers cancellation", "[actor]") {
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(!act->access<rt::to::timers_map>().empty());
 
-    sup->do_shutdown();
+    sup->shutdown();
     sup->do_process();
 
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -525,7 +530,7 @@ TEST_CASE("subscription confirmation arrives on non-init phase", "[actor]") {
             auto req = sup->get_leader_queue().back();
             sup->get_leader_queue().pop_back();
             act->msg = std::move(req);
-            act->do_shutdown();
+            act->shutdown();
         });
     };
     act->configurer = act_configurer;
