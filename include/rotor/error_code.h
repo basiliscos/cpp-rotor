@@ -67,4 +67,5 @@ inline std::error_code make_error_code(const shutdown_code_t e) {
 
 namespace std {
 template <> struct is_error_code_enum<rotor::error_code_t> : std::true_type {};
+template <> struct is_error_code_enum<rotor::shutdown_code_t> : std::true_type {};
 } // namespace std
