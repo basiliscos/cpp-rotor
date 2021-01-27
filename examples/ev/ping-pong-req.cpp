@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -41,7 +41,7 @@ struct pinger_t : public rotor::actor_base_t {
         if (!msg.payload.ec) {
             std::cout << "pong received\n";
         } else {
-            std::cout << "pong was NOT received: " << ec.message() << "\n";
+            std::cout << "pong was NOT received: " << ec->message() << "\n";
         }
         supervisor->do_shutdown();
     }

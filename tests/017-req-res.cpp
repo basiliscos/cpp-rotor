@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -62,7 +62,7 @@ struct good_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
@@ -81,7 +81,7 @@ struct good_actor_t : public r::actor_base_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
     }
 };
 
@@ -89,7 +89,7 @@ struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
     r::intrusive_ptr_t<traits_t::request::message_t> req_msg;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
@@ -113,8 +113,8 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
-        ec = msg.payload.ec;
-        if (!ec) {
+        ee = msg.payload.ec;
+        if (!ee) {
             res_val += 9;
         }
     }
@@ -124,7 +124,7 @@ struct bad_actor2_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
@@ -139,13 +139,14 @@ struct bad_actor2_t : public r::actor_base_t {
     }
 
     void on_request(traits_t::request::message_t &msg) noexcept {
-        reply_with_error(msg, r::make_error_code(r::error_code_t::request_timeout));
+        auto ec = r::make_error_code(r::error_code_t::request_timeout);
+        reply_with_error(msg, make_error(ec));
     }
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
-        ec = msg.payload.ec;
-        if (!ec) {
+        ee = msg.payload.ec;
+        if (!ee) {
             res_val += 9;
         }
     }
@@ -154,7 +155,7 @@ struct bad_actor2_t : public r::actor_base_t {
 struct good_supervisor_t : rt::supervisor_test_t {
     int req_val = 0;
     int res_val = 0;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     using rt::supervisor_test_t::supervisor_test_t;
 
@@ -175,7 +176,7 @@ struct good_supervisor_t : rt::supervisor_test_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
     }
 };
 
@@ -187,7 +188,7 @@ struct good_actor2_t : public r::actor_base_t {
     int req_val = 0;
     int res_val = 0;
     r::address_ptr_t reply_addr;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([this](auto &p) {
@@ -207,7 +208,7 @@ struct good_actor2_t : public r::actor_base_t {
     void on_response(traits2_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res->value;
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
     }
 };
 
@@ -219,7 +220,7 @@ struct good_actor3_t : public r::actor_base_t {
     int req_left = 1;
     int req_val = 0;
     int res_val = 0;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
@@ -238,7 +239,7 @@ struct good_actor3_t : public r::actor_base_t {
     void on_response(traits2_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res->value;
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         if (req_left) {
             --req_left;
             request<req2_t>(address, 4).send(rt::default_timeout);
@@ -355,7 +356,7 @@ struct duplicating_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     int req_val = 0;
     int res_val = 0;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
@@ -377,7 +378,7 @@ struct duplicating_actor_t : public r::actor_base_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
     }
 };
 
@@ -396,7 +397,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 5);
-    REQUIRE(actor->ec == r::error_code_t::success);
+    CHECK(!actor->ee);
 
     actor->do_shutdown();
     sup->do_process();
@@ -428,10 +429,10 @@ TEST_CASE("request-response successfull delivery indentical message to 2 actors"
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(actor1->req_val == 4);
     REQUIRE(actor1->res_val == 5);
-    REQUIRE(actor1->ec == r::error_code_t::success);
+    CHECK(!actor1->ee);
     REQUIRE(actor2->req_val == 4);
     REQUIRE(actor2->res_val == 5);
-    REQUIRE(actor2->ec == r::error_code_t::success);
+    CHECK(!actor2->ee);
 
     sup->do_shutdown();
     sup->do_process();
@@ -455,7 +456,7 @@ TEST_CASE("request-response timeout", "[actor]") {
     REQUIRE(actor->req_val == 0);
     REQUIRE(actor->res_val == 0);
     REQUIRE(sup->active_timers.size() == 1);
-    REQUIRE(!actor->ec);
+    REQUIRE(!actor->ee);
 
     auto timer_it = *sup->active_timers.begin();
     ((r::actor_base_t *)sup.get())
@@ -464,9 +465,9 @@ TEST_CASE("request-response timeout", "[actor]") {
     REQUIRE(actor->req_msg);
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 0);
-    REQUIRE(actor->ec);
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
-    REQUIRE(actor->ec.message() == std::string("request timeout"));
+    REQUIRE(actor->ee);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec.message() == std::string("request timeout"));
 
     sup->active_timers.clear();
 
@@ -475,7 +476,7 @@ TEST_CASE("request-response timeout", "[actor]") {
     // nothing should be changed, i.e. reply should just be dropped
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 0);
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
 
     sup->do_shutdown();
     sup->do_process();
@@ -495,8 +496,8 @@ TEST_CASE("response with custom error", "[actor]") {
 
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 0);
-    REQUIRE(actor->ec);
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(sup->active_timers.size() == 0);
 
     sup->do_shutdown();
@@ -516,7 +517,7 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(sup->req_val == 4);
     REQUIRE(sup->res_val == 5);
-    REQUIRE(sup->ec == r::error_code_t::success);
+    CHECK(!sup->ee);
 
     sup->do_shutdown();
     sup->do_process();
@@ -540,7 +541,7 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 5);
-    REQUIRE(actor->ec == r::error_code_t::success);
+    CHECK(!actor->ee);
 
     sup->do_shutdown();
     sup->do_process();
@@ -564,7 +565,7 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(actor->req_val == 4 * 2);
     REQUIRE(actor->res_val == 5 * 2);
-    REQUIRE(actor->ec == r::error_code_t::success);
+    CHECK(!actor->ee);
 
     sup->do_shutdown();
     sup->do_process();
@@ -588,7 +589,7 @@ TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(actor->req_val == 4);
     REQUIRE(actor->res_val == 5);
-    REQUIRE(actor->ec == r::error_code_t::success);
+    CHECK(!actor->ee);
 
     sup->do_shutdown();
     sup->do_process();

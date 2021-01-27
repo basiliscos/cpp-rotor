@@ -30,9 +30,3 @@ void actor_test_t::shutdown_finish() noexcept {
     if (shutdowner)
         shutdowner(*this);
 }
-
-void actor_test_t::shutdown() noexcept {
-    auto ec = rotor::make_error_code(rotor::shutdown_code_t::normal);
-    auto reason = make_error(ec);
-    do_shutdown(reason);
-}

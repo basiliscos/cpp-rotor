@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -146,7 +146,7 @@ struct ponger_t : public rotor::actor_base_t {
     void on_ping(message::ping_t &req) noexcept {
         if (state != rotor::state_t::OPERATIONAL) {
             auto ec = rotor::make_error_code(rotor::error_code_t::cancelled);
-            reply_with_error(req, ec);
+            reply_with_error(req, make_error(ec));
             return;
         }
 
@@ -183,7 +183,7 @@ struct ponger_t : public rotor::actor_base_t {
             }
         } else {
             auto ec = rotor::make_error_code(rotor::error_code_t::cancelled);
-            reply_with_error(*it->second, ec);
+            reply_with_error(*it->second, make_error(ec));
         }
         requests.erase(it);
     }
@@ -205,7 +205,7 @@ struct ponger_t : public rotor::actor_base_t {
 struct custom_supervisor_t : ra::supervisor_asio_t {
     using ra::supervisor_asio_t::supervisor_asio_t;
 
-    void on_child_shutdown(actor_base_t *, const std::error_code &) noexcept override {
+    void on_child_shutdown(actor_base_t *) noexcept override {
         if (state < rotor::state_t::SHUTTING_DOWN) {
             do_shutdown();
         }

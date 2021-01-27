@@ -30,7 +30,14 @@ void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins
 
 void actor_base_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     if (state < state_t::SHUTTING_DOWN) {
-        send<payload::shutdown_trigger_t>(supervisor->address, address, std::move(reason));
+        extended_error_ptr_t r;
+        if (!reason) {
+            auto ec = make_error_code(shutdown_code_t::normal);
+            r = make_error(ec);
+        } else {
+            r = reason;
+        }
+        send<payload::shutdown_trigger_t>(supervisor->address, address, std::move(r));
     }
 }
 

@@ -80,7 +80,7 @@ TEST_CASE("ping-pong", "[supervisor]") {
     REQUIRE(ponger->pong_sent == 1);
     REQUIRE(ponger->ping_received == 1);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);

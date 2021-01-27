@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -75,9 +75,8 @@ TEST_CASE("client/server, common workflow", "[actor]") {
     bool invoked = false;
     act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
         plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
-            p.link(addr_s, false, [&](auto &ec) mutable {
-                REQUIRE(ec.category().name() == std::string("rotor_error"));
-                REQUIRE(ec.message() == std::string("success"));
+            p.link(addr_s, false, [&](auto &ee) mutable {
+                REQUIRE(!ee);
                 invoked = true;
             });
         });
@@ -189,7 +188,7 @@ TEST_CASE("unlink", "[actor]") {
         sup1->do_invoke_timer(unlink_req);
         sup1->do_process();
 
-        REQUIRE(system_context.reason == r::error_code_t::request_timeout);
+        REQUIRE(system_context.reason->ec == r::error_code_t::request_timeout);
         REQUIRE(act_s->get_state() == r::state_t::SHUTTING_DOWN);
         act_s->force_cleanup();
     }
@@ -422,7 +421,7 @@ TEST_CASE("link errors", "[actor]") {
 
         REQUIRE(act_c->message2);
         CHECK(act_c->message2->payload.ec);
-        CHECK(act_c->message2->payload.ec.message() == std::string("already linked"));
+        CHECK(act_c->message2->payload.ec->ec.message() == std::string("already linked"));
     }
 
     SECTION("not linkeable") {
@@ -435,7 +434,7 @@ TEST_CASE("link errors", "[actor]") {
         REQUIRE(act_s->get_state() == r::state_t::SHUTTING_DOWN);
 
         SECTION("check error") {
-            std::error_code err;
+            r::extended_error_ptr_t err;
             auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
             act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
                 plugin.with_casted<r::plugin::link_client_plugin_t>(
@@ -443,7 +442,8 @@ TEST_CASE("link errors", "[actor]") {
             };
             process_12();
             CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
-            CHECK(err.message() == std::string("actor is not linkeable"));
+            REQUIRE(err);
+            CHECK(err->ec.message() == std::string("actor is not linkeable"));
         }
 
         SECTION("get the error during shutdown") {

@@ -277,7 +277,7 @@ struct sample_actor7_t : public rt::actor_test_t {
     void on_start() noexcept override {
         rt::actor_test_t::on_start();
         subscribe(&sample_actor7_t::on_message);
-        shutdown();
+        do_shutdown();
     }
 
     void shutdown_start() noexcept override {
@@ -306,7 +306,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     CHECK(sup->active_timers.size() == 0);
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     REQUIRE(sup->shutdown_started == 1);
     REQUIRE(sup->shutdown_finished == 1);
@@ -340,7 +340,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown", "[supervisor]") {
     REQUIRE(sup->active_timers.size() == 0);
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     REQUIRE(sup->shutdown_finished == 1);
     REQUIRE(sup->active_timers.size() == 0);
@@ -382,7 +382,7 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     CHECK(!sup->init_ec);
     CHECK(sup->shutdown_child == nullptr);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(act->access<rt::to::state>() == r::state_t::SHUT_DOWN);
@@ -407,7 +407,7 @@ TEST_CASE("custom subscription", "[supervisor]") {
     sup->do_process();
     CHECK(sup->received == 1);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
@@ -415,7 +415,7 @@ TEST_CASE("custom subscription", "[supervisor]") {
 TEST_CASE("shutdown immediately", "[supervisor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<sample_sup3_t>().timeout(rt::default_timeout).finish();
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
@@ -426,7 +426,7 @@ TEST_CASE("self unsubscriber", "[actor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
@@ -443,7 +443,7 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     CHECK(act->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->received == 1);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -456,7 +456,7 @@ TEST_CASE("acquire resources on shutdown start", "[actor]") {
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
@@ -476,7 +476,7 @@ TEST_CASE("io tagging & intercepting", "[actor]") {
     CHECK(act->received == 1);
     CHECK(sup->counter == 2);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
 
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -495,7 +495,7 @@ TEST_CASE("io tagging (in plugin) & intercepting", "[actor]") {
     CHECK(plugin);
     CHECK(static_cast<sample_plugin_t *>(plugin)->message_received);
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
 
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -511,7 +511,7 @@ TEST_CASE("timers cancellation", "[actor]") {
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(!act->access<rt::to::timers_map>().empty());
 
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
 
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
@@ -530,7 +530,7 @@ TEST_CASE("subscription confirmation arrives on non-init phase", "[actor]") {
             auto req = sup->get_leader_queue().back();
             sup->get_leader_queue().pop_back();
             act->msg = std::move(req);
-            act->shutdown();
+            act->do_shutdown();
         });
     };
     act->configurer = act_configurer;

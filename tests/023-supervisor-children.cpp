@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -129,7 +129,7 @@ struct custom_init_plugin2_t : r::plugin::plugin_base_t {
 
     bool handle_init(r::message::init_request_t *message) noexcept override {
         auto ec = r::make_error_code(r::error_code_t::actor_misconfigured);
-        actor->reply_with_error(*message, ec);
+        actor->reply_with_error(*message, make_error(ec));
         actor->access<to::init_request>().reset();
         return false;
     }
@@ -149,7 +149,7 @@ struct custom_shutdown_plugin_t : r::plugin::plugin_base_t {
 
     bool handle_shutdown(r::message::shutdown_request_t *message) noexcept override {
         auto ec = r::make_error_code(r::error_code_t::actor_misconfigured);
-        actor->reply_with_error(*message, ec);
+        actor->reply_with_error(*message, make_error(ec));
         actor->access<to::shutdown_request>().reset();
         return false;
     }
@@ -538,7 +538,7 @@ TEST_CASE("failed to shutdown actor (1)", "[supervisor]") {
     sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
-    REQUIRE(system_context.reason == r::error_code_t::request_timeout);
+    REQUIRE(system_context.reason->ec == r::error_code_t::request_timeout);
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
@@ -556,7 +556,7 @@ TEST_CASE("failed to shutdown actor (2)", "[supervisor]") {
     sup->do_shutdown();
     sup->do_process();
 
-    REQUIRE(system_context.reason == r::error_code_t::actor_misconfigured);
+    REQUIRE(system_context.reason->ec == r::error_code_t::actor_misconfigured);
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
@@ -581,7 +581,7 @@ TEST_CASE("failed to shutdown actor (3)", "[supervisor]") {
     sup->do_invoke_timer(timer_it->request_id);
     sup->do_process();
 
-    REQUIRE(system_context.reason == r::error_code_t::request_timeout);
+    REQUIRE(system_context.reason->ec == r::error_code_t::request_timeout);
     act->force_cleanup();
 
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);

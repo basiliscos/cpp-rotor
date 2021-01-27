@@ -136,7 +136,7 @@ struct supervisor_t : public actor_base_t {
      * let it be processed by the supervisor */
     virtual void shutdown() noexcept = 0;
 
-    void do_shutdown(const extended_error_ptr_t &reason) noexcept override;
+    void do_shutdown(const extended_error_ptr_t &reason = {}) noexcept override;
 
     void shutdown_finish() noexcept override;
 

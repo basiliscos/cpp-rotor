@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -28,7 +28,7 @@ using traits_t = r::request_traits_t<sample_req_t>;
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
@@ -46,10 +46,10 @@ struct bad_actor_t : public r::actor_base_t {
     }
 
     void on_response(traits_t::response::message_t &msg) noexcept {
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         // alternative for supervisor.do_shutdown() for better coverage
         auto sup_addr = static_cast<r::actor_base_t *>(supervisor)->get_address();
-        auto shutdown_trigger = r::make_message<r::payload::shutdown_trigger_t>(sup_addr, sup_addr);
+        auto shutdown_trigger = r::make_message<r::payload::shutdown_trigger_t>(sup_addr, sup_addr, ee);
         supervisor->enqueue(shutdown_trigger);
         auto loop = wxEventLoopBase::GetActive();
         loop->ScheduleExit();
@@ -75,7 +75,7 @@ TEST_CASE("ping/pong ", "[supervisor][wx]") {
     sup->start();
     loop->Run();
 
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
 
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -24,7 +24,7 @@ using traits_t = r::request_traits_t<sample_req_t>;
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
@@ -42,7 +42,7 @@ struct bad_actor_t : public r::actor_base_t {
     }
 
     void on_response(traits_t::response::message_t &msg) noexcept {
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         supervisor->do_shutdown();
     }
 };
@@ -61,6 +61,6 @@ TEST_CASE("timer", "[supervisor][ev]") {
     sup->start();
     ev_run(loop);
 
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -46,9 +46,9 @@ struct self_shutdowner_sup_t : public re::supervisor_ev_t {
 };
 
 struct system_context_ev_test_t : public re::system_context_ev_t {
-    std::error_code code;
-    void on_error(const std::error_code &ec) noexcept override {
-        code = ec;
+    r::extended_error_ptr_t ee;
+    void on_error(const r::extended_error_ptr_t &err) noexcept override {
+        ee = err;
         auto loop = static_cast<re::supervisor_ev_t *>(get_supervisor().get())->get_loop();
         ev_break(loop);
     }
@@ -166,7 +166,7 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     sup->create_actor<bad_actor_t>().timeout(timeout).finish();
     ev_run(loop);
 
-    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
+    REQUIRE(system_context->ee->ec == r::error_code_t::request_timeout);
 
     // act->force_cleanup();
     sup->shutdown();
@@ -190,7 +190,7 @@ TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {
     auto act = sup->create_actor<self_shutdowner_sup_t>().loop(loop).loop_ownership(false).timeout(timeout).finish();
     sup->start();
     ev_run(loop);
-    CHECK(!system_context->code);
+    CHECK(!system_context->ee);
 
     CHECK(((r::actor_base_t *)act.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(((r::actor_base_t *)sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);

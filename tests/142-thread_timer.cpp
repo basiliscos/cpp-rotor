@@ -34,7 +34,7 @@ using req_ptr_t = r::intrusive_ptr_t<message::sample_req_t>;
 
 struct bad_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
@@ -55,7 +55,7 @@ struct bad_actor_t : public r::actor_base_t {
     }
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         supervisor->do_shutdown();
     }
 };
@@ -63,7 +63,7 @@ struct bad_actor_t : public r::actor_base_t {
 struct io_actor1_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
     req_ptr_t req;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
@@ -87,7 +87,7 @@ struct io_actor1_t : public r::actor_base_t {
     void on_timeout(r::request_id_t, bool) noexcept { reply_to(*req); }
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         supervisor->do_shutdown();
     }
 };
@@ -95,7 +95,7 @@ struct io_actor1_t : public r::actor_base_t {
 struct io_actor2_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
     r::request_id_t req_id;
     std::uint32_t event_id = 0;
     std::uint32_t cancel_event;
@@ -123,7 +123,7 @@ struct io_actor2_t : public r::actor_base_t {
     void on_timeout(r::request_id_t, bool) noexcept { cancel_event = ++event_id; }
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         timeout_event = ++event_id;
         supervisor->do_shutdown();
     }
@@ -132,7 +132,7 @@ struct io_actor2_t : public r::actor_base_t {
 struct io_actor3_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
-    std::error_code ec;
+    r::extended_error_ptr_t ee;
     r::request_id_t req_id;
     std::uint32_t event_id = 0;
     std::uint32_t cancel_event;
@@ -166,7 +166,7 @@ struct io_actor3_t : public r::actor_base_t {
     void dummy_timer(r::request_id_t, bool) noexcept {}
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ec = msg.payload.ec;
+        ee = msg.payload.ec;
         timeout_event = ++event_id;
         supervisor->do_shutdown();
     }
@@ -181,7 +181,7 @@ TEST_CASE("timer", "[supervisor][thread]") {
     sup->start();
     system_context.run();
 
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }
 
@@ -194,7 +194,7 @@ TEST_CASE("correct timeout triggering", "[supervisor][thread]") {
     sup->start();
     system_context.run();
 
-    REQUIRE(actor->ec == r::error_code_t::success);
+    REQUIRE(!actor->ee);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }
 
@@ -209,7 +209,7 @@ TEST_CASE("no I/O tag, incorrect timers", "[supervisor][thread]") {
 
     REQUIRE(actor->timeout_event == 1);
     REQUIRE(actor->cancel_event == 2);
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }
 
@@ -224,6 +224,6 @@ TEST_CASE("has I/O tag, correct timers", "[supervisor][thread]") {
 
     REQUIRE(actor->cancel_event == 1);
     REQUIRE(actor->timeout_event == 2);
-    REQUIRE(actor->ec == r::error_code_t::request_timeout);
+    REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }

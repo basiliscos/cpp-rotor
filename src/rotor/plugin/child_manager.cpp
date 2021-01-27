@@ -23,6 +23,7 @@ struct parent {};
 struct policy {};
 struct shutdown_timeout {};
 struct state {};
+struct shutdown_reason {};
 struct system_context {};
 struct synchronize_start {};
 struct timers_map {};
@@ -43,6 +44,7 @@ template <> auto &supervisor_t::access<to::parent>() noexcept { return parent; }
 template <> auto &supervisor_t::access<to::policy>() noexcept { return policy; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
+template <> auto &actor_base_t::access<to::shutdown_reason>() noexcept { return shutdown_reason; }
 template <> auto &supervisor_t::access<to::system_context>() noexcept { return context; }
 template <> auto &supervisor_t::access<to::synchronize_start>() noexcept { return synchronize_start; }
 template <> auto &supervisor_t::access<to::timers_map>() noexcept { return timers_map; }
@@ -252,7 +254,14 @@ bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *req) n
     /* prevent double sending req, i.e. from parent and from self */
     auto &self = actors_map.at(actor->get_address());
     self.shutdown = request_state_t::CONFIRMED;
-    request_shutdown(req->payload.request_payload.reason);
+    extended_error_ptr_t reason;
+    if (req) {
+        reason = req->payload.request_payload.reason;
+    } else {
+        reason = actor->access<to::shutdown_reason>();
+    }
+    assert(reason);
+    request_shutdown(reason);
 
     /* only own actor left, which will be handled differently */
     return actors_map.size() == 1 && plugin_base_t::handle_shutdown(req);

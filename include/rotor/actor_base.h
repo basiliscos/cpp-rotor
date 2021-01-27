@@ -92,11 +92,11 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /** \brief convenient method to send actor's supervisor shutdown trigger message
+    /* \brief convenient method to send actor's supervisor shutdown trigger message
      *
      * The reason will be send "as is"
      */
-    virtual void do_shutdown(const extended_error_ptr_t &reason) noexcept;
+    virtual void do_shutdown(const extended_error_ptr_t &reason = {}) noexcept;
 
     /** \brief convenient method to send actor's supervisor shutdown trigger message
      *

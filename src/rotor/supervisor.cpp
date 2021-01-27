@@ -63,7 +63,14 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
 void supervisor_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     if (state < state_t::SHUTTING_DOWN) {
         auto upstream_sup = parent ? parent : this;
-        send<payload::shutdown_trigger_t>(upstream_sup->address, address, reason);
+        extended_error_ptr_t r;
+        if (!reason) {
+            auto ec = make_error_code(shutdown_code_t::normal);
+            r = make_error(ec);
+        } else {
+            r = reason;
+        }
+        send<payload::shutdown_trigger_t>(upstream_sup->address, address, std::move(r));
     }
 }
 

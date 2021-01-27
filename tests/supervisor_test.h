@@ -41,7 +41,7 @@ struct supervisor_test_t : public supervisor_t {
     void do_invoke_timer(request_id_t timer_id) noexcept;
     request_id_t get_timer(std::size_t index) noexcept;
     virtual void start() noexcept override {}
-    virtual void shutdown() noexcept override;
+    virtual void shutdown() noexcept override {}
     virtual void enqueue(rotor::message_ptr_t message) noexcept override;
     virtual address_ptr_t make_address() noexcept override;
     void intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept override;

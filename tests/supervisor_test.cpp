@@ -41,13 +41,6 @@ void supervisor_test_t::do_cancel_timer(request_id_t timer_id) noexcept {
     assert(0 && "should not happen");
 }
 
-void supervisor_test_t::shutdown() noexcept {
-    auto ec = rotor::make_error_code(rotor::shutdown_code_t::normal);
-    auto reason = make_error(ec);
-    do_shutdown(reason);
-}
-
-
 void supervisor_test_t::do_invoke_timer(request_id_t timer_id) noexcept {
     printf("invoking timer %lu (%p)\n", timer_id, (void*)this);
     auto predicate = [&](auto& handler) { return handler->request_id == timer_id;  };

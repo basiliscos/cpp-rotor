@@ -29,7 +29,7 @@ TEST_CASE("properly configured root supervisor", "[system_context]") {
     CHECK(system_context.get_supervisor() == sup);
 
     sup->do_process();
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     sup.reset();
 }
@@ -47,6 +47,6 @@ TEST_CASE("root supervisor cannot be created twice", "[system_context]") {
     CHECK_THAT(system_context.reason->message(), Catch::EndsWith("supervisor is already defined"));
 
     sup1->do_process();
-    sup1->shutdown();
+    sup1->do_shutdown();
     sup1->do_process();
 }

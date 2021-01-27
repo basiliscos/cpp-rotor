@@ -35,7 +35,7 @@ TEST_CASE("direct builder configuration", "[config_builder]") {
     REQUIRE(sup);
     REQUIRE(sup->locality == &system_context);
     sup->do_process();
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
     sup->do_process();
     CHECK(rt::empty(sup->get_subscription()));
@@ -50,7 +50,7 @@ TEST_CASE("indirect builder configuration", "[config_builder]") {
     REQUIRE(sup);
     REQUIRE(sup->locality == &system_context);
     sup->do_process();
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
 }
 
@@ -69,6 +69,6 @@ TEST_CASE("validation", "[config_builder]") {
     }
 
     sup->do_process();
-    sup->shutdown();
+    sup->do_shutdown();
     sup->do_process();
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -159,8 +159,9 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         sup->do_process();
 
         REQUIRE((bool)act->discovery_reply);
-        REQUIRE(act->discovery_reply->payload.ec == r::make_error_code(r::error_code_t::unknown_service));
-        REQUIRE(act->discovery_reply->payload.ec.message() == "the requested service name is not registered");
+        auto& ec = act->discovery_reply->payload.ec->ec;
+        CHECK(ec == r::error_code_t::unknown_service);
+        CHECK(ec.message() == "the requested service name is not registered");
     }
 
     SECTION("duplicate registration attempt") {
@@ -171,9 +172,10 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
 
         act->register_name("nnn");
         sup->do_process();
-        REQUIRE((bool)act->registration_reply->payload.ec);
-        REQUIRE(act->registration_reply->payload.ec == r::make_error_code(r::error_code_t::already_registered));
-        REQUIRE(act->registration_reply->payload.ec.message() == "service name is already registered");
+        auto& ec = act->registration_reply->payload.ec->ec;
+        REQUIRE((bool)ec);
+        REQUIRE(ec == r::error_code_t::already_registered);
+        REQUIRE(ec.message() == "service name is already registered");
     }
 
     SECTION("reg 2 names, check, unreg on, check") {
@@ -207,15 +209,15 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         act->unregister_name("s2");
         act->query_name("s2");
         sup->do_process();
-        REQUIRE(act->discovery_reply->payload.ec == r::make_error_code(r::error_code_t::unknown_service));
+        REQUIRE(act->discovery_reply->payload.ec->ec == r::error_code_t::unknown_service);
 
         act->unregister_all();
         act->query_name("s1");
         sup->do_process();
-        REQUIRE(act->discovery_reply->payload.ec == r::make_error_code(r::error_code_t::unknown_service));
+        REQUIRE(act->discovery_reply->payload.ec->ec == r::error_code_t::unknown_service);
         act->query_name("s3");
         sup->do_process();
-        REQUIRE(act->discovery_reply->payload.ec == r::make_error_code(r::error_code_t::unknown_service));
+        REQUIRE(act->discovery_reply->payload.ec->ec == r::error_code_t::unknown_service);
     }
 
     SECTION("promise & future") {
@@ -244,7 +246,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
                 r::plugin::child_manager_plugin_t::class_identity);
             auto &reply = act->future_reply;
             CHECK(reply->payload.ec);
-            CHECK(reply->payload.ec.message() == "request has been cancelled");
+            CHECK(reply->payload.ec->ec.message() == "request has been cancelled");
             auto &actors_map = static_cast<r::plugin::child_manager_plugin_t *>(plugin)->access<rt::to::actors_map>();
             auto actor_state = actors_map.find(act->registry_addr);
             auto &registry = actor_state->second.actor;
