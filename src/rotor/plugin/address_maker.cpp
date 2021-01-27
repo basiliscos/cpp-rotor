@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,9 @@
 #include "rotor/supervisor.h"
 #include <typeinfo>
 #include <sstream>
+#include <string>
+#include <string_view>
+#include <ostream>
 #include <ios>
 
 using namespace rotor;
