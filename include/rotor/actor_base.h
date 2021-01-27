@@ -320,6 +320,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     inline const extended_error_ptr_t &get_shutdown_reason() const noexcept { return shutdown_reason; }
 
+    inline const std::string &get_identity() const noexcept { return identity; }
+
     /** \brief flag to mark, that actor is already executing initialization */
     static const constexpr std::uint32_t PROGRESS_INIT = 1 << 0;
 
