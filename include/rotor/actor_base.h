@@ -318,6 +318,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void cancel_timer(request_id_t request_id) noexcept;
 
+    inline const extended_error_ptr_t &get_shutdown_reason() const noexcept { return shutdown_reason; }
+
     /** \brief flag to mark, that actor is already executing initialization */
     static const constexpr std::uint32_t PROGRESS_INIT = 1 << 0;
 
