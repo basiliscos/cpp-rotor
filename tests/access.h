@@ -13,11 +13,9 @@ namespace rotor::test {
 
 namespace {
 namespace to {
-struct identity {};
 struct get_plugin {};
 struct on_timer_trigger {};
 struct state {};
-struct shutdown_reason {};
 struct internal_infos {};
 struct mine_handlers {};
 struct actors_map {};
@@ -45,9 +43,7 @@ bool empty(rotor::subscription_t &subs) noexcept;
 namespace rotor {
 
 template <> inline auto &actor_base_t::access<test::to::timers_map>() noexcept { return timers_map; }
-template <> inline auto &actor_base_t::access<test::to::shutdown_reason>() noexcept { return shutdown_reason; }
 template <> inline auto &actor_base_t::access<test::to::state>() noexcept { return state; }
-template <> inline auto &actor_base_t::access<test::to::identity>() noexcept { return identity; }
 template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }
 
 template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const void *>(const void *identity) noexcept {

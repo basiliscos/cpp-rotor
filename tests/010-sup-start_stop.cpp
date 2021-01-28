@@ -296,7 +296,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
 
     REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
-    auto& identity = static_cast<r::actor_base_t*>(sup.get())->access<rt::to::identity>();
+    auto& identity = sup->get_identity();
     CHECK_THAT(identity, StartsWith("supervisor"));
 
     sup->do_process();
@@ -364,7 +364,7 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
-    CHECK_THAT(act->access<rt::to::identity>(), StartsWith("actor"));
+    CHECK_THAT(act->get_identity(), StartsWith("actor"));
 
     /* for better coverage */
     auto last = sup->access<rt::to::last_req_id>();
@@ -388,7 +388,7 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     CHECK(act->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(sup->shutdown_child == act.get());
 
-    auto& reason = sup->shutdown_child->access<rt::to::shutdown_reason>();
+    auto& reason = sup->shutdown_child->get_shutdown_reason();
     REQUIRE(reason);
     CHECK(reason->ec.value() == static_cast<int>(r::shutdown_code_t::supervisor_shutdown));
     auto& root = reason->next;
@@ -436,7 +436,7 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor2_t>().timeout(rt::default_timeout).finish();
 
-    CHECK(act->access<rt::to::identity>() == "specific_name");
+    CHECK(act->get_identity() == "specific_name");
 
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
