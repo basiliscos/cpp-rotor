@@ -382,6 +382,15 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         sup->do_process();
         REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+        auto& reason = act->get_shutdown_reason();
+        CHECK(reason->ec == r::shutdown_code_t::supervisor_shutdown);
+        CHECK(reason->ec.message() == "actor shutdown has been requested by supervisor");
+        CHECK(reason->next->ec == r::shutdown_code_t::child_init_failed);
+        CHECK(reason->next->ec.message() == "supervisor shutdown due to child init failure");
+        auto& down_reason = reason->next->next->next;
+        REQUIRE(down_reason);
+        CHECK(down_reason->ec == r::error_code_t::discovery_failed);
+        CHECK(down_reason->ec.message() == "discovery has been failed");
     }
 
     SECTION("double name registration => fail") {
@@ -400,6 +409,12 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         CHECK(act1->get_state() == r::state_t::SHUT_DOWN);
         CHECK(act2->get_state() == r::state_t::SHUT_DOWN);
         CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+
+        auto& reason = act2->get_shutdown_reason();
+        auto& down_reason = reason->next->next->next;
+        REQUIRE(down_reason);
+        CHECK(down_reason->ec == r::error_code_t::registration_failed);
+        CHECK(down_reason->ec.message() == "registration has been failed");
     }
 }
 
