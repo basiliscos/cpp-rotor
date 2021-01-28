@@ -390,7 +390,10 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
 
     auto& reason = sup->shutdown_child->get_shutdown_reason();
     REQUIRE(reason);
-    CHECK(reason->ec.value() == static_cast<int>(r::shutdown_code_t::supervisor_shutdown));
+    CHECK(reason->ec == r::shutdown_code_t::supervisor_shutdown);
+    CHECK(reason->ec.category().name() == std::string("rotor_shutdown"));
+    CHECK_THAT(reason->message(), Catch::Contains("shutdown has been requested by supervisor"));
+    CHECK_THAT(reason->message(), Catch::Contains("normal shutdown"));
     auto& root = reason->next;
     CHECK(root);
     CHECK(root->ec.value() == static_cast<int>(r::shutdown_code_t::normal));
