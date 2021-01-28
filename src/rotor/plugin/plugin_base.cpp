@@ -96,13 +96,6 @@ bool plugin_base_t::handle_unsubscription(const subscription_point_t &point, boo
     }
     return forget_subscription(point);
 }
-
-extended_error_ptr_t plugin_base_t::make_error(const std::string &context, const std::error_code &ec,
-                                               const extended_error_ptr_t &next) noexcept {
-    auto inner = ::make_error(context, ec, next);
-    return actor->access<to::make_error_code, const std::error_code &, const extended_error_ptr_t &>(ec, inner);
-}
-
 extended_error_ptr_t plugin_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next) noexcept {
     return actor->access<to::make_error_code, const std::error_code &, const extended_error_ptr_t &>(ec, next);
 }
