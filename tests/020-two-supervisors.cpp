@@ -293,6 +293,7 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
     sup1->do_process();
 
     REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_shutdown_reason()->next->ec.message() == "success");
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
 
     sup1->do_shutdown();
