@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -252,7 +252,7 @@ template <typename Request> struct wrapped_response_t {
 
     static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
 
-    /* \brief error code of processing request, i.e. `error_code_t::request_timeout` */
+    /** \brief pointer to extended error, used in the case of response failure */
     extended_error_ptr_t ec;
 
     /** \brief original request message, which contains request_id for request/response matching */
@@ -308,6 +308,7 @@ struct request_curry_t {
     /** \brief the original request message */
     message_ptr_t request_message;
 
+    /** \brief actor, on which behalf the original request has been made */
     actor_base_t *source;
 };
 

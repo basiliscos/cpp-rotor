@@ -44,6 +44,11 @@ struct system_context_t : arc_base_t<system_context_t> {
      */
     virtual void on_error(const extended_error_ptr_t &ec) noexcept;
 
+    /** \brief identifies the context.
+     *
+     *  By default, is is just human-readable address of the system context
+     *
+     */
     virtual std::string identity() noexcept;
 
   private:

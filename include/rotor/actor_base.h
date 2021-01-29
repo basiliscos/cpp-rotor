@@ -92,9 +92,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /* \brief convenient method to send actor's supervisor shutdown trigger message
+    /** \brief convenient method to send actor's supervisor shutdown trigger message
      *
-     * The reason will be send "as is"
+     * If actor is already shutting down, the method will do nothing, otherwise
+     * it will send shutdown trigger to its supervisor.
+     *
+     * The shutdown reason is forwarded "as is". If it is missing, than it will
+     * be constructed with the error code "normal shutdown".
      */
     virtual void do_shutdown(const extended_error_ptr_t &reason = {}) noexcept;
 
@@ -318,8 +322,18 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void cancel_timer(request_id_t request_id) noexcept;
 
+    /** \brief returns actor shutdwon reason
+     *
+     *  The shutdown reason should be available if actors' state is already `SHUTTING_DOWN`
+     *
+     */
     inline const extended_error_ptr_t &get_shutdown_reason() const noexcept { return shutdown_reason; }
 
+    /** \brief retuns human-readable actor identity
+     *
+     * The identity can be assigned either directly in ctor, or via address_maker plugin
+     *
+     */
     inline const std::string &get_identity() const noexcept { return identity; }
 
     /** \brief flag to mark, that actor is already executing initialization */
@@ -340,8 +354,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
                      Method method) noexcept;
 
+    /** \brief helper-method, which assigns shutdown reason if it isn't set */
     void assign_shutdown_reason(extended_error_ptr_t reason) noexcept;
 
+    /** \brief makes extended error within the context of the actor */
     extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
 
     /** \brief suspended init request message */
@@ -410,6 +426,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     std::uint32_t continuation_mask = 0;
 
+    /** \brief explanation, why actor is been requested for shut down */
     extended_error_ptr_t shutdown_reason;
 
     friend struct plugin::plugin_base_t;

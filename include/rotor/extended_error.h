@@ -28,10 +28,16 @@ using extended_error_ptr_t = intrusive_ptr_t<extended_error_t>;
  *
  */
 struct extended_error_t : arc_base_t<extended_error_t> {
+    /** \brief error context, ususally actor identity */
     std::string context;
+
+    /** \brief abstract error code, describing occured error */
     std::error_code ec;
+
+    /** \brief pointer to the root error */
     extended_error_ptr_t next;
 
+    /** \brief extened error constructor */
     extended_error_t(const std::string &context_, const std::error_code &ec_,
                      const extended_error_ptr_t &next_ = {}) noexcept
         : context{context_}, ec{ec_}, next{next_} {}
@@ -46,6 +52,7 @@ struct extended_error_t : arc_base_t<extended_error_t> {
     std::string message() const noexcept;
 };
 
+/** \brief constructs smart pointer to the extened error */
 extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
                                 const extended_error_ptr_t &next_ = {}) noexcept;
 

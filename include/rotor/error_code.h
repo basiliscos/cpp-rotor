@@ -40,17 +40,21 @@ enum class shutdown_code_t {
 
 namespace details {
 
-/** \brief category support for `rotor` error codes */
 class error_code_category : public std::error_category {
   public:
+    /** error category name */
     virtual const char *name() const noexcept override;
+
+    /** message for error code */
     virtual std::string message(int c) const override;
 };
 
-/** \brief category support for `rotor` shutdown codes */
 class shutdown_code_category : public std::error_category {
   public:
+    /** error category name */
     virtual const char *name() const noexcept override;
+
+    /** message for error code */
     virtual std::string message(int c) const override;
 };
 
@@ -59,10 +63,13 @@ class shutdown_code_category : public std::error_category {
 /** \brief returns error code category for `rotor` error codes */
 const details::error_code_category &error_code_category();
 
+/** \brief returns error code category for `rotor` shutdown codes */
 const details::shutdown_code_category &shutdown_code_category();
 
-/** \brief makes `std::error_code` from rotor error_code enumerations */
+/** \brief makes `std::error_code` from rotor error code enumerations */
 inline std::error_code make_error_code(const error_code_t e) { return {static_cast<int>(e), error_code_category()}; }
+
+/** \brief makes `std::error_code` from rotor shutdown code enumerations */
 inline std::error_code make_error_code(const shutdown_code_t e) {
     return {static_cast<int>(e), shutdown_code_category()};
 }
