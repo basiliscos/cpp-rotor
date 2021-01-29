@@ -175,7 +175,8 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             }
         } else {
             auto source_actor = actor_found ? it_actor->second.actor : this->actor;
-            auto reason = make_error(make_error_code(shutdown_code_t::init_failed), ec);
+            auto inner = make_error_code(shutdown_code_t::init_failed);
+            auto reason = make_error(inner, ec);
             source_actor->do_shutdown(reason);
         }
     } else {

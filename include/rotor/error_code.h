@@ -27,6 +27,7 @@ enum class error_code_t {
     unknown_service,
 };
 
+/** \brief actor shutdown reasons as error code */
 enum class shutdown_code_t {
     normal = 0,
     supervisor_shutdown,
@@ -41,11 +42,14 @@ namespace details {
 
 /** \brief category support for `rotor` error codes */
 class error_code_category : public std::error_category {
+  public:
     virtual const char *name() const noexcept override;
     virtual std::string message(int c) const override;
 };
 
+/** \brief category support for `rotor` shutdown codes */
 class shutdown_code_category : public std::error_category {
+  public:
     virtual const char *name() const noexcept override;
     virtual std::string message(int c) const override;
 };

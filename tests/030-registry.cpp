@@ -159,7 +159,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         sup->do_process();
 
         REQUIRE((bool)act->discovery_reply);
-        auto& ec = act->discovery_reply->payload.ec->ec;
+        auto &ec = act->discovery_reply->payload.ec->ec;
         CHECK(ec == r::error_code_t::unknown_service);
         CHECK(ec.message() == "the requested service name is not registered");
     }
@@ -172,7 +172,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
 
         act->register_name("nnn");
         sup->do_process();
-        auto& ec = act->registration_reply->payload.ec->ec;
+        auto &ec = act->registration_reply->payload.ec->ec;
         REQUIRE((bool)ec);
         REQUIRE(ec == r::error_code_t::already_registered);
         REQUIRE(ec.message() == "service name is already registered");
@@ -382,12 +382,12 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
         sup->do_process();
         REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
-        auto& reason = act->get_shutdown_reason();
+        auto &reason = act->get_shutdown_reason();
         CHECK(reason->ec == r::shutdown_code_t::supervisor_shutdown);
         CHECK(reason->ec.message() == "actor shutdown has been requested by supervisor");
         CHECK(reason->next->ec == r::shutdown_code_t::child_init_failed);
         CHECK(reason->next->ec.message() == "supervisor shutdown due to child init failure");
-        auto& down_reason = reason->next->next->next;
+        auto &down_reason = reason->next->next->next;
         REQUIRE(down_reason);
         CHECK(down_reason->ec == r::error_code_t::discovery_failed);
         CHECK(down_reason->ec.message() == "discovery has been failed");
@@ -410,8 +410,8 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         CHECK(act2->get_state() == r::state_t::SHUT_DOWN);
         CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 
-        auto& reason = act2->get_shutdown_reason();
-        auto& down_reason = reason->next->next->next;
+        auto &reason = act2->get_shutdown_reason();
+        auto &down_reason = reason->next->next->next;
         REQUIRE(down_reason);
         CHECK(down_reason->ec == r::error_code_t::registration_failed);
         CHECK(down_reason->ec.message() == "registration has been failed");

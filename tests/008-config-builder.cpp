@@ -65,7 +65,6 @@ TEST_CASE("validation", "[config_builder]") {
     SECTION("custom validator failed") {
         auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         REQUIRE(!act);
-        CHECK(system_context.reason->ec.category().name() == std::string("rotor_error"));
         CHECK(system_context.reason->ec == r::error_code_t::actor_misconfigured);
     }
 

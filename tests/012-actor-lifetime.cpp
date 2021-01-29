@@ -151,7 +151,7 @@ TEST_CASE("fail shutdown test", "[actor]") {
     auto cm_plugin = static_cast<custom_child_manager_t *>(plugin);
 
     REQUIRE(cm_plugin->fail_addr == act->get_address());
-    auto& ec = cm_plugin->fail_ec;
+    auto &ec = cm_plugin->fail_ec;
     REQUIRE(ec);
     CHECK(ec->ec.value() == static_cast<int>(r::error_code_t::request_timeout));
     REQUIRE(!ec->next);

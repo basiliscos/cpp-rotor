@@ -322,6 +322,14 @@ TEST_CASE("shutdown_failed policy", "[supervisor]") {
     sup->do_process();
     REQUIRE(act->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+
+    auto &sup_reason = sup->get_shutdown_reason();
+    CHECK(sup_reason->ec == r::shutdown_code_t::child_down);
+    CHECK(sup_reason->ec.message() == "supervisor shutdown due to child shutdown policy");
+
+    auto &act_reason = act->get_shutdown_reason();
+    REQUIRE(act_reason->next->ec == r::shutdown_code_t::init_failed);
+    REQUIRE(act_reason->next->ec.message() == "actor shutdown due to init failure");
 }
 
 TEST_CASE("shutdown_self policy", "[supervisor]") {

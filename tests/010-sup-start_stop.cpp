@@ -134,9 +134,7 @@ struct sample_sup2_t : public rt::supervisor_test_t {
         init_ec = ec;
     }
 
-    void on_child_shutdown(actor_base_t *actor) noexcept override {
-        shutdown_child = actor;
-    }
+    void on_child_shutdown(actor_base_t *actor) noexcept override { shutdown_child = actor; }
 };
 
 struct sample_sup3_t : public rt::supervisor_test_t {
@@ -296,7 +294,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
 
     REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
-    auto& identity = sup->get_identity();
+    auto &identity = sup->get_identity();
     CHECK_THAT(identity, StartsWith("supervisor"));
 
     sup->do_process();
@@ -389,13 +387,12 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     CHECK(act->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(sup->shutdown_child == act.get());
 
-    auto& reason = sup->shutdown_child->get_shutdown_reason();
+    auto &reason = sup->shutdown_child->get_shutdown_reason();
     REQUIRE(reason);
     CHECK(reason->ec == r::shutdown_code_t::supervisor_shutdown);
-    CHECK(reason->ec.category().name() == std::string("rotor_shutdown"));
     CHECK_THAT(reason->message(), Catch::Contains("shutdown has been requested by supervisor"));
     CHECK_THAT(reason->message(), Catch::Contains("normal shutdown"));
-    auto& root = reason->next;
+    auto &root = reason->next;
     CHECK(root);
     CHECK(root->ec.value() == static_cast<int>(r::shutdown_code_t::normal));
     CHECK(!root->next);

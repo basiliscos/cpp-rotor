@@ -54,7 +54,7 @@ struct ponger_t : public r::actor_base_t {
 struct custom_sup : rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;
 
-    void on_child_init(actor_base_t *, const r::extended_error_ptr_t& ee_) noexcept override { ee = ee_; }
+    void on_child_init(actor_base_t *, const r::extended_error_ptr_t &ee_) noexcept override { ee = ee_; }
     r::extended_error_ptr_t ee;
 };
 
@@ -136,7 +136,7 @@ TEST_CASE("failure escalation") {
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup_child->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup_root->get_state() == r::state_t::SHUT_DOWN);
-    auto& ee = sup_root->ee;
+    auto &ee = sup_root->ee;
     REQUIRE(ee);
     CHECK(ee->ec.message() == "failure escalation");
 }
