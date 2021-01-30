@@ -71,10 +71,11 @@ void link_client_plugin_t::on_link_response(message::link_response_t &message) n
         if (init_request) {
             actor->reply_with_error(*init_request, ec);
             actor->access<to::init_request>().reset();
-        } else if (actor->access<to::state>() == state_t::SHUTTING_DOWN) {
+        } /* else
+            if (actor->access<to::state>() == state_t::SHUTTING_DOWN) {
             auto ec_inner = make_error_code(shutdown_code_t::link_failed);
             actor->do_shutdown(make_error(ec_inner, ec));
-        }
+        } */
     } else {
         it->second.state = link_state_t::OPERATIONAL;
         if (actor->access<to::init_request>()) {

@@ -54,8 +54,10 @@ std::string shutdown_code_category::message(int c) const {
         return "supervisor shutdown due to child shutdown policy";
     case shutdown_code_t::init_failed:
         return "actor shutdown due to init failure";
+/*
     case shutdown_code_t::link_failed:
         return "actor shutdown due to link failure";
+*/
     case shutdown_code_t::unlink_requested:
         return "actor shutdown due to unlink request";
     }

@@ -34,7 +34,7 @@ enum class shutdown_code_t {
     child_down,
     child_init_failed,
     init_failed,
-    link_failed,
+    //link_failed,
     unlink_requested,
 };
 
