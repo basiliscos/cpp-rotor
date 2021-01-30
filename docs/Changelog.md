@@ -6,11 +6,17 @@
 
 ## 0.14 (xx-xxx-2021)
  - [improvement] actor identity has been introduced. It can be configured or generated via
-`address_maker` plugin.
+`address_maker` plugin
  - [improvement] `actor::do_shutdown()` - optionally takes shutdown reason
  - [improvement/breaking] instead of using `std::error_code` the `extended_error` class
 is used. It wraps `std::error_code`, provides string context and pointer to the next
 `extended_error` cause. This greatly simplfies error tracking of errors
+ - [improvement] `actor` has shutdown reason (in form of `extended_error` pointer)
+ - [improvement] delivery plugin in debug mode it dumps shutdown reason in shutdown trigger
+ messages
+ - [breaking] all responses now have `extended_error` pointer instread of `std::error_code`
+ - [breaking] `shutdown_request_t` and `shutdown_trigger_t` messages how have
+shutdown reason (in form of `extended_error` pointer)
  - [bugfix] `link_client_plugin_t` do not invoke custom callback, before erasing request
 in case of failure
  - [bugfix] `child_manager_plugin_t` reactivate self if a child was created from other
