@@ -4,7 +4,13 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.14 (xx-xxx-202x)
+## 0.14 (xx-xxx-2021)
+ - [improvement] actor identity has been introduced. It can be configured or generated via
+`address_maker` plugin.
+ - [improvement] `actor::do_shutdown()` - optionally takes shutdown reason
+ - [improvement/breaking] instead of using `std::error_code` the `extended_error` class
+is used. It wraps `std::error_code`, provides string context and pointer to the next
+`extended_error` cause. This greatly simplfies error tracking of errors
  - [bugfix] `link_client_plugin_t` do not invoke custom callback, before erasing request
 in case of failure
  - [bugfix] `child_manager_plugin_t` reactivate self if a child was created from other
