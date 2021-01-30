@@ -40,6 +40,7 @@ enum class shutdown_code_t {
 
 namespace details {
 
+/** \brief category support for `rotor` error codes */
 class error_code_category : public std::error_category {
   public:
     /** error category name */
@@ -49,6 +50,7 @@ class error_code_category : public std::error_category {
     virtual std::string message(int c) const override;
 };
 
+/** \brief category support for `rotor` shutdown codes */
 class shutdown_code_category : public std::error_category {
   public:
     /** error category name */

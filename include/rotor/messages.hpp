@@ -69,8 +69,10 @@ struct shutdown_trigger_t {
     /** \brief the actor to be shut down */
     address_ptr_t actor_address;
 
+    /** \brief shutdown reason */
     extended_error_ptr_t reason;
 
+    /** \brief constructs shutdown trigger for the actor, defined with address, and the shutdown reason */
     template <typename Address, typename Reason>
     shutdown_trigger_t(Address &&address_, Reason &&reason_) noexcept
         : actor_address(std::forward<Address>(address_)), reason(std::forward<Reason>(reason_)) {}
@@ -90,7 +92,10 @@ struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
 
+    /** \brief constructs shutdown request with shutdown reason */
     template <typename Reason> shutdown_request_t(Reason &&reason_) noexcept : reason(std::forward<Reason>(reason_)) {}
+
+    /** \brief shutdown reason */
     extended_error_ptr_t reason;
 };
 
