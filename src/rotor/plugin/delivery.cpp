@@ -60,9 +60,6 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
         case T::ANONYMOUS:
             out << "A";
             break;
-        case T::NOT_AVAILABLE:
-            out << "NA";
-            break;
         }
         out << "] m: " << demangle((const char *)p.handler->message_type) << ", addr: " << (void *)p.address.get()
             << " ";
