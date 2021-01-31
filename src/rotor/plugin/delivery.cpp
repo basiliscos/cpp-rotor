@@ -91,8 +91,8 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
     } else if (auto m = dynamic_cast<const message::shutdown_trigger_t *>(message); m) {
         level = 0;
         std::stringstream out;
-        out << ", target = " << ((void *)m->payload.actor_address.get()) << ", reason = "
-            << m->payload.reason->message();
+        out << ", target = " << ((void *)m->payload.actor_address.get())
+            << ", reason = " << m->payload.reason->message();
         info += out.str();
     }
 

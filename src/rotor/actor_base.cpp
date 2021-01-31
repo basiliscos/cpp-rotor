@@ -41,12 +41,6 @@ void actor_base_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     }
 }
 
-void actor_base_t::do_shutdown(std::error_code &ec, const extended_error_ptr_t &cause) noexcept {
-    if (state < state_t::SHUTTING_DOWN) {
-        do_shutdown(make_error(ec, cause));
-    }
-}
-
 void actor_base_t::activate_plugins() noexcept {
     for (auto plugin : plugins) {
         plugin->activate(this);

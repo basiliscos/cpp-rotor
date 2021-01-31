@@ -102,12 +102,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_shutdown(const extended_error_ptr_t &reason = {}) noexcept;
 
-    /** \brief convenient method to send actor's supervisor shutdown trigger message
-     *
-     *  The context will be set to the current actor identity
-     */
-    void do_shutdown(std::error_code &ec, const extended_error_ptr_t &cause = {}) noexcept;
-
     /** \brief actor is fully initialized and it's supervisor has sent signal to start
      *
      * The actor state is set to `OPERATIONAL`.
