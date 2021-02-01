@@ -78,6 +78,7 @@ struct supervisor_t : public actor_base_t {
         plugin::link_server_plugin_t,
         plugin::link_client_plugin_t,
         plugin::registry_plugin_t,
+        plugin::resources_plugin_t,
         plugin::starter_plugin_t>;
     // clang-format on
 
