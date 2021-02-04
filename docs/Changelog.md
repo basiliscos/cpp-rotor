@@ -14,6 +14,8 @@ is used. It wraps `std::error_code`, provides string context and pointer to the 
  - [improvement] `actor` has shutdown reason (in form of `extended_error` pointer)
  - [improvement] delivery plugin in debug mode it dumps shutdown reason in shutdown trigger
  messages
+ - [improvement] actor identity has `on_unlink` method to get it know, when it has been
+unlinked from server actor
  - [improvement] add `resources` plugin for supervisor
  - [breaking] all responses now have `extended_error` pointer instread of `std::error_code`
  - [breaking] `shutdown_request_t` and `shutdown_trigger_t` messages how have

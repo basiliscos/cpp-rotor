@@ -50,8 +50,9 @@ template <> auto &supervisor_t::access<to::synchronize_start>() noexcept { retur
 template <> auto &supervisor_t::access<to::timers_map>() noexcept { return timers_map; }
 
 template <>
-auto actor_base_t::access<to::assign_shutdown_reason, extended_error_ptr_t>(extended_error_ptr_t reason) noexcept {
-    return assign_shutdown_reason(std::move(reason));
+auto actor_base_t::access<to::assign_shutdown_reason, const extended_error_ptr_t &>(
+    const extended_error_ptr_t &reason) noexcept {
+    return assign_shutdown_reason(reason);
 }
 
 const void *child_manager_plugin_t::class_identity = static_cast<const void *>(typeid(child_manager_plugin_t).name());
@@ -283,7 +284,7 @@ void child_manager_plugin_t::request_shutdown(actor_state_t &actor_state, const 
                 // do not do shutdown-request on self
                 if (actor->access<to::state>() != state_t::SHUTTING_DOWN) {
                     actor_state.shutdown = request_state_t::CONFIRMED;
-                    actor->access<to::assign_shutdown_reason>(reason);
+                    actor->access<to::assign_shutdown_reason, const extended_error_ptr_t &>(reason);
                     actor->shutdown_start();
                     request_shutdown(reason);
                     actor->shutdown_continue();

@@ -237,3 +237,5 @@ void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept 
 extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next) noexcept {
     return ::make_error(identity, ec, next);
 }
+
+bool actor_base_t::on_unlink(const address_ptr_t &) noexcept { return true; }

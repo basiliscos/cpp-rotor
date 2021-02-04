@@ -13,6 +13,7 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct discard_request {};
+struct on_unlink {};
 struct init_request {};
 struct init_timeout {};
 struct state {};
@@ -24,6 +25,10 @@ struct link_server {};
 template <> auto supervisor_t::access<to::discard_request, request_id_t>(request_id_t request_id) noexcept {
     return discard_request(request_id);
 }
+template <> auto actor_base_t::access<to::on_unlink, const address_ptr_t &>(const address_ptr_t &server_addr) noexcept {
+    return on_unlink(server_addr);
+}
+
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
@@ -97,12 +102,15 @@ void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexc
 void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
     if (!actor->access<to::link_server>()->has_clients()) {
         bool unlink_requested = !unlink_queue.empty();
+        bool shutdown_needed = false;
         for (auto it : unlink_queue) {
             auto &message = *it;
             auto &server_addr = message.payload.request_payload.server_addr;
             auto server_it = servers_map.find(server_addr);
             if (server_it != servers_map.end()) {
                 actor->reply_to(message, actor->get_address());
+                auto result = actor->access<to::on_unlink, const address_ptr_t &>(server_addr);
+                shutdown_needed |= result;
                 servers_map.erase(server_it);
             }
         }

@@ -354,6 +354,13 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief makes extended error within the context of the actor */
     extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
 
+    /** \brief notification, when actor has been unlinked from server actor
+     *
+     * Returns boolean, meaning whether actor should initate shutdown. Default value is `true`.
+     *
+     */
+    bool on_unlink(const address_ptr_t &server_addr) noexcept;
+
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
