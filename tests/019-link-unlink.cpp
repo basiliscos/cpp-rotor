@@ -26,8 +26,8 @@ struct double_linked_actor_t : r::actor_base_t {
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) { alternative = p.create_address(); });
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
-            p.subscribe_actor(&double_linked_actor_t::on_link, alternative);
-            p.subscribe_actor(&double_linked_actor_t::on_unlink, alternative);
+            p.subscribe_actor(&double_linked_actor_t::on_link_res, alternative);
+            p.subscribe_actor(&double_linked_actor_t::on_unlink_req, alternative);
             for (auto i = 0; i < 2; ++i) {
                 resources->acquire(resource::linking);
                 request_via<r::payload::link_request_t>(target, alternative, false).send(rt::default_timeout);
@@ -35,7 +35,7 @@ struct double_linked_actor_t : r::actor_base_t {
         });
     }
 
-    void on_link(r::message::link_response_t &res) noexcept {
+    void on_link_res(r::message::link_response_t &res) noexcept {
         resources->release(resource::linking);
         if (!message1)
             message1 = &res;
@@ -48,7 +48,7 @@ struct double_linked_actor_t : r::actor_base_t {
         resources->acquire(resource::unlinking);
     }
 
-    void on_unlink(r::message::unlink_request_t &message) noexcept {
+    void on_unlink_req(r::message::unlink_request_t &message) noexcept {
         reply_to(message, alternative);
         if (resources->has(resource::unlinking))
             resources->release(resource::unlinking);
@@ -62,6 +62,16 @@ struct double_linked_actor_t : r::actor_base_t {
 struct tracked_actor_t : rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
     std::uint32_t shutdown_event = 0;
+};
+
+struct ignore_unlink_actor_t: rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+    r::address_ptr_t server_addr;
+
+    bool on_unlink(const r::address_ptr_t& addr) noexcept override {
+        server_addr = addr;
+        return false;
+    }
 };
 
 TEST_CASE("client/server, common workflow", "[actor]") {
@@ -578,4 +588,28 @@ TEST_CASE("unlink of root supervisor", "[actor]") {
 
     CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("ignore unlink", "[actor]") {
+    rt::system_context_test_t ctx;
+    auto sup = ctx.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act_c = sup->create_actor<ignore_unlink_actor_t>().timeout(rt::default_timeout).finish();
+    auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
+
+    act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
+            p.link(act_s->get_address(), true);
+        });
+    };
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    act_s->do_shutdown();
+    sup->do_process();
+    CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+    CHECK(act_s->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(act_c->server_addr == act_s->get_address());
+
+    sup->do_shutdown();
+    sup->do_process();
 }

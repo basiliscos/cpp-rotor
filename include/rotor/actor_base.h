@@ -359,7 +359,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * Returns boolean, meaning whether actor should initate shutdown. Default value is `true`.
      *
      */
-    bool on_unlink(const address_ptr_t &server_addr) noexcept;
+    virtual bool on_unlink(const address_ptr_t &server_addr) noexcept;
 
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;

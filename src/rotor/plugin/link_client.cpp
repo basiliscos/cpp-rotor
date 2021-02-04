@@ -114,7 +114,7 @@ void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
                 servers_map.erase(server_it);
             }
         }
-        if (attempt_shutdown) {
+        if (attempt_shutdown && shutdown_needed) {
             if (actor->access<to::state>() == rotor::state_t::SHUTTING_DOWN) {
                 actor->shutdown_continue();
             } else if (unlink_requested) {
