@@ -109,9 +109,9 @@ void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
             auto server_it = servers_map.find(server_addr);
             if (server_it != servers_map.end()) {
                 actor->reply_to(message, actor->get_address());
+                servers_map.erase(server_it);
                 auto result = actor->access<to::on_unlink, const address_ptr_t &>(server_addr);
                 shutdown_needed |= result;
-                servers_map.erase(server_it);
             }
         }
         if (attempt_shutdown && shutdown_needed) {
