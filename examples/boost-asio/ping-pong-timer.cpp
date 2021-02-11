@@ -102,7 +102,7 @@ struct pinger_t : public rotor::actor_base_t {
     void on_pong(message::pong_t &msg) noexcept {
         resources->release(resource::ping);
         request_id.reset();
-        auto &ec = msg.payload.ec;
+        auto &ec = msg.payload.ee;
         if (!ec) {
             std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attemps : " << attempts << "\n";
             do_shutdown();

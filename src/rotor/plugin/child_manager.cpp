@@ -151,7 +151,7 @@ void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcep
 
 void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept {
     auto &address = message.payload.req->address;
-    auto &ec = message.payload.ec;
+    auto &ec = message.payload.ee;
 
     auto &sup = static_cast<supervisor_t &>(*actor);
     bool continue_init = false;
@@ -229,7 +229,7 @@ void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &m
     auto &source_addr = message.payload.req->address;
     auto &actor_state = actors_map.at(source_addr);
     actor_state.shutdown = request_state_t::CONFIRMED;
-    auto &ec = message.payload.ec;
+    auto &ec = message.payload.ee;
     auto child_actor = actor_state.actor;
     if (ec) {
         on_shutdown_fail(*child_actor, ec);

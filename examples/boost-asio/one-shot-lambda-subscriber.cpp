@@ -55,7 +55,7 @@ struct pinger_t : public rotor::actor_base_t {
     }
 
     void on_pong(message::pong_t &msg) noexcept {
-        auto &ec = msg.payload.ec;
+        auto &ec = msg.payload.ee;
         if (ec) {
             std::cout << "pong error: " << ec->message() << "\n";
             supervisor->do_shutdown();

@@ -10,7 +10,8 @@
  - [improvement] `actor::do_shutdown()` - optionally takes shutdown reason
  - [improvement/breaking] instead of using `std::error_code` the `extended_error` class
 is used. It wraps `std::error_code`, provides string context and pointer to the next
-`extended_error` cause. This greatly simplfies error tracking of errors
+`extended_error` cause. This greatly simplfies error tracking of errors. Every response
+now contains `ee` field instead of `ec.
  - [improvement] `actor` has shutdown reason (in form of `extended_error` pointer)
  - [improvement] delivery plugin in debug mode it dumps shutdown reason in shutdown trigger
  messages

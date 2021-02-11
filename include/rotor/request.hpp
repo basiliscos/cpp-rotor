@@ -253,7 +253,7 @@ template <typename Request> struct wrapped_response_t {
     static_assert(std::is_default_constructible_v<response_t>, "response type must be default-constructible");
 
     /** \brief pointer to extended error, used in the case of response failure */
-    extended_error_ptr_t ec;
+    extended_error_ptr_t ee;
 
     /** \brief original request message, which contains request_id for request/response matching */
     req_message_ptr_t req;
@@ -262,8 +262,8 @@ template <typename Request> struct wrapped_response_t {
     response_t res;
 
     /** \brief error-response constructor (response payload is empty) */
-    wrapped_response_t(const extended_error_ptr_t &ec_, req_message_ptr_t message_)
-        : ec{ec_}, req{std::move(message_)} {}
+    wrapped_response_t(const extended_error_ptr_t &ee_, req_message_ptr_t message_)
+        : ee{ee_}, req{std::move(message_)} {}
 
     /** \brief "forward-constructor"
      *
@@ -272,8 +272,8 @@ template <typename Request> struct wrapped_response_t {
      *
      */
     template <typename Responce, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Responce>>>>
-    wrapped_response_t(req_message_ptr_t message_, const extended_error_ptr_t &ec_, Responce &&res_)
-        : ec{ec_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
+    wrapped_response_t(req_message_ptr_t message_, const extended_error_ptr_t &ee_, Responce &&res_)
+        : ee{ee_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
 
     /** \brief successful-response constructor.
      *
@@ -286,7 +286,7 @@ template <typename Request> struct wrapped_response_t {
               typename E1 = std::enable_if_t<std::is_same_v<req_message_ptr_t, std::remove_cv_t<Req>>>,
               typename E2 = std::enable_if_t<details::is_constructible_v<unwrapped_response_t, Args...>>>
     wrapped_response_t(Req &&message_, Args &&...args)
-        : ec{}, req{std::forward<Req>(message_)}, res{res_helper_t::construct(std::forward<Args>(args)...)} {}
+        : ee{}, req{std::forward<Req>(message_)}, res{res_helper_t::construct(std::forward<Args>(args)...)} {}
 
     /** \brief returns request id of the original request */
     inline request_id_t request_id() const noexcept { return req->payload.id; }
@@ -362,12 +362,12 @@ template <typename R> struct request_traits_t {
 
     /** \brief helper free function to produce error reply to the original request */
     static message_ptr_t make_error_response(const address_ptr_t &reply_to, message_base_t &message,
-                                             const extended_error_ptr_t &ec) noexcept {
+                                             const extended_error_ptr_t &ee) noexcept {
         using reply_message_t = typename response::message_t;
         using request_message_ptr = typename request::message_ptr_t;
         auto &request = static_cast<typename request::message_t &>(message);
         auto req_ptr = request_message_ptr(&request);
-        auto raw_reply = new reply_message_t{reply_to, ec, req_ptr};
+        auto raw_reply = new reply_message_t{reply_to, ee, req_ptr};
         return message_ptr_t{raw_reply};
     }
 };

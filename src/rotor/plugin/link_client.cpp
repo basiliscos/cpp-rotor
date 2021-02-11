@@ -58,7 +58,7 @@ void link_client_plugin_t::link(const address_ptr_t &address, bool operational_o
 
 void link_client_plugin_t::on_link_response(message::link_response_t &message) noexcept {
     auto &address = message.payload.req->address;
-    auto &ec = message.payload.ec;
+    auto &ec = message.payload.ee;
     auto it = servers_map.find(address);
     assert(it != servers_map.end());
 

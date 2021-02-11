@@ -54,7 +54,7 @@ struct pinger_t : public rotor::actor_base_t {
     void on_pong(message::pong_t &msg) noexcept {
         auto &ctx = request_map[msg.address];
         --ctx.pings_left;
-        auto &ec = msg.payload.ec;
+        auto &ec = msg.payload.ee;
         if (ec) {
             ++ctx.pings_error;
         } else {

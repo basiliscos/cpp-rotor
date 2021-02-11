@@ -43,7 +43,7 @@ struct bad_actor_t : public r::actor_base_t {
     }
 
     void on_response(traits_t::response::message_t &msg) noexcept {
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         supervisor->do_shutdown();
     }
 };

@@ -472,9 +472,9 @@ struct http_worker_t : public r::actor_base_t {
 
     void on_resolve(message::resolve_response_t &res) noexcept {
         resources->release(resource::resolve);
-        auto &ec = res.payload.ec;
-        if (ec) {
-            make_response(ec);
+        auto &ee = res.payload.ee;
+        if (ee) {
+            make_response(ee);
             return finish_response();
         }
 
@@ -704,7 +704,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
         auto it = req_mapping.find(res.payload.request_id());
         auto worker_addr = res.payload.req->address;
         free_workers.emplace(std::move(worker_addr));
-        reply_to(*it->second.request, res.payload.ec, std::move(res.payload.res));
+        reply_to(*it->second.request, res.payload.ee, std::move(res.payload.res));
         req_mapping.erase(it);
     }
 
@@ -784,7 +784,7 @@ struct client_t : r::actor_base_t {
         resources->release(resource::request);
 
         bool err = false;
-        if (!msg.payload.ec) {
+        if (!msg.payload.ee) {
             auto &res = msg.payload.res->response;
             if (res.result() == http::status::ok) {
                 // std::cerr << "." << std::flush;
@@ -794,7 +794,7 @@ struct client_t : r::actor_base_t {
                 err = true;
             }
         } else {
-            std::cerr << "request error: " << msg.payload.ec->message() << "\n";
+            std::cerr << "request error: " << msg.payload.ee->message() << "\n";
             err = true;
         }
         if (err) {

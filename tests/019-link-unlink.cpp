@@ -427,11 +427,11 @@ TEST_CASE("link errors", "[actor]") {
 
         process_12();
         REQUIRE(act_c->message1);
-        CHECK(!act_c->message1->payload.ec);
+        CHECK(!act_c->message1->payload.ee);
 
         REQUIRE(act_c->message2);
-        CHECK(act_c->message2->payload.ec);
-        CHECK(act_c->message2->payload.ec->ec.message() == std::string("already linked"));
+        CHECK(act_c->message2->payload.ee);
+        CHECK(act_c->message2->payload.ee->ec.message() == std::string("already linked"));
     }
 
     SECTION("not linkeable") {

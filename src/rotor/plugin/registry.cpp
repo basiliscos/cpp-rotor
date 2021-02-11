@@ -76,17 +76,17 @@ registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std:
 
 void registry_plugin_t::on_registration(message::registration_response_t &message) noexcept {
     auto &service = message.payload.req->payload.request_payload.service_name;
-    auto &ec = message.payload.ec;
+    auto &ee = message.payload.ee;
     auto it = register_map.find(service);
     assert(it != register_map.end());
-    if (ec) {
+    if (ee) {
         register_map.erase(it);
     } else {
         it->second.state = state_t::OPERATIONAL;
     }
 
-    if (!has_registering() || ec) {
-        continue_init(error_code_t::registration_failed, ec);
+    if (!has_registering() || ee) {
+        continue_init(error_code_t::registration_failed, ee);
     }
 }
 
@@ -179,11 +179,11 @@ bool registry_plugin_t::has_registering() noexcept {
 
 template <typename Message> void process_discovery(registry_plugin_t::discovery_map_t &dm, Message &message) noexcept {
     auto &service = message.payload.req->payload.request_payload.service_name;
-    auto &ec = message.payload.ec;
+    auto &ee = message.payload.ee;
     auto it = dm.find(service);
     assert(it != dm.end());
-    address_ptr_t *address_value = ec ? nullptr : &message.payload.res.service_addr;
-    it->second.template access<to::on_discovery, address_ptr_t *, const extended_error_ptr_t &>(address_value, ec);
+    address_ptr_t *address_value = ee ? nullptr : &message.payload.res.service_addr;
+    it->second.template access<to::on_discovery, address_ptr_t *, const extended_error_ptr_t &>(address_value, ee);
 }
 
 void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_addr,

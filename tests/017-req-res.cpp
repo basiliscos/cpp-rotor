@@ -81,7 +81,7 @@ struct good_actor_t : public r::actor_base_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
     }
 };
 
@@ -113,7 +113,7 @@ struct bad_actor_t : public r::actor_base_t {
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         if (!ee) {
             res_val += 9;
         }
@@ -145,7 +145,7 @@ struct bad_actor2_t : public r::actor_base_t {
 
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         if (!ee) {
             res_val += 9;
         }
@@ -176,7 +176,7 @@ struct good_supervisor_t : rt::supervisor_test_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
     }
 };
 
@@ -208,7 +208,7 @@ struct good_actor2_t : public r::actor_base_t {
     void on_response(traits2_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res->value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
     }
 };
 
@@ -239,7 +239,7 @@ struct good_actor3_t : public r::actor_base_t {
     void on_response(traits2_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res->value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         if (req_left) {
             --req_left;
             request<req2_t>(address, 4).send(rt::default_timeout);
@@ -297,7 +297,7 @@ struct request_forwarder_t : public r::actor_base_t {
         req_val += msg.payload.req->payload.request_payload.value * 2;
         res_val += msg.payload.res->value * 2;
         back_req2_id = msg.payload.request_id();
-        reply_to(*req_ptr, msg.payload.ec, std::move(msg.payload.res));
+        reply_to(*req_ptr, msg.payload.ee, std::move(msg.payload.res));
     }
 };
 
@@ -348,7 +348,7 @@ struct intrusive_actor_t : public r::actor_base_t {
     void on_response_back(traits3_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload->value * 2;
         res_val += msg.payload.res->value * 2;
-        reply_to(*req_ptr, msg.payload.ec, std::move(msg.payload.res));
+        reply_to(*req_ptr, msg.payload.ee, std::move(msg.payload.res));
     }
 };
 
@@ -378,7 +378,7 @@ struct duplicating_actor_t : public r::actor_base_t {
     void on_response(traits_t::response::message_t &msg) noexcept {
         req_val += msg.payload.req->payload.request_payload.value;
         res_val += msg.payload.res.value;
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
     }
 };
 

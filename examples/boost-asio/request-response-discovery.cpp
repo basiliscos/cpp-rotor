@@ -80,7 +80,7 @@ struct client_actor : public rotor::actor_base_t {
     }
 
     void on_response(message::response_t &res) noexcept {
-        if (!res.payload.ec) { // check for possible error
+        if (!res.payload.ee) { // check for possible error
             auto &in = res.payload.req->payload.request_payload.value;
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";

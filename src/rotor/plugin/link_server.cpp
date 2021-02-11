@@ -86,7 +86,7 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
 }
 
 void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {
-    auto &ec = message.payload.ec;
+    auto &ec = message.payload.ee;
     auto &shutdown_request = actor->access<to::shutdown_request>();
     if (ec && shutdown_request) {
         actor->reply_with_error(*actor->access<to::shutdown_request>(), ec);

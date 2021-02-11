@@ -55,7 +55,7 @@ struct bad_actor_t : public r::actor_base_t {
     }
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         supervisor->do_shutdown();
     }
 };
@@ -87,7 +87,7 @@ struct io_actor1_t : public r::actor_base_t {
     void on_timeout(r::request_id_t, bool) noexcept { reply_to(*req); }
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         supervisor->do_shutdown();
     }
 };
@@ -123,7 +123,7 @@ struct io_actor2_t : public r::actor_base_t {
     void on_timeout(r::request_id_t, bool) noexcept { cancel_event = ++event_id; }
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         timeout_event = ++event_id;
         supervisor->do_shutdown();
     }
@@ -166,7 +166,7 @@ struct io_actor3_t : public r::actor_base_t {
     void dummy_timer(r::request_id_t, bool) noexcept {}
 
     void on_response(message::sample_res_t &msg) noexcept {
-        ee = msg.payload.ec;
+        ee = msg.payload.ee;
         timeout_event = ++event_id;
         supervisor->do_shutdown();
     }

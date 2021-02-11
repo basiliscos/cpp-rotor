@@ -159,7 +159,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         sup->do_process();
 
         REQUIRE((bool)act->discovery_reply);
-        auto &ec = act->discovery_reply->payload.ec->ec;
+        auto &ec = act->discovery_reply->payload.ee->ec;
         CHECK(ec == r::error_code_t::unknown_service);
         CHECK(ec.message() == "the requested service name is not registered");
     }
@@ -168,11 +168,11 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         act->register_name("nnn");
         sup->do_process();
         REQUIRE((bool)act->registration_reply);
-        REQUIRE(!act->registration_reply->payload.ec);
+        REQUIRE(!act->registration_reply->payload.ee);
 
         act->register_name("nnn");
         sup->do_process();
-        auto &ec = act->registration_reply->payload.ec->ec;
+        auto &ec = act->registration_reply->payload.ee->ec;
         REQUIRE((bool)ec);
         REQUIRE(ec == r::error_code_t::already_registered);
         REQUIRE(ec.message() == "service name is already registered");
@@ -182,42 +182,42 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
         act->register_name("s1");
         sup->do_process();
         REQUIRE((bool)act->registration_reply);
-        REQUIRE(!act->registration_reply->payload.ec);
+        REQUIRE(!act->registration_reply->payload.ee);
 
         act->query_name("s1");
         sup->do_process();
         REQUIRE((bool)act->discovery_reply);
-        REQUIRE(!act->discovery_reply->payload.ec);
+        REQUIRE(!act->discovery_reply->payload.ee);
         REQUIRE(act->discovery_reply->payload.res.service_addr.get() == act->get_address().get());
 
         act->register_name("s2");
         sup->do_process();
         REQUIRE((bool)act->registration_reply);
-        REQUIRE(!act->registration_reply->payload.ec);
+        REQUIRE(!act->registration_reply->payload.ee);
 
         act->query_name("s2");
         sup->do_process();
         REQUIRE((bool)act->discovery_reply);
-        REQUIRE(!act->discovery_reply->payload.ec);
+        REQUIRE(!act->discovery_reply->payload.ee);
         REQUIRE(act->discovery_reply->payload.res.service_addr.get() == act->get_address().get());
 
         act->register_name("s3");
         sup->do_process();
         REQUIRE((bool)act->registration_reply);
-        REQUIRE(!act->registration_reply->payload.ec);
+        REQUIRE(!act->registration_reply->payload.ee);
 
         act->unregister_name("s2");
         act->query_name("s2");
         sup->do_process();
-        REQUIRE(act->discovery_reply->payload.ec->ec == r::error_code_t::unknown_service);
+        REQUIRE(act->discovery_reply->payload.ee->ec == r::error_code_t::unknown_service);
 
         act->unregister_all();
         act->query_name("s1");
         sup->do_process();
-        REQUIRE(act->discovery_reply->payload.ec->ec == r::error_code_t::unknown_service);
+        REQUIRE(act->discovery_reply->payload.ee->ec == r::error_code_t::unknown_service);
         act->query_name("s3");
         sup->do_process();
-        REQUIRE(act->discovery_reply->payload.ec->ec == r::error_code_t::unknown_service);
+        REQUIRE(act->discovery_reply->payload.ee->ec == r::error_code_t::unknown_service);
     }
 
     SECTION("promise & future") {
@@ -245,8 +245,8 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
             auto plugin = static_cast<r::actor_base_t *>(sup.get())->access<rt::to::get_plugin>(
                 r::plugin::child_manager_plugin_t::class_identity);
             auto &reply = act->future_reply;
-            CHECK(reply->payload.ec);
-            CHECK(reply->payload.ec->ec.message() == "request has been cancelled");
+            CHECK(reply->payload.ee);
+            CHECK(reply->payload.ee->ec.message() == "request has been cancelled");
             auto &actors_map = static_cast<r::plugin::child_manager_plugin_t *>(plugin)->access<rt::to::actors_map>();
             auto actor_state = actors_map.find(act->registry_addr);
             auto &registry = actor_state->second.actor;
