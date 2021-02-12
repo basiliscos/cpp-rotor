@@ -40,10 +40,12 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
 
     reply_to(request);
     auto predicate = [&](auto &msg) { return msg->payload.request_payload.service_name == name; };
-    auto it = std::find_if(promises.begin(), promises.end(), predicate);
+    auto find = [&](auto from) { return std::find_if(from, promises.end(), predicate); };
+    auto it = find(promises.begin());
     while (it != promises.end()) {
         reply_to(**it, service_addr);
         it = promises.erase(it);
+        it = find(it);
     }
 }
 

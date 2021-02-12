@@ -25,7 +25,7 @@ shutdown reason (in form of `extended_error` pointer)
 in case of failure
  - [bugfix] `child_manager_plugin_t` reactivate self if a child was created from other
 plugin.
-
+- [bugfix] `registy actor` incorrectly resolves postponed requests to wrong addresses
 
 ## 0.13 (26-Dec-2020)
  - [improvement] delivery plugin in debug mode dumps discarded messages
