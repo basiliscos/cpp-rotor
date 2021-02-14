@@ -9,6 +9,7 @@
 
 `rotor` is event loop friendly C++ actor micro framework.
 
+[![https://t.me/cpp_rotor](https://raw.githubusercontent.com/wiki/erthink/libmdbx/img/telegram.png)](https://t.me/cpp_rotor)
 [![Travis](https://api.travis-ci.org/basiliscos/cpp-rotor.svg?branch=master)](https://travis-ci.org/basiliscos/cpp-rotor)
 [![Build status](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43/branch/master?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
 [![codecov](https://codecov.io/gh/basiliscos/cpp-rotor/branch/master/graph/badge.svg)](https://codecov.io/gh/basiliscos/cpp-rotor)
