@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -59,7 +59,7 @@ struct server_actor : public rotor::actor_base_t {
         } else {
             // IRL, it should be your custom error codes
             auto ec = std::make_error_code(std::errc::invalid_argument);
-            reply_with_error(req, ec);
+            reply_with_error(req, make_error(ec));
         }
     }
 };
@@ -80,7 +80,7 @@ struct client_actor : public rotor::actor_base_t {
     }
 
     void on_response(message::response_t &res) noexcept {
-        if (!res.payload.ec) { // check for possible error
+        if (!res.payload.ee) { // check for possible error
             auto &in = res.payload.req->payload.request_payload.value;
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";

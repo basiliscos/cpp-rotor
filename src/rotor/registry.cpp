@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,6 +11,7 @@ using namespace rotor;
 
 void registry_t::configure(plugin::plugin_base_t &plug) noexcept {
     actor_base_t::configure(plug);
+    plug.with_casted<plugin::address_maker_plugin_t>([&](auto &p) { p.set_identity("registry", true); });
     plug.with_casted<plugin::starter_plugin_t>(
         [](auto &p) {
             p.subscribe_actor(&registry_t::on_reg);
@@ -27,7 +28,8 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
     auto &name = request.payload.request_payload.service_name;
     if (registered_map.find(name) != registered_map.end()) {
         auto ec = make_error_code(error_code_t::already_registered);
-        reply_with_error(request, ec);
+        auto reason = ::make_error(name, ec);
+        reply_with_error(request, reason);
         return;
     }
 
@@ -38,10 +40,12 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
 
     reply_to(request);
     auto predicate = [&](auto &msg) { return msg->payload.request_payload.service_name == name; };
-    auto it = std::find_if(promises.begin(), promises.end(), predicate);
+    auto find = [&](auto from) { return std::find_if(from, promises.end(), predicate); };
+    auto it = find(promises.begin());
     while (it != promises.end()) {
         reply_to(**it, service_addr);
         it = promises.erase(it);
+        it = find(it);
     }
 }
 
@@ -75,7 +79,8 @@ void registry_t::on_discovery(message::discovery_request_t &request) noexcept {
         reply_to(request, service_addr);
     } else {
         auto ec = make_error_code(error_code_t::unknown_service);
-        reply_with_error(request, ec);
+        auto reason = ::make_error(name, ec);
+        reply_with_error(request, reason);
     }
 }
 
@@ -98,8 +103,10 @@ void registry_t::on_cancel(message::discovery_cancel_t &notify) noexcept {
     auto rit = std::find_if(promises.rbegin(), promises.rend(), predicate);
     if (rit != promises.rend()) {
         auto it = --rit.base();
+        auto &name = (*it)->payload.request_payload.service_name;
         auto ec = make_error_code(error_code_t::cancelled);
-        reply_with_error(**it, ec);
+        auto reason = ::make_error(name, ec);
+        reply_with_error(**it, reason);
         promises.erase(it);
     }
 }

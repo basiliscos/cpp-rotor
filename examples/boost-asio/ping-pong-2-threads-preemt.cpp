@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,8 +42,13 @@ struct pinger_t : public r::actor_base_t {
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
         plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
-            p.link(ponger_addr, true,
-                   [&](auto &ec) { std::cout << "pinger has been linked with ponger :: " << ec.message() << "\n"; });
+            p.link(ponger_addr, true, [&](auto &ec) {
+                if (ec) {
+                    std::cout << "error linking pinger with ponger :: " << ec->message() << "\n";
+                } else {
+                    std::cout << "pinger has been successfully linked with ponger\n";
+                }
+            });
         });
     }
 

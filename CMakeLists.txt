@@ -3,7 +3,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ROTOR_VERSION "0.12")
+set(ROTOR_VERSION "0.14")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -33,6 +33,7 @@ add_library(rotor
     src/rotor/actor_base.cpp
     src/rotor/address_mapping.cpp
     src/rotor/error_code.cpp
+    src/rotor/extended_error.cpp
     src/rotor/handler.cpp
     src/rotor/registry.cpp
     src/rotor/subscription.cpp

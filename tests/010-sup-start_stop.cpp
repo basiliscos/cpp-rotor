@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -12,6 +12,7 @@
 
 namespace r = rotor;
 namespace rt = rotor::test;
+using namespace Catch::Matchers;
 
 static std::uint32_t destroyed = 0;
 
@@ -107,8 +108,7 @@ struct sample_sup2_t : public rt::supervisor_test_t {
     r::address_ptr_t shutdown_addr;
     actor_base_t *init_child = nullptr;
     actor_base_t *shutdown_child = nullptr;
-    std::error_code init_ec;
-    std::error_code shutdown_ec;
+    r::extended_error_ptr_t init_ec;
 
     using rt::supervisor_test_t::supervisor_test_t;
 
@@ -129,15 +129,12 @@ struct sample_sup2_t : public rt::supervisor_test_t {
         rt::supervisor_test_t::shutdown_finish();
     }
 
-    void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept override {
+    void on_child_init(actor_base_t *actor, const r::extended_error_ptr_t &ec) noexcept override {
         init_child = actor;
         init_ec = ec;
     }
 
-    void on_child_shutdown(actor_base_t *actor, const std::error_code &ec) noexcept override {
-        shutdown_child = actor;
-        shutdown_ec = ec;
-    }
+    void on_child_shutdown(actor_base_t *actor) noexcept override { shutdown_child = actor; }
 };
 
 struct sample_sup3_t : public rt::supervisor_test_t {
@@ -191,7 +188,10 @@ struct sample_actor2_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) { alternative = p.create_address(); });
+        plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) {
+            alternative = p.create_address();
+            p.set_identity("specific_name", false);
+        });
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
             p.subscribe_actor(&sample_actor2_t::on_link, alternative);
             send<payload::sample_payload_t>(alternative);
@@ -294,6 +294,8 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
 
     REQUIRE(&sup->get_supervisor() == sup.get());
     REQUIRE(sup->initialized == 1);
+    auto &identity = sup->get_identity();
+    CHECK_THAT(identity, StartsWith("supervisor"));
 
     sup->do_process();
     CHECK(sup->init_invoked == 1);
@@ -311,6 +313,7 @@ TEST_CASE("on_initialize, on_start, simple on_shutdown (handled by plugin)", "[s
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     REQUIRE(sup->get_points().size() == 0);
+    REQUIRE(sup->get_shutdown_reason()->ec.message() == "normal shutdown");
     CHECK(rt::empty(sup->get_subscription()));
 
     REQUIRE(destroyed == 0);
@@ -360,6 +363,8 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
+    CHECK_THAT(act->get_identity(), StartsWith("actor"));
+
     /* for better coverage */
     auto last = sup->access<rt::to::last_req_id>();
     auto &request_map = sup->access<rt::to::request_map>();
@@ -381,7 +386,16 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
     CHECK(act->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(sup->shutdown_child == act.get());
-    CHECK(!sup->shutdown_ec);
+
+    auto &reason = sup->shutdown_child->get_shutdown_reason();
+    REQUIRE(reason);
+    CHECK(reason->ec == r::shutdown_code_t::supervisor_shutdown);
+    CHECK_THAT(reason->message(), Catch::Contains("shutdown has been requested by supervisor"));
+    CHECK_THAT(reason->message(), Catch::Contains("normal shutdown"));
+    auto &root = reason->next;
+    CHECK(root);
+    CHECK(root->ec.value() == static_cast<int>(r::shutdown_code_t::normal));
+    CHECK(!root->next);
 }
 
 TEST_CASE("custom subscription", "[supervisor]") {
@@ -422,6 +436,9 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor2_t>().timeout(rt::default_timeout).finish();
+
+    CHECK(act->get_identity() == "specific_name");
+
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->get_state() == r::state_t::OPERATIONAL);

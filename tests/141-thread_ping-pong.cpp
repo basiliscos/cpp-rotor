@@ -57,8 +57,8 @@ struct self_shutdowner_sup_t : public rth::supervisor_thread_t {
 };
 
 struct system_context_thread_test_t : public rth::system_context_thread_t {
-    std::error_code code;
-    void on_error(const std::error_code &ec) noexcept override { code = ec; }
+    r::extended_error_ptr_t ee;
+    void on_error(const r::extended_error_ptr_t &err) noexcept override { ee = err; }
 };
 
 struct ping_t {};
@@ -168,7 +168,7 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     sup->create_actor<bad_actor_t>().timeout(timeout).finish();
     system_context->run();
 
-    REQUIRE(system_context->code.value() == static_cast<int>(r::error_code_t::request_timeout));
+    REQUIRE(system_context->ee->ec == r::error_code_t::request_timeout);
 
     // act->force_cleanup();
     sup->shutdown();
@@ -186,7 +186,7 @@ TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {
     auto act = sup->create_actor<self_shutdowner_sup_t>().timeout(timeout).finish();
     sup->start();
     system_context->run();
-    CHECK(!system_context->code);
+    CHECK(!system_context->ee);
 
     CHECK(((r::actor_base_t *)act.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(((r::actor_base_t *)sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);

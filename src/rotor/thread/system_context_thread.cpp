@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+//
+// Distributed under the MIT Software License
+//
+
 #include "rotor/thread/system_context_thread.h"
 #include "rotor/supervisor.h"
 #include <chrono>

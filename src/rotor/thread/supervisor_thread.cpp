@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+//
+// Distributed under the MIT Software License
+//
+
 #include "rotor/thread/supervisor_thread.h"
 #include "rotor/thread/system_context_thread.h"
 
@@ -10,7 +16,9 @@ void supervisor_thread_t::start() noexcept {
 
 void supervisor_thread_t::shutdown() noexcept {
     auto &sup_addr = supervisor->get_address();
-    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address));
+    auto ec = make_error_code(shutdown_code_t::normal);
+    auto reason = make_error(ec);
+    supervisor->enqueue(make_message<payload::shutdown_trigger_t>(sup_addr, address, reason));
 }
 
 void supervisor_thread_t::enqueue(message_ptr_t message) noexcept {

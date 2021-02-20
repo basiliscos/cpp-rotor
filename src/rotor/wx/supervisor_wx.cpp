@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -54,9 +54,11 @@ void supervisor_wx_t::start() noexcept {
 
 void supervisor_wx_t::shutdown() noexcept {
     supervisor_ptr_t self{this};
-    handler->CallAfter([self = std::move(self)]() {
+    auto ec = make_error_code(shutdown_code_t::normal);
+    auto reason = make_error(ec);
+    handler->CallAfter([self = std::move(self), reason = std::move(reason)]() {
         auto &sup = *self;
-        sup.do_shutdown();
+        sup.do_shutdown(reason);
         sup.do_process();
     });
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -13,6 +13,7 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct discard_request {};
+struct on_unlink {};
 struct init_request {};
 struct init_timeout {};
 struct state {};
@@ -24,6 +25,10 @@ struct link_server {};
 template <> auto supervisor_t::access<to::discard_request, request_id_t>(request_id_t request_id) noexcept {
     return discard_request(request_id);
 }
+template <> auto actor_base_t::access<to::on_unlink, const address_ptr_t &>(const address_ptr_t &server_addr) noexcept {
+    return on_unlink(server_addr);
+}
+
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
@@ -53,23 +58,29 @@ void link_client_plugin_t::link(const address_ptr_t &address, bool operational_o
 
 void link_client_plugin_t::on_link_response(message::link_response_t &message) noexcept {
     auto &address = message.payload.req->address;
-    auto &ec = message.payload.ec;
+    auto &ec = message.payload.ee;
     auto it = servers_map.find(address);
     assert(it != servers_map.end());
 
-    auto &callback = it->second.callback;
-    if (callback)
-        callback(ec);
-
+    auto callback = it->second.callback;
     if (ec) {
         servers_map.erase(it);
+    }
+
+    if (callback) {
+        callback(ec);
+    }
+
+    if (ec) {
         auto &init_request = actor->access<to::init_request>();
         if (init_request) {
             actor->reply_with_error(*init_request, ec);
             actor->access<to::init_request>().reset();
-        } else if (actor->access<to::state>() == state_t::SHUTTING_DOWN) {
-            actor->do_shutdown();
-        }
+        } /* else
+            if (actor->access<to::state>() == state_t::SHUTTING_DOWN) {
+            auto ec_inner = make_error_code(shutdown_code_t::link_failed);
+            actor->do_shutdown(make_error(ec_inner, ec));
+        } */
     } else {
         it->second.state = link_state_t::OPERATIONAL;
         if (actor->access<to::init_request>()) {
@@ -91,6 +102,7 @@ void link_client_plugin_t::forget_link(message::unlink_request_t &message) noexc
 void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
     if (!actor->access<to::link_server>()->has_clients()) {
         bool unlink_requested = !unlink_queue.empty();
+        bool shutdown_needed = false;
         for (auto it : unlink_queue) {
             auto &message = *it;
             auto &server_addr = message.payload.request_payload.server_addr;
@@ -98,13 +110,16 @@ void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
             if (server_it != servers_map.end()) {
                 actor->reply_to(message, actor->get_address());
                 servers_map.erase(server_it);
+                auto result = actor->access<to::on_unlink, const address_ptr_t &>(server_addr);
+                shutdown_needed |= result;
             }
         }
-        if (attempt_shutdown) {
+        if (attempt_shutdown && shutdown_needed) {
             if (actor->access<to::state>() == rotor::state_t::SHUTTING_DOWN) {
                 actor->shutdown_continue();
             } else if (unlink_requested) {
-                actor->do_shutdown();
+                auto ec = make_error_code(shutdown_code_t::unlink_requested);
+                actor->do_shutdown(make_error(ec));
             }
         }
     }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,12 +15,19 @@ namespace to {
 struct state {};
 struct init_request {};
 struct shutdown_request {};
+struct assign_shutdown_reason {};
 } // namespace to
 } // namespace
 
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::shutdown_request>() noexcept { return shutdown_request; }
+
+template <>
+auto actor_base_t::access<to::assign_shutdown_reason, const extended_error_ptr_t &>(
+    const extended_error_ptr_t &reason) noexcept {
+    return assign_shutdown_reason(reason);
+}
 
 const void *init_shutdown_plugin_t::class_identity = static_cast<const void *>(typeid(init_shutdown_plugin_t).name());
 
@@ -49,7 +56,9 @@ void init_shutdown_plugin_t::on_shutdown(message::shutdown_request_t &msg) noexc
            (actor->access<to::state>() != state_t::SHUT_DOWN));
     // std::cout << "received shutdown_request for " << actor->address.get() << " from " << msg.payload.reply_to.get()
     // << "\n";
+    auto &reason = msg.payload.request_payload.reason;
     actor->access<to::shutdown_request>().reset(&msg);
+    actor->access<to::assign_shutdown_reason, const extended_error_ptr_t &>(reason);
     actor->shutdown_start();
     actor->shutdown_continue();
 }

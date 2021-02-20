@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,14 +42,14 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
     auto state = actor->access<to::state>();
     if (state > state_t::OPERATIONAL) {
         auto ec = make_error_code(error_code_t::actor_not_linkable);
-        actor->reply_with_error(message, ec);
+        actor->reply_with_error(message, make_error(ec));
         return;
     }
 
     auto &client_addr = message.payload.origin;
     if (linked_clients.find(client_addr) != linked_clients.end()) {
         auto ec = make_error_code(error_code_t::already_linked);
-        actor->reply_with_error(message, ec);
+        actor->reply_with_error(message, make_error(ec));
         return;
     }
 
@@ -86,7 +86,7 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
 }
 
 void link_server_plugin_t::on_unlink_response(message::unlink_response_t &message) noexcept {
-    auto &ec = message.payload.ec;
+    auto &ec = message.payload.ee;
     auto &shutdown_request = actor->access<to::shutdown_request>();
     if (ec && shutdown_request) {
         actor->reply_with_error(*actor->access<to::shutdown_request>(), ec);

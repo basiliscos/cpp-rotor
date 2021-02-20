@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -32,7 +32,12 @@ extern const void *io;
  * - anonymous (subscription point was created from actor)
  *
  */
-enum class owner_tag_t { PLUGIN, SUPERVISOR, FOREIGN, ANONYMOUS, NOT_AVAILABLE };
+enum class owner_tag_t {
+    ANONYMOUS,
+    PLUGIN,
+    SUPERVISOR,
+    FOREIGN,
+};
 
 /** \struct subscription_point_t
  *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
@@ -52,7 +57,7 @@ struct subscription_point_t {
 
     /** \brief ctor from handler and related address (used for comparison) */
     subscription_point_t(const handler_ptr_t &handler_, const address_ptr_t &address_) noexcept
-        : handler{handler_}, address{address_}, owner_ptr{nullptr}, owner_tag{owner_tag_t::NOT_AVAILABLE} {}
+        : handler{handler_}, address{address_}, owner_ptr{nullptr} {}
 
     /** \brief full ctor (handler, address, actor, and owner tag) */
     subscription_point_t(const handler_ptr_t &handler_, const address_ptr_t &address_, const actor_base_t *owner_ptr_,

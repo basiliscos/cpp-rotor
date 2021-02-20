@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -115,7 +115,7 @@ struct work_progress_t {
 
 namespace message {
 using work_progress_t = r::message_t<payload::work_progress_t>;
-};
+}
 
 struct sah_actor_config : r::actor_config_t {
     std::string path = "";

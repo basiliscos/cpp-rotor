@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -287,10 +287,13 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
 
     // for better coverage
     auto &address = static_cast<r::actor_base_t *>(sup2.get())->get_address();
-    sup2->send<r::payload::shutdown_trigger_t>(address, address);
+    auto ec = r::make_error_code(r::error_code_t::success);
+    auto reason = r::make_error("some-ctx", ec);
+    sup2->send<r::payload::shutdown_trigger_t>(address, address, reason);
     sup1->do_process();
 
     REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_shutdown_reason()->next->ec.message() == "success");
     REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
 
     sup1->do_shutdown();

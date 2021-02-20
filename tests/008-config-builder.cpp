@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -65,7 +65,7 @@ TEST_CASE("validation", "[config_builder]") {
     SECTION("custom validator failed") {
         auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         REQUIRE(!act);
-        REQUIRE(system_context.ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
+        CHECK(system_context.reason->ec == r::error_code_t::actor_misconfigured);
     }
 
     sup->do_process();

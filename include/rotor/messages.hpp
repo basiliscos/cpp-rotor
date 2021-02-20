@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -12,6 +12,7 @@
 #include "request.hpp"
 #include "subscription_point.h"
 #include "forward.hpp"
+#include "extended_error.h"
 
 namespace rotor {
 
@@ -67,6 +68,14 @@ struct create_actor_t {
 struct shutdown_trigger_t {
     /** \brief the actor to be shut down */
     address_ptr_t actor_address;
+
+    /** \brief shutdown reason */
+    extended_error_ptr_t reason;
+
+    /** \brief constructs shutdown trigger for the actor, defined with address, and the shutdown reason */
+    template <typename Address, typename Reason>
+    shutdown_trigger_t(Address &&address_, Reason &&reason_) noexcept
+        : actor_address(std::forward<Address>(address_)), reason(std::forward<Reason>(reason_)) {}
 };
 
 /** \struct shutdown_confirmation_t
@@ -82,6 +91,12 @@ struct shutdown_confirmation_t {};
 struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
+
+    /** \brief constructs shutdown request with shutdown reason */
+    template <typename Reason> shutdown_request_t(Reason &&reason_) noexcept : reason(std::forward<Reason>(reason_)) {}
+
+    /** \brief shutdown reason */
+    extended_error_ptr_t reason;
 };
 
 /** \struct handler_call_t

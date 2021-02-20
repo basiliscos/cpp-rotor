@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -256,7 +256,7 @@ struct resolver_worker_t : public r::actor_base_t {
     void on_request(message::resolve_request_t &req) noexcept {
         if (state == r::state_t::SHUTTING_DOWN) {
             auto ec = r::make_error_code(r::error_code_t::cancelled);
-            reply_with_error(req, ec);
+            reply_with_error(req, make_error(ec));
             return;
         }
 
@@ -280,7 +280,7 @@ struct resolver_worker_t : public r::actor_base_t {
             auto ec = r::make_error_code(r::error_code_t::cancelled);
             for (auto &it : queue) {
                 if (predicate(it)) {
-                    reply_with_error(*it, ec);
+                    reply_with_error(*it, make_error(ec));
                     it.reset();
                 }
             }
@@ -308,8 +308,8 @@ struct resolver_worker_t : public r::actor_base_t {
         reply(endpoint, [&](auto &message) { reply_to(message, results); });
     }
 
-    void mass_reply(const endpoint_t &endpoint, const std::error_code &ec) noexcept {
-        reply(endpoint, [&](auto &message) { reply_with_error(message, ec); });
+    void mass_reply(const endpoint_t &endpoint, const r::extended_error_ptr_t &ee) noexcept {
+        reply(endpoint, [&](auto &message) { reply_with_error(message, ee); });
     }
 
     void process() noexcept {
@@ -350,7 +350,6 @@ struct resolver_worker_t : public r::actor_base_t {
 
     void on_resolve(resolve_results_t results) noexcept {
         resources->release(resource::io);
-        cancel_request_timer();
 
         if (request) {
             auto &endpoint = request->payload.request_payload->endpoint;
@@ -358,17 +357,19 @@ struct resolver_worker_t : public r::actor_base_t {
             auto &it = pair.first;
             mass_reply(it->first, it->second);
         }
+        cancel_request_timer();
+
         process();
     }
 
     void on_resolve_error(const sys::error_code &ec) noexcept {
         resources->release(resource::io);
-        cancel_request_timer();
 
         if (request) {
             auto endpoint = request->payload.request_payload->endpoint;
-            mass_reply(endpoint, ec);
+            mass_reply(endpoint, make_error(ec));
         }
+        cancel_request_timer();
         process();
     }
 
@@ -377,7 +378,7 @@ struct resolver_worker_t : public r::actor_base_t {
         if (request) {
             auto ec = r::make_error_code(cancelled ? r::error_code_t::cancelled : r::error_code_t::request_timeout);
             auto endpoint = request->payload.request_payload->endpoint;
-            mass_reply(endpoint, ec);
+            mass_reply(endpoint, make_error(ec));
         }
         process();
     }
@@ -418,18 +419,18 @@ struct http_worker_t : public r::actor_base_t {
             p.subscribe_actor(&http_worker_t::on_cancel);
         });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name(service::resolver, resolver).link(false).callback([](auto phase, auto &ec) {
-                if (ec) {
+            p.discover_name(service::resolver, resolver).link(false).callback([](auto phase, auto &ee) {
+                if (ee) {
                     auto p = (phase == rotor::plugin::registry_plugin_t::phase_t::linking) ? "link" : "discovery";
-                    std::cout << "cannot link with resolver (" << p << "): " << ec.message() << "\n";
+                    std::cout << "cannot link with resolver (" << p << "): " << ee->message() << "\n";
                 }
             });
         });
     }
 
-    void make_response(const std::error_code &ec) noexcept {
+    void make_response(const r::extended_error_ptr_t &ee) noexcept {
         if (!response) {
-            response = r::actor_base_t::make_response(*orig_req, ec);
+            response = r::actor_base_t::make_response(*orig_req, ee);
         }
     }
 
@@ -448,7 +449,7 @@ struct http_worker_t : public r::actor_base_t {
 
     void on_request(message::http_request_t &req) noexcept {
         if (state == r::state_t::SHUTTING_DOWN) {
-            make_response(r::make_error_code(r::error_code_t::cancelled));
+            make_response(make_error(r::make_error_code(r::error_code_t::cancelled)));
             return finish_response();
         }
 
@@ -471,9 +472,9 @@ struct http_worker_t : public r::actor_base_t {
 
     void on_resolve(message::resolve_response_t &res) noexcept {
         resources->release(resource::resolve);
-        auto &ec = res.payload.ec;
-        if (ec) {
-            make_response(ec);
+        auto &ee = res.payload.ee;
+        if (ee) {
+            make_response(ee);
             return finish_response();
         }
 
@@ -481,7 +482,7 @@ struct http_worker_t : public r::actor_base_t {
         sock = std::make_unique<tcp::socket>(strand.context());
         sock->open(tcp::v4(), ec_sock);
         if (ec_sock) {
-            make_response(ec_sock);
+            make_response(make_error(ec_sock));
             return finish_response();
         }
 
@@ -536,7 +537,7 @@ struct http_worker_t : public r::actor_base_t {
     void on_tcp_error(const sys::error_code &ec) noexcept {
         resources->release(resource::io);
         if (!response) {
-            make_response(ec);
+            make_response(make_error(ec));
         }
 
         finish_response();
@@ -546,7 +547,7 @@ struct http_worker_t : public r::actor_base_t {
     void on_timer(r::request_id_t, bool cancelled) noexcept {
         resources->release(resource::timer);
         if (cancelled && !response) {
-            make_response(r::make_error_code(r::error_code_t::cancelled));
+            make_response(make_error(r::make_error_code(r::error_code_t::cancelled)));
         }
         cancel_sock();
         finish_response();
@@ -653,9 +654,9 @@ struct http_manager_t : public ra::supervisor_asio_t {
         ra::supervisor_asio_t::shutdown_finish();
     }
 
-    void on_child_init(actor_base_t *actor, const std::error_code &ec) noexcept override {
-        ra::supervisor_asio_t::on_child_init(actor, ec);
-        assert(!ec);
+    void on_child_init(actor_base_t *actor, const r::extended_error_ptr_t &ee) noexcept override {
+        ra::supervisor_asio_t::on_child_init(actor, ee);
+        assert(!ee);
         auto &req = delayed_queue.front();
         forward(*req, actor->get_address());
         delayed_queue.pop_front();
@@ -703,7 +704,7 @@ struct http_manager_t : public ra::supervisor_asio_t {
         auto it = req_mapping.find(res.payload.request_id());
         auto worker_addr = res.payload.req->address;
         free_workers.emplace(std::move(worker_addr));
-        reply_to(*it->second.request, res.payload.ec, std::move(res.payload.res));
+        reply_to(*it->second.request, res.payload.ee, std::move(res.payload.res));
         req_mapping.erase(it);
     }
 
@@ -723,9 +724,13 @@ struct client_t : r::actor_base_t {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&client_t::on_response); });
         plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
-            p.discover_name(service::manager, manager_addr, true).link(false).callback([](auto phase, auto &ec) {
+            p.discover_name(service::manager, manager_addr, true).link(false).callback([](auto phase, auto &ee) {
                 auto p = (phase == rotor::plugin::registry_plugin_t::phase_t::linking) ? "link" : "discovery";
-                std::cerr << "manager has been found:" << ec.message() << " (" << p << ")\n";
+                if (!ee) {
+                    std::cerr << "manager has been found (" << p << ")\n";
+                } else {
+                    std::cerr << "manager has not been found (" << ee->message() << " (" << p << ")\n";
+                }
             });
         });
     }
@@ -779,7 +784,7 @@ struct client_t : r::actor_base_t {
         resources->release(resource::request);
 
         bool err = false;
-        if (!msg.payload.ec) {
+        if (!msg.payload.ee) {
             auto &res = msg.payload.res->response;
             if (res.result() == http::status::ok) {
                 // std::cerr << "." << std::flush;
@@ -789,7 +794,7 @@ struct client_t : r::actor_base_t {
                 err = true;
             }
         } else {
-            std::cerr << "request error: " << msg.payload.ec.message() << "\n";
+            std::cerr << "request error: " << msg.payload.ee->message() << "\n";
             err = true;
         }
         if (err) {

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -60,9 +60,6 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
         case T::ANONYMOUS:
             out << "A";
             break;
-        case T::NOT_AVAILABLE:
-            out << "NA";
-            break;
         }
         out << "] m: " << demangle((const char *)p.handler->message_type) << ", addr: " << (void *)p.address.get()
             << " ";
@@ -88,6 +85,12 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
         level = 0;
         info += ", service = ";
         info += m->payload.service_name;
+    } else if (auto m = dynamic_cast<const message::shutdown_trigger_t *>(message); m) {
+        level = 0;
+        std::stringstream out;
+        out << ", target = " << ((void *)m->payload.actor_address.get())
+            << ", reason = " << m->payload.reason->message();
+        info += out.str();
     }
 
     if (level > threshold)

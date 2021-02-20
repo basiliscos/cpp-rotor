@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -28,8 +28,8 @@ template <> auto actor_base_t::access<to::get_plugin, const void *>(const void *
 }
 
 template <>
-auto registry_plugin_t::discovery_task_t::access<to::on_discovery, address_ptr_t *, const std::error_code &>(
-    address_ptr_t *address, const std::error_code &ec) noexcept {
+auto registry_plugin_t::discovery_task_t::access<to::on_discovery, address_ptr_t *, const extended_error_ptr_t &>(
+    address_ptr_t *address, const extended_error_ptr_t &ec) noexcept {
     return on_discovery(address, ec);
 }
 
@@ -76,17 +76,17 @@ registry_plugin_t::discovery_task_t &registry_plugin_t::discover_name(const std:
 
 void registry_plugin_t::on_registration(message::registration_response_t &message) noexcept {
     auto &service = message.payload.req->payload.request_payload.service_name;
-    auto &ec = message.payload.ec;
+    auto &ee = message.payload.ee;
     auto it = register_map.find(service);
     assert(it != register_map.end());
-    if (ec) {
+    if (ee) {
         register_map.erase(it);
     } else {
         it->second.state = state_t::OPERATIONAL;
     }
 
-    if (!has_registering() || ec) {
-        continue_init(ec);
+    if (!has_registering() || ee) {
+        continue_init(error_code_t::registration_failed, ee);
     }
 }
 
@@ -98,11 +98,12 @@ void registry_plugin_t::on_future(message::discovery_future_t &message) noexcept
     process_discovery(discovery_map, message);
 }
 
-void registry_plugin_t::continue_init(const std::error_code &ec) noexcept {
+void registry_plugin_t::continue_init(const error_code_t &possible_ec, const extended_error_ptr_t &root_ec) noexcept {
     auto &init_request = actor->access<to::init_request>();
     assert(init_request);
-    if (ec) {
-        actor->reply_with_error(*init_request, ec);
+    if (root_ec) {
+        auto reason = make_error(possible_ec, root_ec);
+        actor->reply_with_error(*init_request, reason);
     } else {
         actor->init_continue();
     }
@@ -119,7 +120,7 @@ void registry_plugin_t::link_registry() noexcept {
     p->link(registry_addr, operational_only, [this](auto &ec) { on_link(ec); });
 }
 
-void registry_plugin_t::on_link(const std::error_code &ec) noexcept {
+void registry_plugin_t::on_link(const extended_error_ptr_t &ec) noexcept {
     plugin_state = plugin_state | LINKED;
     plugin_state = plugin_state & ~LINKING;
     if (!ec) {
@@ -178,15 +179,15 @@ bool registry_plugin_t::has_registering() noexcept {
 
 template <typename Message> void process_discovery(registry_plugin_t::discovery_map_t &dm, Message &message) noexcept {
     auto &service = message.payload.req->payload.request_payload.service_name;
-    auto &ec = message.payload.ec;
+    auto &ee = message.payload.ee;
     auto it = dm.find(service);
     assert(it != dm.end());
-    address_ptr_t *address_value = ec ? nullptr : &message.payload.res.service_addr;
-    it->second.template access<to::on_discovery, address_ptr_t *, const std::error_code &>(address_value, ec);
+    address_ptr_t *address_value = ee ? nullptr : &message.payload.res.service_addr;
+    it->second.template access<to::on_discovery, address_ptr_t *, const extended_error_ptr_t &>(address_value, ee);
 }
 
 void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_addr,
-                                                       const std::error_code &ec) noexcept {
+                                                       const extended_error_ptr_t &ec) noexcept {
     if (!ec) {
         *address = *service_addr;
         if (task_callback) {
@@ -210,7 +211,7 @@ void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_ad
     post_discovery(ec);
 }
 
-void registry_plugin_t::discovery_task_t::post_discovery(const std::error_code &ec) noexcept {
+void registry_plugin_t::discovery_task_t::post_discovery(const extended_error_ptr_t &ec) noexcept {
     auto &plugin = this->plugin;
     auto &dm = plugin.discovery_map;
     auto it = dm.find(service_name);
@@ -219,7 +220,7 @@ void registry_plugin_t::discovery_task_t::post_discovery(const std::error_code &
     if (dm.empty() || ec) {
         auto actor_state = plugin.actor->access<to::state>();
         if (actor_state == rotor::state_t::INITIALIZING) {
-            plugin.continue_init(ec);
+            plugin.continue_init(error_code_t::discovery_failed, ec);
         } else {
             plugin.actor->shutdown_continue();
         }

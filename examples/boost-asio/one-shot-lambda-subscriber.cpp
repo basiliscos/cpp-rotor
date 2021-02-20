@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -55,9 +55,9 @@ struct pinger_t : public rotor::actor_base_t {
     }
 
     void on_pong(message::pong_t &msg) noexcept {
-        auto &ec = msg.payload.ec;
+        auto &ec = msg.payload.ee;
         if (ec) {
-            std::cout << "pong error: " << ec.message() << "\n";
+            std::cout << "pong error: " << ec->message() << "\n";
             supervisor->do_shutdown();
         } else {
             std::cout << "ping (2)\n";

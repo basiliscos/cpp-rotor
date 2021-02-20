@@ -8,6 +8,7 @@
 
 #include "plugin_base.h"
 #include "link_client.h"
+#include "rotor/error_code.h"
 #include <string>
 #include <unordered_map>
 
@@ -37,7 +38,7 @@ struct registry_plugin_t : public plugin_base_t {
      */
     struct discovery_task_t {
         /** \brief callback for the discovery progress */
-        using callback_t = std::function<void(phase_t phase, const std::error_code &)>;
+        using callback_t = std::function<void(phase_t phase, const extended_error_ptr_t &)>;
 
         /** \brief stat of the discovery task */
         enum class state_t { PASSIVE, DISCOVERING, LINKING, OPERATIONAL, CANCELLING };
@@ -64,9 +65,9 @@ struct registry_plugin_t : public plugin_base_t {
         operator bool() const noexcept { return address; }
 
         void do_discover() noexcept;
-        void on_discovery(address_ptr_t *service_addr, const std::error_code &ec) noexcept;
+        void on_discovery(address_ptr_t *service_addr, const extended_error_ptr_t &ec) noexcept;
         bool do_cancel() noexcept;
-        void post_discovery(const std::error_code &ec) noexcept;
+        void post_discovery(const extended_error_ptr_t &ec) noexcept;
 
         registry_plugin_t &plugin;
         address_ptr_t *address;
@@ -145,9 +146,9 @@ struct registry_plugin_t : public plugin_base_t {
     discovery_map_t discovery_map;
 
     void link_registry() noexcept;
-    void on_link(const std::error_code &ec) noexcept;
+    void on_link(const extended_error_ptr_t &ec) noexcept;
     bool has_registering() noexcept;
-    virtual void continue_init(const std::error_code &ec) noexcept;
+    virtual void continue_init(const error_code_t &possible_ec, const extended_error_ptr_t &root_ec) noexcept;
 };
 
 } // namespace rotor::plugin

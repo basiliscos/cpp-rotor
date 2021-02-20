@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -57,8 +57,8 @@ struct sample_actor_t : public r::actor_base_t {
 
 struct custom_child_manager_t : public r::plugin::child_manager_plugin_t {
     r::address_ptr_t fail_addr;
-    std::error_code fail_ec;
-    void on_shutdown_fail(r::actor_base_t &actor, const std::error_code &ec) noexcept {
+    r::extended_error_ptr_t fail_ec;
+    void on_shutdown_fail(r::actor_base_t &actor, const r::extended_error_ptr_t &ec) noexcept override {
         fail_addr = actor.get_address();
         fail_ec = ec;
     }
@@ -151,7 +151,10 @@ TEST_CASE("fail shutdown test", "[actor]") {
     auto cm_plugin = static_cast<custom_child_manager_t *>(plugin);
 
     REQUIRE(cm_plugin->fail_addr == act->get_address());
-    REQUIRE(cm_plugin->fail_ec.value() == static_cast<int>(r::error_code_t::request_timeout));
+    auto &ec = cm_plugin->fail_ec;
+    REQUIRE(ec);
+    CHECK(ec->ec.value() == static_cast<int>(r::error_code_t::request_timeout));
+    REQUIRE(!ec->next);
 
     act->access<rt::to::resources>()->release();
     act->shutdown_continue();

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -12,14 +12,14 @@ namespace rotor {
 namespace test {
 
 struct system_context_test_t : public rotor::system_context_t {
-    std::error_code ec;
+    extended_error_ptr_t reason;
 
     system_context_test_t() {
 
     }
 
-    virtual void on_error(const std::error_code &ec_) noexcept override {
-        ec = ec_;
+    virtual void on_error(const extended_error_ptr_t &ec_) noexcept override {
+        reason = ec_;
     }
 
 };

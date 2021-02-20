@@ -162,8 +162,8 @@ void do_ping() noexcept {
 void on_pong(message::pong_t &msg) noexcept {
     resources->release(resource::ping);
     request_id.reset();
-    auto &ec = msg.payload.ec;
-    if (!ec) {
+    auto &ee = msg.payload.ee;
+    if (!ee) {
         std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attemps : " << attempts << "\n";
         do_shutdown();
     } else {

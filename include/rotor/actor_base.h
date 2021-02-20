@@ -12,6 +12,7 @@
 #include "messages.hpp"
 #include "state.h"
 #include "handler.h"
+#include "extended_error.h"
 #include "timer_handler.hpp"
 #include <set>
 
@@ -91,8 +92,15 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     virtual void do_initialize(system_context_t *ctx) noexcept;
 
-    /** \brief convenient method to send actor's supervisor shutdown trigger message */
-    virtual void do_shutdown() noexcept;
+    /** \brief convenient method to send actor's supervisor shutdown trigger message
+     *
+     * If actor is already shutting down, the method will do nothing, otherwise
+     * it will send shutdown trigger to its supervisor.
+     *
+     * The shutdown reason is forwarded "as is". If it is missing, than it will
+     * be constructed with the error code "normal shutdown".
+     */
+    virtual void do_shutdown(const extended_error_ptr_t &reason = {}) noexcept;
 
     /** \brief actor is fully initialized and it's supervisor has sent signal to start
      *
@@ -140,7 +148,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&...args);
 
     /** \brief convenient method for constructing and sending error response to a request */
-    template <typename Request> void reply_with_error(Request &message, const std::error_code &ec);
+    template <typename Request> void reply_with_error(Request &message, const extended_error_ptr_t &ec);
 
     /** \brief makes response to the request, but does not send it.
      *
@@ -160,7 +168,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * supervisor->put(std::move(response_ptr));
      *
      */
-    template <typename Request> auto make_response(Request &message, const std::error_code &ec);
+    template <typename Request> auto make_response(Request &message, const extended_error_ptr_t &ec);
 
     /** \brief subscribes actor's handler to process messages on the specified address */
     template <typename Handler> subscription_info_ptr_t subscribe(Handler &&h, const address_ptr_t &addr) noexcept;
@@ -308,6 +316,20 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      */
     void cancel_timer(request_id_t request_id) noexcept;
 
+    /** \brief returns actor shutdwon reason
+     *
+     *  The shutdown reason should be available if actors' state is already `SHUTTING_DOWN`
+     *
+     */
+    inline const extended_error_ptr_t &get_shutdown_reason() const noexcept { return shutdown_reason; }
+
+    /** \brief retuns human-readable actor identity
+     *
+     * The identity can be assigned either directly in ctor, or via address_maker plugin
+     *
+     */
+    inline const std::string &get_identity() const noexcept { return identity; }
+
     /** \brief flag to mark, that actor is already executing initialization */
     static const constexpr std::uint32_t PROGRESS_INIT = 1 << 0;
 
@@ -326,6 +348,19 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     void start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,
                      Method method) noexcept;
 
+    /** \brief helper-method, which assigns shutdown reason if it isn't set */
+    void assign_shutdown_reason(extended_error_ptr_t reason) noexcept;
+
+    /** \brief makes extended error within the context of the actor */
+    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
+
+    /** \brief notification, when actor has been unlinked from server actor
+     *
+     * Returns boolean, meaning whether actor should initate shutdown. Default value is `true`.
+     *
+     */
+    virtual bool on_unlink(const address_ptr_t &server_addr) noexcept;
+
     /** \brief suspended init request message */
     intrusive_ptr_t<message::init_request_t> init_request;
 
@@ -334,6 +369,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief actor address */
     address_ptr_t address;
+
+    /** \brief actor identity, wich might have some meaning for developers */
+    std::string identity;
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */
     supervisor_t *supervisor;
@@ -388,6 +426,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     std::uint32_t continuation_mask = 0;
+
+    /** \brief explanation, why actor is been requested for shut down */
+    extended_error_ptr_t shutdown_reason;
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;

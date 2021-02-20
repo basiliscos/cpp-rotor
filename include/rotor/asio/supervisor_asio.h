@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -115,6 +115,9 @@ struct supervisor_asio_t : public supervisor_t {
 
     /** \brief guard to control ownership of the io-context */
     guard_ptr_t guard;
+
+  private:
+    void invoke_shutdown() noexcept;
 };
 
 template <typename Actor> inline boost::asio::io_context::strand &get_strand(Actor &actor) {

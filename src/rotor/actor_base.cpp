@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -28,9 +28,16 @@ actor_base_t::~actor_base_t() { assert(deactivating_plugins.empty()); }
 
 void actor_base_t::do_initialize(system_context_t *) noexcept { activate_plugins(); }
 
-void actor_base_t::do_shutdown() noexcept {
+void actor_base_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     if (state < state_t::SHUTTING_DOWN) {
-        send<payload::shutdown_trigger_t>(supervisor->address, address);
+        extended_error_ptr_t r;
+        if (!reason) {
+            auto ec = make_error_code(shutdown_code_t::normal);
+            r = make_error(ec);
+        } else {
+            r = reason;
+        }
+        send<payload::shutdown_trigger_t>(supervisor->address, address, std::move(r));
     }
 }
 
@@ -220,3 +227,15 @@ void actor_base_t::on_timer_trigger(request_id_t request_id, bool cancelled) noe
         timers_map.erase(it);
     }
 }
+
+void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept {
+    if (!shutdown_reason) {
+        shutdown_reason = reason;
+    }
+}
+
+extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next) noexcept {
+    return ::make_error(identity, ec, next);
+}
+
+bool actor_base_t::on_unlink(const address_ptr_t &) noexcept { return true; }
