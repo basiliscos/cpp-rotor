@@ -40,6 +40,8 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ## Changelog
 
 ### 0.14 (20-Feb-2021)
+- the dedicated article with highlights: [en](https://habr.com/en/post/543364/) and
+[ru](https://habr.com/ru/post/543362/)
  - [improvement] actor identity has been introduced. It can be configured or generated via
 `address_maker` plugin
  - [improvement] `actor::do_shutdown()` - optionally takes shutdown reason
