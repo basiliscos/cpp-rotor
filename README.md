@@ -39,6 +39,29 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.14 (20-Feb-2021)
+ - [improvement] actor identity has been introduced. It can be configured or generated via
+`address_maker` plugin
+ - [improvement] `actor::do_shutdown()` - optionally takes shutdown reason
+ - [improvement/breaking] instead of using `std::error_code` the `extended_error` class
+is used. It wraps `std::error_code`, provides string context and pointer to the next
+`extended_error` cause. This greatly simplfies error tracking of errors. Every response
+now contains `ee` field instead of `ec`.
+ - [improvement] `actor` has shutdown reason (in form of `extended_error` pointer)
+ - [improvement] delivery plugin in debug mode it dumps shutdown reason in shutdown trigger
+ messages
+ - [improvement] actor identity has `on_unlink` method to get it know, when it has been
+unlinked from server actor
+ - [improvement] add `resources` plugin for supervisor
+ - [breaking] all responses now have `extended_error` pointer instread of `std::error_code`
+ - [breaking] `shutdown_request_t` and `shutdown_trigger_t` messages how have
+shutdown reason (in form of `extended_error` pointer)
+ - [bugfix] `link_client_plugin_t` do not invoke custom callback, before erasing request
+in case of failure
+ - [bugfix] `child_manager_plugin_t` reactivate self if a child was created from other
+plugin.
+ - [bugfix] `registy actor` incorrectly resolves postponed requests to wrong addresses
+
 ### 0.13 (26-Dec-2020)
  - [improvement] delivery plugin in debug mode dumps discarded messages
  - [breaking] `state_response_t` has been removed
