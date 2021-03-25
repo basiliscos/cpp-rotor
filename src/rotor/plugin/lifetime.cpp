@@ -13,6 +13,7 @@ using namespace rotor::plugin;
 namespace to {
 struct state {};
 struct internal_address {};
+struct owner_tag {};
 struct own_subscriptions {};
 struct deactivating_plugins {};
 } // namespace to
@@ -21,6 +22,7 @@ template <> auto &plugin_base_t::access<to::own_subscriptions>() noexcept { retu
 template <> auto &actor_base_t::access<to::deactivating_plugins>() noexcept { return deactivating_plugins; }
 template <> auto &subscription_info_t::access<to::state>() noexcept { return state; }
 template <> auto &subscription_info_t::access<to::internal_address>() noexcept { return internal_address; }
+template <> auto &subscription_info_t::access<to::owner_tag>() noexcept { return owner_tag; }
 
 const void *lifetime_plugin_t::class_identity = static_cast<const void *>(typeid(lifetime_plugin_t).name());
 
@@ -59,10 +61,13 @@ void lifetime_plugin_t::unsubscribe(const subscription_info_ptr_t &info_ptr) noe
     auto &dest = handler->actor_ptr->address;
     if (info.access<to::state>() != state_t::UNSUBSCRIBING) {
         info.access<to::state>() = state_t::UNSUBSCRIBING;
-        if (info.access<to::internal_address>()) {
-            actor->send<payload::unsubscription_confirmation_t>(dest, info);
-        } else {
-            actor->send<payload::external_unsubscription_t>(dest, info);
+
+        if (info.access<to::owner_tag>() != owner_tag_t::FOREIGN) {
+            if (info.access<to::internal_address>()) {
+                actor->send<payload::unsubscription_confirmation_t>(dest, info);
+            } else {
+                actor->send<payload::external_unsubscription_t>(dest, info);
+            }
         }
     }
 }
