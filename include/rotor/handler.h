@@ -109,7 +109,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     actor_ptr_t actor_ptr;
 
     /** \brief non-owning raw poiter to actor */
-    const void *raw_actor_ptr;
+    const actor_base_t *raw_actor_ptr;
 
     /** \brief precalculated hash for the handler */
     size_t precalc_hash;

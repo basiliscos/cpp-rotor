@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace rotor {
 
@@ -271,9 +272,12 @@ struct supervisor_t : public actor_base_t {
     supervisor_t *locality_leader;
 
   private:
+    using actors_set_t = std::unordered_set<const actor_base_t *>;
+
     bool create_registry;
     bool synchronize_start;
     address_ptr_t registry_address;
+    actors_set_t alive_actors;
 
     supervisor_policy_t policy;
 

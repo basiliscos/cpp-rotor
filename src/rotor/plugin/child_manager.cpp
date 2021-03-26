@@ -14,6 +14,7 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct address_mapping {};
+struct alive_actors {};
 struct discard_request {};
 struct init_request {};
 struct init_timeout {};
@@ -35,6 +36,7 @@ template <> auto &supervisor_t::access<to::address_mapping>() noexcept { return 
 template <> auto supervisor_t::access<to::discard_request, request_id_t>(request_id_t request_id) noexcept {
     return discard_request(request_id);
 }
+template <> auto &supervisor_t::access<to::alive_actors>() noexcept { return alive_actors; }
 template <> auto &actor_base_t::access<to::init_request>() const noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
@@ -62,6 +64,7 @@ const void *child_manager_plugin_t::identity() const noexcept { return class_ide
 void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
     static_cast<supervisor_t &>(*actor_).access<to::manager>() = this;
+    static_cast<supervisor_t &>(*actor_).access<to::alive_actors>().emplace(actor_);
     subscribe(&child_manager_plugin_t::on_create);
     subscribe(&child_manager_plugin_t::on_init);
     subscribe(&child_manager_plugin_t::on_shutdown_trigger);
@@ -112,6 +115,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
 
     cancel_init(&child);
     actors_map.erase(it_actor);
+    static_cast<supervisor_t &>(*actor).access<to::alive_actors>().erase(&child);
 
     if (state == state_t::SHUTTING_DOWN && (actors_map.size() <= 1)) {
         actor->shutdown_continue();
@@ -136,6 +140,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     auto &timeout = child->access<to::init_timeout>();
     sup.send<payload::create_actor_t>(actor->get_address(), child, timeout);
     actors_map.emplace(child->get_address(), actor_state_t(child));
+    sup.access<to::alive_actors>().emplace(child.get());
     if (static_cast<actor_base_t &>(sup).access<to::state>() == state_t::INITIALIZING) {
         reaction_on(reaction_t::INIT);
     }

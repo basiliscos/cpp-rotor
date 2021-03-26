@@ -237,6 +237,26 @@ struct unsubscriber_actor_t : rt::actor_test_t {
     }
 };
 
+struct unsubscriber_actor2_t : rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
+
+    r::address_ptr_t some_addr;
+    bool received = false;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        rt::actor_test_t::configure(plugin);
+        plugin.with_casted<rotor::plugin::starter_plugin_t>(
+            [this](auto &p) { p.subscribe_actor(&unsubscriber_actor2_t::on_message, some_addr); });
+    }
+
+    void on_message(message::trigger_t &) noexcept { received = true; }
+
+    void shutdown_start() noexcept override {
+        rt::actor_test_t::shutdown_start();
+        send<payload::trigger_t>(some_addr);
+    }
+};
+
 TEST_CASE("supervisor is not initialized, while it child did not confirmed initialization", "[supervisor]") {
     r::system_context_t system_context;
 
@@ -682,6 +702,26 @@ TEST_CASE("race during external unsubscription", "[supervisor]") {
     sup1->do_shutdown();
     sup1->do_process();
     CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    sup1->do_shutdown();
+    sup1->do_process();
+}
+
+TEST_CASE("race during external unsubscription (2)", "[supervisor]") {
+    rt::system_context_test_t system_context;
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    sup1->do_process();
+
+    auto addr = sup2->create_address();
+    auto act = sup1->create_actor<unsubscriber_actor2_t>().timeout(rt::default_timeout).finish();
+    act->some_addr = addr;
+    sup1->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+
+    act->do_shutdown();
+    sup1->do_process();
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(!act->received);
     sup1->do_shutdown();
     sup1->do_process();
 }

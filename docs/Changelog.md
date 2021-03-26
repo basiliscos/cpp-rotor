@@ -6,6 +6,8 @@
 
 ## 0.15 (20-Feb-2021)
  - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions
+ - [bugfix] `foreigners_support_plugin_t` more safely deliver a message for a foreign 
+subscriber (actor)
 
 
 ## 0.14 (20-Feb-2021)
