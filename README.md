@@ -39,6 +39,11 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.15 (02-Apr-2021)
+ - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions
+ - [bugfix] `foreigners_support_plugin_t` more safely deliver a message for a foreign
+subscriber (actor)
+
 ### 0.14 (20-Feb-2021)
 - the dedicated article with highlights: [en](https://habr.com/en/post/543364/) and
 [ru](https://habr.com/ru/post/543362/)

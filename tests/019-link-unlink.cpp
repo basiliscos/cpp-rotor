@@ -64,11 +64,11 @@ struct tracked_actor_t : rt::actor_test_t {
     std::uint32_t shutdown_event = 0;
 };
 
-struct ignore_unlink_actor_t: rt::actor_test_t {
+struct ignore_unlink_actor_t : rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
     r::address_ptr_t server_addr;
 
-    bool on_unlink(const r::address_ptr_t& addr) noexcept override {
+    bool on_unlink(const r::address_ptr_t &addr) noexcept override {
         server_addr = addr;
         return false;
     }
@@ -597,9 +597,7 @@ TEST_CASE("ignore unlink", "[actor]") {
     auto act_s = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
     act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
-        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) {
-            p.link(act_s->get_address(), true);
-        });
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(act_s->get_address(), true); });
     };
     sup->do_process();
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);

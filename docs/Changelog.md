@@ -4,6 +4,11 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.15 (02-Apr-2021)
+ - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions
+ - [bugfix] `foreigners_support_plugin_t` more safely deliver a message for a foreign
+subscriber (actor)
+
 ## 0.14 (20-Feb-2021)
  - [improvement] actor identity has been introduced. It can be configured or generated via
 `address_maker` plugin

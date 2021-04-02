@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -13,11 +13,15 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct lifetime {};
+struct points {};
 struct state {};
+struct alive_actors {};
 } // namespace to
 } // namespace
 
+template <> auto &supervisor_t::access<to::alive_actors>() noexcept { return alive_actors; }
 template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetime; }
+template <> auto &lifetime_plugin_t::access<to::points>() noexcept { return points; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 
 const void *foreigners_support_plugin_t::class_identity =
@@ -46,7 +50,25 @@ void foreigners_support_plugin_t::deactivate() noexcept {
 void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noexcept {
     auto &handler = message.payload.handler;
     auto &orig_message = message.payload.orig_message;
-    handler->call(orig_message);
+    auto child_actor = const_cast<actor_base_t *>(handler->raw_actor_ptr);
+    // need to check, that
+    // 1. children exists
+    // 2. check it's state
+    // 2. it is still subscribed to the message
+
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    if (sup.access<to::alive_actors>().count(child_actor)) {
+        if (child_actor->access<to::state>() < state_t::SHUT_DOWN) {
+            auto point = subscription_point_t(handler, orig_message->address);
+            auto lifetime = child_actor->access<to::lifetime>();
+            if (lifetime) {
+                auto &points = lifetime->access<to::points>();
+                if (points.find(point) != points.end()) {
+                    handler->call(orig_message);
+                }
+            }
+        }
+    }
 }
 
 void foreigners_support_plugin_t::on_subscription_external(message::external_subscription_t &message) noexcept {
