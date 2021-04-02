@@ -39,6 +39,11 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.15 (02-Apr-2021)
+ - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions
+ - [bugfix] `foreigners_support_plugin_t` more safely deliver a message for a foreign
+subscriber (actor)
+
 ### 0.14 (20-Feb-2021)
  - [improvement] actor identity has been introduced. It can be configured or generated via
 `address_maker` plugin
