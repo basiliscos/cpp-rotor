@@ -7,11 +7,10 @@
 /*
  * This is an example how to do simple ping-pong using different threads
  *
-*/
+ */
 
 #include "rotor.hpp"
 #include "rotor/thread.hpp"
-#include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <functional>
@@ -22,7 +21,6 @@
 #include <utility>
 #include <vector>
 
-namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 namespace r = rotor;
 namespace rth = rotor::thread;
@@ -114,8 +112,6 @@ struct ponger_t : public r::actor_base_t {
 };
 
 int main(int argc, char **argv) {
-
-    asio::io_context io_context{1};
     try {
         std::uint32_t count = 10000;
         if (argc > 1) {
