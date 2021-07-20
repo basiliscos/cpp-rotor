@@ -25,7 +25,7 @@
 - asynchornous message passing interface
 - [request-response](https://en.wikipedia.org/wiki/Request%E2%80%93response) messaging with cancellation capabilities,
 [see](https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/)
-- MPMC (multiple producers mupltiple consumers) messaging, aka pub-sub
+- MPMC (multiple producers multiple consumers) messaging, aka pub-sub
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
 
