@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,6 +14,7 @@
 #include <list>
 #include <mutex>
 #include <thread>
+#include <boost/lockfree/queue.hpp>
 
 namespace rotor {
 namespace thread {
@@ -29,7 +30,8 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_thread_t>;
  */
 struct system_context_thread_t : public system_context_t {
     /** \brief constructs thread system context */
-    system_context_thread_t() noexcept;
+    system_context_thread_t(size_t queue_size = 64, pt::time_duration poll_time = pt::millisec{1}) noexcept;
+    ~system_context_thread_t();
 
     /** \brief invokes blocking execution of the supervisor
      *
@@ -38,7 +40,7 @@ struct system_context_thread_t : public system_context_t {
      */
     virtual void run() noexcept;
 
-    /** \brief checks for messages from external threads and fires expired timers*/
+    /** \brief checks for messages from external threads and fires expired timers */
     void check() noexcept;
 
   protected:
@@ -59,6 +61,8 @@ struct system_context_thread_t : public system_context_t {
     /** \brief ordered list of deadline infos (type) */
     using list_t = std::list<deadline_info_t>;
 
+    using inbound_queue_t = boost::lockfree::queue<message_base_t *>;
+
     /** \brief fires handlers for expired timers */
     void update_time() noexcept;
 
@@ -66,10 +70,14 @@ struct system_context_thread_t : public system_context_t {
     void start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept;
 
     /** \brief cancel timer implementation */
+
     void cancel_timer(request_id_t timer_id) noexcept;
 
+    /** \brief how much time actively poll inbound queue (100% cpu usage), before switching into notify mode */
+    pt::time_duration poll_time;
+
     /** \brief queue for keeping external messages, from other threads/loops/backends */
-    messages_queue_t inbound;
+    inbound_queue_t inbound;
 
     /** \brief mutex for inbound queue */
     std::mutex mutex;
