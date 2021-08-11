@@ -61,6 +61,7 @@ struct system_context_thread_t : public system_context_t {
     /** \brief ordered list of deadline infos (type) */
     using list_t = std::list<deadline_info_t>;
 
+    /** \brief lock-free queue for inbound messages */
     using inbound_queue_t = boost::lockfree::queue<message_base_t *>;
 
     /** \brief fires handlers for expired timers */

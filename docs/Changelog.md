@@ -5,6 +5,7 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.16 (xx-xxx-xxxx)
+- [improvement] significant optimiziation of `std::thread` based backend
 - [example] `examples/thread/ping-pong-thread.cpp` (new)
 
 ## 0.15 (02-Apr-2021)
