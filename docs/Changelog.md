@@ -5,8 +5,9 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.16 (xx-xxx-xxxx)
-- [improvement] significant optimiziation of `std::thread` based backend
+- [improvement] significant optimiziation of `std::thread`, `ev` backend
 - [example] `examples/thread/ping-pong-thread.cpp` (new)
+- [example] `examples/ev/ping-pong-ev-2-threads` (new)
 
 ## 0.15 (02-Apr-2021)
  - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions

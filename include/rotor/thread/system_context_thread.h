@@ -29,7 +29,13 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_thread_t>;
  *
  */
 struct system_context_thread_t : public system_context_t {
-    /** \brief constructs thread system context */
+    /** \brief constructs thread system context
+     *
+     *  \param queue_size defines pre-allocated ibound queue size for messages from other threads
+     *
+     *  \param poll_time how much time it will spend in polling inbound queue before switching into
+     *  notification mode (i.e. cv + mutex)
+     */
     system_context_thread_t(size_t queue_size = 64, pt::time_duration poll_time = pt::millisec{1}) noexcept;
     ~system_context_thread_t();
 

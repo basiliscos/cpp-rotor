@@ -5,6 +5,7 @@
 //
 
 #include "rotor/ev/supervisor_ev.h"
+#include <thread>
 
 using namespace rotor;
 using namespace rotor::ev;
@@ -54,7 +55,9 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
 }
 
 supervisor_ev_t::supervisor_ev_t(supervisor_config_ev_t &config_)
-    : supervisor_t{config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership}, pending{false} {
+    : supervisor_t{config_}, loop{config_.loop},
+      loop_ownership{config_.loop_ownership}, inbound{parent ? config_.inbound_queue_size : 0},
+      poll_duration{static_cast<ev_tstamp>(config_.poll_duration.total_nanoseconds()) / 1000000000} {
     ev_async_init(&async_watcher, async_cb);
 }
 
@@ -65,46 +68,15 @@ void supervisor_ev_t::do_initialize(system_context_t *ctx) noexcept {
 }
 
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
-    bool ok{false};
-    try {
-        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-        auto &inbound = leader->inbound;
-        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
-        if (leader->state < state_t::SHUT_DOWN) {
-            if (!leader->pending) {
-                // async events are "compressed" by EV. Need to do only once
-                intrusive_ptr_add_ref(this);
-            }
-            inbound.emplace_back(std::move(message));
-            ok = true;
-        }
-    } catch (const std::system_error &err) {
-        context->on_error(make_error(err.code()));
-    }
-
-    if (ok) {
-        ev_async_send(loop, &async_watcher);
-    }
+    auto leader = static_cast<supervisor_ev_t *>(locality_leader);
+    auto &inbound = leader->inbound;
+    auto ptr = message.get();
+    intrusive_ptr_add_ref(ptr);
+    inbound.push(ptr);
+    ev_async_send(loop, &async_watcher);
 }
 
-void supervisor_ev_t::start() noexcept {
-    bool ok{false};
-    try {
-        auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
-        if (!leader->pending) {
-            intrusive_ptr_add_ref(leader);
-            leader->pending = true;
-        }
-        ok = true;
-    } catch (const std::system_error &err) {
-        context->on_error(make_error(err.code()));
-    }
-
-    if (ok) {
-        ev_async_send(loop, &async_watcher);
-    }
-}
+void supervisor_ev_t::start() noexcept { ev_async_send(loop, &async_watcher); }
 
 void supervisor_ev_t::shutdown_finish() noexcept {
     supervisor_t::shutdown_finish();
@@ -145,9 +117,23 @@ void supervisor_ev_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_ev_t::on_async() noexcept {
+    move_inbound_queue();
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-    intrusive_ptr_release(leader);
-    if (move_inbound_queue()) {
+    auto &queue = leader->queue;
+    if (!queue.empty()) {
+        do_process();
+    }
+
+    ev_now_update(loop);
+    auto now = ev_now(loop);
+    auto deadline = now + poll_duration;
+    while (now < deadline && queue.empty()) {
+        move_inbound_queue();
+        ev_now_update(loop);
+        now = ev_now(loop);
+    }
+
+    if (!queue.empty()) {
         do_process();
     }
 }
@@ -156,21 +142,20 @@ supervisor_ev_t::~supervisor_ev_t() {
     if (loop_ownership) {
         ev_loop_destroy(loop);
     }
+    message_base_t *ptr;
+    while (inbound.pop(ptr)) {
+        queue.emplace_back(ptr);
+        intrusive_ptr_release(ptr);
+    }
 }
 
-bool supervisor_ev_t::move_inbound_queue() noexcept {
-    bool ok{false};
+void supervisor_ev_t::move_inbound_queue() noexcept {
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-    try {
-        std::lock_guard<std::mutex> lock(leader->inbound_mutex);
-        auto &inbound = leader->inbound;
-        auto &queue = leader->queue;
-        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
-        inbound.clear();
-        leader->pending = false;
-        ok = true;
-    } catch (const std::system_error &err) {
-        context->on_error(make_error(err.code()));
+    auto &inbound = leader->inbound;
+    auto &queue = leader->queue;
+    message_base_t *ptr;
+    while (inbound.pop(ptr)) {
+        queue.emplace_back(ptr);
+        intrusive_ptr_release(ptr);
     }
-    return ok;
 }

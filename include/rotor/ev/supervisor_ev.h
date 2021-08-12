@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,9 +11,9 @@
 #include "rotor/ev/system_context_ev.h"
 #include "rotor/system_context.h"
 #include <ev.h>
-#include <mutex>
 #include <memory>
 #include <unordered_map>
+#include <boost/lockfree/queue.hpp>
 
 namespace rotor {
 namespace ev {
@@ -80,6 +80,9 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief a type for mapping `timer_id` to timer pointer */
     using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
+    /** \brief lock-free queue for inbound messages */
+    using inbound_queue_t = boost::lockfree::queue<message_base_t *>;
+
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
 
@@ -104,23 +107,13 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
     ev_async async_watcher;
 
-    /** \brief mutex for protecting inbound queue and pending flag */
-    std::mutex inbound_mutex;
-
-    /** \brief whether refcounter should be decreased
-     *
-     * Async events are "compressed" by EV, i.e. a few async sygnals can be
-     * delivere as one. As we do inc/dec for atomic counter, this might be
-     * a problem. So by the flag we are sure, that inc/dec will happen
-     * only once.
-     *
-     */
-    bool pending;
-
     /** \brief inbound messages queue, i.e.the structure to hold messages
      * received from other supervisors / threads
      */
-    messages_queue_t inbound;
+    inbound_queue_t inbound;
+
+    /** \brief how much time spend in active inbound queue polling */
+    ev_tstamp poll_duration;
 
     /** \brief timer_id to timer map */
     timers_map_t timers_map;
@@ -128,7 +121,7 @@ struct supervisor_ev_t : public supervisor_t {
     friend struct supervisor_ev_shutdown_t;
 
   private:
-    bool move_inbound_queue() noexcept;
+    void move_inbound_queue() noexcept;
 };
 
 } // namespace ev
