@@ -114,9 +114,9 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
         out << ", service = " << m->payload.req->payload.request_payload.service_name;
         auto &ee = m->payload.ee;
         if (ee) {
-            out << ", failure = " <<  ee->message() << " ";
+            out << ", failure = " << ee->message() << " ";
         } else {
-            auto& addr = m->payload.res.service_addr;
+            auto &addr = m->payload.res.service_addr;
             out << ", success, addr =  " << addr.get() << " ";
         }
         info += out.str();
@@ -126,9 +126,9 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
         out << ", service = " << m->payload.req->payload.request_payload.service_name;
         auto &ee = m->payload.ee;
         if (ee) {
-            out << ", failure = " <<  ee->message() << " ";
+            out << ", failure = " << ee->message() << " ";
         } else {
-            auto& addr = m->payload.res.service_addr;
+            auto &addr = m->payload.res.service_addr;
             out << ", success, addr =  " << addr.get() << " ";
         }
         info += out.str();

@@ -106,9 +106,12 @@ void supervisor_asio_t::do_process() noexcept {
     using clock_t = std::chrono::steady_clock;
     using time_units_t = std::chrono::microseconds;
 
+    auto leader = static_cast<supervisor_asio_t *>(locality_leader);
+    auto &inbound = leader->inbound_queue;
+    auto &queue = leader->queue;
     bool ok = false;
     message_base_t *ptr;
-    while (inbound_queue.pop(ptr)) {
+    while (inbound.pop(ptr)) {
         queue.emplace_back(ptr);
         intrusive_ptr_release(ptr);
         ok = true;
@@ -121,7 +124,7 @@ void supervisor_asio_t::do_process() noexcept {
         auto deadline = clock_t::now() + time_units_t{poll_duration.total_microseconds()};
         while (clock_t::now() < deadline && queue.empty()) {
             message_base_t *ptr;
-            while (inbound_queue.pop(ptr)) {
+            while (inbound.pop(ptr)) {
                 queue.emplace_back(ptr);
                 intrusive_ptr_release(ptr);
             }
