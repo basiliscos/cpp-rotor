@@ -58,7 +58,7 @@ struct self_shutdowner_sup_t : public rth::supervisor_thread_t {
 
 struct system_context_thread_test_t : public rth::system_context_thread_t {
     r::extended_error_ptr_t ee;
-    void on_error(const r::extended_error_ptr_t &err) noexcept override { ee = err; }
+    void on_error(r::actor_base_t *, const r::extended_error_ptr_t &err) noexcept override { ee = err; }
 };
 
 struct ping_t {};

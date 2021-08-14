@@ -326,7 +326,7 @@ template <typename Supervisor> auto system_context_t::create_supervisor() {
         [this](auto &actor) {
             if (supervisor) {
                 auto ec = make_error_code(error_code_t::supervisor_defined);
-                on_error(make_error(identity(), ec));
+                on_error(actor.get(), make_error(identity(), ec));
                 actor.reset();
             } else {
                 this->supervisor = actor;
@@ -577,7 +577,7 @@ template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::
     intrusive_ptr_t<Actor> actor_ptr;
     if (!validate()) {
         auto ec = make_error_code(error_code_t::actor_misconfigured);
-        system_context.on_error(make_error(system_context.identity(), ec));
+        system_context.on_error(actor_ptr.get(), make_error(system_context.identity(), ec));
     } else {
         auto &cfg = static_cast<typename builder_t::config_t &>(config);
         auto actor = new Actor(cfg);

@@ -6,6 +6,7 @@
 
 ## 0.16 (xx-xxx-xxxx)
 - [improvement] significant optimiziation of `std::thread`, `ev` backend
+- [improvement/breaking] more details on fatal error (system_context_t)
 - [example] `examples/thread/ping-pong-thread.cpp` (new)
 - [example] `examples/ev/ping-pong-ev-2-threads` (new)
 

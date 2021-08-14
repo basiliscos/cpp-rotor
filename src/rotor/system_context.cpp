@@ -17,8 +17,12 @@ system_context_t::system_context_t() {}
 
 system_context_t::~system_context_t() {}
 
-void system_context_t::on_error(const extended_error_ptr_t &ec) noexcept {
-    std::cerr << "fatal error: " << ec->message() << "\n";
+void system_context_t::on_error(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept {
+    std::cerr << "fatal error ";
+    if (actor) {
+        std::cerr << actor->get_identity();
+    }
+    std::cerr << ": " << ec->message() << "\n";
     std::terminate();
 }
 

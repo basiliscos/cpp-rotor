@@ -18,7 +18,7 @@ struct system_context_test_t : public rotor::system_context_t {
 
     }
 
-    virtual void on_error(const extended_error_ptr_t &ec_) noexcept override {
+    inline virtual void on_error(actor_base_t*, const extended_error_ptr_t &ec_) noexcept override {
         reason = ec_;
     }
 
