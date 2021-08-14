@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -34,6 +34,16 @@ struct supervisor_config_t : actor_config_t {
      * hierarchy
      */
     address_ptr_t registry_address;
+
+    /** \brief initial queue size for inbound messages. Makes sense only for
+     *  root/leader supervisor */
+    size_t inbound_queue_size = 64;
+
+    /**
+     * \brief How much time it will spend in polling inbound queue before switching into
+     * sleep mode (i.e. waiting external messages)
+     */
+    pt::time_duration poll_duration = pt::millisec{1};
 };
 
 /** \brief CRTP supervisor config builder */
@@ -68,6 +78,19 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
     builder_t &&registry_address(const address_ptr_t &value) &&noexcept {
         parent_t::config.registry_address = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
+    }
+
+    /** \brief initial queue size for inbound messages. Makes sense only for
+     *  root/leader supervisor */
+    builder_t &&inbound_queue_size(size_t value) && {
+        parent_t::config.inbound_queue_size = value;
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    /** \brief how much time spend in active inbound queue polling */
+    builder_t &&poll_duration(const pt::time_duration &value) && {
+        parent_t::config.poll_duration = value;
+        return std::move(*static_cast<builder_t *>(this));
     }
 
     virtual bool validate() noexcept {

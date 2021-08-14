@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <boost/lockfree/queue.hpp>
+
 namespace rotor {
 
 /** \struct supervisor_t
@@ -225,6 +227,9 @@ struct supervisor_t : public actor_base_t {
     /** \brief generic non-public methods accessor */
     template <typename T, typename... Args> auto access(Args... args) noexcept;
 
+    /** \brief lock-free queue for inbound messages */
+    using inbound_queue_t = boost::lockfree::queue<message_base_t *>;
+
   protected:
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
@@ -270,6 +275,15 @@ struct supervisor_t : public actor_base_t {
 
     /** \brief root supervisor for the locality */
     supervisor_t *locality_leader;
+
+    /** \brief inbound queue for external messages */
+    inbound_queue_t inbound_queue;
+
+    /** \brief size of inbound queue */
+    size_t inbound_queue_size;
+
+    /** \brief how much time spend in active inbound queue polling */
+    pt::time_duration poll_duration;
 
   private:
     using actors_set_t = std::unordered_set<const actor_base_t *>;

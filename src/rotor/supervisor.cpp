@@ -24,11 +24,10 @@ template <> auto &subscription_info_t::access<to::internal_handler>() noexcept {
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), last_req_id{0}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
+      inbound_queue(0), inbound_queue_size{config.inbound_queue_size}, poll_duration{config.poll_duration},
+
       create_registry(config.create_registry), synchronize_start(config.synchronize_start),
       registry_address(config.registry_address), policy{config.policy} {
-    if (!supervisor) {
-        supervisor = this;
-    }
     supervisor = this;
 }
 

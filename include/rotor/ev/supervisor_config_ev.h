@@ -23,16 +23,6 @@ struct supervisor_config_ev_t : public supervisor_config_t {
     /** \brief whether loop should be destroyed by supervisor */
     bool loop_ownership = false;
 
-    /** \brief initial queue size for inbound messages. Makes sense only for
-     *  root/leader supervisor */
-    size_t inbound_queue_size = 64;
-
-    /**
-     * \brief How much time it will spend in polling inbound queue before switching into
-     * sleep mode (i.e. waiting external events)
-     */
-    pt::time_duration poll_duration = pt::millisec{1};
-
     using supervisor_config_t::supervisor_config_t;
 };
 
@@ -65,19 +55,6 @@ template <typename Supervisor> struct supervisor_config_ev_builder_t : superviso
     builder_t &&loop_ownership(bool value) && {
         parent_t::config.loop_ownership = value;
         parent_t::mask = (parent_t::mask & ~LOOP_OWNERSHIP);
-        return std::move(*static_cast<builder_t *>(this));
-    }
-
-    /** \brief initial queue size for inbound messages. Makes sense only for
-     *  root/leader supervisor */
-    builder_t &&inbound_queue_size(size_t value) && {
-        parent_t::config.inbound_queue_size = value;
-        return std::move(*static_cast<builder_t *>(this));
-    }
-
-    /** \brief how much time spend in active inbound queue polling */
-    builder_t &&poll_duration(const pt::time_duration &value) && {
-        parent_t::config.poll_duration = value;
         return std::move(*static_cast<builder_t *>(this));
     }
 };

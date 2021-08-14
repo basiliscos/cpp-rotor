@@ -56,6 +56,7 @@ struct pinger_t : public rotor::actor_base_t {
             std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                       << ", freq = " << std::fixed << std::setprecision(10) << freq << ", real freq = " << std::fixed
                       << std::setprecision(10) << freq * 2 << "\n";
+            ponger_addr->supervisor.shutdown();
             supervisor->shutdown();
         }
     }

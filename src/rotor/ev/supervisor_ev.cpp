@@ -55,9 +55,8 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
 }
 
 supervisor_ev_t::supervisor_ev_t(supervisor_config_ev_t &config_)
-    : supervisor_t{config_}, loop{config_.loop},
-      loop_ownership{config_.loop_ownership}, inbound{parent ? config_.inbound_queue_size : 0},
-      poll_duration{static_cast<ev_tstamp>(config_.poll_duration.total_nanoseconds()) / 1000000000} {
+    : supervisor_t{config_}, loop{config_.loop}, loop_ownership{config_.loop_ownership},
+      poll_duration{static_cast<ev_tstamp>(supervisor_t::poll_duration.total_nanoseconds()) / 1000000000} {
     ev_async_init(&async_watcher, async_cb);
 }
 
@@ -69,7 +68,7 @@ void supervisor_ev_t::do_initialize(system_context_t *ctx) noexcept {
 
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-    auto &inbound = leader->inbound;
+    auto &inbound = leader->inbound_queue;
     auto ptr = message.get();
     intrusive_ptr_add_ref(ptr);
     inbound.push(ptr);
@@ -143,7 +142,7 @@ supervisor_ev_t::~supervisor_ev_t() {
         ev_loop_destroy(loop);
     }
     message_base_t *ptr;
-    while (inbound.pop(ptr)) {
+    while (inbound_queue.pop(ptr)) {
         queue.emplace_back(ptr);
         intrusive_ptr_release(ptr);
     }
@@ -151,7 +150,7 @@ supervisor_ev_t::~supervisor_ev_t() {
 
 void supervisor_ev_t::move_inbound_queue() noexcept {
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-    auto &inbound = leader->inbound;
+    auto &inbound = leader->inbound_queue;
     auto &queue = leader->queue;
     message_base_t *ptr;
     while (inbound.pop(ptr)) {

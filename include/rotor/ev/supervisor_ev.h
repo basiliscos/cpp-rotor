@@ -13,7 +13,6 @@
 #include <ev.h>
 #include <memory>
 #include <unordered_map>
-#include <boost/lockfree/queue.hpp>
 
 namespace rotor {
 namespace ev {
@@ -80,9 +79,6 @@ struct supervisor_ev_t : public supervisor_t {
     /** \brief a type for mapping `timer_id` to timer pointer */
     using timers_map_t = std::unordered_map<request_id_t, timer_ptr_t>;
 
-    /** \brief lock-free queue for inbound messages */
-    using inbound_queue_t = boost::lockfree::queue<message_base_t *>;
-
     /** \brief EV-specific trampoline function for `on_async` method */
     static void async_cb(EV_P_ ev_async *w, int revents) noexcept;
 
@@ -106,11 +102,6 @@ struct supervisor_ev_t : public supervisor_t {
 
     /** \brief ev-loop specific thread-safe wake-up notifier for external messages delivery */
     ev_async async_watcher;
-
-    /** \brief inbound messages queue, i.e.the structure to hold messages
-     * received from other supervisors / threads
-     */
-    inbound_queue_t inbound;
 
     /** \brief how much time spend in active inbound queue polling */
     ev_tstamp poll_duration;
