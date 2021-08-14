@@ -20,11 +20,13 @@ std::string extended_error_t::message() const noexcept {
 
 extended_error_ptr_t extended_error_t::root() const noexcept {
     if (!next) {
-        auto self = const_cast<extended_error_t*>(this);
+        auto self = const_cast<extended_error_t *>(this);
         return extended_error_ptr_t(self);
     }
     auto n = next;
-    while(n->next) { n = n->next; }
+    while (n->next) {
+        n = n->next;
+    }
     return n;
 }
 

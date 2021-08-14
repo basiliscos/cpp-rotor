@@ -51,7 +51,6 @@ struct extended_error_t : arc_base_t<extended_error_t> {
      */
     std::string message() const noexcept;
 
-
     /**
      * \brief returns root (inner-most) extended error
      */
