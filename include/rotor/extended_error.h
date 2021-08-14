@@ -50,6 +50,12 @@ struct extended_error_t : arc_base_t<extended_error_t> {
      * into the result. The result string is returned.
      */
     std::string message() const noexcept;
+
+
+    /**
+     * \brief returns root (inner-most) extended error
+     */
+    extended_error_ptr_t root() const noexcept;
 };
 
 /** \brief constructs smart pointer to the extened error */
