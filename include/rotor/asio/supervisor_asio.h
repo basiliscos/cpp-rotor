@@ -79,6 +79,8 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
+    void do_process() noexcept;
+
   protected:
     /** \struct timer_t
      * \brief boos::asio::deadline_timer with embedded timer handler */

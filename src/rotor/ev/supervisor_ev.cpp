@@ -69,9 +69,7 @@ void supervisor_ev_t::do_initialize(system_context_t *ctx) noexcept {
 void supervisor_ev_t::enqueue(rotor::message_ptr_t message) noexcept {
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
     auto &inbound = leader->inbound_queue;
-    auto ptr = message.get();
-    intrusive_ptr_add_ref(ptr);
-    inbound.push(ptr);
+    inbound.push(message.detach());
     ev_async_send(loop, &async_watcher);
 }
 
