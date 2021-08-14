@@ -95,6 +95,7 @@ struct supervisor_t : public actor_base_t {
     supervisor_t(supervisor_config_t &config);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
+    ~supervisor_t();
 
     virtual void do_initialize(system_context_t *ctx) noexcept override;
 

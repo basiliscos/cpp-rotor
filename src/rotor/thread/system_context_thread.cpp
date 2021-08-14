@@ -15,12 +15,16 @@ namespace {
 namespace to {
 struct state {};
 struct queue {};
+struct poll_duration {};
+struct inbound_queue {};
 struct on_timer_trigger {};
 } // namespace to
 } // namespace
 
 template <> auto &supervisor_t::access<to::state>() noexcept { return state; }
 template <> auto &supervisor_t::access<to::queue>() noexcept { return queue; }
+template <> auto &supervisor_t::access<to::poll_duration>() noexcept { return poll_duration; }
+template <> auto &supervisor_t::access<to::inbound_queue>() noexcept { return inbound_queue; }
 template <>
 inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool>(request_id_t request_id,
                                                                                   bool cancelled) noexcept {
@@ -29,25 +33,17 @@ inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool
 
 using time_units_t = std::chrono::microseconds;
 
-system_context_thread_t::system_context_thread_t(size_t queue_size,
-                                                 boost::posix_time::time_duration poll_time_) noexcept
-    : poll_time{poll_time_}, inbound{queue_size} {
-    update_time();
-}
+system_context_thread_t::system_context_thread_t() noexcept { update_time(); }
 
-system_context_thread_t::~system_context_thread_t() {
-    // clean-up: just drop unprocessed messages
-    message_base_t *ptr;
-    while (inbound.pop(ptr)) {
-        intrusive_ptr_release(ptr);
-    }
-}
+system_context_thread_t::~system_context_thread_t() {}
 
 void system_context_thread_t::run() noexcept {
     using std::chrono::duration_cast;
     auto &root_sup = *get_supervisor();
     auto condition = [&]() -> bool { return root_sup.access<to::state>() != state_t::SHUT_DOWN; };
     auto &queue = root_sup.access<to::queue>();
+    auto &inbound = root_sup.access<to::inbound_queue>();
+    auto &poll_duration = root_sup.access<to::poll_duration>();
 
     auto process = [&]() -> bool {
         message_base_t *ptr;
@@ -59,7 +55,7 @@ void system_context_thread_t::run() noexcept {
         return false;
     };
 
-    auto delta = time_units_t{poll_time.total_microseconds()};
+    auto delta = time_units_t{poll_duration.total_microseconds()};
     while (condition()) {
         root_sup.do_process();
         if (condition()) {
@@ -87,6 +83,7 @@ void system_context_thread_t::run() noexcept {
 void system_context_thread_t::check() noexcept {
     auto &root_sup = *get_supervisor();
     auto &queue = root_sup.access<to::queue>();
+    auto &inbound = root_sup.access<to::inbound_queue>();
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
         queue.emplace_back(ptr);

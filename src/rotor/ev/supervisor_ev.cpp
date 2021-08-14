@@ -141,11 +141,6 @@ supervisor_ev_t::~supervisor_ev_t() {
     if (loop_ownership) {
         ev_loop_destroy(loop);
     }
-    message_base_t *ptr;
-    while (inbound_queue.pop(ptr)) {
-        queue.emplace_back(ptr);
-        intrusive_ptr_release(ptr);
-    }
 }
 
 void supervisor_ev_t::move_inbound_queue() noexcept {

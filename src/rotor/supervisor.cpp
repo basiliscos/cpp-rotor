@@ -31,6 +31,14 @@ supervisor_t::supervisor_t(supervisor_config_t &config)
     supervisor = this;
 }
 
+supervisor_t::~supervisor_t() {
+    message_base_t *ptr;
+    while (inbound_queue.pop(ptr)) {
+        queue.emplace_back(ptr);
+        intrusive_ptr_release(ptr);
+    }
+}
+
 address_ptr_t supervisor_t::make_address() noexcept {
     auto root_sup = this;
     while (root_sup->parent) {

@@ -26,7 +26,7 @@ void supervisor_thread_t::enqueue(message_ptr_t message) noexcept {
     auto ctx = static_cast<system_context_thread_t *>(context);
     auto ptr = message.get();
     intrusive_ptr_add_ref(ptr);
-    ctx->inbound.push(ptr);
+    inbound_queue.push(ptr);
     std::lock_guard<std::mutex> lock(ctx->mutex);
     ctx->cv.notify_one();
 }
