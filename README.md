@@ -29,6 +29,22 @@
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
 
+## performance
+
+
+ inter-thread messaging (1)   | cross-thread messaging (2)
+------------------------------|-------------------------
+  ~18.3M messages/second      | ~ 2.5M messages/second
+
+
+Setup: Intel Core i7-8550U, Void Linux 5.13.
+
+(1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
+
+(2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
+`examples/boost-asio/ping-pong-2-theads`, `examples/ev/ping-pong-ev-2-threads`.
+
+
 ## license
 
 MIT
