@@ -34,7 +34,6 @@ supervisor_t::supervisor_t(supervisor_config_t &config)
 supervisor_t::~supervisor_t() {
     message_base_t *ptr;
     while (inbound_queue.pop(ptr)) {
-        queue.emplace_back(ptr);
         intrusive_ptr_release(ptr);
     }
 }
