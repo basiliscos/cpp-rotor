@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.16 (xx-xxx-xxxx)
+## 0.16 (22-Aug-2021)
 - [improvement] significant message throughtput increase for `std::thread`, `boost-asio`
 and `ev` backends (upto 5x times)
 - [improvement] `extended_error` can now access to root reason

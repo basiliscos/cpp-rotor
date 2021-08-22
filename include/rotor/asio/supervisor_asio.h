@@ -79,6 +79,7 @@ struct supervisor_asio_t : public supervisor_t {
     /** \brief returns exeuction strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
+    /** \brief process queue of messages of locality leader */
     void do_process() noexcept;
 
   protected:

@@ -5,7 +5,6 @@
 //
 
 #include "rotor/ev/supervisor_ev.h"
-#include <thread>
 
 using namespace rotor;
 using namespace rotor::ev;

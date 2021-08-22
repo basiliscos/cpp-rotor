@@ -55,6 +55,15 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+## 0.16 (22-Aug-2021)
+- [improvement] significant message throughtput increase for `std::thread`, `boost-asio`
+and `ev` backends (upto 5x times)
+- [improvement] `extended_error` can now access to root reason
+- [improvement] delivery plugin in debug mode dumps discovery requests and responses
+- [improvement/breaking] more details on fatal error (`system_context`)
+- [example] `examples/thread/ping-pong-thread.cpp` (new)
+- [example] `examples/ev/ping-pong-ev-2-threads` (new)
+
 ### 0.15 (02-Apr-2021)
  - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions
  - [bugfix] `foreigners_support_plugin_t` more safely deliver a message for a foreign
