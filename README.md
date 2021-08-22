@@ -55,7 +55,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
-## 0.16 (22-Aug-2021)
+### 0.16 (22-Aug-2021)
 - [improvement] significant message throughtput increase for `std::thread`, `boost-asio`
 and `ev` backends (upto 5x times)
 - [improvement] `extended_error` can now access to root reason
