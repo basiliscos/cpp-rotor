@@ -14,6 +14,7 @@
 namespace rotor {
 
 struct supervisor_t;
+struct actor_base_t;
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_t>;
 
 /** \struct system_context_t
@@ -42,7 +43,7 @@ struct system_context_t : arc_base_t<system_context_t> {
      * implementation is to output the error to `std::err` and invoke `std::abort()`.
      *
      */
-    virtual void on_error(const extended_error_ptr_t &ec) noexcept;
+    virtual void on_error(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept;
 
     /** \brief identifies the context.
      *

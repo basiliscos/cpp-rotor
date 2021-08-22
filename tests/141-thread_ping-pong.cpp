@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -58,7 +58,7 @@ struct self_shutdowner_sup_t : public rth::supervisor_thread_t {
 
 struct system_context_thread_test_t : public rth::system_context_thread_t {
     r::extended_error_ptr_t ee;
-    void on_error(const r::extended_error_ptr_t &err) noexcept override { ee = err; }
+    void on_error(r::actor_base_t *, const r::extended_error_ptr_t &err) noexcept override { ee = err; }
 };
 
 struct ping_t {};
@@ -126,7 +126,7 @@ struct bad_actor_t : public r::actor_base_t {
     ~bad_actor_t() { printf("~bad_actor_t\n"); }
 };
 
-TEST_CASE("ping/pong", "[supervisor][ev]") {
+TEST_CASE("ping/pong", "[supervisor][thread]") {
     auto system_context = r::intrusive_ptr_t<rth::system_context_thread_t>(new rth::system_context_thread_t());
     auto timeout = r::pt::milliseconds{10};
     auto sup = system_context->create_supervisor<supervisor_thread_test_t>().timeout(timeout).finish();
@@ -158,7 +158,7 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     REQUIRE(destroyed == 1 + 2 + 4);
 }
 
-TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
+TEST_CASE("no shutdown confirmation", "[supervisor][thread]") {
     auto destroyed_start = destroyed;
     auto system_context = r::intrusive_ptr_t<system_context_thread_test_t>(new system_context_thread_test_t());
     auto timeout = r::pt::milliseconds{10};
@@ -178,7 +178,7 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     CHECK(destroyed_end == destroyed_start + 4);
 }
 
-TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {
+TEST_CASE("supervisors hierarchy", "[supervisor][thread]") {
     auto system_context = r::intrusive_ptr_t<system_context_thread_test_t>(new system_context_thread_test_t());
     auto timeout = r::pt::milliseconds{10};
     auto sup = system_context->create_supervisor<supervisor_thread_test_t>().timeout(timeout).finish();

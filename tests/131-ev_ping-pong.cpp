@@ -47,7 +47,7 @@ struct self_shutdowner_sup_t : public re::supervisor_ev_t {
 
 struct system_context_ev_test_t : public re::system_context_ev_t {
     r::extended_error_ptr_t ee;
-    void on_error(const r::extended_error_ptr_t &err) noexcept override {
+    void on_error(r::actor_base_t *, const r::extended_error_ptr_t &err) noexcept override {
         ee = err;
         auto loop = static_cast<re::supervisor_ev_t *>(get_supervisor().get())->get_loop();
         ev_break(loop);

@@ -214,7 +214,7 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
 }
 
 void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const extended_error_ptr_t &ec) noexcept {
-    actor.get_supervisor().access<to::system_context>()->on_error(ec);
+    actor.get_supervisor().access<to::system_context>()->on_error(&actor, ec);
 }
 
 void child_manager_plugin_t::cancel_init(const actor_base_t *child) noexcept {

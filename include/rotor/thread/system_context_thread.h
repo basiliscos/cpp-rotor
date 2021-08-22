@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -28,8 +28,15 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_thread_t>;
  *
  */
 struct system_context_thread_t : public system_context_t {
-    /** \brief constructs thread system context */
+    /** \brief constructs thread system context
+     *
+     *  \param queue_size defines pre-allocated ibound queue size for messages from other threads
+     *
+     *  \param poll_time how much time it will spend in polling inbound queue before switching into
+     *  notification mode (i.e. cv + mutex)
+     */
     system_context_thread_t() noexcept;
+    ~system_context_thread_t();
 
     /** \brief invokes blocking execution of the supervisor
      *
@@ -38,7 +45,7 @@ struct system_context_thread_t : public system_context_t {
      */
     virtual void run() noexcept;
 
-    /** \brief checks for messages from external threads and fires expired timers*/
+    /** \brief checks for messages from external threads and fires expired timers */
     void check() noexcept;
 
   protected:
@@ -66,10 +73,8 @@ struct system_context_thread_t : public system_context_t {
     void start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept;
 
     /** \brief cancel timer implementation */
-    void cancel_timer(request_id_t timer_id) noexcept;
 
-    /** \brief queue for keeping external messages, from other threads/loops/backends */
-    messages_queue_t inbound;
+    void cancel_timer(request_id_t timer_id) noexcept;
 
     /** \brief mutex for inbound queue */
     std::mutex mutex;

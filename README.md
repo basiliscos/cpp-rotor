@@ -29,6 +29,22 @@
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
 
+## performance
+
+
+ inter-thread messaging (1)   | cross-thread messaging (2)
+------------------------------|-------------------------
+  ~18.3M messages/second      | ~ 2.5M messages/second
+
+
+Setup: Intel Core i7-8550U, Void Linux 5.13.
+
+(1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
+
+(2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
+`examples/boost-asio/ping-pong-2-theads`, `examples/ev/ping-pong-ev-2-threads`.
+
+
 ## license
 
 MIT
@@ -38,6 +54,15 @@ MIT
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
 
 ## Changelog
+
+## 0.16 (22-Aug-2021)
+- [improvement] significant message throughtput increase for `std::thread`, `boost-asio`
+and `ev` backends (upto 5x times)
+- [improvement] `extended_error` can now access to root reason
+- [improvement] delivery plugin in debug mode dumps discovery requests and responses
+- [improvement/breaking] more details on fatal error (`system_context`)
+- [example] `examples/thread/ping-pong-thread.cpp` (new)
+- [example] `examples/ev/ping-pong-ev-2-threads` (new)
 
 ### 0.15 (02-Apr-2021)
  - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions

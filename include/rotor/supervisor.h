@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <boost/lockfree/queue.hpp>
+
 namespace rotor {
 
 /** \struct supervisor_t
@@ -93,6 +95,7 @@ struct supervisor_t : public actor_base_t {
     supervisor_t(supervisor_config_t &config);
     supervisor_t(const supervisor_t &) = delete;
     supervisor_t(supervisor_t &&) = delete;
+    ~supervisor_t();
 
     virtual void do_initialize(system_context_t *ctx) noexcept override;
 
@@ -225,6 +228,9 @@ struct supervisor_t : public actor_base_t {
     /** \brief generic non-public methods accessor */
     template <typename T, typename... Args> auto access(Args... args) noexcept;
 
+    /** \brief lock-free queue for inbound messages */
+    using inbound_queue_t = boost::lockfree::queue<message_base_t *>;
+
   protected:
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
@@ -271,6 +277,15 @@ struct supervisor_t : public actor_base_t {
     /** \brief root supervisor for the locality */
     supervisor_t *locality_leader;
 
+    /** \brief inbound queue for external messages */
+    inbound_queue_t inbound_queue;
+
+    /** \brief size of inbound queue */
+    size_t inbound_queue_size;
+
+    /** \brief how much time spend in active inbound queue polling */
+    pt::time_duration poll_duration;
+
   private:
     using actors_set_t = std::unordered_set<const actor_base_t *>;
 
@@ -311,7 +326,7 @@ template <typename Supervisor> auto system_context_t::create_supervisor() {
         [this](auto &actor) {
             if (supervisor) {
                 auto ec = make_error_code(error_code_t::supervisor_defined);
-                on_error(make_error(identity(), ec));
+                on_error(actor.get(), make_error(identity(), ec));
                 actor.reset();
             } else {
                 this->supervisor = actor;
@@ -562,7 +577,7 @@ template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::
     intrusive_ptr_t<Actor> actor_ptr;
     if (!validate()) {
         auto ec = make_error_code(error_code_t::actor_misconfigured);
-        system_context.on_error(make_error(system_context.identity(), ec));
+        system_context.on_error(actor_ptr.get(), make_error(system_context.identity(), ec));
     } else {
         auto &cfg = static_cast<typename builder_t::config_t &>(config);
         auto actor = new Actor(cfg);

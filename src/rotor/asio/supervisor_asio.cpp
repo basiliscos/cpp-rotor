@@ -79,13 +79,13 @@ void supervisor_asio_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_asio_t::enqueue(rotor::message_ptr_t message) noexcept {
+    auto leader = static_cast<supervisor_asio_t *>(locality_leader);
+    auto &inbound = leader->inbound_queue;
+    inbound.push(message.detach());
+
     auto actor_ptr = supervisor_ptr_t(this);
-    // std::cout << "deferring on " << this << ", stopped : " << strand.get_io_context().stopped() << "\n";
-    asio::defer(get_strand(), [actor = std::move(actor_ptr), message = std::move(message)]() mutable {
+    asio::defer(get_strand(), [actor = std::move(actor_ptr)]() mutable {
         auto &sup = *actor;
-        // std::cout << "deferred processing on" << &sup << "\n";
-        // sup.enqueue(std::move(message));
-        sup.put(std::move(message));
         sup.do_process();
     });
 }
@@ -100,4 +100,37 @@ void supervisor_asio_t::invoke_shutdown() noexcept {
     auto ec = make_error_code(shutdown_code_t::normal);
     auto reason = make_error(ec);
     do_shutdown(reason);
+}
+
+void supervisor_asio_t::do_process() noexcept {
+    using clock_t = std::chrono::steady_clock;
+    using time_units_t = std::chrono::microseconds;
+
+    auto leader = static_cast<supervisor_asio_t *>(locality_leader);
+    auto &inbound = leader->inbound_queue;
+    auto &queue = leader->queue;
+    bool ok = false;
+    message_base_t *ptr;
+    while (inbound.pop(ptr)) {
+        queue.emplace_back(ptr);
+        intrusive_ptr_release(ptr);
+        ok = true;
+    }
+    if (!queue.empty()) {
+        supervisor_t::do_process();
+    }
+
+    if (ok) {
+        auto deadline = clock_t::now() + time_units_t{poll_duration.total_microseconds()};
+        while (clock_t::now() < deadline && queue.empty()) {
+            message_base_t *ptr;
+            while (inbound.pop(ptr)) {
+                queue.emplace_back(ptr);
+                intrusive_ptr_release(ptr);
+            }
+        }
+        if (!queue.empty()) {
+            supervisor_t::do_process();
+        }
+    }
 }

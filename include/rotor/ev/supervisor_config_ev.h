@@ -21,7 +21,7 @@ struct supervisor_config_ev_t : public supervisor_config_t {
     struct ev_loop *loop;
 
     /** \brief whether loop should be destroyed by supervisor */
-    bool loop_ownership;
+    bool loop_ownership = false;
 
     using supervisor_config_t::supervisor_config_t;
 };

@@ -24,7 +24,7 @@ namespace pt = boost::posix_time;
 namespace ra = rotor::asio;
 
 namespace constants {
-static float failure_probability = 0.97f;
+static float failure_probability = 0.70f;
 static pt::time_duration ping_timeout = pt::milliseconds{100};
 static pt::time_duration ping_reply_base = pt::milliseconds{50};
 static pt::time_duration check_interval = pt::milliseconds{3000};

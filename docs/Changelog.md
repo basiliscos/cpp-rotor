@@ -4,8 +4,14 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.16 (xx-xxx-xxxx)
+## 0.16 (22-Aug-2021)
+- [improvement] significant message throughtput increase for `std::thread`, `boost-asio`
+and `ev` backends (upto 5x times)
+- [improvement] `extended_error` can now access to root reason
+- [improvement] delivery plugin in debug mode dumps discovery requests and responses
+- [improvement/breaking] more details on fatal error (`system_context`)
 - [example] `examples/thread/ping-pong-thread.cpp` (new)
+- [example] `examples/ev/ping-pong-ev-2-threads` (new)
 
 ## 0.15 (02-Apr-2021)
  - [bugfix] `lifetime_plugin_t` do not unsubscribe from foreign to me subscriptions
@@ -21,7 +27,7 @@ is used. It wraps `std::error_code`, provides string context and pointer to the 
 `extended_error` cause. This greatly simplfies error tracking of errors. Every response
 now contains `ee` field instead of `ec`.
  - [improvement] `actor` has shutdown reason (in form of `extended_error` pointer)
- - [improvement] delivery plugin in debug mode it dumps shutdown reason in shutdown trigger
+ - [improvement] delivery plugin in debug mode dumps shutdown reason in shutdown trigger
  messages
  - [improvement] actor identity has `on_unlink` method to get it know, when it has been
 unlinked from server actor

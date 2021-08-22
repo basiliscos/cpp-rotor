@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,42 +15,65 @@ namespace {
 namespace to {
 struct state {};
 struct queue {};
+struct poll_duration {};
+struct inbound_queue {};
 struct on_timer_trigger {};
 } // namespace to
 } // namespace
 
 template <> auto &supervisor_t::access<to::state>() noexcept { return state; }
 template <> auto &supervisor_t::access<to::queue>() noexcept { return queue; }
+template <> auto &supervisor_t::access<to::poll_duration>() noexcept { return poll_duration; }
+template <> auto &supervisor_t::access<to::inbound_queue>() noexcept { return inbound_queue; }
 template <>
 inline auto rotor::actor_base_t::access<to::on_timer_trigger, request_id_t, bool>(request_id_t request_id,
                                                                                   bool cancelled) noexcept {
     on_timer_trigger(request_id, cancelled);
 }
 
+using time_units_t = std::chrono::microseconds;
+
 system_context_thread_t::system_context_thread_t() noexcept { update_time(); }
+
+system_context_thread_t::~system_context_thread_t() {}
 
 void system_context_thread_t::run() noexcept {
     using std::chrono::duration_cast;
     auto &root_sup = *get_supervisor();
     auto condition = [&]() -> bool { return root_sup.access<to::state>() != state_t::SHUT_DOWN; };
+    auto &queue = root_sup.access<to::queue>();
+    auto &inbound = root_sup.access<to::inbound_queue>();
+    auto &poll_duration = root_sup.access<to::poll_duration>();
+
+    auto process = [&]() -> bool {
+        message_base_t *ptr;
+        if (inbound.pop(ptr)) {
+            queue.emplace_back(ptr);
+            intrusive_ptr_release(ptr);
+            return true;
+        }
+        return false;
+    };
+
+    auto delta = time_units_t{poll_duration.total_microseconds()};
     while (condition()) {
         root_sup.do_process();
         if (condition()) {
-            auto predicate = [&]() -> bool { return !inbound.empty(); };
-            bool r = false;
-            std::unique_lock<std::mutex> lock(mutex);
+            using namespace std::chrono_literals;
+            auto dealine = clock_t::now() + delta;
             if (!timer_nodes.empty()) {
-                r = cv.wait_until(lock, timer_nodes.begin()->deadline, predicate);
-            } else {
-                cv.wait(lock, predicate);
-                r = true;
+                dealine = std::min(dealine, timer_nodes.front().deadline);
             }
-            if (r) {
-                auto &queue = root_sup.access<to::queue>();
-                std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
-                inbound.clear();
+            // fast stage, indirect spin-lock, cpu consuming
+            while ((clock_t::now() < dealine) && !process()) {
             }
-            lock.unlock();
+            if (queue.empty()) {
+                std::unique_lock<std::mutex> lock(mutex);
+                auto predicate = [&]() { return !inbound.empty(); };
+                // wait notification, do not consume CPU
+                auto next_timer_deadline = !timer_nodes.empty() ? timer_nodes.front().deadline : dealine + 1h;
+                cv.wait_until(lock, next_timer_deadline, predicate);
+            }
             update_time();
             root_sup.do_process();
         }
@@ -60,11 +83,12 @@ void system_context_thread_t::run() noexcept {
 void system_context_thread_t::check() noexcept {
     auto &root_sup = *get_supervisor();
     auto &queue = root_sup.access<to::queue>();
-    do {
-        std::scoped_lock<std::mutex> lock(mutex);
-        std::move(inbound.begin(), inbound.end(), std::back_inserter(queue));
-        inbound.clear();
-    } while (0);
+    auto &inbound = root_sup.access<to::inbound_queue>();
+    message_base_t *ptr;
+    while (inbound.pop(ptr)) {
+        queue.emplace_back(ptr);
+        intrusive_ptr_release(ptr);
+    }
     update_time();
 }
 
@@ -81,7 +105,7 @@ void system_context_thread_t::update_time() noexcept {
 void system_context_thread_t::start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
     if (intercepting)
         update_time();
-    auto deadline = now + std::chrono::microseconds{interval.total_microseconds()};
+    auto deadline = now + time_units_t{interval.total_microseconds()};
     auto it = timer_nodes.begin();
     for (; it != timer_nodes.end(); ++it) {
         if (deadline < it->deadline) {
