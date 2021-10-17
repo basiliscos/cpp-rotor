@@ -10,7 +10,7 @@
 #include "rotor/address.hpp"
 #include "rotor/subscription_point.h"
 #include "rotor/message.h"
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 namespace rotor {
