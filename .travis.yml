@@ -8,7 +8,7 @@ os:
     - linux
 
 before_script:
-    - wget -q -O - https://github.com/boostorg/boost/archive/refs/tags/boost-1.70.0.zip | tar -xf
+    - wget -q -O - https://github.com/boostorg/boost/archive/refs/tags/boost-1.70.0.zip | tar -xf -
     - cd boost_1_70_0 && ./bootstrap.sh --with-libraries=coroutine,context,chrono,system,thread,regex,filesystem,date_time,program_options
     - ./b2  --ignore-site-config && cd ..
     - mkdir build
