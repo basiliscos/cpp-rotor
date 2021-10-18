@@ -84,6 +84,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/address_mapping.h
     include/rotor/arc.hpp
     include/rotor/error_code.h
+    include/rotor/extended_error.h
     include/rotor/forward.hpp
     include/rotor/handler.h
     include/rotor/message.h
@@ -224,7 +225,7 @@ install(
 
 foreach( HEADER_FILE ${ROTOR_HEADERS_TO_INSTALL} )
     get_filename_component( DIR ${HEADER_FILE} PATH )
-    install( FILES ${HEADER_FILE} DESTINATION include/rotor/${DIR} )
+    install( FILES ${HEADER_FILE} DESTINATION ${DIR} )
 endforeach()
 
 install(
