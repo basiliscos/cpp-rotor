@@ -55,6 +55,12 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.17 (23-Oct-2021)
+- [bugfix] fix installation issues with cmake (thanks to @melpon)
+- [bugfix] fix missing header (thanks to @melpon)
+- [ci] drop travis-ci in the sake of circle-ci
+
+
 ### 0.16 (22-Aug-2021)
 - [improvement] significant message throughtput increase for `std::thread`, `boost-asio`
 and `ev` backends (upto 5x times)
