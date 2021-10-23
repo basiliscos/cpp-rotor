@@ -1,0 +1,61 @@
+version: 2.1
+jobs:
+  build_clang:
+    docker:
+      - image: debian:10
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: "prepare & build"
+          command: |
+              apt-get update
+              apt-get install -y cmake clang wx-common libwxgtk3.0-gtk3-dev wx3.0-headers libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
+              mkdir build
+              cd build && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_EV=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer -Wall -Wextra -pedantic -Werror" ..
+              make -j2 && ctest .
+
+  build_gcc:
+    docker:
+      - image: debian:10
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: "prepare & build"
+          command: |
+              apt-get update
+              apt-get install -y cmake g++ lcov wx-common libwxgtk3.0-gtk3-dev wx3.0-headers libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
+              mkdir build
+              cd build && cmake -DBUILD_DOC=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_EV=on -DBUILD_DOC=on -DBUILD_TESTS=on -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage -Wall -Wextra -pedantic -Werror" ..
+              make -j2
+              lcov --directory . --zerocounters
+              cd tests && ROTOR_INSPECT_DELIVERY=10 ctest --output-on-failure . && ROTOR_INSPECT_DELIVERY=1 ctest . && cd ..
+              lcov --directory . --capture --output-file coverage.info
+              lcov --remove coverage.info '*/tests/*' '*/examples/*'  '/usr/*' --output-file coverage.info.cleaned
+              rm coverage.info
+              genhtml -o coverage coverage.info.cleaned
+              apt-get install -y curl
+              bash <(curl -s https://codecov.io/bash) -X gcov
+
+  build_arm:
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: "prepare & build"
+          command: |
+              sudo apt-get update
+              sudo apt-get install -y cmake g++ libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
+              mkdir build
+              cd build && cmake -DBUILD_DOC=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_EV=on -DBUILD_TESTS=on ..
+              make -j2 && ctest .
+
+workflows:
+  build-all-workflow:
+    jobs:
+      - build_gcc
+      - build_clang
+      - build_arm
