@@ -28,7 +28,14 @@ jobs:
               apt-get install -y cmake g++ lcov wx-common libwxgtk3.0-gtk3-dev wx3.0-headers libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
               mkdir build
               cd build && cmake -DBUILD_DOC=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_EV=on -DBUILD_DOC=on -DBUILD_TESTS=on -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage -Wall -Wextra -pedantic -Werror" ..
-              make -j2 && ctest .
+              make -j2
+              lcov --directory . --zerocounters
+              cd tests && ROTOR_INSPECT_DELIVERY=10 ctest --output-on-failure . && ROTOR_INSPECT_DELIVERY=1 ctest . && cd ..
+              lcov --directory . --capture --output-file coverage.info
+              lcov --remove coverage.info '*/tests/*' '*/examples/*'  '/usr/*' --output-file coverage.info.cleaned
+              rm coverage.info
+              genhtml -o coverage coverage.info.cleaned
+              bash <(curl -s https://codecov.io/bash) -X gcov
 
   build_arm:
     machine:
