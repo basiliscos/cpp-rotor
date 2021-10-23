@@ -35,6 +35,7 @@ jobs:
               lcov --remove coverage.info '*/tests/*' '*/examples/*'  '/usr/*' --output-file coverage.info.cleaned
               rm coverage.info
               genhtml -o coverage coverage.info.cleaned
+              apt-get install -y curl
               bash <(curl -s https://codecov.io/bash) -X gcov
 
   build_arm:
