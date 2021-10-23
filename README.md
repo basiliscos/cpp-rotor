@@ -10,8 +10,8 @@
 `rotor` is event loop friendly C++ actor micro framework.
 
 [![https://t.me/cpp_rotor](https://raw.githubusercontent.com/wiki/erthink/libmdbx/img/telegram.png)](https://t.me/cpp_rotor)
-[![Travis](https://api.travis-ci.org/basiliscos/cpp-rotor.svg?branch=master)](https://travis-ci.org/basiliscos/cpp-rotor)
-[![Build status](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43/branch/master?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
+[![CircleCI](https://circleci.com/gh/basiliscos/cpp-rotor.svg?style=svg)](https://circleci.com/gh/basiliscos/cpp-rotor)
+[![appveyor](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43/branch/master?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
 [![codecov](https://codecov.io/gh/basiliscos/cpp-rotor/branch/master/graph/badge.svg)](https://codecov.io/gh/basiliscos/cpp-rotor)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b9fc6a0fd738473f8fa9084227cd7265)](https://www.codacy.com/manual/basiliscos/cpp-rotor?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=basiliscos/cpp-rotor&amp;utm_campaign=Badge_Grade)
 [![license](https://img.shields.io/github/license/basiliscos/cpp-rotor.svg)](https://github.com/basiliscos/cpp-rotor/blob/master/LICENSE)
