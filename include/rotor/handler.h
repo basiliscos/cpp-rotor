@@ -49,6 +49,9 @@ template <typename M, typename F> constexpr lambda_holder_t<M, F> lambda(F &&fn)
  */
 template <typename T> struct handler_traits {};
 
+/** \struct handler_traits<void (A::*)(M &) >
+ *  \brief Helper class to catch wrong message handler
+ */
 template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
     using pointer_t = void (A::*)(M &);
     static auto const constexpr has_noexcept =
