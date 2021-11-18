@@ -30,11 +30,11 @@ struct system_context_t : arc_base_t<system_context_t> {
     /** \brief returns root supervisor */
     inline supervisor_ptr_t get_supervisor() noexcept { return supervisor; }
 
-    system_context_t();
+    system_context_t() = default;
 
     system_context_t(const system_context_t &) = delete;
     system_context_t(system_context_t &&) = delete;
-    virtual ~system_context_t();
+    virtual ~system_context_t() = default;
 
     /** \brief fatal error handler
      *

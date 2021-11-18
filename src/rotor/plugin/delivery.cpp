@@ -15,8 +15,6 @@
 using namespace rotor;
 using namespace rotor::plugin;
 
-delivery_plugin_base_t::~delivery_plugin_base_t() {}
-
 void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
     auto sup = static_cast<supervisor_t *>(actor_);

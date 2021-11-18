@@ -57,7 +57,7 @@ struct subscription_point_t {
 
     /** \brief ctor from handler and related address (used for comparison) */
     subscription_point_t(const handler_ptr_t &handler_, const address_ptr_t &address_) noexcept
-        : handler{handler_}, address{address_}, owner_ptr{nullptr} {}
+        : handler{handler_}, address{address_}, owner_ptr{nullptr}, owner_tag{owner_tag_t::ANONYMOUS} {}
 
     /** \brief full ctor (handler, address, actor, and owner tag) */
     subscription_point_t(const handler_ptr_t &handler_, const address_ptr_t &address_, const actor_base_t *owner_ptr_,
@@ -86,7 +86,6 @@ struct subscription_info_t : public arc_base_t<subscription_info_t>, subscriptio
                         state_t state_) noexcept
         : subscription_point_t{point}, internal_address{internal_address_},
           internal_handler{internal_handler_}, state{state_} {}
-    ~subscription_info_t();
 
     /** \brief uses {@link subscription_point_t} comparison */
     inline bool operator==(const subscription_point_t &point) const noexcept {

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -19,8 +19,6 @@ struct internal_handler {};
 
 template <> auto &subscription_info_t::access<to::internal_address>() noexcept { return internal_address; }
 template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
-
-subscription_info_t::~subscription_info_t() {}
 
 subscription_t::subscription_t(supervisor_t &sup_) noexcept : supervisor{sup_} {}
 

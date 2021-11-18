@@ -40,7 +40,6 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     assert(revents & EV_TIMER);
     (void)revents;
     auto *sup = static_cast<supervisor_ev_t *>(w->data);
-    intrusive_ptr_release(sup);
     auto timer = static_cast<supervisor_ev_t::timer_t *>(w);
     auto timer_id = timer->handler->request_id;
     auto &timers_map = sup->access<to::timers_map>();
@@ -51,6 +50,7 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
         timers_map.erase(it);
         sup->do_process();
     }
+    intrusive_ptr_release(sup);
 }
 
 supervisor_ev_t::supervisor_ev_t(supervisor_config_ev_t &config_)
