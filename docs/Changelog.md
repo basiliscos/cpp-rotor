@@ -4,6 +4,11 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.18 (03-12-2021)
+- [improvement] add `static_assert` for `noexcept` check of a hanler signature
+- [improvement] add [gitee](https://gitee.com/basiliscos/cpp-rotor) mirror
+- [bugfix] fix potential use-after-free in `ev` backend
+
 ## 0.17 (23-Oct-2021)
 - [bugfix] fix installation issues with cmake (thanks to @melpon)
 - [bugfix] fix missing header (thanks to @melpon)
