@@ -35,8 +35,6 @@ using time_units_t = std::chrono::microseconds;
 
 system_context_thread_t::system_context_thread_t() noexcept { update_time(); }
 
-system_context_thread_t::~system_context_thread_t() {}
-
 void system_context_thread_t::run() noexcept {
     using std::chrono::duration_cast;
     auto &root_sup = *get_supervisor();

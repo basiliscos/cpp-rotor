@@ -6,7 +6,7 @@
 
 #include "rotor/supervisor.h"
 #include "rotor/registry.h"
-#include <assert.h>
+#include <cassert>
 
 using namespace rotor;
 
@@ -23,7 +23,7 @@ template <> auto &subscription_info_t::access<to::internal_address>() noexcept {
 template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
-    : actor_base_t(config), last_req_id{0}, subscription_map(*this), parent{config.supervisor}, manager{nullptr},
+    : actor_base_t(config), last_req_id{0}, subscription_map(*this), parent{config.supervisor},
       inbound_queue(0), inbound_queue_size{config.inbound_queue_size}, poll_duration{config.poll_duration},
 
       create_registry(config.create_registry), synchronize_start(config.synchronize_start),

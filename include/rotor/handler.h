@@ -49,10 +49,21 @@ template <typename M, typename F> constexpr lambda_holder_t<M, F> lambda(F &&fn)
  */
 template <typename T> struct handler_traits {};
 
+/** \struct handler_traits<void (A::*)(M &) >
+ *  \brief Helper class to catch wrong message handler
+ */
+template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
+    using pointer_t = void (A::*)(M &);
+    static auto const constexpr has_noexcept =
+        noexcept((std::declval<A>().*std::declval<pointer_t>())(std::declval<M &>()));
+    static_assert(has_noexcept, "message handler should have 'noexcept' specification");
+};
+
 /** \struct handler_traits<void (A::*)(M &) noexcept>
  *  \brief Helper class to extract final actor class and message type from pointer-to-member function
  */
 template <typename A, typename M> struct handler_traits<void (A::*)(M &) noexcept> {
+
     /** \brief returns true if message is valid */
     static auto const constexpr has_valid_message = std::is_base_of_v<message_base_t, M>;
 

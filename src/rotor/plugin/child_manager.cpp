@@ -110,7 +110,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     }
 
     if (shutdown_reason) {
-        actor->do_shutdown(std::move(shutdown_reason));
+        actor->do_shutdown(shutdown_reason);
     }
 
     cancel_init(&child);

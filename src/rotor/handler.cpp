@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -20,14 +20,15 @@ inline auto rotor::supervisor_t::access<to::intercept, message_ptr_t &, const vo
     return intercept(msg, tag, continuation);
 }
 
-struct continuation_impl_t : continuation_t {
-    handler_intercepted_t &handler;
-    message_ptr_t &message;
-
+struct continuation_impl_t final : continuation_t {
     continuation_impl_t(handler_intercepted_t &handler_, message_ptr_t &message_) noexcept
         : handler{handler_}, message{message_} {}
 
-    void operator()() const noexcept { handler.call_no_check(message); }
+    void operator()() const noexcept override { handler.call_no_check(message); }
+
+private:
+    handler_intercepted_t &handler;
+    message_ptr_t &message;
 };
 
 handler_base_t::handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_) noexcept
@@ -43,7 +44,7 @@ handler_ptr_t handler_base_t::upgrade(const void *tag) noexcept {
 }
 
 handler_intercepted_t::handler_intercepted_t(handler_ptr_t backend_, const void *tag_) noexcept
-    : handler_base_t(*backend_->actor_ptr, backend_->message_type, backend_->handler_type), backend{backend_},
+    : handler_base_t(*backend_->actor_ptr, backend_->message_type, backend_->handler_type), backend{std::move(backend_)},
       tag{tag_} {}
 
 void handler_intercepted_t::call(message_ptr_t &message) noexcept {

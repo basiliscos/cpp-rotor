@@ -45,10 +45,10 @@ void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_
 
     intrusive_ptr_t<supervisor_asio_t> self(this);
     request_id_t timer_id = handler.request_id;
-    timer->async_wait([self = std::move(self), timer_id = timer_id](const boost::system::error_code &ec) {
+    timer->async_wait([self = self, timer_id = timer_id](const boost::system::error_code &ec) {
         auto &strand = self->get_strand();
         if (!ec) {
-            asio::defer(strand, [self = std::move(self), timer_id = timer_id]() {
+            asio::defer(strand, [self = self, timer_id = timer_id]() {
                 auto &sup = *self;
                 auto &timers_map = sup.timers_map;
                 auto it = timers_map.find(timer_id);

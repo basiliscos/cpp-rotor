@@ -7,7 +7,9 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 [blog-cpp-req_res]: https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/
 
-`rotor` is event loop friendly C++ actor micro framework.
+`rotor` is event loop friendly C++ actor micro framework,
+    [github](https://github.com/basiliscos/cpp-rotor)
+    [gitee](https://gitee.com/basiliscos/cpp-rotor)
 
 [![https://t.me/cpp_rotor](https://raw.githubusercontent.com/wiki/erthink/libmdbx/img/telegram.png)](https://t.me/cpp_rotor)
 [![CircleCI](https://circleci.com/gh/basiliscos/cpp-rotor.svg?style=svg)](https://circleci.com/gh/basiliscos/cpp-rotor)
@@ -54,6 +56,12 @@ MIT
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
 
 ## Changelog
+
+### 0.18 (03-12-2021)
+- [improvement] add `static_assert` for `noexcept` check of a hanler signature
+- [improvement] add [gitee](https://gitee.com/basiliscos/cpp-rotor) mirror
+- [bugfix] fix potential use-after-free in `ev` backend
+
 
 ### 0.17 (23-Oct-2021)
 - [bugfix] fix installation issues with cmake (thanks to @melpon)

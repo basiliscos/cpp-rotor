@@ -6,8 +6,7 @@
 
 #include "rotor/error_code.h"
 
-namespace rotor {
-namespace details {
+namespace rotor::details {
 
 const char *error_code_category::name() const noexcept { return "rotor_error"; }
 const char *shutdown_code_category::name() const noexcept { return "rotor_shutdown"; }
@@ -60,8 +59,7 @@ std::string shutdown_code_category::message(int c) const {
     return "unknown shutdown reason";
 }
 
-} // namespace details
-} // namespace rotor
+}
 
 namespace rotor {
 

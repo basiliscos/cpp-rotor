@@ -26,8 +26,6 @@ auto actor_base_t::access<to::make_error_code, const std::error_code &, const ex
     return make_error(ec, next);
 }
 
-plugin_base_t::~plugin_base_t() {}
-
 void plugin_base_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;
     actor->commit_plugin_activation(*this, true);

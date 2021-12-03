@@ -62,8 +62,6 @@ using default_local_delivery_t = inspected_local_delivery_t;
 struct delivery_plugin_base_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
-    ~delivery_plugin_base_t();
-
     /** \brief main messages dispatcher interface */
     virtual void process() noexcept = 0;
     void activate(actor_base_t *actor) noexcept override;

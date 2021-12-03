@@ -16,7 +16,7 @@ template <> auto &plugin_base_t::access<actor_base_t>() noexcept { return actor;
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
     : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
-      shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW}, continuation_mask{0} {
+      shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW} {
     plugins_storage = cfg.plugins_constructor();
     plugins = plugins_storage->get_plugins();
     for (auto plugin : plugins) {
@@ -110,8 +110,7 @@ void actor_base_t::init_continue() noexcept {
 
     continuation_mask = continuation_mask | PROGRESS_INIT;
     std::size_t in_progress = plugins.size();
-    for (size_t i = 0; i < plugins.size(); ++i) {
-        auto plugin = plugins[i];
+    for (auto& plugin: plugins) {
         if (plugin->get_reaction() & plugin_base_t::INIT) {
             if (plugin->handle_init(init_request.get())) {
                 plugin->reaction_off(plugin_base_t::INIT);
@@ -230,7 +229,7 @@ void actor_base_t::on_timer_trigger(request_id_t request_id, bool cancelled) noe
 
 void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept {
     if (!shutdown_reason) {
-        shutdown_reason = reason;
+        shutdown_reason = std::move(reason);
     }
 }
 

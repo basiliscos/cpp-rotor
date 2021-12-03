@@ -67,7 +67,7 @@ void supervisor_wx_t::enqueue(message_ptr_t message) noexcept {
     supervisor_ptr_t self{this};
     handler->CallAfter([self = std::move(self), message = std::move(message)]() {
         auto &sup = *self;
-        sup.put(std::move(message));
+        sup.put(message);
         sup.do_process();
     });
 }

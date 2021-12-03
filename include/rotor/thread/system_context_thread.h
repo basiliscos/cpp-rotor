@@ -36,7 +36,6 @@ struct system_context_thread_t : public system_context_t {
      *  notification mode (i.e. cv + mutex)
      */
     system_context_thread_t() noexcept;
-    ~system_context_thread_t();
 
     /** \brief invokes blocking execution of the supervisor
      *

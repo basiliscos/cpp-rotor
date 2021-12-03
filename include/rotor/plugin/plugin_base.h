@@ -32,7 +32,7 @@ struct plugin_base_t {
 
     /** \brief copy ctor is not allowed */
     plugin_base_t(const plugin_base_t &) = delete;
-    virtual ~plugin_base_t();
+    virtual ~plugin_base_t() = default;
 
     /** \brief returns pointer, which uniquely identifes plugin type */
     virtual const void *identity() const noexcept = 0;
