@@ -166,6 +166,20 @@ TEST_CASE("link not possible => supervisor is shutted down", "[actor]") {
 }
 #endif
 
+TEST_CASE("link (supervisor) not possible => supervisor is shutted down", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto addr = sup->create_address();
+    sup->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(addr); });
+    };
+    sup->do_process();
+    sup->do_invoke_timer((*sup->active_timers.begin())->request_id);
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
 TEST_CASE("unlink", "[actor]") {
     rt::system_context_test_t system_context;
 

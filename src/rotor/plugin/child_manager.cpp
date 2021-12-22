@@ -172,9 +172,13 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             continue_init = false;
             auto &init_request = actor->access<to::init_request>();
             if (init_request) {
-                auto reply_ec = make_error_code(error_code_t::failure_escalation);
-                actor->reply_with_error(*init_request, make_error(reply_ec, ec));
-                init_request.reset();
+                if (init_request != message.payload.req) {
+                    auto reply_ec = make_error_code(error_code_t::failure_escalation);
+                    actor->reply_with_error(*init_request, make_error(reply_ec, ec));
+                    init_request.reset();
+                } else {
+                    actor->do_shutdown(ec);
+                }
             } else {
                 auto reason = make_error(make_error_code(shutdown_code_t::child_init_failed), ec);
                 actor->do_shutdown(reason);

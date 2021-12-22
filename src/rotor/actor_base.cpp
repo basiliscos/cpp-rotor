@@ -110,7 +110,7 @@ void actor_base_t::init_continue() noexcept {
 
     continuation_mask = continuation_mask | PROGRESS_INIT;
     std::size_t in_progress = plugins.size();
-    for (auto& plugin: plugins) {
+    for (auto &plugin : plugins) {
         if (plugin->get_reaction() & plugin_base_t::INIT) {
             if (plugin->handle_init(init_request.get())) {
                 plugin->reaction_off(plugin_base_t::INIT);

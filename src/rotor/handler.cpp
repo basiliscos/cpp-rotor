@@ -26,7 +26,7 @@ struct continuation_impl_t final : continuation_t {
 
     void operator()() const noexcept override { handler.call_no_check(message); }
 
-private:
+  private:
     handler_intercepted_t &handler;
     message_ptr_t &message;
 };
@@ -44,8 +44,8 @@ handler_ptr_t handler_base_t::upgrade(const void *tag) noexcept {
 }
 
 handler_intercepted_t::handler_intercepted_t(handler_ptr_t backend_, const void *tag_) noexcept
-    : handler_base_t(*backend_->actor_ptr, backend_->message_type, backend_->handler_type), backend{std::move(backend_)},
-      tag{tag_} {}
+    : handler_base_t(*backend_->actor_ptr, backend_->message_type, backend_->handler_type),
+      backend{std::move(backend_)}, tag{tag_} {}
 
 void handler_intercepted_t::call(message_ptr_t &message) noexcept {
     if (select(message)) {
