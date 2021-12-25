@@ -57,6 +57,8 @@ struct req3_t : r::arc_base_t<req3_t> {
 static_assert(std::is_base_of_v<r::arc_base_t<req3_t>, req3_t>, "zzz");
 
 using traits_t = r::request_traits_t<request_sample_t>;
+using req_ptr_t = r::intrusive_ptr_t<traits_t::request::message_t>;
+using res_ptr_t = r::intrusive_ptr_t<traits_t::response::message_t>;
 
 struct good_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
@@ -382,6 +384,49 @@ struct duplicating_actor_t : public r::actor_base_t {
     }
 };
 
+struct req_actor_t: r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&req_actor_t::on_response);
+        });
+    }
+
+    void do_request() {
+        request<request_sample_t>(target, 4).send(rt::default_timeout);
+    }
+
+    void on_response(traits_t::response::message_t &msg) noexcept {
+        res = &msg;
+    }
+    auto &get_state() noexcept { return state; }
+
+
+    r::address_ptr_t target;
+    res_ptr_t res;
+};
+
+struct res_actor_t: r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
+            p.subscribe_actor(&res_actor_t::on_request);
+        });
+    }
+
+    void on_request(traits_t::request::message_t &msg) noexcept {
+        req = &msg;
+    }
+
+    auto &get_state() noexcept { return state; }
+
+    req_ptr_t req;
+};
+
+
+
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
@@ -648,4 +693,65 @@ TEST_CASE("intrusive pointer request/responce", "[actor]") {
     REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->get_requests().size() == 0);
     REQUIRE(sup->active_timers.size() == 0);
+}
+
+TEST_CASE("response arrives after requestee shutdown", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto req = sup->create_actor<req_actor_t>().timeout(rt::default_timeout).finish();
+    auto res = sup->create_actor<res_actor_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    req->target = res->get_address();
+    req->do_request();
+    sup->do_process();
+
+    REQUIRE(!req->res);
+    REQUIRE(res->req);
+
+    req->do_shutdown();
+    sup->do_process();
+    REQUIRE(req->get_state() == r::state_t::SHUT_DOWN);
+
+    res->reply_to(*res->req, 5);
+    sup->do_process();
+    REQUIRE(!req->res);
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("response arrives after requestee shutdown (on the same localities)", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto req = sup2->create_actor<req_actor_t>().timeout(rt::default_timeout).finish();
+    auto res = sup1->create_actor<res_actor_t>().timeout(rt::default_timeout).finish();
+    sup1->do_process();
+
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+
+    req->target = res->get_address();
+    req->do_request();
+    sup1->do_process();
+
+    REQUIRE(!req->res);
+    REQUIRE(res->req);
+
+    req->do_shutdown();
+    sup1->do_process();
+    REQUIRE(req->get_state() == r::state_t::SHUT_DOWN);
+
+    res->reply_to(*res->req, 5);
+    sup1->do_process();
+    REQUIRE(!req->res);
+
+    sup1->do_shutdown();
+    sup1->do_process();
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
 }
