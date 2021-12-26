@@ -57,6 +57,9 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.19 (xx-xx-202x)
+ - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
+
 ### 0.18 (03-12-2021)
 - [improvement] add `static_assert` for `noexcept` check of a hanler signature
 - [improvement] add [gitee](https://gitee.com/basiliscos/cpp-rotor) mirror
