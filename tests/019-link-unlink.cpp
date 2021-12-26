@@ -625,3 +625,34 @@ TEST_CASE("ignore unlink", "[actor]") {
     sup->do_shutdown();
     sup->do_process();
 }
+
+TEST_CASE("unlink in supervisor", "[supervisort]") {
+    rt::system_context_test_t ctx1;
+    rt::system_context_test_t ctx2;
+    auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality("abc").finish();
+
+    auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality("def").finish();
+
+    sup2->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::link_client_plugin_t>([&](auto &p) { p.link(sup1->get_address(), false); });
+    };
+
+    sup1->do_process();
+
+    auto p = sup1->get_casted_plugin<r::plugin::resources_plugin_t>();
+    p->acquire(0);
+    sup1->do_shutdown();
+    sup1->do_process();
+
+    sup2->do_process();
+    sup2->do_shutdown();
+    sup2->do_process();
+    sup1->do_process();
+
+    p->release(0);
+    sup1->do_process();
+    sup2->do_process();
+
+    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
+}

@@ -57,6 +57,16 @@ struct supervisor_test_t : public supervisor_t {
     auto get_activating_plugins() noexcept { return this->activating_plugins; }
     auto get_deactivating_plugins() noexcept { return this->deactivating_plugins; }
 
+    template<typename Plugin>
+    Plugin* get_casted_plugin() noexcept {
+        for(auto& p: plugins) {
+            if (p->identity() == Plugin::class_identity) {
+                return static_cast<Plugin*>(p);
+            }
+        }
+        return nullptr;
+    }
+
     const void *locality;
     timers_t active_timers;
     plugin_configurer_t configurer;

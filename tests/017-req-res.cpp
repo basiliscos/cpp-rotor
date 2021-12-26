@@ -384,48 +384,35 @@ struct duplicating_actor_t : public r::actor_base_t {
     }
 };
 
-struct req_actor_t: r::actor_base_t {
+struct req_actor_t : r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
-            p.subscribe_actor(&req_actor_t::on_response);
-        });
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&req_actor_t::on_response); });
     }
 
-    void do_request() {
-        request<request_sample_t>(target, 4).send(rt::default_timeout);
-    }
+    void do_request() { request<request_sample_t>(target, 4).send(rt::default_timeout); }
 
-    void on_response(traits_t::response::message_t &msg) noexcept {
-        res = &msg;
-    }
+    void on_response(traits_t::response::message_t &msg) noexcept { res = &msg; }
     auto &get_state() noexcept { return state; }
-
 
     r::address_ptr_t target;
     res_ptr_t res;
 };
 
-struct res_actor_t: r::actor_base_t {
+struct res_actor_t : r::actor_base_t {
     using r::actor_base_t::actor_base_t;
 
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
-        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
-            p.subscribe_actor(&res_actor_t::on_request);
-        });
+        plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&res_actor_t::on_request); });
     }
 
-    void on_request(traits_t::request::message_t &msg) noexcept {
-        req = &msg;
-    }
+    void on_request(traits_t::request::message_t &msg) noexcept { req = &msg; }
 
     auto &get_state() noexcept { return state; }
 
     req_ptr_t req;
 };
-
-
 
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
