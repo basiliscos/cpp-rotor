@@ -112,8 +112,7 @@ void supervisor_asio_t::do_process() noexcept {
     bool ok = false;
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
-        queue.emplace_back(ptr);
-        intrusive_ptr_release(ptr);
+        queue.emplace_back(ptr, false);
         ok = true;
     }
     if (!queue.empty()) {
@@ -125,8 +124,7 @@ void supervisor_asio_t::do_process() noexcept {
         while (clock_t::now() < deadline && queue.empty()) {
             message_base_t *ptr;
             while (inbound.pop(ptr)) {
-                queue.emplace_back(ptr);
-                intrusive_ptr_release(ptr);
+                queue.emplace_back(ptr, false);
             }
         }
         if (!queue.empty()) {

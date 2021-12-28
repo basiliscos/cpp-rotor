@@ -146,7 +146,6 @@ void supervisor_ev_t::move_inbound_queue() noexcept {
     auto &queue = leader->queue;
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
-        queue.emplace_back(ptr);
-        intrusive_ptr_release(ptr);
+        queue.emplace_back(ptr, false);
     }
 }

@@ -46,8 +46,7 @@ void system_context_thread_t::run() noexcept {
     auto process = [&]() -> bool {
         message_base_t *ptr;
         if (inbound.pop(ptr)) {
-            queue.emplace_back(ptr);
-            intrusive_ptr_release(ptr);
+            queue.emplace_back(ptr, false);
             return true;
         }
         return false;
@@ -84,8 +83,7 @@ void system_context_thread_t::check() noexcept {
     auto &inbound = root_sup.access<to::inbound_queue>();
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
-        queue.emplace_back(ptr);
-        intrusive_ptr_release(ptr);
+        queue.emplace_back(ptr, false);
     }
     update_time();
 }

@@ -58,6 +58,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ## Changelog
 
 ### 0.19 (xx-xx-202x)
+ - [improvement] minor potential performance boost on cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
  - [bugfix] link_server plugin should ignore unlink_notifications
 
