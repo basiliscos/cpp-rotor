@@ -432,7 +432,7 @@ template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() n
 
 template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::process() noexcept {
     while (queue->size()) {
-        auto message = queue->front();
+        auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
         queue->pop_front();
         auto &dest_sup = dest->supervisor;
