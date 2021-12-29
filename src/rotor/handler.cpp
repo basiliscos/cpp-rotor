@@ -32,7 +32,7 @@ struct continuation_impl_t final : continuation_t {
 };
 
 handler_base_t::handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_) noexcept
-    : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor}, raw_actor_ptr{&actor} {
+    : message_type{message_type_}, handler_type{handler_type_}, actor_ptr{&actor} {
     auto h1 = reinterpret_cast<std::size_t>(handler_type);
     auto h2 = reinterpret_cast<std::size_t>(&actor);
     precalc_hash = h1 ^ (h2 << 1);

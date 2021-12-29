@@ -61,6 +61,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
  - [improvement] minor performance in inter-thread and cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
  - [bugfix] link_server plugin should ignore unlink_notifications
+ - [bugfix] avoid actor "outliveness" when it subscribed to external addresses
 
 ### 0.18 (03-12-2021)
 - [improvement] add `static_assert` for `noexcept` check of a hanler signature

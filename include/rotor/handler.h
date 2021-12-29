@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -115,12 +115,8 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief pointer to unique handler type ( `typeid(Handler).name()` ) */
     const void *handler_type;
 
-    /** \brief intrusive poiter to {@link actor_base_t} the actor of the handler */
-    // actor_base_t* actor_ptr;
-    actor_ptr_t actor_ptr;
-
-    /** \brief non-owning raw poiter to actor */
-    const actor_base_t *raw_actor_ptr;
+    /** \brief non-owning pointer to {@link actor_base_t} the actor of the handler */
+    actor_base_t* actor_ptr;
 
     /** \brief precalculated hash for the handler */
     size_t precalc_hash;
@@ -132,7 +128,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
 
     /** \brief compare two handler for equality */
     inline bool operator==(const handler_base_t &rhs) const noexcept {
-        return handler_type == rhs.handler_type && raw_actor_ptr == rhs.raw_actor_ptr;
+        return handler_type == rhs.handler_type && actor_ptr == rhs.actor_ptr;
     }
 
     /** \brief attempt to delivery message to the handler
