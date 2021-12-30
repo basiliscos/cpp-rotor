@@ -36,7 +36,13 @@ handler_base_t::handler_base_t(actor_base_t &actor, const void *message_type_, c
     auto h1 = reinterpret_cast<std::size_t>(handler_type);
     auto h2 = reinterpret_cast<std::size_t>(&actor);
     precalc_hash = h1 ^ (h2 << 1);
+    intrusive_ptr_add_ref(actor_ptr);
 }
+
+handler_base_t::~handler_base_t() {
+    intrusive_ptr_release(actor_ptr);
+}
+
 
 handler_ptr_t handler_base_t::upgrade(const void *tag) noexcept {
     handler_ptr_t self(this);

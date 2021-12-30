@@ -106,7 +106,9 @@ template <typename M, typename H> struct handler_traits<lambda_holder_t<M, H>> {
 
 /** \struct handler_base_t
  *  \brief Base class for `rotor` handler, i.e concrete message type processing point
- * on concrete actor
+ * on concrete actor.
+ *
+ * It holds reference to {@link actor_base_t}.
  */
 struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief pointer to unique message type ( `typeid(Message).name()` ) */
@@ -115,7 +117,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief pointer to unique handler type ( `typeid(Handler).name()` ) */
     const void *handler_type;
 
-    /** \brief non-owning pointer to {@link actor_base_t} the actor of the handler */
+    /** \brief non-null pointer to {@link actor_base_t} the actor of the handler,  */
     actor_base_t* actor_ptr;
 
     /** \brief precalculated hash for the handler */
@@ -145,7 +147,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
      */
     virtual handler_ptr_t upgrade(const void *tag) noexcept;
 
-    virtual inline ~handler_base_t() {}
+    virtual ~handler_base_t();
 
     /** \brief returns `true` if the message can be handled by the handler */
     virtual bool select(message_ptr_t &) noexcept = 0;
