@@ -39,10 +39,7 @@ handler_base_t::handler_base_t(actor_base_t &actor, const void *message_type_, c
     intrusive_ptr_add_ref(actor_ptr);
 }
 
-handler_base_t::~handler_base_t() {
-    intrusive_ptr_release(actor_ptr);
-}
-
+handler_base_t::~handler_base_t() { intrusive_ptr_release(actor_ptr); }
 
 handler_ptr_t handler_base_t::upgrade(const void *tag) noexcept {
     handler_ptr_t self(this);

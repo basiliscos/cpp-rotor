@@ -13,7 +13,15 @@ using namespace rotor::test;
 using namespace rotor;
 
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
-    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)}, interceptor{std::move(config_.interceptor)} {}
+    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)}, interceptor{std::move(config_.interceptor)} {
+    supervisor_t* root_sup = this;
+    if (!locality) {
+        while (root_sup->access<test::to::parent_supervisor>()) {
+            root_sup = root_sup->access<test::to::parent_supervisor>();
+        }
+        locality = root_sup;
+    }
+}
 
 supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n", (void *)this, (void *)address.get()); }
 
@@ -88,4 +96,18 @@ void supervisor_test_t::intercept(message_ptr_t &message, const void *tag, const
         return interceptor(message, tag, continuation);
     }
     continuation();
+}
+
+
+// let trigger memory leaks
+system_test_context_t::~system_test_context_t() {
+    auto& sup = access<to::supervisor>();
+    if (sup) {
+        auto& queue = sup->access<to::queue>();
+        auto& inbound = sup->access<to::inbound_queue>();
+        while(!queue.empty()) {
+            inbound.push(queue.front().detach());
+            queue.pop_front();
+        }
+    }
 }

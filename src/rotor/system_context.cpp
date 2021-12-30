@@ -11,6 +11,17 @@
 #include "rotor/supervisor.h"
 #include "rotor/system_context.h"
 
+namespace rotor {
+
+namespace {
+namespace to {
+struct inbound_queue {};
+} // namespace to
+} // namespace
+
+template <> auto &supervisor_t::access<to::inbound_queue>() noexcept { return inbound_queue; }
+} // namespace rotor
+
 using namespace rotor;
 
 void system_context_t::on_error(actor_base_t *actor, const extended_error_ptr_t &ec) noexcept {
@@ -26,4 +37,13 @@ std::string system_context_t::identity() noexcept {
     std::stringstream out;
     out << std::hex << (const void *)this;
     return out.str();
+}
+
+system_context_t::~system_context_t() {
+    if (supervisor) {
+        message_base_t *ptr;
+        while (supervisor->access<to::inbound_queue>().pop(ptr)) {
+            intrusive_ptr_release(ptr);
+        }
+    }
 }

@@ -192,8 +192,8 @@ TEST_CASE("two supervisors, different localities, shutdown 1st", "[supervisor]")
 }
 
 TEST_CASE("two supervisors & external subscription", "[supervisor]") {
-    r::system_context_t ctx1;
-    r::system_context_t ctx2;
+    rt::system_test_context_t ctx1;
+    rt::system_test_context_t ctx2;
 
     auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto sup2 = ctx2.create_supervisor<rt::supervisor_test_t>()
@@ -207,24 +207,65 @@ TEST_CASE("two supervisors & external subscription", "[supervisor]") {
                     .timeout(rt::default_timeout)
                     .finish();
 
-    auto process_12 = [&]() {
+    auto process = [&]() {
         while (!sup1->get_leader_queue().empty() || !sup2->get_leader_queue().empty()) {
-            sup1->do_process();
-            sup2->do_process();
+            bool progress = false;
+            if (sup1->get_state() != r::state_t::SHUT_DOWN && !sup1->get_leader_queue().empty()) {
+                auto msg = &sup1->get_leader_queue().front();
+                sup1->do_process();
+                progress = sup1->get_leader_queue().empty() || (msg != &sup1->get_leader_queue().front());
+            }
+            if (sup2->get_state() != r::state_t::SHUT_DOWN && !sup2->get_leader_queue().empty()) {
+                auto msg = &sup2->get_leader_queue().front();
+                sup2->do_process();
+                progress = sup1->get_leader_queue().empty() || (msg != &sup1->get_leader_queue().front());
+            }
+            if (!progress) {
+                break;
+            }
         }
     };
 
-    process_12();
-    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
-    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+    SECTION("server-client shutdown order") {
+        process();
+        REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+        REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
 
-    sup1->do_shutdown();
-    process_12();
-    CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
-    CHECK(sup2->get_state() == r::state_t::OPERATIONAL);
+        sup1->do_shutdown();
+        while (sup1->get_state() != r::state_t::SHUT_DOWN) {
+            sup1->do_process();
+        }
+        CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(sup2->get_state() == r::state_t::OPERATIONAL);
 
-    sup2->do_shutdown();
-    process_12();
+        sup2->do_shutdown();
+        process();
+    }
+
+    SECTION("client-server shutdown order, wiht message in progress") {
+        process();
+        REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+        REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+
+        sup2->do_shutdown();
+        while (sup2->get_state() != r::state_t::SHUT_DOWN) {
+            sup2->do_process();
+        }
+        CHECK(sup1->get_state() == r::state_t::OPERATIONAL);
+        CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
+
+        auto msg = sup1->get_leader_queue().front();
+        sup1->get_leader_queue().pop_front();
+        process();
+
+        sup1->send<rt::payload::sample_t>(sup1->get_address(), 5);
+        process();
+
+        sup1->get_leader_queue().push_back(std::move(msg));
+        sup1->do_shutdown();
+        process();
+    }
+
     CHECK(sup1->get_state() == r::state_t::SHUT_DOWN);
     CHECK(sup2->get_state() == r::state_t::SHUT_DOWN);
 }

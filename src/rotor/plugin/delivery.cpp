@@ -26,13 +26,13 @@ void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
 
 void local_delivery_t::delivery(message_ptr_t &message,
                                 const subscription_t::joint_handlers_t &local_recipients) noexcept {
-    for (auto& handler : local_recipients.external) {
+    for (auto &handler : local_recipients.external) {
         auto &sup = handler->actor_ptr->get_supervisor();
         auto &address = sup.get_address();
         auto wrapped_message = make_message<payload::handler_call_t>(address, message, handler);
         sup.enqueue(std::move(wrapped_message));
     }
-    for (auto& handler : local_recipients.internal) {
+    for (auto &handler : local_recipients.internal) {
         handler->call(message);
     }
 }

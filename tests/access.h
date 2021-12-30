@@ -22,8 +22,10 @@ struct actors_map {};
 struct points {};
 struct locality_leader {};
 struct parent_supervisor {};
+struct supervisor {};
 struct registry {};
 struct queue {};
+struct inbound_queue {};
 struct own_subscriptions {};
 struct request_map {};
 struct resources {};
@@ -73,8 +75,10 @@ template <> inline auto &rotor::supervisor_t::access<test::to::locality_leader>(
 template <> inline auto &rotor::supervisor_t::access<test::to::parent_supervisor>() noexcept { return parent; }
 template <> inline auto &rotor::supervisor_t::access<test::to::registry>() noexcept { return registry_address; }
 template <> inline auto &rotor::supervisor_t::access<test::to::queue>() noexcept { return queue; }
+template <> inline auto &rotor::supervisor_t::access<test::to::inbound_queue>() noexcept { return inbound_queue; }
 template <> inline auto &rotor::supervisor_t::access<test::to::request_map>() noexcept { return request_map; }
 template <> inline auto &rotor::supervisor_t::access<test::to::last_req_id>() noexcept { return last_req_id; }
 template <> inline auto &rotor::registry_t::access<test::to::promises>() noexcept { return promises; }
+template <> inline auto &rotor::system_context_t::access<test::to::supervisor>() noexcept { return supervisor; }
 
 } // namespace rotor

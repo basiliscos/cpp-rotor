@@ -118,7 +118,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     const void *handler_type;
 
     /** \brief non-null pointer to {@link actor_base_t} the actor of the handler,  */
-    actor_base_t* actor_ptr;
+    actor_base_t *actor_ptr;
 
     /** \brief precalculated hash for the handler */
     size_t precalc_hash;

@@ -95,5 +95,11 @@ template <typename Supervisor> struct supervisor_test_config_builder_t : supervi
     }
 };
 
+
+struct system_test_context_t : system_context_t {
+    using system_context_t::system_context_t;
+    ~system_test_context_t();
+};
+
 } // namespace test
 } // namespace rotor
