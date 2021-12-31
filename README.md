@@ -57,11 +57,11 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
-### 0.19 (xx-xx-202x)
+### 0.19 (31-12-2021)
  - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
  - [bugfix] link_server plugin should ignore unlink_notifications
- - [bugfix] avoid cycle (i.e. memleak) in rare cases when supervisor is shutdown, but an external 
+ - [bugfix] avoid cycle (i.e. memleak) in rare cases when supervisor is shutdown, but an external
 message arrives for processing
 
 ### 0.18 (03-12-2021)
