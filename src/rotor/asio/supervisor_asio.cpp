@@ -51,12 +51,13 @@ void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_
             asio::defer(strand, [self = self, timer_id = timer_id]() {
                 auto &sup = *self;
                 auto &timers_map = sup.timers_map;
-                auto it = timers_map.find(timer_id);
-                if (it != timers_map.end()) {
-                    auto &actor_ptr = it->second->handler->owner;
+                try {
+                    auto actor_ptr = timers_map.at(timer_id)->handler->owner;
                     actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
-                    timers_map.erase(it);
+                    timers_map.erase(timer_id);
                     sup.do_process();
+                } catch (std::out_of_range &ex) {
+                    // no-op
                 }
             });
         }
@@ -65,15 +66,13 @@ void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_
 }
 
 void supervisor_asio_t::do_cancel_timer(request_id_t timer_id) noexcept {
-    auto it = timers_map.find(timer_id);
-    assert(it != timers_map.end());
-    auto &timer = it->second;
+    auto &timer = timers_map.at(timer_id);
     boost::system::error_code ec;
     timer->cancel(ec);
 
-    auto &actor_ptr = it->second->handler->owner;
+    auto &actor_ptr = timer->handler->owner;
     actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
-    timers_map.erase(it);
+    timers_map.erase(timer_id);
     // ignore the possible error, caused the case when timer is not cancelleable
     // if (ec) { ... }
 }
@@ -112,8 +111,7 @@ void supervisor_asio_t::do_process() noexcept {
     bool ok = false;
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
-        queue.emplace_back(ptr);
-        intrusive_ptr_release(ptr);
+        queue.emplace_back(ptr, false);
         ok = true;
     }
     if (!queue.empty()) {
@@ -125,8 +123,7 @@ void supervisor_asio_t::do_process() noexcept {
         while (clock_t::now() < deadline && queue.empty()) {
             message_base_t *ptr;
             while (inbound.pop(ptr)) {
-                queue.emplace_back(ptr);
-                intrusive_ptr_release(ptr);
+                queue.emplace_back(ptr, false);
             }
         }
         if (!queue.empty()) {

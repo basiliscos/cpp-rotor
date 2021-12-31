@@ -50,7 +50,7 @@ void foreigners_support_plugin_t::deactivate() noexcept {
 void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noexcept {
     auto &handler = message.payload.handler;
     auto &orig_message = message.payload.orig_message;
-    auto child_actor = const_cast<actor_base_t *>(handler->raw_actor_ptr);
+    auto child_actor = handler->actor_ptr;
     // need to check, that
     // 1. children exists
     // 2. check it's state

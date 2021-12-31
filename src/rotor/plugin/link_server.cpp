@@ -67,12 +67,8 @@ void link_server_plugin_t::on_unlink_notify(message::unlink_notify_t &message) n
     auto &client = message.payload.client_addr;
     auto it = linked_clients.find(client);
 
-    // no idea, how to trigger/cause the race
-    assert(it != linked_clients.end());
-    /*
     if (it == linked_clients.end())
         return;
-    */
 
     auto &unlink_request = it->second.unlink_request;
     if (unlink_request) {

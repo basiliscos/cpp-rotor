@@ -110,7 +110,7 @@ void actor_base_t::init_continue() noexcept {
 
     continuation_mask = continuation_mask | PROGRESS_INIT;
     std::size_t in_progress = plugins.size();
-    for (auto& plugin: plugins) {
+    for (auto &plugin : plugins) {
         if (plugin->get_reaction() & plugin_base_t::INIT) {
             if (plugin->handle_init(init_request.get())) {
                 plugin->reaction_off(plugin_base_t::INIT);
@@ -220,10 +220,12 @@ void actor_base_t::cancel_timer(request_id_t request_id) noexcept {
 }
 
 void actor_base_t::on_timer_trigger(request_id_t request_id, bool cancelled) noexcept {
-    auto it = timers_map.find(request_id);
-    if (it != timers_map.end()) {
-        it->second->trigger(cancelled);
-        timers_map.erase(it);
+    try {
+        auto &timer = timers_map.at(request_id);
+        timer->trigger(cancelled);
+        timers_map.erase(request_id);
+    } catch (std::out_of_range &ex) {
+        // no-op
     }
 }
 

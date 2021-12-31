@@ -43,12 +43,14 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
     auto timer = static_cast<supervisor_ev_t::timer_t *>(w);
     auto timer_id = timer->handler->request_id;
     auto &timers_map = sup->access<to::timers_map>();
-    auto it = timers_map.find(timer_id);
-    if (it != timers_map.end()) {
-        auto actor_ptr = timer->handler->owner;
+
+    try {
+        auto actor_ptr = timers_map.at(timer_id)->handler->owner;
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
-        timers_map.erase(it);
+        timers_map.erase(timer_id);
         sup->do_process();
+    } catch (std::out_of_range &ex) {
+        // no-op
     }
     intrusive_ptr_release(sup);
 }
@@ -101,14 +103,15 @@ void supervisor_ev_t::do_start_timer(const pt::time_duration &interval, timer_ha
 }
 
 void supervisor_ev_t::do_cancel_timer(request_id_t timer_id) noexcept {
-    auto it = timers_map.find(timer_id);
-    if (it != timers_map.end()) {
+    try {
         auto &timer = timers_map.at(timer_id);
         ev_timer_stop(loop, timer.get());
-        auto actor_ptr = it->second->handler->owner;
+        auto actor_ptr = timer->handler->owner;
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
-        timers_map.erase(it);
+        timers_map.erase(timer_id);
         intrusive_ptr_release(this);
+    } catch (std::out_of_range &ex) {
+        // no-op
     }
 }
 
@@ -146,7 +149,6 @@ void supervisor_ev_t::move_inbound_queue() noexcept {
     auto &queue = leader->queue;
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
-        queue.emplace_back(ptr);
-        intrusive_ptr_release(ptr);
+        queue.emplace_back(ptr, false);
     }
 }

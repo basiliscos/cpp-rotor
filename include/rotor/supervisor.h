@@ -308,11 +308,13 @@ struct supervisor_t : public actor_base_t {
     void discard_request(request_id_t request_id) noexcept;
 
     inline request_id_t next_request_id() noexcept {
-        request_map_t::iterator it;
-        do {
-            it = locality_leader->request_map.find(++locality_leader->last_req_id);
-        } while (it != locality_leader->request_map.end());
-        return locality_leader->last_req_id;
+    AGAIN:
+        try {
+            locality_leader->request_map.at(++locality_leader->last_req_id);
+            goto AGAIN;
+        } catch (std::out_of_range &ex) {
+            return locality_leader->last_req_id;
+        }
     }
 };
 
@@ -409,7 +411,7 @@ subscription_info_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler, con
 
 template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() noexcept {
     while (queue->size()) {
-        auto message = queue->front();
+        auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
         queue->pop_front();
         auto &dest_sup = dest->supervisor;
@@ -432,7 +434,7 @@ template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() n
 
 template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::process() noexcept {
     while (queue->size()) {
-        auto message = queue->front();
+        auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
         queue->pop_front();
         auto &dest_sup = dest->supervisor;
@@ -503,16 +505,17 @@ template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration 
 template <typename T> void request_builder_t<T>::install_handler() noexcept {
     auto handler = lambda<response_message_t>([supervisor = &sup](response_message_t &msg) {
         auto request_id = msg.payload.request_id();
-        auto it = supervisor->request_map.find(request_id);
-        if (it != supervisor->request_map.end()) {
-            auto &orig_addr = it->second.origin;
+        try {
+            auto &curry = supervisor->request_map.at(request_id);
+            auto &orig_addr = curry.origin;
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
             supervisor->discard_request(request_id);
+        } catch (std::out_of_range &ex) {
+            // if a response to request has arrived and no timer can be found
+            // that means that either timeout timer already triggered
+            // and error-message already delivered or response is not expected.
+            // just silently drop it anyway
         }
-        // if a response to request has arrived and no timer can be found
-        // that means that either timeout timer already triggered
-        // and error-message already delivered or response is not expected.
-        // just silently drop it anyway
     });
     auto wrapped_handler = wrap_handler(sup, std::move(handler));
     auto info = sup.subscribe(wrapped_handler, imaginary_address, &actor, owner_tag_t::SUPERVISOR);

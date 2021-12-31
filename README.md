@@ -36,7 +36,7 @@
 
  inter-thread messaging (1)   | cross-thread messaging (2)
 ------------------------------|-------------------------
-  ~18.3M messages/second      | ~ 2.5M messages/second
+  ~23.5M messages/second      | ~ 2.5M messages/second
 
 
 Setup: Intel Core i7-8550U, Void Linux 5.13.
@@ -56,6 +56,13 @@ MIT
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
 
 ## Changelog
+
+### 0.19 (31-12-2021)
+ - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
+ - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
+ - [bugfix] link_server plugin should ignore unlink_notifications
+ - [bugfix] avoid cycle (i.e. memleak) in rare cases when supervisor is shutdown, but an external
+message arrives for processing
 
 ### 0.18 (03-12-2021)
 - [improvement] add `static_assert` for `noexcept` check of a hanler signature

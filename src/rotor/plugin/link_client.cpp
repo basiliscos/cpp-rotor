@@ -103,7 +103,7 @@ void link_client_plugin_t::try_forget_links(bool attempt_shutdown) noexcept {
     if (!actor->access<to::link_server>()->has_clients()) {
         bool unlink_requested = !unlink_queue.empty();
         bool shutdown_needed = false;
-        for (const auto& it : unlink_queue) {
+        for (const auto &it : unlink_queue) {
             auto &message = *it;
             auto &server_addr = message.payload.request_payload.server_addr;
             auto server_it = servers_map.find(server_addr);

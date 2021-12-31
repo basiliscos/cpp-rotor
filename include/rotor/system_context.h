@@ -34,7 +34,7 @@ struct system_context_t : arc_base_t<system_context_t> {
 
     system_context_t(const system_context_t &) = delete;
     system_context_t(system_context_t &&) = delete;
-    virtual ~system_context_t() = default;
+    virtual ~system_context_t();
 
     /** \brief fatal error handler
      *
@@ -51,6 +51,9 @@ struct system_context_t : arc_base_t<system_context_t> {
      *
      */
     virtual std::string identity() noexcept;
+
+    /** \brief generic non-public fields accessor */
+    template <typename T> auto &access() noexcept;
 
   private:
     friend struct supervisor_t;

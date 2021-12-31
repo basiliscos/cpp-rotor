@@ -59,7 +59,7 @@ std::string shutdown_code_category::message(int c) const {
     return "unknown shutdown reason";
 }
 
-}
+} // namespace rotor::details
 
 namespace rotor {
 
