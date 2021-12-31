@@ -4,14 +4,14 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-## 0.19 (31-12-2021)
+## 0.19 (31-Dec-2021)
  - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
  - [bugfix] link_server plugin should ignore unlink_notifications
  - [bugfix] avoid cycle (i.e. memleak) in rare cases when supervisor is shutdown, but an external
 message arrives for processing
 
-## 0.18 (03-12-2021)
+## 0.18 (03-Dec-2021)
 - [improvement] add `static_assert` for `noexcept` check of a hanler signature
 - [improvement] add [gitee](https://gitee.com/basiliscos/cpp-rotor) mirror
 - [bugfix] fix potential use-after-free in `ev` backend
