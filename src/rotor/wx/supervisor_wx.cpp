@@ -33,12 +33,14 @@ void supervisor_wx_t::timer_t::Notify() noexcept {
     auto timer_id = handler->request_id;
     auto *supervisor = sup.get();
     auto &timers_map = sup->timers_map;
-    auto it = timers_map.find(timer_id);
-    if (it != timers_map.end()) {
-        auto actor_ptr = handler->owner;
+
+    try {
+        auto actor_ptr = timers_map.at(timer_id)->handler->owner;
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
-        timers_map.erase(it);
+        timers_map.erase(timer_id);
         supervisor->do_process();
+    } catch (std::out_of_range &ex) {
+        // no-op
     }
 }
 
@@ -81,12 +83,13 @@ void supervisor_wx_t::do_start_timer(const pt::time_duration &interval, timer_ha
 }
 
 void supervisor_wx_t::do_cancel_timer(request_id_t timer_id) noexcept {
-    auto it = timers_map.find(timer_id);
-    if (it != timers_map.end()) {
+    try {
         auto &timer = timers_map.at(timer_id);
         timer->Stop();
-        auto actor_ptr = it->second->handler->owner;
+        auto actor_ptr = timer->handler->owner;
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
-        timers_map.erase(it);
+        timers_map.erase(timer_id);
+    } catch (std::out_of_range &ex) {
+        // no-op
     }
 }

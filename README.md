@@ -36,7 +36,7 @@
 
  inter-thread messaging (1)   | cross-thread messaging (2)
 ------------------------------|-------------------------
-  ~18.3M messages/second      | ~ 2.5M messages/second
+  ~23.5M messages/second      | ~ 2.5M messages/second
 
 
 Setup: Intel Core i7-8550U, Void Linux 5.13.
@@ -58,7 +58,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ## Changelog
 
 ### 0.19 (xx-xx-202x)
- - [improvement] minor performance in inter-thread and cross-thread messaging
+ - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
  - [bugfix] link_server plugin should ignore unlink_notifications
  - [bugfix] avoid cycle (i.e. memleak) in rare cases when supervisor is shutdown, but an external 

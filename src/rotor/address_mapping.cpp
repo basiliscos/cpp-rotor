@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -17,25 +17,17 @@ void address_mapping_t::set(actor_base_t &actor, const subscription_info_ptr_t &
 }
 
 address_ptr_t address_mapping_t::get_mapped_address(actor_base_t &actor, const void *message) noexcept {
-    auto it_points = actor_map.find(static_cast<const void *>(&actor));
-    if (it_points == actor_map.end()) {
-        return address_ptr_t();
+    try {
+        auto &point_map = actor_map.at(static_cast<const void *>(&actor));
+        auto &info = point_map.at(message);
+        return info->address;
+    } catch (std::out_of_range &ex) {
+        return {};
     }
-
-    auto &point_map = it_points->second;
-    auto it_subscription = point_map.find(message);
-    if (it_subscription == point_map.end()) {
-        return address_ptr_t();
-    }
-
-    return it_subscription->second->address;
 }
 
 void address_mapping_t::remove(const subscription_point_t &point) noexcept {
-    auto it_points = actor_map.find(point.owner_ptr);
-    assert(it_points != actor_map.end());
-
-    auto &subs = it_points->second;
+    auto &subs = actor_map.at(point.owner_ptr);
     for (auto it = subs.begin(); it != subs.end();) {
         auto &info = *it->second;
         if (info.handler.get() == point.handler.get() && info.address == point.address) {
@@ -46,7 +38,7 @@ void address_mapping_t::remove(const subscription_point_t &point) noexcept {
         }
     }
     if (subs.empty()) {
-        actor_map.erase(it_points);
+        actor_map.erase(point.owner_ptr);
     }
 }
 
@@ -58,6 +50,10 @@ void address_mapping_t::clear(supervisor_t&) noexcept {
 */
 
 bool address_mapping_t::has_subscriptions(const actor_base_t &actor) const noexcept {
-    auto it = actor_map.find(static_cast<const void *>(&actor));
-    return it != actor_map.end();
+    try {
+        actor_map.at(static_cast<const void *>(&actor));
+        return true;
+    } catch (std::out_of_range &ex) {
+        return false;
+    }
 }
