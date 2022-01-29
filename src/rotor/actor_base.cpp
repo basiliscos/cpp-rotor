@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,7 +15,7 @@ using namespace rotor::plugin;
 template <> auto &plugin_base_t::access<actor_base_t>() noexcept { return actor; }
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
-    : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
+    : spawner_address{cfg.spawner_address}, supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
       shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW} {
     plugins_storage = cfg.plugins_constructor();
     plugins = plugins_storage->get_plugins();

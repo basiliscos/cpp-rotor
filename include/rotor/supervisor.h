@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,6 +15,7 @@
 #include "supervisor_config.h"
 #include "address_mapping.h"
 #include "error_code.h"
+#include "spawner.h"
 
 #include <functional>
 #include <unordered_map>
@@ -216,6 +217,9 @@ struct supervisor_t : public actor_base_t {
      */
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
+
+
+    spawner_t spawn(factory_t) noexcept;
 
     using actor_base_t::subscribe;
 

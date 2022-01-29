@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -139,3 +139,5 @@ void supervisor_t::shutdown_finish() noexcept {
     actor_base_t::shutdown_finish();
     assert(request_map.size() == 0);
 }
+
+spawner_t supervisor_t::spawn(factory_t factory) noexcept { return spawner_t(std::move(factory), *this); }

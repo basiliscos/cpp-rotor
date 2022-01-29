@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -370,6 +370,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief actor address */
     address_ptr_t address;
 
+    address_ptr_t spawner_address;
+
     /** \brief actor identity, wich might have some meaning for developers */
     std::string identity;
 
@@ -429,6 +431,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief explanation, why actor is been requested for shut down */
     extended_error_ptr_t shutdown_reason;
+
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;

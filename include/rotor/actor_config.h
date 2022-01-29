@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -69,6 +69,8 @@ struct actor_config_t {
 
     /** \brief max actor shutdown time */
     pt::time_duration shutdown_timeout;
+
+    address_ptr_t spawner_address;
 
     /** \brief constructs actor_config_t from raw supervisor pointer */
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
@@ -143,6 +145,11 @@ template <typename Actor> struct actor_config_builder_t {
     builder_t &&shutdown_timeout(const pt::time_duration &timeout) &&noexcept {
         config.shutdown_timeout = timeout;
         mask = (mask & ~SHUTDOWN_TIMEOUT);
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    builder_t &&spawner_address(const address_ptr_t& value) &&noexcept {
+        config.spawner_address = value;
         return std::move(*static_cast<builder_t *>(this));
     }
 

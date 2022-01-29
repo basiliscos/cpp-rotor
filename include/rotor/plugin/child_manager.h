@@ -1,13 +1,14 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "plugin_base.h"
 #include <unordered_set>
+#include "rotor/detail/child_info.h"
 
 namespace rotor::plugin {
 
@@ -34,6 +35,9 @@ struct child_manager_plugin_t : public plugin_base_t {
 
     /** \brief pre-initializes child and sends create_child message to the supervisor */
     virtual void create_child(const actor_ptr_t &actor) noexcept;
+
+    // can throw
+    virtual void spawn_later(factory_t factory, const pt::time_duration& period, restart_policy_t policy, size_t max_attempts) noexcept;
 
     /** \brief removes the child from the supervisor
      *
@@ -72,8 +76,10 @@ struct child_manager_plugin_t : public plugin_base_t {
      */
     virtual void on_shutdown_trigger(message::shutdown_trigger_t &message) noexcept;
 
-    /** \brief reacion on shutdown confirmation (i.e. perform some cleanings) */
+    /** \brief reaction on shutdown confirmation (i.e. perform some cleanings) */
     virtual void on_shutdown_confirm(message::shutdown_response_t &message) noexcept;
+
+    virtual void on_spawn(message::spawn_actor_t &message) noexcept;
 
     bool handle_init(message::init_request_t *) noexcept override;
     bool handle_shutdown(message::shutdown_request_t *) noexcept override;
@@ -85,32 +91,25 @@ struct child_manager_plugin_t : public plugin_base_t {
     template <typename T> auto &access() noexcept;
 
   private:
-    enum class request_state_t { NONE, SENT, CONFIRMED };
-
-    struct actor_state_t {
-        /** \brief intrusive pointer to actor */
-        actor_ptr_t actor;
-
-        template <typename Actor> actor_state_t(Actor &&act) noexcept : actor{std::forward<Actor>(act)} {}
-
-        bool initialized = false;
-        bool strated = false;
-        request_state_t shutdown = request_state_t::NONE;
-    };
+    using actors_map_t = std::unordered_map<address_ptr_t, detail::child_info_ptr_t>;
+    using spawning_map_t = std::unordered_map<request_id_t, detail::child_info_ptr_t>;
 
     bool has_initializing() const noexcept;
     void init_continue() noexcept;
     void request_shutdown(const extended_error_ptr_t &ec) noexcept;
     void cancel_init(const actor_base_t *child) noexcept;
-    void request_shutdown(actor_state_t &actor_state, const extended_error_ptr_t &ec) noexcept;
+    void request_shutdown(detail::child_info_t &child_state, const extended_error_ptr_t &ec) noexcept;
+    void on_spawn_timer(request_id_t timer_id, bool cancelled) noexcept;
 
-    using actors_map_t = std::unordered_map<address_ptr_t, actor_state_t>;
+    size_t active_actors() noexcept;
+
 
     /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
     using initializing_actors_t = std::unordered_set<address_ptr_t>;
 
     /** \brief local address to local actor (intrusive pointer) mapping */
     actors_map_t actors_map;
+    spawning_map_t spawning_map;
 };
 
 } // namespace rotor::plugin
