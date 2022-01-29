@@ -12,8 +12,24 @@ void child_info_t::spawn_attempt() noexcept {
     initialized = started = false;
     ++attempts;
     timer_id = 0;
-    last_instantiation = pt::microsec_clock::local_time();
+    shutdown = shutdown_state_t::none;
+    last_instantiation = clock_t::local_time();
     if (max_attempts && attempts >= max_attempts) {
         active = false;
     }
+    if (policy == restart_policy_t::never) {
+        active = false;
+    }
+}
+
+spawn_demand_t child_info_t::can_spawn() noexcept {
+    if (actor || !active || timer_id) {
+        return demand::no{};
+    }
+    auto now = clock_t::local_time();
+    auto after = now - last_instantiation;
+    if (after >= restart_period) {
+        return demand::now{};
+    }
+    return after;
 }

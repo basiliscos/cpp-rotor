@@ -8,12 +8,21 @@
 
 #include "rotor/forward.hpp"
 #include "rotor/policy.h"
+#include <variant>
 
 namespace rotor::detail {
 
-enum class shutdown_state_t { none, sent, confirmed};
+enum class shutdown_state_t {none, sent, confirmed};
+
+namespace demand {
+    struct no{};
+    struct now{};
+}
+
+using spawn_demand_t = std::variant<demand::no, demand::now, pt::time_duration>;
 
 struct child_info_t: boost::intrusive_ref_counter<child_info_t, boost::thread_unsafe_counter> {
+    using clock_t = pt::microsec_clock;
 
     template<typename Factory>
     child_info_t(address_ptr_t address_, Factory&& factory_, restart_policy_t policy_ = restart_policy_t::normal_only,
@@ -37,6 +46,8 @@ struct child_info_t: boost::intrusive_ref_counter<child_info_t, boost::thread_un
     }
 
     void spawn_attempt() noexcept;
+
+    spawn_demand_t can_spawn() noexcept;
 
     address_ptr_t address;
     factory_t factory;

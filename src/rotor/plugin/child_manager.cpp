@@ -94,13 +94,16 @@ void child_manager_plugin_t::deactivate() noexcept {
 void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.get_address());
     assert(it_actor != actors_map.end());
-    bool child_started = it_actor->second->started;
+    auto info_ptr = it_actor->second;
+    auto &info = *info_ptr;
+    bool child_started = info.started;
     auto &state = actor->access<to::state>();
+    auto sup = static_cast<supervisor_t *>(actor);
 
     auto shutdown_reason = extended_error_ptr_t{};
     if (state == state_t::INITIALIZING) {
         if (!child_started) {
-            auto &policy = static_cast<supervisor_t *>(actor)->access<to::policy>();
+            auto &policy = sup->access<to::policy>();
             if (policy == supervisor_policy_t::shutdown_failed) {
                 auto ec = make_error_code(shutdown_code_t::child_down);
                 shutdown_reason = make_error(ec);
@@ -120,8 +123,32 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     }
 
     cancel_init(&child);
-    actors_map.erase(it_actor);
+    info.actor.reset();
+    bool erase_spawner = true;
     static_cast<supervisor_t &>(*actor).access<to::alive_actors>().erase(&child);
+
+    if ((state <= state_t::OPERATIONAL) && info.active && info.factory) {
+        auto demand = info.can_spawn();
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, detail::demand::now>) {
+                    erase_spawner = false;
+                    actor->send<payload::spawn_actor_t>(actor->get_address(), info.address);
+                } else if constexpr (std::is_same_v<T, pt::time_duration>) {
+                    auto callback = &child_manager_plugin_t::on_spawn_timer;
+                    auto request_id = sup->start_timer(info.restart_period, *this, callback);
+                    info.timer_id = request_id;
+                    spawning_map[request_id] = std::move(info_ptr);
+                    erase_spawner = false;
+                }
+            },
+            demand);
+    }
+
+    if (erase_spawner) {
+        actors_map.erase(it_actor);
+    }
 
     if (state == state_t::SHUTTING_DOWN && (active_actors() <= 1)) {
         actor->shutdown_continue();
@@ -154,7 +181,7 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
         actors_map.erase(it);
         info->actor = child;
         spawner_address = info->address = address;
-        actors_map.emplace(address, it->second);
+        actors_map.emplace(address, std::move(info));
     } else {
         auto info = detail::child_info_ptr_t{};
         info = new detail::child_info_t(address, factory_t{}, child);
@@ -187,7 +214,9 @@ void child_manager_plugin_t::on_spawn(message::spawn_actor_t &message) noexcept 
     info.spawn_attempt();
 
     try {
-        info.factory(sup, addr);
+        auto child = info.factory(sup, addr);
+        assert(child->access<to::spawner_address>() && "spawner address is not defined");
+        info.actor = child;
     } catch (...) {
         bool try_next = (info.policy == restart_policy_t::always) || (info.policy == restart_policy_t::fail_only);
         if (try_next) {
@@ -402,9 +431,14 @@ void child_manager_plugin_t::handle_start(message::start_trigger_t *trigger) noe
 
 bool child_manager_plugin_t::has_initializing() const noexcept {
     auto init_predicate = [&](auto &it) {
-        auto &state = it.second->actor->template access<to::state>();
+        auto &info = *it.second;
+        auto &child = info.actor;
+        if (!child) {
+            return false;
+        }
+        auto &state = child->template access<to::state>();
         bool still_initializing =
-            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !it.second->initialized;
+            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !info.initialized;
         return still_initializing;
     };
     bool has_any = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
@@ -413,9 +447,11 @@ bool child_manager_plugin_t::has_initializing() const noexcept {
 
 size_t child_manager_plugin_t::active_actors() noexcept {
     size_t r = 0;
+    auto state = actor->access<to::state>();
     for (auto &it : actors_map) {
         auto &info = *it.second;
-        if (info.actor || info.active) {
+        bool is_alive = info.actor || info.timer_id || (info.active && (state <= state_t::SHUTTING_DOWN));
+        if (is_alive) {
             ++r;
         }
     }

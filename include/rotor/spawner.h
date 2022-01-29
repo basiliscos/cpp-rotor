@@ -32,7 +32,7 @@ private:
     size_t attempts = 0;
     bool done = false;
 
-    friend class supervisor_t;
+    friend struct supervisor_t;
 };
 
 }
