@@ -129,13 +129,16 @@ TEST_CASE("normal flow", "[spawner]") {
     REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
     size_t invocations = 0;
     r::actor_ptr_t act;
+    auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
+        ++invocations;
+        act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
+        return act;
+    };
+
+    auto ec = r::make_error_code(r::error_code_t::cancelled);
+    auto ee = r::make_error("custom", ec);
 
     SECTION("restart_policy: never") {
-        auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
-            ++invocations;
-            act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
-            return act;
-        };
         sup->spawn(factory).restart_policy(r::restart_policy_t::never).spawn();
         sup->do_process();
         CHECK(invocations == 1);
@@ -151,11 +154,6 @@ TEST_CASE("normal flow", "[spawner]") {
     }
 
     SECTION("restart_policy: always") {
-        auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
-            ++invocations;
-            act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
-            return act;
-        };
         sup->spawn(factory).restart_policy(r::restart_policy_t::always).max_attempts(2).spawn();
         sup->do_process();
         CHECK(invocations == 1);
@@ -166,6 +164,60 @@ TEST_CASE("normal flow", "[spawner]") {
         sup->trigger_timers_and_process();
 
         CHECK(act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+    }
+
+    SECTION("restart_policy: normal_only") {
+        sup->spawn(factory).restart_policy(r::restart_policy_t::normal_only).spawn();
+        sup->do_process();
+        CHECK(invocations == 1);
+        CHECK(samples == 1);
+
+        act->do_shutdown();
+        act.reset();
+        sup->trigger_timers_and_process();
+
+        CHECK(act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        act->do_shutdown(ee);
+        act.reset();
+        sup->trigger_timers_and_process();
+        CHECK(!act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+    }
+
+    SECTION("restart_policy: fail_only") {
+        sup->spawn(factory).restart_policy(r::restart_policy_t::fail_only).spawn();
+        sup->do_process();
+        CHECK(invocations == 1);
+        CHECK(samples == 1);
+
+        act->do_shutdown(ee);
+        act.reset();
+        sup->trigger_timers_and_process();
+
+        CHECK(act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        act->do_shutdown();
+        act.reset();
+        sup->trigger_timers_and_process();
+        CHECK(!act);
         CHECK(invocations == 2);
         CHECK(samples == 2);
 

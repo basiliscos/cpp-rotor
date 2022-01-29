@@ -100,13 +100,13 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     auto &state = actor->access<to::state>();
     auto sup = static_cast<supervisor_t *>(actor);
 
-    auto shutdown_reason = extended_error_ptr_t{};
+    auto supervisor_reason = extended_error_ptr_t{};
     if (state == state_t::INITIALIZING) {
         if (!child_started) {
             auto &policy = sup->access<to::policy>();
             if (policy == supervisor_policy_t::shutdown_failed) {
                 auto ec = make_error_code(shutdown_code_t::child_down);
-                shutdown_reason = make_error(ec);
+                supervisor_reason = make_error(ec);
             } else {
                 auto &init_request = actor->access<to::init_request>();
                 if (init_request) {
@@ -118,17 +118,20 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
         }
     }
 
-    if (shutdown_reason) {
-        actor->do_shutdown(shutdown_reason);
+    if (supervisor_reason) {
+        actor->do_shutdown(supervisor_reason);
     }
 
     cancel_init(&child);
+    auto child_reason = info.actor->get_shutdown_reason();
     info.actor.reset();
     bool erase_spawner = true;
     static_cast<supervisor_t &>(*actor).access<to::alive_actors>().erase(&child);
 
+    bool abnormal = child_reason && (bool)child_reason->root()->ec;
+
     if ((state <= state_t::OPERATIONAL) && info.active && info.factory) {
-        auto demand = info.can_spawn();
+        auto demand = info.next_spawn(abnormal);
         std::visit(
             [&](auto &&arg) {
                 using T = std::decay_t<decltype(arg)>;

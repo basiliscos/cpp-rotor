@@ -47,7 +47,7 @@ struct child_info_t: boost::intrusive_ref_counter<child_info_t, boost::thread_un
 
     void spawn_attempt() noexcept;
 
-    spawn_demand_t can_spawn() noexcept;
+    spawn_demand_t next_spawn(bool abnormal_shutdown) noexcept;
 
     address_ptr_t address;
     factory_t factory;

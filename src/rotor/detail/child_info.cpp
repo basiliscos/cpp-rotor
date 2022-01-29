@@ -22,10 +22,21 @@ void child_info_t::spawn_attempt() noexcept {
     }
 }
 
-spawn_demand_t child_info_t::can_spawn() noexcept {
+spawn_demand_t child_info_t::next_spawn(bool abnormal_shutdown) noexcept {
     if (actor || !active || timer_id) {
         return demand::no{};
     }
+
+    if (policy == restart_policy_t::fail_only && !abnormal_shutdown) {
+        active = false;
+        return demand::no{};
+    }
+
+    if (policy == restart_policy_t::normal_only && abnormal_shutdown) {
+        active = false;
+        return demand::no{};
+    }
+
     auto now = clock_t::local_time();
     auto after = now - last_instantiation;
     if (after >= restart_period) {
