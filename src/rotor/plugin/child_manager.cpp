@@ -124,7 +124,6 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
 
     cancel_init(&child);
     auto child_reason = info.actor->get_shutdown_reason();
-    info.actor.reset();
     bool erase_spawner = true;
     static_cast<supervisor_t &>(*actor).access<to::alive_actors>().erase(&child);
 
@@ -149,6 +148,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
             demand);
     }
 
+    info.actor.reset();
     if (erase_spawner) {
         actors_map.erase(it_actor);
     }

@@ -240,3 +240,5 @@ extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const e
 }
 
 bool actor_base_t::on_unlink(const address_ptr_t &) noexcept { return true; }
+
+bool actor_base_t::should_restart() const noexcept { return false; }

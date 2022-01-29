@@ -24,11 +24,14 @@ using sample_payload_t = r::message_t<payload::sample_payload_t>;
 
 struct sample_actor_t : rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
+    bool restart_flag = false;
 
     void on_start() noexcept override {
         rt::actor_test_t::on_start();
         send<payload::sample_payload_t>(supervisor->get_address());
     }
+
+    bool should_restart() const noexcept override { return restart_flag; }
 };
 
 struct sample_supervisor_t : rt::supervisor_test_t {
@@ -57,6 +60,16 @@ TEST_CASE("throw in factory", "[spawner]") {
             throw std::runtime_error("does-not-matter");
         };
         sup->spawn(factory).restart_policy(r::restart_policy_t::never).spawn();
+        sup->do_process();
+        CHECK(invocations == 1);
+    }
+
+    SECTION("restart_policy: ask_actor") {
+        auto factory = [&](r::supervisor_t &, const r::address_ptr_t &) -> r::actor_ptr_t {
+            ++invocations;
+            throw std::runtime_error("does-not-matter");
+        };
+        sup->spawn(factory).restart_policy(r::restart_policy_t::ask_actor).spawn();
         sup->do_process();
         CHECK(invocations == 1);
     }
@@ -214,6 +227,37 @@ TEST_CASE("normal flow", "[spawner]") {
         CHECK(invocations == 2);
         CHECK(samples == 2);
 
+        act->do_shutdown();
+        act.reset();
+        sup->trigger_timers_and_process();
+        CHECK(!act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+    }
+
+    SECTION("restart_policy: ask_actor") {
+        sup->spawn(factory).restart_policy(r::restart_policy_t::ask_actor).spawn();
+        sup->do_process();
+        CHECK(invocations == 1);
+        CHECK(samples == 1);
+
+        auto *actor = static_cast<sample_actor_t *>(act.get());
+        actor->restart_flag = true;
+        act->do_shutdown(ee);
+        act.reset();
+        sup->trigger_timers_and_process();
+
+        CHECK(act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        actor = static_cast<sample_actor_t *>(act.get());
+        actor->restart_flag = false;
         act->do_shutdown();
         act.reset();
         sup->trigger_timers_and_process();

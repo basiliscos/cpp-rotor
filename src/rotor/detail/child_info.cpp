@@ -5,6 +5,7 @@
 //
 
 #include "rotor/detail/child_info.h"
+#include "rotor/actor_base.h"
 
 using namespace rotor::detail;
 
@@ -23,7 +24,7 @@ void child_info_t::spawn_attempt() noexcept {
 }
 
 spawn_demand_t child_info_t::next_spawn(bool abnormal_shutdown) noexcept {
-    if (actor || !active || timer_id) {
+    if (!active || timer_id) {
         return demand::no{};
     }
 
@@ -35,6 +36,14 @@ spawn_demand_t child_info_t::next_spawn(bool abnormal_shutdown) noexcept {
     if (policy == restart_policy_t::normal_only && abnormal_shutdown) {
         active = false;
         return demand::no{};
+    }
+
+    if (policy == restart_policy_t::ask_actor) {
+        auto need_restart = actor->should_restart();
+        if (!need_restart) {
+            active = false;
+            return demand::no{};
+        }
     }
 
     auto now = clock_t::local_time();

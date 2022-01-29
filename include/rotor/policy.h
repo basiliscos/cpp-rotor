@@ -22,6 +22,7 @@ enum class supervisor_policy_t {
 enum class restart_policy_t {
     always,
     never,
+    ask_actor,
     normal_only,
     fail_only,
 };

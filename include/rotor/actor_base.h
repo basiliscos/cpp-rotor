@@ -336,6 +336,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief flag to mark, that actor is already executing shutdown */
     static const constexpr std::uint32_t PROGRESS_SHUTDOWN = 1 << 1;
 
+    virtual bool should_restart() const noexcept;
+
   protected:
     /** \brief timer-id to timer-handler map (type) */
     using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
