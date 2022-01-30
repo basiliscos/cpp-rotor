@@ -17,18 +17,20 @@ enum class shutdown_state_t { none, sent, confirmed };
 namespace demand {
 struct no {};
 struct now {};
+struct escalate_failure {};
 } // namespace demand
 
-using spawn_demand_t = std::variant<demand::no, demand::now, pt::time_duration>;
+using spawn_demand_t = std::variant<demand::no, demand::now, demand::escalate_failure, pt::time_duration>;
 
 struct child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_unsafe_counter> {
     using clock_t = pt::microsec_clock;
 
     template <typename Factory>
     child_info_t(address_ptr_t address_, Factory &&factory_, restart_policy_t policy_ = restart_policy_t::normal_only,
-                 const pt::time_duration &restart_period_ = pt::seconds{15}, size_t max_attempts_ = 0) noexcept
+                 const pt::time_duration &restart_period_ = pt::seconds{15}, size_t max_attempts_ = 0,
+                 bool escalate_failure_ = false) noexcept
         : address{std::move(address_)}, factory{std::forward<Factory>(factory_)}, policy{policy_},
-          restart_period{restart_period_}, max_attempts{max_attempts_} {}
+          restart_period{restart_period_}, max_attempts{max_attempts_}, escalate_failure{escalate_failure_} {}
 
     template <typename Factory, typename Actor>
     child_info_t(address_ptr_t address_, Factory &&factory_, Actor &&actor_) noexcept
@@ -52,6 +54,7 @@ struct child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_u
     size_t max_attempts;
     size_t attempts = 0;
     bool active = true;
+    bool escalate_failure = false;
     request_id_t timer_id{0};
 
     pt::ptime last_instantiation;

@@ -129,7 +129,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
 
     bool abnormal = child_reason && (bool)child_reason->root()->ec;
 
-    if ((state <= state_t::OPERATIONAL) && info.active && info.factory) {
+    if ((state <= state_t::OPERATIONAL) && info.factory) {
         auto demand = info.next_spawn(abnormal);
         std::visit(
             [&](auto &&arg) {
@@ -137,6 +137,10 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
                 if constexpr (std::is_same_v<T, detail::demand::now>) {
                     erase_spawner = false;
                     actor->send<payload::spawn_actor_t>(actor->get_address(), info.address);
+                } else if constexpr (std::is_same_v<T, detail::demand::escalate_failure>) {
+                    auto ee = make_error(make_error_code(error_code_t::failure_escalation), child_reason);
+                    auto &sup_addr = actor->get_address();
+                    actor->send<payload::shutdown_trigger_t>(sup_addr, sup_addr, std::move(ee));
                 } else if constexpr (std::is_same_v<T, pt::time_duration>) {
                     auto callback = &child_manager_plugin_t::on_spawn_timer;
                     auto request_id = sup->start_timer(info.restart_period, *this, callback);
@@ -477,12 +481,12 @@ size_t child_manager_plugin_t::active_actors() noexcept {
     return r;
 }
 
-void child_manager_plugin_t::spawn_later(factory_t factory, const pt::time_duration &period, restart_policy_t policy,
-                                         size_t max_attempts) noexcept {
+void child_manager_plugin_t::spawn(factory_t factory, const pt::time_duration &period, restart_policy_t policy,
+                                   size_t max_attempts, bool escalate) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     auto info = detail::child_info_ptr_t{};
     auto spawner_address = sup.make_address();
-    info = new detail::child_info_t(spawner_address, std::move(factory), policy, period, max_attempts);
+    info = new detail::child_info_t(spawner_address, std::move(factory), policy, period, max_attempts, escalate);
     actors_map.emplace(spawner_address, std::move(info));
     sup.send<payload::spawn_actor_t>(sup.get_address(), spawner_address);
 }

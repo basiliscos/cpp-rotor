@@ -37,8 +37,8 @@ struct child_manager_plugin_t : public plugin_base_t {
     virtual void create_child(const actor_ptr_t &actor) noexcept;
 
     // can throw
-    virtual void spawn_later(factory_t factory, const pt::time_duration &period, restart_policy_t policy,
-                             size_t max_attempts) noexcept;
+    virtual void spawn(factory_t factory, const pt::time_duration &period, restart_policy_t policy, size_t max_attempts,
+                       bool escalate) noexcept;
 
     /** \brief removes the child from the supervisor
      *

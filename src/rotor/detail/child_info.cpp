@@ -24,7 +24,29 @@ void child_info_t::spawn_attempt() noexcept {
 }
 
 spawn_demand_t child_info_t::next_spawn(bool abnormal_shutdown) noexcept {
-    if (!active || timer_id) {
+    if (timer_id) {
+        return demand::no{};
+    }
+
+    auto check_failure_escalation = [&]() -> bool {
+        if (escalate_failure && abnormal_shutdown) {
+            if (policy == restart_policy_t::always && !active) {
+                active = false;
+                return true;
+            }
+            if (policy == restart_policy_t::normal_only) {
+                active = false;
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (check_failure_escalation()) {
+        return demand::escalate_failure{};
+    }
+
+    if (!active) {
         return demand::no{};
     }
 

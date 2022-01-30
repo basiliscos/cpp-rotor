@@ -20,6 +20,7 @@ struct spawner_t {
     spawner_t &&restart_period(const pt::time_duration &) noexcept;
     spawner_t &&restart_policy(restart_policy_t) noexcept;
     spawner_t &&max_attempts(size_t) noexcept;
+    spawner_t &&escalate_failure(bool = true) noexcept;
     void spawn() noexcept;
 
   private:
@@ -31,6 +32,7 @@ struct spawner_t {
     restart_policy_t policy = restart_policy_t::normal_only;
     size_t attempts = 0;
     bool done = false;
+    bool escalate = false;
 
     friend struct supervisor_t;
 };

@@ -38,10 +38,15 @@ spawner_t &&spawner_t::max_attempts(size_t attempts_) noexcept {
     return std::move(*this);
 }
 
+spawner_t &&spawner_t::escalate_failure(bool value) noexcept {
+    escalate = value;
+    return std::move(*this);
+}
+
 void spawner_t::spawn() noexcept {
     if (!done) {
         done = true;
         auto manager = supervisor.access<to::manager>();
-        manager->spawn_later(std::move(factory), period, policy, attempts);
+        manager->spawn(std::move(factory), period, policy, attempts, escalate);
     }
 }
