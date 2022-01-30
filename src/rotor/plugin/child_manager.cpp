@@ -232,8 +232,7 @@ void child_manager_plugin_t::on_spawn(message::spawn_actor_t &message) noexcept 
                     auto ec = make_error_code(error_code_t::failure_escalation);
                     actor->reply_with_error(*init_request, make_error(ec));
                     init_request.reset();
-                }
-                else {
+                } else {
                     auto reason = make_error(make_error_code(shutdown_code_t::child_init_failed));
                     actor->do_shutdown(reason);
                 }

@@ -302,7 +302,6 @@ TEST_CASE("normal flow", "[spawner]") {
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
-
 TEST_CASE("trees of supervisorts", "[spawner]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout).finish();
@@ -319,7 +318,8 @@ TEST_CASE("trees of supervisorts", "[spawner]") {
     SECTION("just with inner sup") {
         r::actor_ptr_t act;
         auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
-            act = sup->create_actor<test_supervisor1_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
+            act =
+                sup->create_actor<test_supervisor1_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
             return act;
         };
 
@@ -340,7 +340,8 @@ TEST_CASE("trees of supervisorts", "[spawner]") {
     SECTION("inner sup with a child") {
         r::actor_ptr_t act;
         auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
-            act = sup->create_actor<test_supervisor2_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
+            act =
+                sup->create_actor<test_supervisor2_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
             return act;
         };
 
@@ -348,24 +349,24 @@ TEST_CASE("trees of supervisorts", "[spawner]") {
         sup->do_process();
         CHECK(samples == 2);
 
-        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
-        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        static_cast<test_supervisor2_t *>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t *>(act.get())->trigger_timers_and_process();
         CHECK(samples == 3);
 
-        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
-        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        static_cast<test_supervisor2_t *>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t *>(act.get())->trigger_timers_and_process();
         CHECK(samples == 3);
 
         act->do_shutdown();
         sup->trigger_timers_and_process();
         CHECK(samples == 5);
 
-        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
-        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        static_cast<test_supervisor2_t *>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t *>(act.get())->trigger_timers_and_process();
         CHECK(samples == 6);
 
-        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
-        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        static_cast<test_supervisor2_t *>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t *>(act.get())->trigger_timers_and_process();
         CHECK(samples == 6);
 
         act->do_shutdown();
@@ -382,15 +383,15 @@ TEST_CASE("trees of supervisorts", "[spawner]") {
 
 TEST_CASE("factory throws on supervisor initialization", "[spawner]") {
     r::system_context_t system_context;
-    auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout)
-            .policy(r::supervisor_policy_t::shutdown_self).finish();
-    auto factory = [&](r::supervisor_t &, const r::address_ptr_t &) -> r::actor_ptr_t {
-        throw "does-not-matter";
-    };
+    auto sup = system_context.create_supervisor<sample_supervisor_t>()
+                   .timeout(rt::default_timeout)
+                   .policy(r::supervisor_policy_t::shutdown_self)
+                   .finish();
+    auto factory = [&](r::supervisor_t &, const r::address_ptr_t &) -> r::actor_ptr_t { throw "does-not-matter"; };
     sup->spawn(factory).spawn();
-    static_cast<r::actor_base_t*>(sup.get())->access<rt::to::resources>()->acquire();
+    static_cast<r::actor_base_t *>(sup.get())->access<rt::to::resources>()->acquire();
     sup->do_process();
-    static_cast<r::actor_base_t*>(sup.get())->access<rt::to::resources>()->release();
+    static_cast<r::actor_base_t *>(sup.get())->access<rt::to::resources>()->release();
     sup->do_process();
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
