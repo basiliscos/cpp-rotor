@@ -19,6 +19,12 @@ actor_base_t::actor_base_t(actor_config_t &cfg)
       shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW} {
     plugins_storage = cfg.plugins_constructor();
     plugins = plugins_storage->get_plugins();
+    if (cfg.escalate_failure) {
+        continuation_mask |= ESCALATE_FALIURE;
+    }
+    if (cfg.autoshutdown_supervisor) {
+        continuation_mask |= AUTOSHUTDOWN_SUPERVISOR;
+    }
     for (auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
     }
@@ -79,7 +85,21 @@ void actor_base_t::init_finish() noexcept {
 
 void actor_base_t::on_start() noexcept { state = state_t::OPERATIONAL; }
 
-void actor_base_t::shutdown_start() noexcept { state = state_t::SHUTTING_DOWN; }
+void actor_base_t::shutdown_start() noexcept {
+    state = state_t::SHUTTING_DOWN;
+    if (!spawner_address) {
+        if (continuation_mask & ESCALATE_FALIURE) {
+            auto &sup = supervisor->get_address();
+            auto ee = make_error(make_error_code(error_code_t::failure_escalation), shutdown_reason);
+            send<payload::shutdown_trigger_t>(sup, sup, std::move(ee));
+        }
+        if (continuation_mask & AUTOSHUTDOWN_SUPERVISOR) {
+            auto &sup = supervisor->get_address();
+            auto ee = make_error(make_error_code(shutdown_code_t::child_down), shutdown_reason);
+            send<payload::shutdown_trigger_t>(sup, sup, std::move(ee));
+        }
+    }
+}
 
 void actor_base_t::shutdown_finish() noexcept {
     // shutdown_request might be missing for root supervisor

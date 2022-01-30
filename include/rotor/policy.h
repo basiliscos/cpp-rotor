@@ -27,5 +27,4 @@ enum class restart_policy_t {
     fail_only,
 };
 
-
 } // namespace rotor

@@ -33,7 +33,7 @@ namespace pt = boost::posix_time;
 /** \brief timer identifier type in the scope of the actor */
 using request_id_t = std::size_t;
 
-using factory_t = std::function<actor_ptr_t(supervisor_t&, const address_ptr_t&)>;
+using factory_t = std::function<actor_ptr_t(supervisor_t &, const address_ptr_t &)>;
 
 } // namespace rotor
 

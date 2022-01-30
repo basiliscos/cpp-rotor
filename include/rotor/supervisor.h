@@ -218,7 +218,6 @@ struct supervisor_t : public actor_base_t {
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
 
-
     spawner_t spawn(factory_t) noexcept;
 
     using actor_base_t::subscribe;

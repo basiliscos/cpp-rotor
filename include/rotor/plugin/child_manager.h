@@ -37,7 +37,8 @@ struct child_manager_plugin_t : public plugin_base_t {
     virtual void create_child(const actor_ptr_t &actor) noexcept;
 
     // can throw
-    virtual void spawn_later(factory_t factory, const pt::time_duration& period, restart_policy_t policy, size_t max_attempts) noexcept;
+    virtual void spawn_later(factory_t factory, const pt::time_duration &period, restart_policy_t policy,
+                             size_t max_attempts) noexcept;
 
     /** \brief removes the child from the supervisor
      *
@@ -102,7 +103,6 @@ struct child_manager_plugin_t : public plugin_base_t {
     void on_spawn_timer(request_id_t timer_id, bool cancelled) noexcept;
 
     size_t active_actors() noexcept;
-
 
     /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
     using initializing_actors_t = std::unordered_set<address_ptr_t>;

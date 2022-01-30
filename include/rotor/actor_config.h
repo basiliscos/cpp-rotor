@@ -72,6 +72,10 @@ struct actor_config_t {
 
     address_ptr_t spawner_address;
 
+    bool escalate_failure = false;
+
+    bool autoshutdown_supervisor = false;
+
     /** \brief constructs actor_config_t from raw supervisor pointer */
     actor_config_t(supervisor_t *supervisor_) : supervisor{supervisor_} {}
 };
@@ -148,8 +152,18 @@ template <typename Actor> struct actor_config_builder_t {
         return std::move(*static_cast<builder_t *>(this));
     }
 
-    builder_t &&spawner_address(const address_ptr_t& value) &&noexcept {
+    builder_t &&spawner_address(const address_ptr_t &value) &&noexcept {
         config.spawner_address = value;
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    builder_t &&escalate_failure(bool value = true) &&noexcept {
+        config.escalate_failure = value;
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    builder_t &&autoshutdown_supervisor(bool value = true) &&noexcept {
+        config.autoshutdown_supervisor = value;
         return std::move(*static_cast<builder_t *>(this));
     }
 

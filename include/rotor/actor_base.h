@@ -336,6 +336,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief flag to mark, that actor is already executing shutdown */
     static const constexpr std::uint32_t PROGRESS_SHUTDOWN = 1 << 1;
 
+    static const constexpr std::uint32_t ESCALATE_FALIURE = 1 << 2;
+
+    static const constexpr std::uint32_t AUTOSHUTDOWN_SUPERVISOR = 1 << 3;
+
     virtual bool should_restart() const noexcept;
 
   protected:
@@ -433,7 +437,6 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief explanation, why actor is been requested for shut down */
     extended_error_ptr_t shutdown_reason;
-
 
     friend struct plugin::plugin_base_t;
     friend struct plugin::lifetime_plugin_t;
