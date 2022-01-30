@@ -379,3 +379,18 @@ TEST_CASE("trees of supervisorts", "[spawner]") {
 
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
+
+TEST_CASE("factory throws on supervisor initialization", "[spawner]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout)
+            .policy(r::supervisor_policy_t::shutdown_self).finish();
+    auto factory = [&](r::supervisor_t &, const r::address_ptr_t &) -> r::actor_ptr_t {
+        throw "does-not-matter";
+    };
+    sup->spawn(factory).spawn();
+    static_cast<r::actor_base_t*>(sup.get())->access<rt::to::resources>()->acquire();
+    sup->do_process();
+    static_cast<r::actor_base_t*>(sup.get())->access<rt::to::resources>()->release();
+    sup->do_process();
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+}

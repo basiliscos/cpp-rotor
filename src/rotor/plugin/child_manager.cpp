@@ -222,6 +222,23 @@ void child_manager_plugin_t::on_spawn(message::spawn_actor_t &message) noexcept 
         info.actor = child;
     } catch (...) {
         bool try_next = (info.policy == restart_policy_t::always) || (info.policy == restart_policy_t::fail_only);
+        auto state = actor->access<to::state>();
+        if (state == state_t::INITIALIZING) {
+            auto &policy = sup.access<to::policy>();
+            if (policy == supervisor_policy_t::shutdown_self) {
+                try_next = false;
+                auto &init_request = actor->access<to::init_request>();
+                if (init_request) {
+                    auto ec = make_error_code(error_code_t::failure_escalation);
+                    actor->reply_with_error(*init_request, make_error(ec));
+                    init_request.reset();
+                }
+                else {
+                    auto reason = make_error(make_error_code(shutdown_code_t::child_init_failed));
+                    actor->do_shutdown(reason);
+                }
+            }
+        }
         if (try_next) {
             auto callback = &child_manager_plugin_t::on_spawn_timer;
             auto request_id = sup.start_timer(info.restart_period, *this, callback);
