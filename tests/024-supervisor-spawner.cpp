@@ -28,7 +28,8 @@ struct sample_actor_t : rt::actor_test_t {
 
     void on_start() noexcept override {
         rt::actor_test_t::on_start();
-        send<payload::sample_payload_t>(supervisor->get_address());
+        auto sup = supervisor->access<rt::to::locality_leader>();
+        send<payload::sample_payload_t>(sup->get_address());
     }
 
     bool should_restart() const noexcept override { return restart_flag; }
@@ -44,6 +45,33 @@ struct sample_supervisor_t : rt::supervisor_test_t {
             do_invoke_timer(handler->request_id);
             do_process();
         }
+    }
+};
+
+struct test_supervisor1_t : rt::supervisor_test_t {
+    using rt::supervisor_test_t::supervisor_test_t;
+
+    void on_start() noexcept override {
+        rt::supervisor_test_t::on_start();
+        auto sup = supervisor->access<rt::to::locality_leader>();
+        send<payload::sample_payload_t>(sup->get_address());
+    }
+};
+
+struct test_supervisor2_t : sample_supervisor_t {
+    using sample_supervisor_t::sample_supervisor_t;
+
+    r::actor_ptr_t child;
+
+    void on_start() noexcept override {
+        rt::supervisor_test_t::on_start();
+        auto factory = [&](r::supervisor_t &sup, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
+            child = sup.create_actor<sample_actor_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
+            return child;
+        };
+        spawn(factory).max_attempts(2).restart_policy(r::restart_policy_t::always).spawn();
+        auto root = supervisor->access<rt::to::locality_leader>();
+        send<payload::sample_payload_t>(root->get_address());
     }
 };
 
@@ -269,6 +297,84 @@ TEST_CASE("normal flow", "[spawner]") {
         sup->do_process();
         CHECK(invocations == 2);
         CHECK(samples == 2);
+    }
+
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
+
+TEST_CASE("trees of supervisorts", "[spawner]") {
+    r::system_context_t system_context;
+    auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout).finish();
+    size_t samples = 0;
+    sup->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            p.subscribe_actor(r::lambda<message::sample_payload_t>([&](auto &) noexcept { ++samples; }));
+        });
+    };
+
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    SECTION("just with inner sup") {
+        r::actor_ptr_t act;
+        auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
+            act = sup->create_actor<test_supervisor1_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
+            return act;
+        };
+
+        sup->spawn(factory).restart_policy(r::restart_policy_t::always).max_attempts(2).spawn();
+        sup->do_process();
+        CHECK(samples == 1);
+
+        act->do_shutdown();
+
+        sup->trigger_timers_and_process();
+        CHECK(samples == 2);
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(samples == 2);
+    }
+
+    SECTION("inner sup with a child") {
+        r::actor_ptr_t act;
+        auto factory = [&](r::supervisor_t &, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
+            act = sup->create_actor<test_supervisor2_t>().timeout(rt::default_timeout).spawner_address(spawner).finish();
+            return act;
+        };
+
+        sup->spawn(factory).restart_policy(r::restart_policy_t::always).max_attempts(2).spawn();
+        sup->do_process();
+        CHECK(samples == 2);
+
+        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        CHECK(samples == 3);
+
+        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        CHECK(samples == 3);
+
+        act->do_shutdown();
+        sup->trigger_timers_and_process();
+        CHECK(samples == 5);
+
+        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        CHECK(samples == 6);
+
+        static_cast<test_supervisor2_t*>(act.get())->child->do_shutdown();
+        static_cast<test_supervisor2_t*>(act.get())->trigger_timers_and_process();
+        CHECK(samples == 6);
+
+        act->do_shutdown();
+        sup->trigger_timers_and_process();
+        CHECK(samples == 6);
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(samples == 6);
     }
 
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
