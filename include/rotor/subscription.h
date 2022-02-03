@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -39,8 +39,7 @@ struct subscription_t {
         handlers_t external;
     };
 
-    /** \brief ctor from supervisor reference */
-    subscription_t(supervisor_t &supervisor) noexcept;
+    subscription_t() noexcept;
 
     /** \brief upgrades subscription_point_t into subscription_info smart pointer
      *
@@ -81,7 +80,7 @@ struct subscription_t {
     using addressed_handlers_t = std::unordered_map<subscrption_key_t, joint_handlers_t, subscrption_key_hash_t>;
 
     using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
-    supervisor_t &supervisor;
+    address_t *main_address;
     info_container_t internal_infos;
     addressed_handlers_t mine_handlers;
 };

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,12 +15,22 @@
 using namespace rotor;
 using namespace rotor::plugin;
 
+namespace {
+namespace to {
+struct main_address {};
+;
+} // namespace to
+} // namespace
+
+template <> auto &subscription_t::access<to::main_address>() noexcept { return main_address; }
+
 void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
     auto sup = static_cast<supervisor_t *>(actor_);
     queue = &sup->locality_leader->queue;
     address = sup->address.get();
     subscription_map = &sup->subscription_map;
+    subscription_map->access<to::main_address>() = address;
     sup->delivery = this;
 }
 

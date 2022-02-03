@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -20,15 +20,14 @@ struct internal_handler {};
 template <> auto &subscription_info_t::access<to::internal_address>() noexcept { return internal_address; }
 template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
 
-subscription_t::subscription_t(supervisor_t &sup_) noexcept : supervisor{sup_} {}
+subscription_t::subscription_t() noexcept : main_address{nullptr} {}
 
 subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &point) noexcept {
     using State = subscription_info_t::state_t;
-
     auto &address = point.address;
     auto &handler = point.handler;
-    bool internal_address = &address->supervisor == &supervisor;
-    bool internal_handler = &handler->actor_ptr->get_supervisor() == &supervisor;
+    bool internal_address = address->same_locality(*main_address);
+    bool internal_handler = handler->actor_ptr->get_address()->same_locality(*main_address);
     State state = internal_address ? State::ESTABLISHED : State::SUBSCRIBING;
     subscription_info_ptr_t info(new subscription_info_t(point, internal_address, internal_handler, state));
 
@@ -48,8 +47,8 @@ subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &
 void subscription_t::update(subscription_point_t &point, handler_ptr_t &new_handler) noexcept {
     auto &address = point.address;
     auto &handler = point.handler;
-    bool internal_address = &address->supervisor == &supervisor;
-    bool internal_handler = &handler->actor_ptr->get_supervisor() == &supervisor;
+    bool internal_address = address->same_locality(*main_address);
+    bool internal_handler = handler->actor_ptr->get_address()->same_locality(*main_address);
     if (internal_address) {
         auto it = mine_handlers.find({address.get(), handler->message_type});
         assert(it != mine_handlers.end());
