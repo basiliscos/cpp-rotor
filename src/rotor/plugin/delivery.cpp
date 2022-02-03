@@ -18,7 +18,6 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct main_address {};
-;
 } // namespace to
 } // namespace
 
