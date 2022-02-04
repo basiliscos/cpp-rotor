@@ -70,10 +70,13 @@ struct actor_config_t {
     /** \brief max actor shutdown time */
     pt::time_duration shutdown_timeout;
 
+    /** \brief address of the spawner */
     address_ptr_t spawner_address;
 
+    /** \brief shutdown supervisor upon child failure */
     bool escalate_failure = false;
 
+    /** \brief shutdown supervisor upon child down */
     bool autoshutdown_supervisor = false;
 
     /** \brief constructs actor_config_t from raw supervisor pointer */
@@ -152,16 +155,34 @@ template <typename Actor> struct actor_config_builder_t {
         return std::move(*static_cast<builder_t *>(this));
     }
 
+    /** \brief spawner address
+     *
+     * This value must be set, when actor is create via spawner (i.e. in `factory_t`)
+     *
+     **/
     builder_t &&spawner_address(const address_ptr_t &value) &&noexcept {
         config.spawner_address = value;
         return std::move(*static_cast<builder_t *>(this));
     }
 
+    /** \brief shutdown supervisor upon actor failure
+     *
+     * When actor is shut down due to failure, trigger it's supervisor
+     * to shutdown.
+     *
+     * This policy is ignored when actor is spawned.
+     *
+     */
     builder_t &&escalate_failure(bool value = true) &&noexcept {
         config.escalate_failure = value;
         return std::move(*static_cast<builder_t *>(this));
     }
 
+    /** \brief shutdown supervisor when an actor is down
+     *
+     * This policy is ignored when actor is spawned.
+     *
+     */
     builder_t &&autoshutdown_supervisor(bool value = true) &&noexcept {
         config.autoshutdown_supervisor = value;
         return std::move(*static_cast<builder_t *>(this));

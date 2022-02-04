@@ -85,6 +85,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/address.hpp
     include/rotor/address_mapping.h
     include/rotor/arc.hpp
+    include/rotor/detail/child_info.h
     include/rotor/error_code.h
     include/rotor/extended_error.h
     include/rotor/forward.hpp
@@ -108,6 +109,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/policy.h
     include/rotor/registry.h
     include/rotor/request.hpp
+    include/rotor/spawner.h
     include/rotor/state.h
     include/rotor/subscription.h
     include/rotor/subscription_point.h

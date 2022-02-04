@@ -36,7 +36,8 @@ struct child_manager_plugin_t : public plugin_base_t {
     /** \brief pre-initializes child and sends create_child message to the supervisor */
     virtual void create_child(const actor_ptr_t &actor) noexcept;
 
-    // can throw
+    /** \brief records spawner (via generating a new address) and sends
+     * spawn_actor_t message to the supersior */
     virtual void spawn(factory_t factory, const pt::time_duration &period, restart_policy_t policy, size_t max_attempts,
                        bool escalate) noexcept;
 
@@ -80,6 +81,7 @@ struct child_manager_plugin_t : public plugin_base_t {
     /** \brief reaction on shutdown confirmation (i.e. perform some cleanings) */
     virtual void on_shutdown_confirm(message::shutdown_response_t &message) noexcept;
 
+    /** \brief actually attempts to spawn a new actor via spawner */
     virtual void on_spawn(message::spawn_actor_t &message) noexcept;
 
     bool handle_init(message::init_request_t *) noexcept override;

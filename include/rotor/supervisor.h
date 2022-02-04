@@ -53,7 +53,7 @@ namespace rotor {
  * other supervisors constructing tree-like organization of responsibilities.
  *
  * Unlike Erlang's supervisor, rotor's supervisor does not spawn actors
- * if they terminated. It should be possible, hovewer, to implement it in derived
+ * if they terminated. It should be possible, however, to implement it in derived
  * classes with application-specific logic.
  *
  * This supervisor class is abstract, and the concrete implementation is
@@ -218,6 +218,12 @@ struct supervisor_t : public actor_base_t {
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
 
+    /** \brief returns an actor spawner
+     *
+     * Spawner allows to create a new actor instance, when the current actor
+     * instance is down. Different policies (reactions) can be applied.
+     *
+     */
     spawner_t spawn(factory_t) noexcept;
 
     using actor_base_t::subscribe;

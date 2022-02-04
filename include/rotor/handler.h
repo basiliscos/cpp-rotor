@@ -53,7 +53,10 @@ template <typename T> struct handler_traits {};
  *  \brief Helper class to catch wrong message handler
  */
 template <typename A, typename M> struct handler_traits<void (A::*)(M &)> {
+    /** \brief an alias for handler signature */
     using pointer_t = void (A::*)(M &);
+
+    /** \brief checks whether handler has `noexcept` specification */
     static auto const constexpr has_noexcept =
         noexcept((std::declval<A>().*std::declval<pointer_t>())(std::declval<M &>()));
     static_assert(has_noexcept, "message handler should have 'noexcept' specification");

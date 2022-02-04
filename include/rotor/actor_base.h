@@ -336,10 +336,36 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief flag to mark, that actor is already executing shutdown */
     static const constexpr std::uint32_t PROGRESS_SHUTDOWN = 1 << 1;
 
+    /** \brief flag to mark, that actor is already executing shutdown
+     *
+     * When actor is shutdown due to failure, if this flag is ON, then
+     * it will trigger it's supervisor shutdown.
+     *
+     * This policy is ignored when actor is spawned.
+     *
+     */
     static const constexpr std::uint32_t ESCALATE_FALIURE = 1 << 2;
 
+    /** \brief flag to mark, that actor trigger supervisor shutdown
+     *
+     * When actor is shutdown (for whatever reason), if this flag is ON, then
+     * it will trigger it's supervisor shutdown.
+     *
+     * This policy is ignored when actor is spawned.
+     *
+     */
     static const constexpr std::uint32_t AUTOSHUTDOWN_SUPERVISOR = 1 << 3;
 
+    /** \brief whether spawner should create a new instance of the actor
+     *
+     * When then actor is spawned via a spawner, and it becomes down,
+     * the spawner will ask the curretn instance whether it should
+     * spawn another one.
+     *
+     * This method is consulted, only when spawner's restart_policy_t is
+     * `ask_actor`.
+     *
+     */
     virtual bool should_restart() const noexcept;
 
   protected:
@@ -376,6 +402,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief actor address */
     address_ptr_t address;
 
+    /** \brief actor spawner address */
     address_ptr_t spawner_address;
 
     /** \brief actor identity, wich might have some meaning for developers */

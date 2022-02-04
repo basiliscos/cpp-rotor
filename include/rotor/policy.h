@@ -19,11 +19,22 @@ enum class supervisor_policy_t {
     shutdown_failed,
 };
 
+/** \brief spawner's actor restart policy */
 enum class restart_policy_t {
+    /** \brief always restart actor */
     always,
+    /** \brief never restart actor */
     never,
+
+    /** \brief ask terminated actor whether a new instance should be spawned
+     * `should_restart()` method is used
+     */
     ask_actor,
+
+    /** \brief restart actor only when it terminated normally (without error) */
     normal_only,
+
+    /** \brief restart actor only when it tarminated abmormally (with error) */
     fail_only,
 };
 
