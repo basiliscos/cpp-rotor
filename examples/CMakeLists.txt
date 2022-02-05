@@ -25,6 +25,10 @@ add_executable(hello_loopless hello_loopless.cpp)
 target_link_libraries(hello_loopless rotor)
 add_test(hello_loopless "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hello_loopless")
 
+add_executable(escalate-failure escalate-failure.cpp)
+target_link_libraries(escalate-failure rotor)
+add_test(escalate-failure "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/escalate-failure")
+
 add_executable(ping_pong ping_pong.cpp)
 target_link_libraries(ping_pong rotor)
 add_test(ping_pong "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping_pong")

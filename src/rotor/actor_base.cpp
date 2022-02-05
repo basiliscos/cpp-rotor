@@ -88,7 +88,7 @@ void actor_base_t::on_start() noexcept { state = state_t::OPERATIONAL; }
 void actor_base_t::shutdown_start() noexcept {
     state = state_t::SHUTTING_DOWN;
     if (!spawner_address) {
-        if (continuation_mask & ESCALATE_FALIURE) {
+        if ((continuation_mask & ESCALATE_FALIURE) && shutdown_reason && shutdown_reason->root()->ec) {
             auto &sup = supervisor->get_address();
             auto ee = make_error(make_error_code(error_code_t::failure_escalation), shutdown_reason);
             send<payload::shutdown_trigger_t>(sup, sup, std::move(ee));

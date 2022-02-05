@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cmath>
 #include <system_error>
+#include <random>
 
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
