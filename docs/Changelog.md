@@ -12,6 +12,7 @@ escalate_failure [supervising in erlang](https://www.erlang.org/doc/design_princ
  - [improvement] actor can now `escalate_failure()`, i.e. trigger shutdown own supervisor
 when it finished with failure
  - [example] `examples/autoshutdown` (new)
+ - [example] `examples/escalate-failure` (new)
 
 ## 0.19 (31-Dec-2021)
  - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
