@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -55,7 +55,7 @@ struct pinger_t : public rotor::actor_base_t {
             std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                       << ", freq = " << std::fixed << std::setprecision(10) << freq << ", real freq = " << std::fixed
                       << std::setprecision(10) << freq * 2 << "\n";
-            supervisor->shutdown();
+            do_shutdown();
         }
     }
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
                        .timeout(timeout)
                        .finish();
 
-        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).autoshutdown_supervisor().finish();
         auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
         ponger->set_pinger_addr(pinger->get_address());

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,7 +14,7 @@ struct server_actor : public rotor::actor_base_t {
     void on_start() noexcept override {
         rotor::actor_base_t::on_start();
         std::cout << "hello world\n";
-        supervisor->shutdown();
+        do_shutdown();
     }
 };
 
@@ -26,7 +26,7 @@ int main() {
     auto sup =
         system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
 
-    sup->create_actor<server_actor>().timeout(timeout).finish();
+    sup->create_actor<server_actor>().timeout(timeout).autoshutdown_supervisor().finish();
 
     sup->start();
     io_context.run();

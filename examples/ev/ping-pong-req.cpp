@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -43,7 +43,7 @@ struct pinger_t : public rotor::actor_base_t {
         } else {
             std::cout << "pong was NOT received: " << ec->message() << "\n";
         }
-        supervisor->do_shutdown();
+        do_shutdown();
     }
 
     rotor::address_ptr_t ponger_addr;
@@ -84,7 +84,7 @@ int main() {
                        .timeout(timeout)
                        .finish();
 
-        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
+        auto pinger = sup->create_actor<pinger_t>().timeout(timeout).autoshutdown_supervisor().finish();
         auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
 

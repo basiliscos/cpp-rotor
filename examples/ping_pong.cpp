@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -28,7 +28,7 @@ struct pinger_t : public rotor::actor_base_t {
 
     void on_pong(rotor::message_t<pong_t> &) noexcept {
         std::cout << "pong\n";
-        supervisor->do_shutdown(); // optional
+        do_shutdown();
     }
 
     rotor::address_ptr_t ponger_addr;
@@ -57,8 +57,14 @@ int main() {
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
     auto sup = ctx.create_supervisor<dummy_supervisor_t>().timeout(timeout).finish();
 
-    auto pinger = sup->create_actor<pinger_t>().init_timeout(timeout).shutdown_timeout(timeout).finish();
-    auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish(); // shortcut for init/shutdown
+    auto pinger = sup->create_actor<pinger_t>()
+                      .init_timeout(timeout)
+                      .shutdown_timeout(timeout)
+                      .autoshutdown_supervisor()
+                      .finish();
+    auto ponger = sup->create_actor<ponger_t>()
+                      .timeout(timeout) // shortcut for init/shutdown
+                      .finish();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 

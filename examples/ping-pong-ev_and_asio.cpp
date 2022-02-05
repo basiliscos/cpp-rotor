@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -73,7 +73,7 @@ struct pinger_t : public rotor::actor_base_t {
     void shutdown_finish() noexcept override {
         rotor::actor_base_t::shutdown_finish();
         std::cout << "pinger_t::shutdown_finish\n";
-        supervisor->shutdown();
+        do_shutdown();
         ponger_addr.reset(); // do not hold reference to to ponger's supervisor
     }
 
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
                           .registry_address(sup_asio->get_registry_address())
                           .finish();
 
-        auto pinger = sup_ev->create_actor<pinger_t>().timeout(timeout).finish();
+        auto pinger = sup_ev->create_actor<pinger_t>().autoshutdown_supervisor().timeout(timeout).finish();
         auto ponger = sup_asio->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_pings(count);
 

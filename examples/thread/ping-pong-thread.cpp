@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2021-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -79,7 +79,7 @@ struct pinger_t : public r::actor_base_t {
             std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                       << ", freq = " << std::fixed << std::setprecision(10) << freq << ", real freq = " << std::fixed
                       << std::setprecision(10) << freq * 2 << "\n";
-            supervisor->shutdown();
+            do_shutdown();
         }
     }
 
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
         auto timeout = boost::posix_time::milliseconds{100};
         auto sup_ping =
             ctx_ping.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).create_registry().finish();
-        auto pinger = sup_ping->create_actor<pinger_t>().timeout(timeout).finish();
+        auto pinger = sup_ping->create_actor<pinger_t>().autoshutdown_supervisor().timeout(timeout).finish();
         pinger->set_pings(count);
 
         auto sup_pong = ctx_pong.create_supervisor<rth::supervisor_thread_t>()
