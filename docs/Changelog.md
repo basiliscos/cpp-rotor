@@ -4,6 +4,15 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.20 (xxx-Feb-2022)
+ - [improvement] superviser can create `spawner`, which has a policy to auto-spawns
+new actor instance if previous instance has been shutdown. This is similar to
+escalate_failure [supervising in erlang](https://www.erlang.org/doc/design_principles/sup_princ.html)
+ - [improvement] actor can now `autoshutdown_supervisor()`, when it shutdown
+ - [improvement] actor can now `escalate_failure()`, i.e. trigger shutdown own supervisor
+when it finished with failure
+ - [example] `examples/autoshutdown` (new)
+
 ## 0.19 (31-Dec-2021)
  - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self
