@@ -11,6 +11,7 @@ escalate_failure [supervising in erlang](https://www.erlang.org/doc/design_princ
  - [improvement] actor can now `autoshutdown_supervisor()`, when it shutdown
  - [improvement] actor can now `escalate_failure()`, i.e. trigger shutdown own supervisor
 when it finished with failure
+ - [improvement] messages delivery order is preseverd per-locality (see issue #41)
  - [example] `examples/autoshutdown` (new)
  - [example] `examples/escalate-failure` (new)
 
