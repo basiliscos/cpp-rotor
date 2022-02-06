@@ -461,5 +461,30 @@ TEST_CASE("escalate failure", "[spawner]") {
         CHECK(samples == 2);
     }
 
+    SECTION("restart_policy: fail_only + max_fails") {
+        sup->spawn(factory).restart_policy(r::restart_policy_t::fail_only).max_attempts(2).escalate_failure().spawn();
+        sup->do_process();
+        CHECK(invocations == 1);
+        CHECK(samples == 1);
+
+        act->do_shutdown(ee);
+        act.reset();
+        sup->trigger_timers_and_process();
+
+        CHECK(act);
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+
+        act->do_shutdown(ee);
+        act.reset();
+        sup->trigger_timers_and_process();
+        CHECK(invocations == 2);
+        CHECK(samples == 2);
+    }
+
+    auto reason = sup->get_shutdown_reason();
+    REQUIRE(reason);
+    CHECK(reason->root() == ee);
+
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }

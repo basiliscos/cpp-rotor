@@ -6,6 +6,10 @@ if (OPENSSL_FOUND)
     add_test(sha512 "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sha512")
 endif()
 
+add_executable(ping-pong-spawner ping-pong-spawner.cpp)
+target_link_libraries(ping-pong-spawner rotor::thread)
+add_test(ping-pong-spawner "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-spawner")
+
 add_executable(ping-pong-thread ping-pong-thread.cpp)
 target_link_libraries(ping-pong-thread rotor::thread)
 add_test(ping-pong-thread "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-thread")

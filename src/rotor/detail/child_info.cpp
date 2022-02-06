@@ -29,14 +29,19 @@ spawn_demand_t child_info_t::next_spawn(bool abnormal_shutdown) noexcept {
     }
 
     auto check_failure_escalation = [&]() -> bool {
-        if (escalate_failure && abnormal_shutdown) {
-            if (policy == restart_policy_t::always && !active) {
-                active = false;
+        if (escalate_failure) {
+            if (max_attempts && attempts >= max_attempts) {
                 return true;
             }
-            if (policy == restart_policy_t::normal_only) {
-                active = false;
-                return true;
+            if (abnormal_shutdown) {
+                if (policy == restart_policy_t::always && !active) {
+                    active = false;
+                    return true;
+                }
+                if (policy == restart_policy_t::normal_only) {
+                    active = false;
+                    return true;
+                }
             }
         }
         return false;
