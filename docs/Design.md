@@ -59,12 +59,12 @@ are delivered sequentially within the context of an `supervisor`, and it is safe
 call one some actor's method from some other actor, located on the same supervisor,
 f needed.
 
-**supervising** defines the reaction upon child actor shutdown. It varies from
-doing nothing, to escalating failure (i.e. shutdown supervisor itself with all
-its actors, and may be its supervisor too etc) to spawing a new actor instance
-again (may be, after some timeout) to give it the chance to successfully
-accomplish its job. **spawner** codifies different policies without a need of
-manually code the relevant section in supervisor.
+**supervising** defines the supervisor reaction upon child actor shutdown. It 
+varies from doing nothing to escalating failure (i.e. shutdown supervisor 
+itself with all its actors, and may be its supervisor too etc) and to spawning
+a new actor instance again (may be, after some timeout) to give it the chance
+to successfully accomplish its job. **spawner** codifies different policies 
+without a need of manually code the relevant section in supervisor.
 
 **locality** is rotor-specific marker of `sequential execution context`. An supervisor
 might have an independent locality, i.e. execute only on its own (`strand`); or a
