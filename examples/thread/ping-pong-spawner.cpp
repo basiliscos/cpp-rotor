@@ -58,13 +58,13 @@ struct pinger_t : public rotor::actor_base_t {
 
     void on_pong(message::pong_t &reply) noexcept {
         auto &ee = reply.payload.ee;
+        // fail branch, handled by spawner
         if (ee) {
             std::cout << "err: " << ee->message() << "\n";
             return do_shutdown(ee);
         }
         std::cout << "pong received\n";
-        // case: succesuful ping. shutdown supervisor. this->do_shutdown() is not enough, as
-        // we are managed by spawner policy
+        // succesfull branch: manually shutdown supervisor
         supervisor->do_shutdown();
     }
 
@@ -92,7 +92,6 @@ struct ponger_t : public rotor::actor_base_t {
 
         auto dice = dist(gen);
         auto failure_probability = 0.925;
-        // auto failure_probability = 0.925;
         bool ok = dice > failure_probability;
         std::cout << "pong, dice = " << dice << ", passes threshold : " << (ok ? "yes" : "no") << "\n";
         if (ok) {

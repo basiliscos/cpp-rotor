@@ -383,3 +383,98 @@ ponger_t, shutdown_finish
 
 The full source code can be seen at [examples/boost-asio/ping-pong-timer.cpp]. There is a more advanced
 [examples/boost-asio/beast-scrapper.cpp] example too, however without detailed explanations.
+
+## Supervising and spawning actors
+
+[examples/thread/ping-pong-spawner.cpp]: https://github.com/basiliscos/cpp-rotor/blob/master/examples/thread/ping-pong-spawner.cpp
+
+*Supervising* actors is simply define some reaction upon managed child actor termination.
+Some of reactions are already build in [rotor](https://github.com/basiliscos/cpp-rotor): the default
+`supervisor_policy_t::shutdown_self` policy of a supervisor, will shut down the
+supervisor if (a) it is in `initializing` state, and (b) one of its child actors shuts
+self down. This is a simple form of *failure escalation*: failure to initialize actor
+causes failure to initialize its supervisor.
+
+However, if a supervisor has started, failure in child actor will cause no effect.
+To change that the special method `escalate_failure(true)` should be called in actor
+builder. Another possibility is to invoke `autoshutdown_supervisor(true)`, the difference
+is the following: `autoshutdown_supervisor` **unconditionally** shuts supervisor
+down, when a child is down, while `escalate_failure` analyzes shutdown reason code:
+if the code is normal (i.e. no error or failure caused an actor shutdown, but it
+shut self down because it successfully accomplished its job), then there is nothing
+to escalate.
+
+The common reaction to actor shutdown is to give an actor another chance, i.e.
+restart it (spawn a new instance instead of the terminated one). Here an `spawner`
+comes into play with its various policies applied: restart only on failure, restart only
+on successful termination, always restart, never restart, maximum number of restart
+attempts, whether the spawn failure should be escalated etc. To prevent the underlying
+system from chocking up, caused by frequently actor restarts, the restart frequency
+(i.e. minimum amount of time have to be passed before the next actor restart attempt)
+is introduced.
+
+Here is an example, which demonstrates the features, described above. Let's introduce
+the rules for a ping-pong: pong might reply with failure on ping request; we'd like
+to shutdown pinger then and spawn a new instance upto 15 times. If there is no
+luck even after 15 attempts, the supervisor should fail and exit. Here is the
+relevant code:
+
+```cpp
+auto sup = ctx.create_supervisor<rth::supervisor_thread_t>()
+    .timeout(timeout)
+    .create_registry()
+    .finish();
+sup->create_actor<ponger_t>().timeout(timeout).finish();
+auto pinger_factory = [&](r::supervisor_t &sup, const r::address_ptr_t &spawner) -> r::actor_ptr_t {
+    return sup.create_actor<pinger_t>()
+     .timeout(timeout)
+     .spawner_address(spawner)
+     .finish();
+};
+sup->spawn(pinger_factory)
+    .max_attempts(15)                               /* don't do that endlessly */
+    .restart_period(timeout)
+    .restart_policy(r::restart_policy_t::fail_only) /* case: respawn on single ping fail */
+    .escalate_failure()                             /* case: when all pings fail */
+    .spawn();
+```
+
+The successful branch in `pinger` can be like that:
+
+
+```cpp
+struct pinger_t : public rotor::actor_base_t {
+    ...
+    void on_pong(message::pong_t &reply) noexcept {
+        auto &ee = reply.payload.ee;
+        // fail branch, handled by spawner
+        if (ee) {
+            std::cout << "err: " << ee->message() << "\n";
+            return do_shutdown(ee);
+        }
+        std::cout << "pong received\n";
+        // succesfull branch: manually shutdown supervisor
+        supervisor->do_shutdown();
+    }
+};
+```
+
+The sample output (succesfully terminated, eventually):
+
+```
+ping (pinger #1 0x55d3b09ab130)
+pong, dice = 0.000809254, passes threshold : no
+err: ponger 0x55d3b09abe80 request timeout
+ping (pinger #2 0x55d3b09af090)
+pong, dice = 0.446941, passes threshold : no
+err: ponger 0x55d3b09abe80 request timeout
+ping (pinger #3 0x55d3b09ae670)
+pong, dice = 0.809191, passes threshold : no
+err: ponger 0x55d3b09abe80 request timeout
+ping (pinger #4 0x55d3b09adfd0)
+pong, dice = 0.955792, passes threshold : yes
+pong received
+shutdown reason: supervisor 0x55d3b09a4350 normal shutdown
+```
+
+The whole code is available at [examples/thread/ping-pong-spawner.cpp].
