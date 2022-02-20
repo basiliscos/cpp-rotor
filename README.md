@@ -22,7 +22,7 @@
 
 - minimalistic loop agnostic core
 - [erlang-like](https://en.wikipedia.org/wiki/Erlang_(programming_language)#Supervisor_trees) hierarchical supervisors,
-see [this]((https://basiliscos.github.io/blog/2022/02/20/supervising-in-c-how-to-make-your-programs-reliable)
+see [this](https://basiliscos.github.io/blog/2022/02/20/supervising-in-c-how-to-make-your-programs-reliable)
 and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 - various event loops supported (wx, boost-asio, ev) or planned (uv, gtk, etc.)
 - asynchornous message passing interface
