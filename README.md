@@ -60,7 +60,8 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ### 0.20 (20-Feb-2022)
  - [improvement] superviser can create `spawner`, which has a policy to auto-spawns
 new actor instance if previous instance has been shutdown. This is similar to
-escalate_failure [supervising in erlang](https://www.erlang.org/doc/design_principles/sup_princ.html)
+escalate_failure [supervising in erlang](https://www.erlang.org/doc/design_principles/sup_princ.html),
+see [dedicated article](https://basiliscos.github.io/blog/2022/02/20/supervising-in-c-how-to-make-your-programs-reliable)
  - [improvement] actor can now `autoshutdown_supervisor()`, when it shutdown
  - [improvement] actor can now `escalate_failure()`, i.e. trigger shutdown own supervisor
 when it finished with failure
