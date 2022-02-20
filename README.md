@@ -57,6 +57,21 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.20 (20-Feb-2022)
+ - [improvement] superviser can create `spawner`, which has a policy to auto-spawns
+new actor instance if previous instance has been shutdown. This is similar to
+escalate_failure [supervising in erlang](https://www.erlang.org/doc/design_principles/sup_princ.html)
+ - [improvement] actor can now `autoshutdown_supervisor()`, when it shutdown
+ - [improvement] actor can now `escalate_failure()`, i.e. trigger shutdown own supervisor
+when it finished with failure
+ - [improvement] messages delivery order is preseverd per-locality (see issue #41)
+ - [example] `examples/thread/ping-pong-spawner` (new)
+ - [example] `examples/autoshutdown` (new)
+ - [example] `examples/escalate-failure` (new)
+ - [documentation] updated `Design principes`
+ - [documentation] updated `Examples`
+ - [documentation] updated `Introduction`
+
 ### 0.19 (31-Dec-2021)
  - [improvement] performance improvement in inter-thread (+20%) and cross-thread messaging
  - [bugfix] supervisor does not shut self down in rare conditions, when it fails to initialize self

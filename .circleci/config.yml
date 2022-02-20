@@ -25,7 +25,7 @@ jobs:
           name: "prepare & build"
           command: |
               apt-get update
-              apt-get install -y cmake g++ lcov wx-common libwxgtk3.0-gtk3-dev wx3.0-headers libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
+              apt-get install -y cmake g++ git lcov wx-common libwxgtk3.0-gtk3-dev wx3.0-headers libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
               mkdir build
               cd build && cmake -DBUILD_DOC=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_EV=on -DBUILD_DOC=on -DBUILD_TESTS=on -DCMAKE_CXX_FLAGS="-g -fprofile-arcs -ftest-coverage --coverage -Wall -Wextra -pedantic -Werror" ..
               make -j2

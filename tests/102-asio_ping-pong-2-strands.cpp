@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,7 +42,7 @@ struct pinger_t : public rt::actor_test_t {
 
     void on_pong(r::message_t<pong_t> &) noexcept {
         ++pong_received;
-        supervisor->shutdown();
+        do_shutdown();
     }
 
     void do_send_ping() {
@@ -86,7 +86,7 @@ TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
         system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand1).timeout(timeout).finish();
     auto sup2 = sup1->create_actor<rt::supervisor_asio_test_t>().strand(strand2).timeout(timeout).finish();
 
-    auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
+    auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).autoshutdown_supervisor().finish();
     auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
 
     pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->get_address());

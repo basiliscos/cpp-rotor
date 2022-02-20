@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -249,7 +249,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
             CHECK(reply->payload.ee->ec.message() == "request has been cancelled");
             auto &actors_map = static_cast<r::plugin::child_manager_plugin_t *>(plugin)->access<rt::to::actors_map>();
             auto actor_state = actors_map.find(act->registry_addr);
-            auto &registry = actor_state->second.actor;
+            auto &registry = actor_state->second->actor;
             auto &promises = static_cast<r::registry_t *>(registry.get())->access<rt::to::promises>();
             CHECK(promises.empty());
         }

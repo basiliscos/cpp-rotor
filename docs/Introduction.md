@@ -67,8 +67,6 @@ supervisor is shown below, however for pure messaging the kind of supervisor doe
 ## Hello World (boost::asio loop)
 
 ~~~{.cpp}
-#include "rotor/asio.hpp"
-
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 
@@ -77,7 +75,7 @@ struct server_actor : public rotor::actor_base_t {
     void on_start() noexcept override {
         rotor::actor_base_t::on_start();
         std::cout << "hello world\n";
-        supervisor->shutdown();
+        do_shutdown();
     }
 };
 
@@ -87,9 +85,14 @@ int main() {
     auto strand = std::make_shared<asio::io_context::strand>(io_context);
     auto timeout = boost::posix_time::milliseconds{500};
     auto sup = system_context->create_supervisor<rotor::asio::supervisor_asio_t>()
-               .strand(strand).timeout(timeout).finish();
+        .strand(strand)
+        .timeout(timeout)
+        .finish();
 
-    sup->create_actor<server_actor>().timeout(timeout).finish();
+    sup->create_actor<server_actor>()
+        .timeout(timeout)
+        .autoshutdown_supervisor()
+        .finish();
 
     sup->start();
     io_context.run();
@@ -98,13 +101,15 @@ int main() {
 }
 ~~~
 
-It is obvious that the actor code is the same in both cases, however the system environment
+It is obvious that the actor code is the almost the same in both cases, however the system environment
 and supervisors are different. In the last example the important property of [rotor] is
 shown : it is **not intrusive** to event loops, i.e. an event loop runs on by itself, not
 introducing additional environment/thread; as the consequence, rotor actor can be seamlessly
 integrated with loops.
 
-The `supervisor.do_shutdown()` just sends message to supervisor to perform shutdown procedure.
+The `supervisor.do_shutdown()` from previous example just sends message to supervisor to
+perform shutdown procedure. However, it might be better to have `.autoshutdown_supervisor()` during
+actor setup, as it will shutdown supervisor in any case (i.e. not only from `on_start()`).
 Then, in the code `io_context.run()` loop terminates, as long as *there are no any pending
 event*. [rotor] does not make loop run endlessly.
 
@@ -117,10 +122,6 @@ values do not matter.
 The following example demonstrates how to send messages between actors.
 
 ~~~{.cpp}
-#include "rotor.hpp"
-#include "dummy_supervisor.h"
-#include <iostream>
-
 struct ping_t {};
 struct pong_t {};
 
@@ -141,7 +142,7 @@ struct pinger_t : public rotor::actor_base_t {
 
     void on_pong(rotor::message_t<pong_t> &) noexcept {
         std::cout << "pong\n";
-        supervisor->do_shutdown(); // optional
+        do_shutdown();
     }
 
     rotor::address_ptr_t ponger_addr;
@@ -170,8 +171,14 @@ int main() {
     auto timeout = boost::posix_time::milliseconds{500}; /* does not matter */
     auto sup = ctx.create_supervisor<dummy_supervisor_t>().timeout(timeout).finish();
 
-    auto pinger = sup->create_actor<pinger_t>().init_timeout(timeout).shutdown_timeout(timeout).finish();
-    auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish(); // shortcut for init/shutdown
+    auto pinger = sup->create_actor<pinger_t>()
+                      .init_timeout(timeout)
+                      .shutdown_timeout(timeout)
+                      .autoshutdown_supervisor()
+                      .finish();
+    auto ponger = sup->create_actor<ponger_t>()
+                      .timeout(timeout) // shortcut for init/shutdown
+                      .finish();
     pinger->set_ponger_addr(ponger->get_address());
     ponger->set_pinger_addr(pinger->get_address());
 
@@ -329,7 +336,7 @@ struct server_actor : public rotor::actor_base_t {
         } else {
             // IRL, it should be your custom error codes
             auto ec = std::make_error_code(std::errc::invalid_argument);
-            reply_with_error(req, ec);
+            reply_with_error(req, make_error(ec));
         }
     }
 };
@@ -348,12 +355,12 @@ struct client_actor : public rotor::actor_base_t {
     }
 
     void on_response(message::response_t &res) noexcept {
-        if (!res.payload.ec) { // check for possible error
+        if (!res.payload.ee) { // check for possible error
             auto &in = res.payload.req->payload.request_payload.value;
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";
         }
-        supervisor->do_shutdown(); // optional;
+        do_shutdown();
     }
 
     void on_start() noexcept override {
@@ -371,7 +378,7 @@ int main() {
     auto sup =
         system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
     auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
-    auto client = sup->create_actor<client_actor>().timeout(timeout).finish();
+    auto client = sup->create_actor<client_actor>().timeout(timeout).autoshutdown_supervisor().finish();
     client->set_server(server->get_address());
     sup->do_process();
     return 0;
@@ -403,6 +410,7 @@ have longer lifetime than client actor.
 #include <iostream>
 #include <cmath>
 #include <system_error>
+#include <random>
 
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
@@ -441,7 +449,7 @@ struct server_actor : public rotor::actor_base_t {
         } else {
             // IRL, it should be your custom error codes
             auto ec = std::make_error_code(std::errc::invalid_argument);
-            reply_with_error(req, ec);
+            reply_with_error(req, make_error(ec));
         }
     }
 };
@@ -462,12 +470,12 @@ struct client_actor : public rotor::actor_base_t {
     }
 
     void on_response(message::response_t &res) noexcept {
-        if (!res.payload.ec) { // check for possible error
+        if (!res.payload.ee) { // check for possible error
             auto &in = res.payload.req->payload.request_payload.value;
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";
         }
-        supervisor->do_shutdown(); // optional;
+        do_shutdown(); // optional;
     }
 
     void on_start() noexcept override {
@@ -488,7 +496,7 @@ int main() {
                    .timeout(timeout)
                    .finish();
     auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
-    auto client = sup->create_actor<client_actor>().timeout(timeout).finish();
+    auto client = sup->create_actor<client_actor>().timeout(timeout).autoshutdown_supervisor().finish();
     sup->do_process();
     return 0;
 }

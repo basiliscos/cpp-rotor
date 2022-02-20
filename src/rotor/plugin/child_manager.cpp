@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -23,6 +23,7 @@ struct manager {};
 struct parent {};
 struct policy {};
 struct shutdown_timeout {};
+struct spawner_address {};
 struct state {};
 struct shutdown_reason {};
 struct system_context {};
@@ -45,6 +46,7 @@ template <> auto &supervisor_t::access<to::manager>() noexcept { return manager;
 template <> auto &supervisor_t::access<to::parent>() noexcept { return parent; }
 template <> auto &supervisor_t::access<to::policy>() noexcept { return policy; }
 template <> auto &actor_base_t::access<to::shutdown_timeout>() noexcept { return shutdown_timeout; }
+template <> auto &actor_base_t::access<to::spawner_address>() noexcept { return spawner_address; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::shutdown_reason>() noexcept { return shutdown_reason; }
 template <> auto &supervisor_t::access<to::system_context>() noexcept { return context; }
@@ -66,20 +68,24 @@ void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     static_cast<supervisor_t &>(*actor_).access<to::manager>() = this;
     static_cast<supervisor_t &>(*actor_).access<to::alive_actors>().emplace(actor_);
     subscribe(&child_manager_plugin_t::on_create);
+    subscribe(&child_manager_plugin_t::on_spawn);
     subscribe(&child_manager_plugin_t::on_init);
     subscribe(&child_manager_plugin_t::on_shutdown_trigger);
     subscribe(&child_manager_plugin_t::on_shutdown_confirm);
     reaction_on(reaction_t::INIT);
     reaction_on(reaction_t::SHUTDOWN);
     reaction_on(reaction_t::START);
-    actors_map.emplace(actor->get_address(), actor_state_t(actor));
+    auto address = actor->get_address();
+    auto info = detail::child_info_ptr_t{};
+    info = new detail::child_info_t(address, factory_t{}, actor);
+    actors_map.emplace(address, std::move(info));
     actor->configure(*this);
 }
 
 void child_manager_plugin_t::deactivate() noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
     if (sup.access<to::address_mapping>().empty()) {
-        if (actors_map.size() == 1)
+        if (active_actors() == 1)
             remove_child(sup);
         plugin_base_t::deactivate();
     }
@@ -88,16 +94,19 @@ void child_manager_plugin_t::deactivate() noexcept {
 void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
     auto it_actor = actors_map.find(child.get_address());
     assert(it_actor != actors_map.end());
-    bool child_started = it_actor->second.strated;
+    auto info_ptr = it_actor->second;
+    auto &info = *info_ptr;
+    bool child_started = info.started;
     auto &state = actor->access<to::state>();
+    auto sup = static_cast<supervisor_t *>(actor);
 
-    auto shutdown_reason = extended_error_ptr_t{};
+    auto supervisor_reason = extended_error_ptr_t{};
     if (state == state_t::INITIALIZING) {
         if (!child_started) {
-            auto &policy = static_cast<supervisor_t *>(actor)->access<to::policy>();
+            auto &policy = sup->access<to::policy>();
             if (policy == supervisor_policy_t::shutdown_failed) {
                 auto ec = make_error_code(shutdown_code_t::child_down);
-                shutdown_reason = make_error(ec);
+                supervisor_reason = make_error(ec);
             } else {
                 auto &init_request = actor->access<to::init_request>();
                 if (init_request) {
@@ -109,15 +118,46 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
         }
     }
 
-    if (shutdown_reason) {
-        actor->do_shutdown(shutdown_reason);
+    if (supervisor_reason) {
+        actor->do_shutdown(supervisor_reason);
     }
 
     cancel_init(&child);
-    actors_map.erase(it_actor);
+    auto child_reason = info.actor->get_shutdown_reason();
+    bool erase_spawner = true;
     static_cast<supervisor_t &>(*actor).access<to::alive_actors>().erase(&child);
 
-    if (state == state_t::SHUTTING_DOWN && (actors_map.size() <= 1)) {
+    bool abnormal = child_reason && (bool)child_reason->root()->ec;
+
+    if ((state <= state_t::OPERATIONAL) && info.factory) {
+        auto demand = info.next_spawn(abnormal);
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, detail::demand::now>) {
+                    erase_spawner = false;
+                    actor->send<payload::spawn_actor_t>(actor->get_address(), info.address);
+                } else if constexpr (std::is_same_v<T, detail::demand::escalate_failure>) {
+                    auto ee = make_error(make_error_code(error_code_t::failure_escalation), child_reason);
+                    auto &sup_addr = actor->get_address();
+                    actor->send<payload::shutdown_trigger_t>(sup_addr, sup_addr, std::move(ee));
+                } else if constexpr (std::is_same_v<T, pt::time_duration>) {
+                    auto callback = &child_manager_plugin_t::on_spawn_timer;
+                    auto request_id = sup->start_timer(info.restart_period, *this, callback);
+                    info.timer_id = request_id;
+                    spawning_map[request_id] = std::move(info_ptr);
+                    erase_spawner = false;
+                }
+            },
+            demand);
+    }
+
+    info.actor.reset();
+    if (erase_spawner) {
+        actors_map.erase(it_actor);
+    }
+
+    if (state == state_t::SHUTTING_DOWN && (active_actors() <= 1)) {
         actor->shutdown_continue();
     }
 
@@ -139,7 +179,21 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
     child->do_initialize(sup.access<to::system_context>());
     auto &timeout = child->access<to::init_timeout>();
     sup.send<payload::create_actor_t>(actor->get_address(), child, timeout);
-    actors_map.emplace(child->get_address(), actor_state_t(child));
+
+    auto address = child->get_address();
+    auto &spawner_address = child->access<to::spawner_address>();
+    if (spawner_address) {
+        auto it = actors_map.find(spawner_address);
+        auto info = std::move(it->second);
+        actors_map.erase(it);
+        info->actor = child;
+        spawner_address = info->address = address;
+        actors_map.emplace(address, std::move(info));
+    } else {
+        auto info = detail::child_info_ptr_t{};
+        info = new detail::child_info_t(address, factory_t{}, child);
+        actors_map.emplace(address, std::move(info));
+    }
     sup.access<to::alive_actors>().emplace(child.get());
     if (static_cast<actor_base_t &>(sup).access<to::state>() == state_t::INITIALIZING) {
         reaction_on(reaction_t::INIT);
@@ -152,6 +206,51 @@ void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcep
     auto &actor_address = actor->get_address();
     assert(actors_map.count(actor_address) == 1);
     sup.template request<payload::initialize_actor_t>(actor_address).send(message.payload.timeout);
+}
+
+void child_manager_plugin_t::on_spawn(message::spawn_actor_t &message) noexcept {
+    auto &addr = message.payload.spawner_address;
+    auto it = actors_map.find(addr);
+    assert(it != actors_map.end());
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    auto &info = *it->second;
+
+    if (!info.active) {
+        return;
+    }
+    info.spawn_attempt();
+
+    try {
+        auto child = info.factory(sup, addr);
+        assert(child->access<to::spawner_address>() && "spawner address is not defined");
+        info.actor = child;
+    } catch (...) {
+        bool try_next = (info.policy == restart_policy_t::always) || (info.policy == restart_policy_t::fail_only);
+        auto state = actor->access<to::state>();
+        if (state == state_t::INITIALIZING) {
+            auto &policy = sup.access<to::policy>();
+            if (policy == supervisor_policy_t::shutdown_self) {
+                try_next = false;
+                auto &init_request = actor->access<to::init_request>();
+                if (init_request) {
+                    auto ec = make_error_code(error_code_t::failure_escalation);
+                    actor->reply_with_error(*init_request, make_error(ec));
+                    init_request.reset();
+                } else {
+                    auto reason = make_error(make_error_code(shutdown_code_t::child_init_failed));
+                    actor->do_shutdown(reason);
+                }
+            }
+        }
+        if (try_next) {
+            auto callback = &child_manager_plugin_t::on_spawn_timer;
+            auto request_id = sup.start_timer(info.restart_period, *this, callback);
+            info.timer_id = request_id;
+            spawning_map[request_id] = it->second;
+        } else {
+            info.active = false;
+        }
+    }
 }
 
 void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept {
@@ -184,7 +283,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
                 actor->do_shutdown(reason);
             }
         } else {
-            auto source_actor = actor_found ? it_actor->second.actor : this->actor;
+            auto source_actor = actor_found ? it_actor->second->actor : this->actor;
             auto inner = make_error_code(shutdown_code_t::init_failed);
             auto reason = make_error(inner, ec);
             source_actor->do_shutdown(reason);
@@ -193,12 +292,12 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
         /* the if is needed for the very rare case when supervisor was immediately shut down
            right after creation */
         if (actor_found) {
-            it_actor->second.initialized = true;
+            it_actor->second->initialized = true;
             bool do_start = (address == actor->get_address()) ? (self_state <= state_t::OPERATIONAL)
                                                               : !sup.access<to::synchronize_start>();
             if (do_start) {
                 sup.template send<payload::start_actor_t>(address);
-                it_actor->second.strated = true;
+                it_actor->second->started = true;
             }
         }
     }
@@ -207,14 +306,14 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
     }
     // no need of treating self as a child
     if (address != actor->get_address()) {
-        sup.on_child_init(actor_found ? it_actor->second.actor.get() : nullptr, ec);
+        sup.on_child_init(actor_found ? it_actor->second->actor.get() : nullptr, ec);
     }
 }
 
 void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &message) noexcept {
     auto &source_addr = message.payload.actor_address;
     auto &actor_state = actors_map.at(source_addr);
-    request_shutdown(actor_state, message.payload.reason);
+    request_shutdown(*actor_state, message.payload.reason);
 }
 
 void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const extended_error_ptr_t &ec) noexcept {
@@ -237,9 +336,9 @@ void child_manager_plugin_t::cancel_init(const actor_base_t *child) noexcept {
 void child_manager_plugin_t::on_shutdown_confirm(message::shutdown_response_t &message) noexcept {
     auto &source_addr = message.payload.req->address;
     auto &actor_state = actors_map.at(source_addr);
-    actor_state.shutdown = request_state_t::CONFIRMED;
+    actor_state->shutdown = detail::shutdown_state_t::confirmed;
     auto &ec = message.payload.ee;
-    auto child_actor = actor_state.actor;
+    auto child_actor = actor_state->actor;
     if (ec) {
         on_shutdown_fail(*child_actor, ec);
     }
@@ -264,7 +363,7 @@ bool child_manager_plugin_t::handle_init(message::init_request_t *) noexcept { r
 bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexcept {
     /* prevent double sending req, i.e. from parent and from self */
     auto &self = actors_map.at(actor->get_address());
-    self.shutdown = request_state_t::CONFIRMED;
+    self->shutdown = detail::shutdown_state_t::confirmed;
     extended_error_ptr_t reason;
     if (req) {
         reason = req->payload.request_payload.reason;
@@ -275,24 +374,24 @@ bool child_manager_plugin_t::handle_shutdown(message::shutdown_request_t *req) n
     request_shutdown(reason);
 
     /* only own actor left, which will be handled differently */
-    return actors_map.size() == 1 && plugin_base_t::handle_shutdown(req);
+    return active_actors() == 1 && plugin_base_t::handle_shutdown(req);
 }
 
-void child_manager_plugin_t::request_shutdown(actor_state_t &actor_state, const extended_error_ptr_t &reason) noexcept {
-    if (actor_state.shutdown == request_state_t::NONE) {
+void child_manager_plugin_t::request_shutdown(detail::child_info_t &child_state,
+                                              const extended_error_ptr_t &reason) noexcept {
+    if (child_state.shutdown == detail::shutdown_state_t::none) {
         auto &sup = static_cast<supervisor_t &>(*actor);
-        auto &source_actor = actor_state.actor;
+        auto &source_actor = child_state.actor;
 
         cancel_init(source_actor.get());
         if (source_actor == actor) {
             if (sup.access<to::parent>()) {
                 // will be routed via shutdown request
                 sup.do_shutdown(reason);
-                actor_state.shutdown = request_state_t::SENT;
             } else {
                 // do not do shutdown-request on self
                 if (actor->access<to::state>() != state_t::SHUTTING_DOWN) {
-                    actor_state.shutdown = request_state_t::CONFIRMED;
+                    child_state.shutdown = detail::shutdown_state_t::confirmed;
                     actor->access<to::assign_shutdown_reason, const extended_error_ptr_t &>(reason);
                     actor->shutdown_start();
                     request_shutdown(reason);
@@ -305,15 +404,20 @@ void child_manager_plugin_t::request_shutdown(actor_state_t &actor_state, const 
             auto ec = make_error_code(shutdown_code_t::supervisor_shutdown);
             auto ee = make_error(ec, reason);
             sup.request<payload::shutdown_request_t>(address, ee).send(timeout);
-            actor_state.shutdown = request_state_t::SENT;
         }
-        actor_state.shutdown = request_state_t::SENT;
+        child_state.shutdown = detail::shutdown_state_t::sent;
     }
 }
 
 void child_manager_plugin_t::request_shutdown(const extended_error_ptr_t &reason) noexcept {
     for (auto &it : actors_map) {
-        request_shutdown(it.second, reason);
+        auto &info = *it.second;
+        if (info.actor) {
+            request_shutdown(*it.second, reason);
+        } else if (info.timer_id) {
+            auto &sup = static_cast<supervisor_t &>(*actor);
+            sup.cancel_timer(info.timer_id);
+        }
     }
 }
 
@@ -325,11 +429,9 @@ bool child_manager_plugin_t::handle_unsubscription(const subscription_point_t &p
         if (!address_mapping.has_subscriptions(*point.owner_ptr)) {
             remove_child(*point.owner_ptr);
         }
-        if (actors_map.size() == 0) {
+        if ((active_actors() == 0) || address_mapping.empty()) {
             plugin_base_t::deactivate();
         }
-        if (address_mapping.empty())
-            plugin_base_t::deactivate();
         return false; // handled by lifetime
     } else {
         return plugin_base_t::handle_unsubscription(point, external);
@@ -344,7 +446,7 @@ void child_manager_plugin_t::handle_start(message::start_trigger_t *trigger) noe
             if (address == actor->get_address())
                 continue;
             sup.template send<payload::start_actor_t>(address);
-            it.second.strated = true;
+            it.second->started = true;
         }
     }
     return plugin_base_t::handle_start(trigger);
@@ -352,11 +454,56 @@ void child_manager_plugin_t::handle_start(message::start_trigger_t *trigger) noe
 
 bool child_manager_plugin_t::has_initializing() const noexcept {
     auto init_predicate = [&](auto &it) {
-        auto &state = it.second.actor->template access<to::state>();
+        auto &info = *it.second;
+        auto &child = info.actor;
+        if (!child) {
+            return false;
+        }
+        auto &state = child->template access<to::state>();
         bool still_initializing =
-            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !it.second.initialized;
+            (it.first != actor->get_address()) && (state <= state_t::INITIALIZING) && !info.initialized;
         return still_initializing;
     };
     bool has_any = std::any_of(actors_map.begin(), actors_map.end(), init_predicate);
     return has_any;
+}
+
+size_t child_manager_plugin_t::active_actors() noexcept {
+    size_t r = 0;
+    auto state = actor->access<to::state>();
+    for (auto &it : actors_map) {
+        auto &info = *it.second;
+        bool is_alive = info.actor || info.timer_id || (info.active && (state <= state_t::SHUTTING_DOWN));
+        if (is_alive) {
+            ++r;
+        }
+    }
+    return r;
+}
+
+void child_manager_plugin_t::spawn(factory_t factory, const pt::time_duration &period, restart_policy_t policy,
+                                   size_t max_attempts, bool escalate) noexcept {
+    auto &sup = static_cast<supervisor_t &>(*actor);
+    auto info = detail::child_info_ptr_t{};
+    auto spawner_address = sup.make_address();
+    info = new detail::child_info_t(spawner_address, std::move(factory), policy, period, max_attempts, escalate);
+    actors_map.emplace(spawner_address, std::move(info));
+    sup.send<payload::spawn_actor_t>(sup.get_address(), spawner_address);
+}
+
+void child_manager_plugin_t::on_spawn_timer(request_id_t timer_id, bool cancelled) noexcept {
+    auto it = spawning_map.find(timer_id);
+    assert(it != spawning_map.end());
+    auto info = it->second;
+    info->timer_id = 0;
+    spawning_map.erase(it);
+    if (cancelled) {
+        info->active = false;
+        auto &state = actor->access<to::state>();
+        if (state == state_t::SHUTTING_DOWN) {
+            actor->shutdown_continue();
+        }
+    } else if (actor->access<to::state>() <= state_t::OPERATIONAL) {
+        actor->send<payload::spawn_actor_t>(actor->get_address(), info->address);
+    }
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -82,7 +82,7 @@ struct pinger_t : public r::actor_base_t {
     // we need of this to let somebody shutdown everything
     void shutdown_finish() noexcept override {
         r::actor_base_t::shutdown_finish();
-        supervisor->shutdown();
+        do_shutdown();
         ponger_addr->supervisor.shutdown();
         std::cout << "pinger shutdown finish\n";
     }
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
                         .guard_context(true)
                         .finish();
 
-        auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).finish();
+        auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).autoshutdown_supervisor().finish();
         auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_pings(count);
         pinger->set_ponger_addr(ponger->get_address());

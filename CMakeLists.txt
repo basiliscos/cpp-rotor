@@ -36,10 +36,12 @@ add_library(rotor
     src/rotor/extended_error.cpp
     src/rotor/handler.cpp
     src/rotor/registry.cpp
+    src/rotor/spawner.cpp
     src/rotor/subscription.cpp
     src/rotor/subscription_point.cpp
     src/rotor/supervisor.cpp
     src/rotor/system_context.cpp
+    src/rotor/detail/child_info.cpp
     src/rotor/plugin/address_maker.cpp
     src/rotor/plugin/child_manager.cpp
     src/rotor/plugin/delivery.cpp
@@ -83,6 +85,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/address.hpp
     include/rotor/address_mapping.h
     include/rotor/arc.hpp
+    include/rotor/detail/child_info.h
     include/rotor/error_code.h
     include/rotor/extended_error.h
     include/rotor/forward.hpp
@@ -106,6 +109,7 @@ list(APPEND ROTOR_HEADERS_TO_INSTALL
     include/rotor/policy.h
     include/rotor/registry.h
     include/rotor/request.hpp
+    include/rotor/spawner.h
     include/rotor/state.h
     include/rotor/subscription.h
     include/rotor/subscription_point.h

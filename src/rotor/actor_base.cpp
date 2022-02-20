@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,10 +15,16 @@ using namespace rotor::plugin;
 template <> auto &plugin_base_t::access<actor_base_t>() noexcept { return actor; }
 
 actor_base_t::actor_base_t(actor_config_t &cfg)
-    : supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
+    : spawner_address{cfg.spawner_address}, supervisor{cfg.supervisor}, init_timeout{cfg.init_timeout},
       shutdown_timeout{cfg.shutdown_timeout}, state{state_t::NEW} {
     plugins_storage = cfg.plugins_constructor();
     plugins = plugins_storage->get_plugins();
+    if (cfg.escalate_failure) {
+        continuation_mask |= ESCALATE_FALIURE;
+    }
+    if (cfg.autoshutdown_supervisor) {
+        continuation_mask |= AUTOSHUTDOWN_SUPERVISOR;
+    }
     for (auto plugin : plugins) {
         activating_plugins.insert(plugin->identity());
     }
@@ -79,7 +85,21 @@ void actor_base_t::init_finish() noexcept {
 
 void actor_base_t::on_start() noexcept { state = state_t::OPERATIONAL; }
 
-void actor_base_t::shutdown_start() noexcept { state = state_t::SHUTTING_DOWN; }
+void actor_base_t::shutdown_start() noexcept {
+    state = state_t::SHUTTING_DOWN;
+    if (!spawner_address) {
+        if ((continuation_mask & ESCALATE_FALIURE) && shutdown_reason && shutdown_reason->root()->ec) {
+            auto &sup = supervisor->get_address();
+            auto ee = make_error(make_error_code(error_code_t::failure_escalation), shutdown_reason);
+            send<payload::shutdown_trigger_t>(sup, sup, std::move(ee));
+        }
+        if (continuation_mask & AUTOSHUTDOWN_SUPERVISOR) {
+            auto &sup = supervisor->get_address();
+            auto ee = make_error(make_error_code(shutdown_code_t::child_down), shutdown_reason);
+            send<payload::shutdown_trigger_t>(sup, sup, std::move(ee));
+        }
+    }
+}
 
 void actor_base_t::shutdown_finish() noexcept {
     // shutdown_request might be missing for root supervisor
@@ -240,3 +260,5 @@ extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const e
 }
 
 bool actor_base_t::on_unlink(const address_ptr_t &) noexcept { return true; }
+
+bool actor_base_t::should_restart() const noexcept { return false; }

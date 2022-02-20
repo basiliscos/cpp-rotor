@@ -752,7 +752,6 @@ struct client_t : r::actor_base_t {
         std::cerr << "client_t::shutdown_finish, stats: " << success_requests << "/" << total_requests
                   << " requests, in " << diff.count() << "s, rps = " << rps << "\n";
         manager_addr.reset();
-        supervisor->do_shutdown(); /* trigger all system to shutdown */
     }
 
     void make_request() noexcept {
@@ -898,7 +897,7 @@ int main(int argc, char **argv) {
         .synchronize_start()
         .finish();
 
-    auto client = sup->create_actor<client_t>().timeout(worker_timeout).finish();
+    auto client = sup->create_actor<client_t>().timeout(worker_timeout).autoshutdown_supervisor().finish();
     client->timeout = request_timeout + rotor_timeout * 2;
     client->concurrency = workers_count;
     client->url = *url;

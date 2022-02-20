@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -348,4 +348,65 @@ TEST_CASE("two supervisors, down internal first, same locality", "[supervisor]")
     REQUIRE(sup2->get_leader_queue().size() == 0);
     REQUIRE(sup2->get_points().size() == 0);
     REQUIRE(rt::empty(sup2->get_subscription()));
+}
+
+TEST_CASE("message arrival order", "[supervisor]") {
+    r::system_context_t system_context;
+
+    int model = 0;
+    int states[] = {0, 0};
+    auto sup1 = system_context.create_supervisor<rt::supervisor_test_t>()
+                    .timeout(rt::default_timeout)
+                    .configurer([&](auto &sup, r::plugin::plugin_base_t &plugin) {
+                        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+                            using message_t = rt::message::sample_t;
+                            auto lambda = r::lambda<message_t>([&](message_t &) noexcept {
+                                printf("sup1\n");
+                                if (!states[0]) {
+                                    model += 1;
+                                } else {
+                                    model *= 2;
+                                }
+                                ++states[0];
+                            });
+                            p.subscribe_actor(lambda, sup.get_address());
+                        });
+                    })
+                    .finish();
+
+    auto sup2 = sup1->create_actor<rt::supervisor_test_t>()
+                    .timeout(rt::default_timeout)
+                    .configurer([&](auto &, r::plugin::plugin_base_t &plugin) {
+                        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+                            using message_t = rt::message::sample_t;
+                            auto lambda = r::lambda<message_t>([&](message_t &) noexcept {
+                                printf("sup2\n");
+                                if (!states[1]) {
+                                    model += 2;
+                                } else {
+                                    model *= 3;
+                                }
+                                ++states[1];
+                            });
+                            printf("sup2-sb\n");
+                            auto addr = sup1->get_address();
+                            p.subscribe_actor(lambda, addr);
+                            printf("sup2-sb\n");
+                        });
+                    })
+                    .finish();
+
+    sup1->do_process();
+    REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
+    REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);
+
+    sup1->send<rt::payload::sample_t>(sup1->get_address(), 0);
+    sup1->send<rt::payload::sample_t>(sup1->get_address(), 0);
+    sup1->do_process();
+    CHECK(model == ((0 + 1 + 2) * 2 * 3));
+
+    sup1->do_shutdown();
+    sup1->do_process();
+    REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup2->get_state() == r::state_t::SHUT_DOWN);
 }

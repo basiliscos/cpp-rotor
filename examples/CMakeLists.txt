@@ -17,9 +17,17 @@ if (BUILD_THREAD)
 endif()
 
 
+add_executable(autoshutdown autoshutdown.cpp)
+target_link_libraries(autoshutdown rotor)
+add_test(autoshutdown "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/autoshutdown")
+
 add_executable(hello_loopless hello_loopless.cpp)
 target_link_libraries(hello_loopless rotor)
 add_test(hello_loopless "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hello_loopless")
+
+add_executable(escalate-failure escalate-failure.cpp)
+target_link_libraries(escalate-failure rotor)
+add_test(escalate-failure "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/escalate-failure")
 
 add_executable(ping_pong ping_pong.cpp)
 target_link_libraries(ping_pong rotor)

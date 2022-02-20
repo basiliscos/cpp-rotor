@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -156,7 +156,7 @@ struct sha_actor_t : public r::actor_base_t {
         std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
         if (!in.is_open()) {
             std::cout << "failed to open " << path << '\n';
-            return supervisor->do_shutdown();
+            return do_shutdown();
         }
 
         auto sz = in.tellg();
@@ -221,10 +221,16 @@ int main(int argc, char **argv) {
     rth::system_context_thread_t ctx;
     auto timeout = boost::posix_time::milliseconds{100};
     auto sup = ctx.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
-    auto act = sup->create_actor<sha_actor_t>().block_size(block_size).path(path).timeout(timeout).finish();
+    auto act = sup->create_actor<sha_actor_t>()
+                   .block_size(block_size)
+                   .path(path)
+                   .timeout(timeout)
+                   .autoshutdown_supervisor()
+                   .finish();
 
 #ifndef _WIN32
     struct sigaction action;
+    memset(&action, 0, sizeof(action));
     action.sa_handler = [](int) { shutdown_flag = true; };
     if (sigaction(SIGINT, &action, nullptr) != 0) {
         std::cout << "critical :: cannot set signal handler\n";

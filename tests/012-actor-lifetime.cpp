@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -233,4 +233,42 @@ TEST_CASE("double shutdown test (supervisor)", "[actor]") {
 
     REQUIRE(sup->get_children_count() == 0);
     REQUIRE(sup->active_timers.size() == 0);
+}
+
+TEST_CASE("autoshutdown supervisor", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).autoshutdown_supervisor().finish();
+
+    sup->do_process();
+
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    act->do_shutdown();
+    sup->do_process();
+
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("escalate failure", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).escalate_failure().finish();
+
+    sup->do_process();
+
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+
+    auto ec = r::make_error_code(r::error_code_t::cancelled);
+    auto ee = r::make_error("ctx", ec);
+    act->do_shutdown(ee);
+    sup->do_process();
+
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }

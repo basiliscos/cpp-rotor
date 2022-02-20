@@ -80,7 +80,7 @@ struct client_actor : public rotor::actor_base_t {
             auto &out = res.payload.res.value;
             std::cout << " in = " << in << ", out = " << out << "\n";
         }
-        supervisor->do_shutdown(); // optional;
+        do_shutdown();
     }
 
     void on_start() noexcept override {
@@ -98,7 +98,7 @@ int main() {
     auto sup =
         system_context->create_supervisor<rotor::asio::supervisor_asio_t>().strand(strand).timeout(timeout).finish();
     auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
-    auto client = sup->create_actor<client_actor>().timeout(timeout).finish();
+    auto client = sup->create_actor<client_actor>().timeout(timeout).autoshutdown_supervisor().finish();
     client->set_server(server->get_address());
     sup->do_process();
     return 0;

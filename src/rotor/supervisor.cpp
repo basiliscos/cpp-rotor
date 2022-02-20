@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -13,8 +13,8 @@ using namespace rotor;
 namespace {
 namespace to {
 struct identity {};
-struct internal_address {};
 struct internal_handler {};
+struct internal_address {};
 } // namespace to
 } // namespace
 
@@ -23,7 +23,7 @@ template <> auto &subscription_info_t::access<to::internal_address>() noexcept {
 template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
-    : actor_base_t(config), last_req_id{0}, subscription_map(*this), parent{config.supervisor},
+    : actor_base_t(config), last_req_id{0}, parent{config.supervisor},
       inbound_queue(0), inbound_queue_size{config.inbound_queue_size}, poll_duration{config.poll_duration},
 
       create_registry(config.create_registry), synchronize_start(config.synchronize_start),
@@ -83,8 +83,7 @@ void supervisor_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
 subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                                 const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept {
     subscription_point_t point(handler, addr, owner_ptr, owner_tag);
-    auto sub_info = subscription_map.materialize(point);
-
+    auto sub_info = locality_leader->subscription_map.materialize(point);
     if (sub_info->access<to::internal_address>()) {
         send<payload::subscription_confirmation_t>(handler->actor_ptr->address, point);
     } else {
@@ -99,7 +98,7 @@ subscription_info_ptr_t supervisor_t::subscribe(const handler_ptr_t &handler, co
 }
 
 void supervisor_t::commit_unsubscription(const subscription_info_ptr_t &info) noexcept {
-    subscription_map.forget(info);
+    locality_leader->subscription_map.forget(info);
 }
 
 void supervisor_t::on_child_init(actor_base_t *, const extended_error_ptr_t &) noexcept {}
@@ -139,3 +138,5 @@ void supervisor_t::shutdown_finish() noexcept {
     actor_base_t::shutdown_finish();
     assert(request_map.size() == 0);
 }
+
+spawner_t supervisor_t::spawn(factory_t factory) noexcept { return spawner_t(std::move(factory), *this); }

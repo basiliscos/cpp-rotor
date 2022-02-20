@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,6 +15,7 @@
 #include "supervisor_config.h"
 #include "address_mapping.h"
 #include "error_code.h"
+#include "spawner.h"
 
 #include <functional>
 #include <unordered_map>
@@ -52,7 +53,7 @@ namespace rotor {
  * other supervisors constructing tree-like organization of responsibilities.
  *
  * Unlike Erlang's supervisor, rotor's supervisor does not spawn actors
- * if they terminated. It should be possible, hovewer, to implement it in derived
+ * if they terminated. It should be possible, however, to implement it in derived
  * classes with application-specific logic.
  *
  * This supervisor class is abstract, and the concrete implementation is
@@ -120,7 +121,7 @@ struct supervisor_t : public actor_base_t {
      * The method should be invoked in event-loop context only.
      *
      */
-    inline void do_process() noexcept { delivery->process(); }
+    inline void do_process() noexcept { locality_leader->delivery->process(); }
 
     /** \brief creates new {@link address_t} linked with the supervisor */
     virtual address_ptr_t make_address() noexcept;
@@ -216,6 +217,14 @@ struct supervisor_t : public actor_base_t {
      */
     subscription_info_ptr_t subscribe(const handler_ptr_t &handler, const address_ptr_t &addr,
                                       const actor_base_t *owner_ptr, owner_tag_t owner_tag) noexcept;
+
+    /** \brief returns an actor spawner
+     *
+     * Spawner allows to create a new actor instance, when the current actor
+     * instance is down. Different policies (reactions) can be applied.
+     *
+     */
+    spawner_t spawn(factory_t) noexcept;
 
     using actor_base_t::subscribe;
 
@@ -414,20 +423,14 @@ template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() n
         auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
         queue->pop_front();
-        auto &dest_sup = dest->supervisor;
-        auto internal = &dest_sup == actor;
+        auto internal = dest->same_locality(*address);
         if (internal) { /* subscriptions are handled by me */
             auto local_recipients = subscription_map->get_recipients(*message);
             if (local_recipients) {
                 plugin::local_delivery_t::delivery(message, *local_recipients);
             }
-        } else if (dest_sup.address->same_locality(*address)) {
-            auto local_recipients = dest_sup.subscription_map.get_recipients(*message);
-            if (local_recipients) {
-                plugin::local_delivery_t::delivery(message, *local_recipients);
-            }
         } else {
-            dest_sup.enqueue(std::move(message));
+            dest->supervisor.enqueue(std::move(message));
         }
     }
 }
@@ -437,18 +440,14 @@ template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::p
         auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
         queue->pop_front();
-        auto &dest_sup = dest->supervisor;
-        auto internal = &dest_sup == actor;
+        auto internal = dest->same_locality(*address);
         const subscription_t::joint_handlers_t *local_recipients = nullptr;
         bool delivery_attempt = false;
         if (internal) { /* subscriptions are handled by me */
             local_recipients = subscription_map->get_recipients(*message);
             delivery_attempt = true;
-        } else if (dest_sup.address->same_locality(*address)) {
-            local_recipients = dest_sup.subscription_map.get_recipients(*message);
-            delivery_attempt = true;
         } else {
-            dest_sup.enqueue(std::move(message));
+            dest->supervisor.enqueue(std::move(message));
         }
         if (local_recipients) {
             plugin::inspected_local_delivery_t::delivery(message, *local_recipients);

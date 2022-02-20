@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -58,6 +58,19 @@ struct create_actor_t {
      *
      */
     pt::time_duration timeout;
+};
+
+/** \struct spawn_actor_t
+ *  \brief Message with this payload is sent to supervisor when
+ * spawner should create new actor instance.
+ *
+ * The message is needed for internal {@link spawner_t} housekeeping.
+ *
+ */
+struct spawn_actor_t {
+
+    /** \brief identifies the spawner */
+    address_ptr_t spawner_address;
 };
 
 /** \struct shutdown_trigger_t
@@ -333,6 +346,9 @@ using shutdown_response_t = request_traits_t<payload::shutdown_request_t>::respo
 
 /** \brief supervisor's message upon actor instantiation */
 using create_actor_t = message_t<payload::create_actor_t>;
+
+/** \brief supervisor's message to spawn new actor */
+using spawn_actor_t = message_t<payload::spawn_actor_t>;
 
 // registry-related
 /** \brief name/address registration request */
