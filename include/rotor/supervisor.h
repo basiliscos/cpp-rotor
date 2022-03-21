@@ -318,12 +318,12 @@ struct supervisor_t : public actor_base_t {
 
     inline request_id_t next_request_id() noexcept {
     AGAIN:
-        try {
-            locality_leader->request_map.at(++locality_leader->last_req_id);
+        auto& map = locality_leader->request_map;
+        auto it = map.find(++locality_leader->last_req_id);
+        if (it != map.end()) {
             goto AGAIN;
-        } catch (std::out_of_range &ex) {
-            return locality_leader->last_req_id;
         }
+        return locality_leader->last_req_id;
     }
 };
 
