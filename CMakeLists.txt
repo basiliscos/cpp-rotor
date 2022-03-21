@@ -21,7 +21,7 @@ option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"   
 
 set(ROTOR_BOOST_COMPONENTS)
 if (BUILD_BOOST_ASIO)
-    set(ROTOR_BOOST_COMPONENTS date_time system regex)
+    set(ROTOR_BOOST_COMPONENTS date_time system)
 endif()
 
 find_package(Boost COMPONENTS ${ROTOR_BOOST_COMPONENTS} REQUIRED)

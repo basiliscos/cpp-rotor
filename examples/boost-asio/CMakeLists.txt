@@ -1,7 +1,15 @@
 find_package(Boost
     COMPONENTS
-        date_time system regex program_options
+        date_time system program_options
     REQUIRED)
+
+if (WIN32)
+    add_compile_definitions(
+        _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+        _WIN32_WINNT=0x600
+    )
+endif()
+
 
 add_executable(hello_asio hello_asio.cpp)
 target_link_libraries(hello_asio rotor_asio ${Boost_LIBRARIES})
