@@ -112,9 +112,10 @@ void supervisor_t::on_child_shutdown(actor_base_t *) noexcept {
 void supervisor_t::intercept(message_ptr_t &, const void *, const continuation_t &cont) noexcept { cont(); }
 
 void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noexcept {
-    try {
+    auto it = request_map.find(timer_id);
+    if (it != request_map.end()) {
         if (!cancelled) {
-            auto &request_curry = request_map.at(timer_id);
+            auto &request_curry = it->second;
             message_ptr_t &request = request_curry.request_message;
             auto ec = make_error_code(error_code_t::request_timeout);
             auto &source = request_curry.source->access<to::identity>();
@@ -122,9 +123,7 @@ void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noe
             auto timeout_message = request_curry.fn(request_curry.origin, *request, reason);
             put(std::move(timeout_message));
         }
-        request_map.erase(timer_id);
-    } catch (std::out_of_range &ex) {
-        // no-op
+        request_map.erase(it);
     }
 }
 

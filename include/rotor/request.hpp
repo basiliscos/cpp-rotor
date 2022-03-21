@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -387,7 +387,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
      * The request id of the dispatched request is returned
      *
      */
-    request_id_t send(pt::time_duration send) noexcept;
+    request_id_t send(const pt::time_duration &send) noexcept;
 
   private:
     using traits_t = request_traits_t<T>;
