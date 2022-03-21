@@ -63,12 +63,20 @@ target_include_directories(rotor
 )
 
 target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
+
 if (BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
 endif()
 if (ROTOR_DEBUG_DELIVERY)
-    target_compile_definitions(rotor PRIVATE "ROTOR_DEBUG_DELIVERY")
+    list(APPEND ROTOR_PRIVATE_FLAGS ROTOR_DEBUG_DELIVERY)
 endif()
+
+if (WIN32)
+    list(APPEND ROTOR_PRIVATE_FLAGS _CRT_SECURE_NO_WARNINGS)
+endif()
+target_compile_definitions(rotor PRIVATE ${ROTOR_PRIVATE_FLAGS})
+
+
 target_compile_features(rotor PUBLIC cxx_std_17)
 set_target_properties(rotor PROPERTIES
     CXX_STANDARD 17
