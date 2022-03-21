@@ -6,7 +6,6 @@ add_library(rotor_test_lib
 )
 target_link_libraries(rotor_test_lib rotor::core)
 add_library(rotor::test ALIAS rotor_test_lib)
-
 set(rotor_TEST_LIBS rotor::core rotor::test)
 
 add_executable(007-plugins 007-plugins.cpp)
@@ -91,6 +90,13 @@ add_test(099-misc "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/099-misc")
 
 if (BUILD_BOOST_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor::test rotor::asio)
+
+    if (WIN32)
+        add_compile_definitions(
+            _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+            _WIN32_WINNT=0x600
+        )
+    endif()
 
     add_executable(101-asio_ping-pong-1-strand 101-asio_ping-pong-1-strand.cpp)
     target_link_libraries(101-asio_ping-pong-1-strand ${rotor_BOOTS_TEST_LIBS})

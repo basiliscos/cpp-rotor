@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -51,13 +51,12 @@ void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_
             asio::defer(strand, [self = self, timer_id = timer_id]() {
                 auto &sup = *self;
                 auto &timers_map = sup.timers_map;
-                try {
-                    auto actor_ptr = timers_map.at(timer_id)->handler->owner;
+                auto it = timers_map.find(timer_id);
+                if (it != timers_map.end()) {
+                    auto actor_ptr = it->second->handler->owner;
                     actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
                     timers_map.erase(timer_id);
                     sup.do_process();
-                } catch (std::out_of_range &ex) {
-                    // no-op
                 }
             });
         }
