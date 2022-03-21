@@ -1,6 +1,6 @@
 find_package(Boost
     COMPONENTS
-        date_time system program_options
+        date_time system regex program_options
     REQUIRED)
 
 if (WIN32)
