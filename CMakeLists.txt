@@ -57,12 +57,11 @@ add_library(rotor
 )
 target_include_directories(rotor
     PUBLIC
-        $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(rotor PUBLIC Boost::date_time Boost::system Boost::regex)
 
 if (BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
