@@ -53,9 +53,25 @@ jobs:
               cd build && cmake -DBUILD_DOC=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_EV=on ..
               make -j2 && ctest .
 
+  build_conan:
+    docker:
+      - image: debian:10
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: "prepare & build"
+          command: |
+              apt-get update
+              apt-get install -y cmake clang python3-pip
+              pip3 install conan
+              conan create conanfile.py rotor/0.20@
+
+
 workflows:
   build-all-workflow:
     jobs:
       - build_gcc
       - build_clang
       - build_arm
+      - build_conan
