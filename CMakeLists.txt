@@ -265,7 +265,7 @@ write_basic_package_version_file(
     COMPATIBILITY ExactVersion
 )
 configure_package_config_file(
-    "cmake/rotor-config.cmake.in"
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/rotor-config.cmake.in"
     ${ROTOR_CONFIG_FILE}
     INSTALL_DESTINATION ${ROTOR_CMAKE_FILES_DEST}
     PATH_VARS ROTOR_VERSION

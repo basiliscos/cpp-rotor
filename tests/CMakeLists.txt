@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8)
 add_library(rotor_test_lib
     access.cpp
     actor_test.cpp

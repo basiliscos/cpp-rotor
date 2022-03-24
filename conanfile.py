@@ -27,17 +27,9 @@ class RotorConan(ConanFile):
         "thread": True,
     }
 
-    exports_sources = ["CMakeLists.txt"]
-    generators = "cmake"
+    exports_sources = ["CMakeLists.txt", "include*", "src*", "test_package*", "cmake*"]
+    generators = "cmake_find_package"
     _cmake = None
-
-    @property
-    def _source_subfolder(self):
-        return "source_subfolder"
-
-    @property
-    def _build_subfolder(self):
-        return "build_subfolder"
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -76,31 +68,26 @@ class RotorConan(ConanFile):
         self._cmake = CMake(self)
         self._cmake.definitions["BUILD_BOOST_ASIO"] = self.options.boost_asio
         self._cmake.definitions["BUILD_THREAD"] = self.options.thread
-        self._cmake.configure(build_folder=self._build_subfolder)
+        self._cmake.definitions["BUILD_TESTING"] = False
+        self._cmake.configure()
         return self._cmake
 
     def build(self):
         cmake = self._configure_cmake()
         cmake.build()
 
-    def source(self):
-        tools.get(**self.conan_data["sources"][self.version],
-                  destination=self._source_subfolder, strip_root=True)
-
     def package(self):
         cmake = self._configure_cmake()
         cmake.install()
-        self.copy("license*", src=self._source_subfolder, dst="licenses",  ignore_case=True, keep_path=False)
-        tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
 
     def package_info(self):
-        self.cpp_info.components["core"].libs = ["rotor-core"]
+        self.cpp_info.components["core"].libs = ["rotor"]
         self.cpp_info.components["core"].requires = ["boost::date_time", "boost::system", "boost::regex"]
 
-        self.cpp_info.components["asio"].libs = ["rotor-asio"]
+        self.cpp_info.components["asio"].libs = ["rotor_asio"]
         self.cpp_info.components["asio"].requires = ["core"]
 
-        self.cpp_info.components["thread"].libs = ["rotor-thread"]
+        self.cpp_info.components["thread"].libs = ["rotor_thread"]
         self.cpp_info.components["thread"].requires = ["core"]
 
         # TODO: to remove in conan v2 once cmake_find_package* generators removed
