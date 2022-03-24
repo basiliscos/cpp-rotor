@@ -198,7 +198,7 @@ if (BUILD_THREAD)
     list(APPEND ROTOR_HEADERS_TO_INSTALL
         include/rotor/thread.hpp
         include/rotor/thread/supervisor_thread.h
-        include/rotor/thread/supervisor_thread.h
+        include/rotor/thread/system_context_thread.h
     )
 endif()
 
