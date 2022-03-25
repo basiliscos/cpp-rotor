@@ -19,12 +19,11 @@ option(BUILD_THREAD_UNSAFE  "Enable building thead-unsafe library [default: OFF]
 option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"            OFF)
 
 
-set(ROTOR_BOOST_COMPONENTS)
-if (BUILD_BOOST_ASIO)
-    set(ROTOR_BOOST_COMPONENTS date_time system regex)
-endif()
-
-find_package(Boost COMPONENTS ${ROTOR_BOOST_COMPONENTS} REQUIRED)
+find_package(Boost COMPONENTS
+        date_time
+        system
+        regex
+    REQUIRED)
 set(ROTOR_TARGETS_TO_INSTALL)
 set(ROTOR_HEADERS_TO_INSTALL)
 
