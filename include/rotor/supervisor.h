@@ -318,12 +318,12 @@ struct supervisor_t : public actor_base_t {
 
     inline request_id_t next_request_id() noexcept {
     AGAIN:
-        try {
-            locality_leader->request_map.at(++locality_leader->last_req_id);
+        auto &map = locality_leader->request_map;
+        auto it = map.find(++locality_leader->last_req_id);
+        if (it != map.end()) {
             goto AGAIN;
-        } catch (std::out_of_range &ex) {
-            return locality_leader->last_req_id;
         }
+        return locality_leader->last_req_id;
     }
 };
 
@@ -490,7 +490,7 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
         new request_message_t{destination, request_id, imaginary_address, reply_to_, std::forward<Args>(args)...});
 }
 
-template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration timeout) noexcept {
+template <typename T> request_id_t request_builder_t<T>::send(const pt::time_duration &timeout) noexcept {
     if (do_install_handler) {
         install_handler();
     }
@@ -504,16 +504,18 @@ template <typename T> request_id_t request_builder_t<T>::send(pt::time_duration 
 template <typename T> void request_builder_t<T>::install_handler() noexcept {
     auto handler = lambda<response_message_t>([supervisor = &sup](response_message_t &msg) {
         auto request_id = msg.payload.request_id();
-        try {
-            auto &curry = supervisor->request_map.at(request_id);
+        auto &request_map = supervisor->request_map;
+        auto it = request_map.find(request_id);
+
+        // if a response to request has arrived and no timer can be found
+        // that means that either timeout timer already triggered
+        // and error-message already delivered or response is not expected.
+        // just silently drop it anyway
+        if (it != request_map.end()) {
+            auto &curry = it->second;
             auto &orig_addr = curry.origin;
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
             supervisor->discard_request(request_id);
-        } catch (std::out_of_range &ex) {
-            // if a response to request has arrived and no timer can be found
-            // that means that either timeout timer already triggered
-            // and error-message already delivered or response is not expected.
-            // just silently drop it anyway
         }
     });
     auto wrapped_handler = wrap_handler(sup, std::move(handler));

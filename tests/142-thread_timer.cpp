@@ -111,13 +111,13 @@ struct io_actor2_t : public r::actor_base_t {
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();
-        start_timer(r::pt::milliseconds(10), *this, &io_actor2_t::on_timeout);
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        start_timer(r::pt::milliseconds(100), *this, &io_actor2_t::on_timeout);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         send<payload::trigger_t>(address);
     }
 
     void on_trigger(message::trigger_t &) noexcept {
-        req_id = request<payload::sample_req_t>(address).send(r::pt::milliseconds(7));
+        req_id = request<payload::sample_req_t>(address).send(r::pt::milliseconds(70));
     }
 
     void on_timeout(r::request_id_t, bool) noexcept { cancel_event = ++event_id; }
@@ -174,13 +174,14 @@ struct io_actor3_t : public r::actor_base_t {
 
 TEST_CASE("timer", "[supervisor][thread]") {
     auto system_context = rth::system_context_thread_t();
-    auto timeout = r::pt::milliseconds{10};
+    auto timeout = r::pt::milliseconds{100};
     auto sup = system_context.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
     auto actor = sup->create_actor<bad_actor_t>().timeout(timeout).finish();
 
     sup->start();
     system_context.run();
 
+    REQUIRE(actor->ee);
     REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 }
@@ -200,7 +201,7 @@ TEST_CASE("correct timeout triggering", "[supervisor][thread]") {
 
 TEST_CASE("no I/O tag, incorrect timers", "[supervisor][thread]") {
     auto system_context = rth::system_context_thread_t();
-    auto timeout = r::pt::milliseconds{10};
+    auto timeout = r::pt::milliseconds{100};
     auto sup = system_context.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
     auto actor = sup->create_actor<io_actor2_t>().timeout(timeout).finish();
 

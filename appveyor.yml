@@ -15,6 +15,7 @@ platform:
 
 environment:
     BOOST_ROOT: "C:\\Libraries\\boost_1_69_0"
+    PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
 
 
 before_build:
@@ -23,15 +24,17 @@ before_build:
     - echo %BOOST_ROOT%
     - dir "C:\Libraries"
     - dir "%BOOST_ROOT%"
-    - set PATH=%BOOST_ROOT%\lib64-msvc-14.1;%PATH%
+    - set PATH=%BOOST_ROOT%\lib64-msvc-14.1;%PY_SCRIPTS%;%PATH%
     - echo %PATH%
 
 build_script:
-  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_builds -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_EXAMPLES=on -DBUILD_TESTS=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
+  - py -m pip install conan
+  - conan create conanfile.py rotor/0.20@
+
+  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_builds -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_EXAMPLES=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
 #  -DBOOST_LIBRARYDIR="%BOOST_LIBRARYDIR%"
 #  -DCMAKE_CXX_FLAGS="-DBOOST_ALL_DYN_LINK"
   - cmake --build _builds
-
 test_script:
   - ps: cd "_builds\tests"
   - ctest --timeout=5 -VV -C "%CONFIG%"

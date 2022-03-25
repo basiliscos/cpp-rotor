@@ -3,7 +3,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ROTOR_VERSION "0.14")
+set(ROTOR_VERSION "0.21")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -14,18 +14,16 @@ option(BUILD_WX             "Enable building with wxWidgets support   [default: 
 option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
 option(BUILD_THREAD         "Enable building with thread support  [default: ON]"          ON)
 option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
-option(BUILD_TESTS          "Enable building tests    [default: OFF]"                    OFF)
 option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
 option(BUILD_THREAD_UNSAFE  "Enable building thead-unsafe library [default: OFF]"        OFF)
 option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"            OFF)
 
 
-set(ROTOR_BOOST_COMPONENTS)
-if (BUILD_BOOST_ASIO)
-    set(ROTOR_BOOST_COMPONENTS date_time system regex)
-endif()
-
-find_package(Boost COMPONENTS ${ROTOR_BOOST_COMPONENTS} REQUIRED)
+find_package(Boost COMPONENTS
+        date_time
+        system
+        regex
+    REQUIRED)
 set(ROTOR_TARGETS_TO_INSTALL)
 set(ROTOR_HEADERS_TO_INSTALL)
 
@@ -58,18 +56,25 @@ add_library(rotor
 )
 target_include_directories(rotor
     PUBLIC
-        $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(rotor PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(rotor PUBLIC Boost::date_time Boost::system Boost::regex)
+
 if (BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
 endif()
 if (ROTOR_DEBUG_DELIVERY)
-    target_compile_definitions(rotor PRIVATE "ROTOR_DEBUG_DELIVERY")
+    list(APPEND ROTOR_PRIVATE_FLAGS ROTOR_DEBUG_DELIVERY)
 endif()
+
+if (WIN32)
+    list(APPEND ROTOR_PRIVATE_FLAGS _CRT_SECURE_NO_WARNINGS)
+endif()
+target_compile_definitions(rotor PRIVATE ${ROTOR_PRIVATE_FLAGS})
+
+
 target_compile_features(rotor PUBLIC cxx_std_17)
 set_target_properties(rotor PROPERTIES
     CXX_STANDARD 17
@@ -124,8 +129,16 @@ if (BUILD_BOOST_ASIO)
     add_library(rotor_asio
         src/rotor/asio/supervisor_asio.cpp
     )
+    if (WIN32)
+        list(APPEND ROTOR_ASIO_PRIVATE_FLAGS
+            _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+            _WIN32_WINNT=0x600
+        )
+    endif()
+    target_compile_definitions(rotor_asio PRIVATE ${ROTOR_ASIO_PRIVATE_FLAGS})
     target_link_libraries(rotor_asio PUBLIC rotor Threads::Threads)
     add_library(rotor::asio ALIAS rotor_asio)
+
     list(APPEND ROTOR_TARGETS_TO_INSTALL rotor_asio)
     list(APPEND ROTOR_HEADERS_TO_INSTALL
         include/rotor/asio.hpp
@@ -184,13 +197,15 @@ if (BUILD_THREAD)
     list(APPEND ROTOR_HEADERS_TO_INSTALL
         include/rotor/thread.hpp
         include/rotor/thread/supervisor_thread.h
-        include/rotor/thread/supervisor_thread.h
+        include/rotor/thread/system_context_thread.h
     )
 endif()
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTS)
-    enable_testing()
-    add_subdirectory("tests")
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include(CTest)
+    if (BUILD_TESTING)
+        add_subdirectory("tests")
+    endif()
 endif()
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_EXAMPLES)
@@ -249,7 +264,7 @@ write_basic_package_version_file(
     COMPATIBILITY ExactVersion
 )
 configure_package_config_file(
-    "cmake/rotor-config.cmake.in"
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/rotor-config.cmake.in"
     ${ROTOR_CONFIG_FILE}
     INSTALL_DESTINATION ${ROTOR_CMAKE_FILES_DEST}
     PATH_VARS ROTOR_VERSION

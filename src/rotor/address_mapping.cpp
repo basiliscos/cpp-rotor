@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -17,13 +17,15 @@ void address_mapping_t::set(actor_base_t &actor, const subscription_info_ptr_t &
 }
 
 address_ptr_t address_mapping_t::get_mapped_address(actor_base_t &actor, const void *message) noexcept {
-    try {
-        auto &point_map = actor_map.at(static_cast<const void *>(&actor));
-        auto &info = point_map.at(message);
-        return info->address;
-    } catch (std::out_of_range &ex) {
-        return {};
+    auto a_it = actor_map.find(static_cast<const void *>(&actor));
+    if (a_it != actor_map.end()) {
+        auto &point_map = a_it->second;
+        auto p_it = point_map.find(message);
+        if (p_it != point_map.end()) {
+            return p_it->second->address;
+        }
     }
+    return {};
 }
 
 void address_mapping_t::remove(const subscription_point_t &point) noexcept {
@@ -50,10 +52,6 @@ void address_mapping_t::clear(supervisor_t&) noexcept {
 */
 
 bool address_mapping_t::has_subscriptions(const actor_base_t &actor) const noexcept {
-    try {
-        actor_map.at(static_cast<const void *>(&actor));
-        return true;
-    } catch (std::out_of_range &ex) {
-        return false;
-    }
+    auto it = actor_map.find(static_cast<const void *>(&actor));
+    return it != actor_map.end();
 }

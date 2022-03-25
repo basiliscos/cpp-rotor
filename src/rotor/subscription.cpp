@@ -65,11 +65,11 @@ const subscription_t::joint_handlers_t *subscription_t::get_recipients(const mes
     auto address = message.address.get();
     auto message_type = message.type_index;
     auto key = subscrption_key_t{address, message_type};
-    try {
-        return &mine_handlers.at(key);
-    } catch (std::out_of_range &ex) {
-        return nullptr;
+    auto it = mine_handlers.find(key);
+    if (it != mine_handlers.end()) {
+        return &it->second;
     }
+    return nullptr;
 }
 
 void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {

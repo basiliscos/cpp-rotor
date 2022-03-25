@@ -23,7 +23,6 @@ The optional event-loop specific supervisors depend on corresponding loop librar
 - `BUILD_WX` build with [wx-widgets] support (`off` by default)
 - `BUILD_EV` build with [libev] support (`off` by default)
 - `BUILD_EXAMPLES` build examples (`off` by default)
-- `BUILD_TESTS` build tests (`off` by default)
 - `BUILD_DOC` generate doxygen documentation (`off` by default, only for release builds)
 - `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default)
 - `ROTOR_DEBUG_DELIVERY` allow runtime messages inspection (`off` by default, enabled by default for debug builds)
