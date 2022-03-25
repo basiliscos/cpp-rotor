@@ -5,7 +5,7 @@
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
 ## 0.21 (25-Mar-2022)
- - [improvement] preliminary support of [conan[(https://conan.io) package child_manager_plugin_t
+ - [improvement] preliminary support of [conan](https://conan.io) package manager
  - [bugfix] fix compilation warnings on Windows/MSVC
  - [bugfix] add missing header for `rotor::thread` installation
 

@@ -59,7 +59,7 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 ## Changelog
 
 ### 0.21 (25-Mar-2022)
- - [improvement] preliminary support of [conan[(https://conan.io) package child_manager_plugin_t
+ - [improvement] preliminary support of [conan](https://conan.io) package manager
  - [bugfix] fix compilation warnings on Windows/MSVC
  - [bugfix] add missing header for `rotor::thread` installation
 
