@@ -4,6 +4,11 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.21 (25-Mar-2022)
+ - [improvement] preliminary support of [conan[(https://conan.io) package child_manager_plugin_t
+ - [bugfix] fix compilation warnings on Windows/MSVC
+ - [bugfix] add missing header for `rotor::thread` installation
+
 ## 0.20 (20-Feb-2022)
  - [improvement] superviser can create `spawner`, which has a policy to auto-spawns
 new actor instance if previous instance has been shutdown. This is similar to
