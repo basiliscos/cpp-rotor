@@ -80,7 +80,7 @@ TEST_CASE("ping/pong 2 sups", "[supervisor][asio]") {
     auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
     auto strand1 = std::make_shared<asio::io_context::strand>(io_context);
     auto strand2 = std::make_shared<asio::io_context::strand>(io_context);
-    auto timeout = r::pt::milliseconds{10};
+    auto timeout = r::pt::milliseconds{50};
 
     auto sup1 =
         system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand1).timeout(timeout).finish();
