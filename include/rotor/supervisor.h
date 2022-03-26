@@ -498,6 +498,7 @@ template <typename T> request_id_t request_builder_t<T>::send(const pt::time_dur
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req, &actor});
     sup.put(req);
     sup.start_timer(request_id, timeout, sup, &supervisor_t::on_request_trigger);
+    actor.active_requests.emplace(request_id);
     return request_id;
 }
 

@@ -4,6 +4,9 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.22 (xx-xxx-2022)
+ - [bugfix] requests do not outlive actors (i.e. cancelled on `shutdown_finish`)
+
 ## 0.21 (25-Mar-2022)
  - [improvement] preliminary support of [conan](https://conan.io) package manager
  - [bugfix] fix compilation warnings on Windows/MSVC

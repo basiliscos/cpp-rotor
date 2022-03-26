@@ -372,6 +372,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief timer-id to timer-handler map (type) */
     using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
 
+    using requests_t = std::unordered_set<request_id_t>;
+
     /** \brief triggers timer handler associated with the timer id */
     void on_timer_trigger(request_id_t request_id, bool cancelled) noexcept;
 
@@ -452,6 +454,8 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;
+
+    requests_t active_requests;
 
     /** \brief set of currently proccessing states, i.e. init or shutdown
      *

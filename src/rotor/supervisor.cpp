@@ -114,15 +114,18 @@ void supervisor_t::intercept(message_ptr_t &, const void *, const continuation_t
 void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noexcept {
     auto it = request_map.find(timer_id);
     if (it != request_map.end()) {
+        auto &request_curry = it->second;
+        auto &actor = *request_curry.source;
         if (!cancelled) {
-            auto &request_curry = it->second;
             message_ptr_t &request = request_curry.request_message;
             auto ec = make_error_code(error_code_t::request_timeout);
-            auto &source = request_curry.source->access<to::identity>();
+            auto &source = actor.access<to::identity>();
             auto reason = ::make_error(source, ec);
             auto timeout_message = request_curry.fn(request_curry.origin, *request, reason);
             put(std::move(timeout_message));
         }
+        auto ait = actor.active_requests.find(timer_id);
+        actor.active_requests.erase(ait);
         request_map.erase(it);
     }
 }

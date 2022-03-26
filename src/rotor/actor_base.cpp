@@ -114,6 +114,9 @@ void actor_base_t::shutdown_finish() noexcept {
     while (!timers_map.empty()) {
         cancel_timer(timers_map.begin()->first);
     }
+    while (!active_requests.empty()) {
+        supervisor->do_cancel_timer(*active_requests.begin());
+    }
     /*
     if (!deactivating_plugins.empty()) {
         auto p = *deactivating_plugins.begin();
