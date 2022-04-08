@@ -138,6 +138,8 @@ struct supervisor_t : public actor_base_t {
      */
     virtual void start() noexcept = 0;
 
+    void on_start() noexcept override;
+
     /** \brief thread-safe version of `do_shutdown`, i.e. send shutdown request
      * let it be processed by the supervisor */
     virtual void shutdown() noexcept = 0;
@@ -295,6 +297,10 @@ struct supervisor_t : public actor_base_t {
     /** \brief how much time spend in active inbound queue polling */
     pt::time_duration poll_duration;
 
+    const std::atomic_bool *shutdown_flag = nullptr;
+
+    pt::time_duration shutdown_poll_frequency = pt::millisec{100};
+
   private:
     using actors_set_t = std::unordered_set<const actor_base_t *>;
 
@@ -315,6 +321,8 @@ struct supervisor_t : public actor_base_t {
     template <typename T> friend struct plugin::delivery_plugin_t;
 
     void discard_request(request_id_t request_id) noexcept;
+
+    void on_shutdown_check_timer(request_id_t, bool cancelled) noexcept;
 
     inline request_id_t next_request_id() noexcept {
     AGAIN:

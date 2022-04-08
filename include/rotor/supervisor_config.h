@@ -1,11 +1,12 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
+#include <atomic>
 #include "policy.h"
 #include "actor_config.h"
 
@@ -44,6 +45,10 @@ struct supervisor_config_t : actor_config_t {
      * sleep mode (i.e. waiting external messages)
      */
     pt::time_duration poll_duration = pt::millisec{1};
+
+    const std::atomic_bool *shutdown_flag = nullptr;
+
+    pt::time_duration shutdown_poll_frequency = pt::millisec{100};
 };
 
 /** \brief CRTP supervisor config builder */
@@ -90,6 +95,12 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
     /** \brief how much time spend in active inbound queue polling */
     builder_t &&poll_duration(const pt::time_duration &value) && {
         parent_t::config.poll_duration = value;
+        return std::move(*static_cast<builder_t *>(this));
+    }
+
+    builder_t &&shutdown_flag(const std::atomic_bool &value, const pt::time_duration &interval) && {
+        parent_t::config.shutdown_flag = &value;
+        parent_t::config.shutdown_poll_frequency = interval;
         return std::move(*static_cast<builder_t *>(this));
     }
 

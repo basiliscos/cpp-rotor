@@ -219,8 +219,11 @@ int main(int argc, char **argv) {
     }
 
     rth::system_context_thread_t ctx;
-    auto timeout = boost::posix_time::milliseconds{100};
-    auto sup = ctx.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
+    auto timeout = r::pt::milliseconds{100};
+    auto sup = ctx.create_supervisor<rth::supervisor_thread_t>()
+                   .timeout(timeout)
+                   .shutdown_flag(shutdown_flag, timeout / 2)
+                   .finish();
     auto act = sup->create_actor<sha_actor_t>()
                    .block_size(block_size)
                    .path(path)
@@ -233,24 +236,15 @@ int main(int argc, char **argv) {
     memset(&action, 0, sizeof(action));
     action.sa_handler = [](int) { shutdown_flag = true; };
     if (sigaction(SIGINT, &action, nullptr) != 0) {
-        std::cout << "critical :: cannot set signal handler\n";
+        shutdown_flag = true;
         return -1;
     }
-    auto console_thread = std::thread([&] {
-        while (!shutdown_flag) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        std::cout << "going to terminate...\n";
-        sup->shutdown();
-    });
 #endif
 
     ctx.run();
-
-#ifndef _WIN32
-    shutdown_flag = true;
-    console_thread.join();
-#endif
+    if (shutdown_flag) {
+        std::cout << "terminated due to ctrl+c press\n";
+    }
 
     std::cout << "normal exit\n";
     return 0;

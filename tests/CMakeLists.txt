@@ -149,4 +149,8 @@ if (BUILD_THREAD)
     add_executable(142-thread_timer 142-thread_timer.cpp)
     target_link_libraries(142-thread_timer rotor::test rotor::thread)
     add_test(142-thread_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/142-thread_timer")
+
+    add_executable(143-thread-shutdown_flag 143-thread-shutdown_flag.cpp)
+    target_link_libraries(143-thread-shutdown_flag rotor::test rotor::thread)
+    add_test(143-thread-shutdown_flag "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/143-thread-shutdown_flag")
 endif()

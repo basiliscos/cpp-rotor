@@ -25,7 +25,7 @@ template <> auto &subscription_info_t::access<to::internal_handler>() noexcept {
 supervisor_t::supervisor_t(supervisor_config_t &config)
     : actor_base_t(config), last_req_id{0}, parent{config.supervisor},
       inbound_queue(0), inbound_queue_size{config.inbound_queue_size}, poll_duration{config.poll_duration},
-
+      shutdown_flag{config.shutdown_flag}, shutdown_poll_frequency{config.shutdown_poll_frequency},
       create_registry(config.create_registry), synchronize_start(config.synchronize_start),
       registry_address(config.registry_address), policy{config.policy} {
     supervisor = this;
@@ -63,6 +63,13 @@ void supervisor_t::do_initialize(system_context_t *ctx) noexcept {
     }
     if (parent && !registry_address) {
         registry_address = parent->registry_address;
+    }
+}
+
+void supervisor_t::on_start() noexcept {
+    actor_base_t::on_start();
+    if (shutdown_flag) {
+        start_timer(shutdown_poll_frequency, *this, &supervisor_t::on_shutdown_check_timer);
     }
 }
 
@@ -142,3 +149,14 @@ void supervisor_t::shutdown_finish() noexcept {
 }
 
 spawner_t supervisor_t::spawn(factory_t factory) noexcept { return spawner_t(std::move(factory), *this); }
+
+void supervisor_t::on_shutdown_check_timer(request_id_t, bool cancelled) noexcept {
+    if (cancelled) {
+        return;
+    }
+    if (*shutdown_flag) {
+        do_shutdown();
+    } else {
+        start_timer(shutdown_poll_frequency, *this, &supervisor_t::on_shutdown_check_timer);
+    }
+}
