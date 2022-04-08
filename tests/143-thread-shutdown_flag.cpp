@@ -36,7 +36,7 @@ TEST_CASE("throw in factory", "[spawner]") {
     auto system_context = rth::system_context_thread_t();
     auto timeout = r::pt::milliseconds{100};
     auto sup = system_context.create_supervisor<rth::supervisor_thread_t>()
-            .timeout(rt::default_timeout)
+            .timeout(timeout)
             .shutdown_flag(my_flag, r::pt::millisec{1})
             .finish();
 
