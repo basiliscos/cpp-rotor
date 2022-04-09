@@ -126,7 +126,7 @@ struct ROTOR_API handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief constructs `handler_base_t` from raw pointer to actor, raw
      * pointer to message type and raw pointer to handler type
      */
-    explicit handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_) noexcept;
+    explicit handler_base_t(actor_base_t &actor, const void *handler_type_) noexcept;
 
     /** \brief compare two handler for equality */
     inline bool operator==(const handler_base_t &rhs) const noexcept {
@@ -230,7 +230,7 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
 
     /** \brief constructs handler from actor & pointer-to-member function  */
     explicit handler_t(actor_base_t &actor, Handler &&handler_)
-        : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{handler_} {}
+        : handler_base_t{actor, handler_type}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->type_index == final_message_t::message_type) {
@@ -278,8 +278,7 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
 
     /** \brief ctor form plugin and plugin handler (pointer-to-member function of the plugin) */
     explicit handler_t(plugin::plugin_base_t &plugin_, Handler &&handler_)
-        : handler_base_t{*plugin_.access<details::to::actor>(), final_message_t::message_type, handler_type},
-          plugin{plugin_}, handler{handler_} {}
+        : handler_base_t{*plugin_.access<details::to::actor>(), handler_type}, plugin{plugin_}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->type_index == final_message_t::message_type) {
@@ -329,8 +328,7 @@ struct handler_t<lambda_holder_t<Handler, M>,
 
     /** \brief constructs handler from actor & lambda wrapper */
     explicit handler_t(actor_base_t &actor, handler_backend_t &&handler_)
-        : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{std::forward<handler_backend_t>(
-                                                                                  handler_)} {}
+        : handler_base_t{actor, handler_type}, handler{std::forward<handler_backend_t>(handler_)} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->type_index == final_message_t::message_type) {

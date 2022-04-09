@@ -31,7 +31,7 @@ struct continuation_impl_t final : continuation_t {
     message_ptr_t &message;
 };
 
-handler_base_t::handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_) noexcept
+handler_base_t::handler_base_t(actor_base_t &actor, const void *handler_type_) noexcept
     : handler_type{handler_type_}, actor_ptr{&actor} {
     auto h1 = reinterpret_cast<std::size_t>(handler_type);
     auto h2 = reinterpret_cast<std::size_t>(&actor);
@@ -47,8 +47,7 @@ handler_ptr_t handler_base_t::upgrade(const void *tag) noexcept {
 }
 
 handler_intercepted_t::handler_intercepted_t(handler_ptr_t backend_, const void *tag_) noexcept
-    : handler_base_t(*backend_->actor_ptr, backend_->message_type(), backend_->handler_type),
-      backend{std::move(backend_)}, tag{tag_} {}
+    : handler_base_t(*backend_->actor_ptr, backend_->handler_type), backend{std::move(backend_)}, tag{tag_} {}
 
 void handler_intercepted_t::call(message_ptr_t &message) noexcept {
     if (select(message)) {
