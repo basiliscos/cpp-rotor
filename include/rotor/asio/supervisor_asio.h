@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -47,7 +47,7 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  * via `strand`.
  *
  */
-struct supervisor_asio_t : public supervisor_t {
+struct ROTOR_API supervisor_asio_t : public supervisor_t {
 
     /** \brief injects an alias for supervisor_config_asio_t */
     using config_t = supervisor_config_asio_t;
@@ -85,7 +85,7 @@ struct supervisor_asio_t : public supervisor_t {
   protected:
     /** \struct timer_t
      * \brief boos::asio::deadline_timer with embedded timer handler */
-    struct timer_t : public asio::deadline_timer {
+    struct ROTOR_API timer_t : public asio::deadline_timer {
 
         /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;

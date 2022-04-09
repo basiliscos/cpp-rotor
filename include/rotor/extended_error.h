@@ -27,7 +27,7 @@ using extended_error_ptr_t = intrusive_ptr_t<extended_error_t>;
  * next error.
  *
  */
-struct extended_error_t : arc_base_t<extended_error_t> {
+struct ROTOR_API extended_error_t : arc_base_t<extended_error_t> {
     /** \brief error context, ususally actor identity */
     std::string context;
 
@@ -58,7 +58,7 @@ struct extended_error_t : arc_base_t<extended_error_t> {
 };
 
 /** \brief constructs smart pointer to the extened error */
-extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
-                                const extended_error_ptr_t &next_ = {}) noexcept;
+ROTOR_API extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
+                                          const extended_error_ptr_t &next_ = {}) noexcept;
 
 } // namespace rotor

@@ -8,6 +8,7 @@
 
 #include <string>
 #include <system_error>
+#include "rotor/export.h"
 
 namespace rotor {
 
@@ -40,7 +41,7 @@ enum class shutdown_code_t {
 namespace details {
 
 /** \brief category support for `rotor` error codes */
-class error_code_category : public std::error_category {
+class ROTOR_API error_code_category : public std::error_category {
   public:
     /** error category name */
     virtual const char *name() const noexcept override;
@@ -50,7 +51,7 @@ class error_code_category : public std::error_category {
 };
 
 /** \brief category support for `rotor` shutdown codes */
-class shutdown_code_category : public std::error_category {
+class ROTOR_API shutdown_code_category : public std::error_category {
   public:
     /** error category name */
     virtual const char *name() const noexcept override;
@@ -62,16 +63,18 @@ class shutdown_code_category : public std::error_category {
 } // namespace details
 
 /** \brief returns error code category for `rotor` error codes */
-const details::error_code_category &error_code_category();
+ROTOR_API const details::error_code_category &error_code_category();
 
 /** \brief returns error code category for `rotor` shutdown codes */
-const details::shutdown_code_category &shutdown_code_category();
+ROTOR_API const details::shutdown_code_category &shutdown_code_category();
 
 /** \brief makes `std::error_code` from rotor error code enumerations */
-inline std::error_code make_error_code(const error_code_t e) { return {static_cast<int>(e), error_code_category()}; }
+ROTOR_API inline std::error_code make_error_code(const error_code_t e) {
+    return {static_cast<int>(e), error_code_category()};
+}
 
 /** \brief makes `std::error_code` from rotor shutdown code enumerations */
-inline std::error_code make_error_code(const shutdown_code_t e) {
+ROTOR_API inline std::error_code make_error_code(const shutdown_code_t e) {
     return {static_cast<int>(e), shutdown_code_category()};
 }
 

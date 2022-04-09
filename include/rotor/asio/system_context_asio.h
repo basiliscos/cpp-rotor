@@ -15,7 +15,7 @@ namespace asio {
 
 namespace asio = boost::asio;
 
-struct supervisor_asio_t;
+struct ROTOR_API supervisor_asio_t;
 
 /** \brief intrusive pointer for boost::asio supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_asio_t>;
@@ -24,7 +24,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_asio_t>;
  *  \brief The boost::asio system context, which holds a reference to
  * `boost::asio::io_context` and root supervisor
  */
-struct system_context_asio_t : public system_context_t {
+struct ROTOR_API system_context_asio_t : public system_context_t {
     /** \brief intrusive pointer type for boost::asio system context */
     using ptr_t = rotor::intrusive_ptr_t<system_context_asio_t>;
 

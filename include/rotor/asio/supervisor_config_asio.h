@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,7 +15,7 @@ namespace asio {
 
 /** \struct supervisor_config_asio_t
  *  \brief boost::asio supervisor config, which holds pointer to strand */
-struct supervisor_config_asio_t : public supervisor_config_t {
+struct ROTOR_API supervisor_config_asio_t : public supervisor_config_t {
     /** \brief alias for boost::asio strand type */
     using strand_t = boost::asio::io_context::strand;
 

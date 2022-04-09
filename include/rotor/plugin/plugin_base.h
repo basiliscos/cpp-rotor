@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -18,7 +18,7 @@ enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
  * \brief base class for all actor plugins
  *
  */
-struct plugin_base_t {
+struct ROTOR_API plugin_base_t {
     /** \brief possible plugin's reactions on actor lifetime events */
     enum reaction_t {
         INIT = 1 << 0,

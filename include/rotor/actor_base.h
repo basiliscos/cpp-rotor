@@ -39,7 +39,7 @@ namespace rotor {
  * to have multiple identities aka "virtual" addresses.
  *
  */
-struct actor_base_t : public arc_base_t<actor_base_t> {
+struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief injects an alias for actor_config_t */
     using config_t = actor_config_t;
 

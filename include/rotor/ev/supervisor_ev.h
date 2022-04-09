@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -31,7 +31,7 @@ namespace ev {
  * via rotor-messaging.
  *
  */
-struct supervisor_ev_t : public supervisor_t {
+struct ROTOR_API supervisor_ev_t : public supervisor_t {
     /** \brief injects an alias for supervisor_config_ev_t */
     using config_t = supervisor_config_ev_t;
 
@@ -41,7 +41,7 @@ struct supervisor_ev_t : public supervisor_t {
     /** \struct timer_t
      * \brief inheritance of ev_timer, which holds rotor `timer_id`
      */
-    struct timer_t : public ev_timer {
+    struct ROTOR_API timer_t : public ev_timer {
 
         /** \brief intrusive pointer to ev supervistor (type) */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;

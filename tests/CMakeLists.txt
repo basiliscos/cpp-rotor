@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-add_library(rotor_test_lib
+add_library(rotor_test_lib STATIC
     access.cpp
     actor_test.cpp
     supervisor_test.cpp

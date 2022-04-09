@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -20,7 +20,7 @@ namespace thread {
  * in the handler the operation should be performed. Lastly, the handler should
  * be tagged I/O.
  */
-struct supervisor_thread_t : public supervisor_t {
+struct ROTOR_API supervisor_thread_t : public supervisor_t {
     /** \brief constructs new thread supervisor */
     inline supervisor_thread_t(supervisor_config_t &cfg) : supervisor_t{cfg} {}
 

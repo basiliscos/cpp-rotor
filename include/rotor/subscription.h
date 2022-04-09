@@ -22,7 +22,7 @@ namespace rotor {
  * whether the hander's supervisor is external or not.
  *
  */
-struct subscription_t {
+struct ROTOR_API subscription_t {
     /** \brief alias for message type (i.e. stringized typeid) */
     using message_type_t = const void *;
 

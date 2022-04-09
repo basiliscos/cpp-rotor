@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -19,7 +19,7 @@ namespace rotor::plugin {
  * ready then initialization (shutdown) is confirmed to uplink.
  *
  */
-struct init_shutdown_plugin_t : public plugin_base_t {
+struct ROTOR_API init_shutdown_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/

@@ -3,9 +3,15 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ROTOR_VERSION "0.21")
+set(ROTOR_VERSION "0.22")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+if (NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET AND
+    NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
+endif ()
 
 include(CMakePrintHelpers)
 
@@ -24,6 +30,14 @@ find_package(Boost COMPONENTS
         system
         regex
     REQUIRED)
+
+include(GenerateExportHeader)
+
+if (DEFINED rotor_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS "${rotor_SHARED_LIBS}")
+endif ()
+
+
 set(ROTOR_TARGETS_TO_INSTALL)
 set(ROTOR_HEADERS_TO_INSTALL)
 
@@ -33,6 +47,7 @@ add_library(rotor
     src/rotor/error_code.cpp
     src/rotor/extended_error.cpp
     src/rotor/handler.cpp
+    src/rotor/message.cpp
     src/rotor/registry.cpp
     src/rotor/spawner.cpp
     src/rotor/subscription.cpp
@@ -54,9 +69,14 @@ add_library(rotor
     src/rotor/plugin/resources.cpp
     src/rotor/plugin/starter.cpp
 )
+generate_export_header(rotor
+    EXPORT_MACRO_NAME ROTOR_API
+    EXPORT_FILE_NAME include/rotor/export.h
+)
 target_include_directories(rotor
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
@@ -72,8 +92,10 @@ endif()
 if (WIN32)
     list(APPEND ROTOR_PRIVATE_FLAGS _CRT_SECURE_NO_WARNINGS)
 endif()
-target_compile_definitions(rotor PRIVATE ${ROTOR_PRIVATE_FLAGS})
-
+target_compile_definitions(rotor
+    PUBLIC "$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:ROTOR_STATIC_DEFINE>"
+    PRIVATE ${ROTOR_PRIVATE_FLAGS}
+)
 
 target_compile_features(rotor PUBLIC cxx_std_17)
 set_target_properties(rotor PROPERTIES
@@ -247,9 +269,18 @@ foreach( HEADER_FILE ${ROTOR_HEADERS_TO_INSTALL} )
     install( FILES ${HEADER_FILE} DESTINATION ${DIR} )
 endforeach()
 
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
+    DESTINATION include/rotor)
+
+if (BUILD_SHARED_LIBS)
+    set(type shared)
+else ()
+    set(type static)
+endif ()
 install(
     EXPORT ROTOR_ALL_TARGETS
-    FILE rotor-targets.cmake
+    FILE rotor-${type}-targets.cmake
     NAMESPACE rotor::
     DESTINATION ${ROTOR_CMAKE_FILES_DEST}
 )

@@ -14,7 +14,7 @@ namespace rotor {
 /** \struct timer_handler_base_t
  *  \brief Base class for timer handler
  */
-struct timer_handler_base_t {
+struct ROTOR_API timer_handler_base_t {
 
     /** \brief actor, which "owns" timer, i.e. where "start_timer" was invoked" */
     actor_base_t *owner;

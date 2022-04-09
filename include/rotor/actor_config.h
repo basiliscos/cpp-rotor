@@ -22,7 +22,7 @@ using plugins_t = std::deque<plugin::plugin_base_t *>;
 
 /** \struct  plugin_storage_base_t
  * \brief abstract item to store plugins inside actor */
-struct plugin_storage_base_t {
+struct ROTOR_API plugin_storage_base_t {
     virtual ~plugin_storage_base_t() {}
 
     /** \brief returns list of plugins pointers from the storage */
@@ -54,7 +54,7 @@ template <typename PluginList> struct plugin_storage_t : plugin_storage_base_t {
 /** \struct actor_config_t
  * \brief basic actor configuration: init and shutdown timeouts, etc.
  */
-struct actor_config_t {
+struct ROTOR_API actor_config_t {
     /** \brief constructs {@link plugin_storage_ptr_t} (type) */
     using plugins_constructor_t = std::function<plugin_storage_ptr_t()>;
 

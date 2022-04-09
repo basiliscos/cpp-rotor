@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -24,7 +24,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_wx_t>;
  * root wx-supervisor
  *
  */
-struct system_context_wx_t : public system_context_t {
+struct ROTOR_API system_context_wx_t : public system_context_t {
     /** \brief intrusive pointer type for wx system context */
     using ptr_t = rotor::intrusive_ptr_t<system_context_wx_t>;
 

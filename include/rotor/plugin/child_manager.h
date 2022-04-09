@@ -22,7 +22,7 @@ namespace rotor::plugin {
  * might shutdown self.
  *
  */
-struct child_manager_plugin_t : public plugin_base_t {
+struct ROTOR_API child_manager_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/

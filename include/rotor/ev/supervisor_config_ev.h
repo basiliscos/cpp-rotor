@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -16,7 +16,7 @@ namespace ev {
  *  \brief libev supervisor config, which holds  a pointer to the ev
  * event loop and a loop ownership flag
  */
-struct supervisor_config_ev_t : public supervisor_config_t {
+struct ROTOR_API supervisor_config_ev_t : public supervisor_config_t {
     /** \brief a pointer to EV event loop */
     struct ev_loop *loop;
 

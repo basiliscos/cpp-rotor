@@ -22,7 +22,7 @@ enum class request_state_t { NONE, SENT, CONFIRMED };
  * supervisor is SHUTTING_DOWN or SHUT_DOWN.
  *
  */
-struct spawner_t {
+struct ROTOR_API spawner_t {
     ~spawner_t();
 
     /** \brief minimum amount of time before respawning new actor

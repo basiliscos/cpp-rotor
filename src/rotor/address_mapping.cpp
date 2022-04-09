@@ -12,7 +12,7 @@ using namespace rotor;
 
 void address_mapping_t::set(actor_base_t &actor, const subscription_info_ptr_t &info) noexcept {
     auto &point_map = actor_map[static_cast<const void *>(&actor)];
-    auto message_type = info->handler->message_type;
+    auto message_type = info->handler->message_type();
     point_map.try_emplace(message_type, info);
 }
 

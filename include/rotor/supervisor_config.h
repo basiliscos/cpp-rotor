@@ -15,7 +15,7 @@ namespace rotor {
 /** \struct supervisor_config_t
  *  \brief base supervisor config, which holds shutdown timeout value
  */
-struct supervisor_config_t : actor_config_t {
+struct ROTOR_API supervisor_config_t : actor_config_t {
 
     using actor_config_t::actor_config_t;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -38,7 +38,7 @@ namespace wx {
  * -message send) should be also performed on wx-specific actors.
  *
  */
-struct supervisor_wx_t : public supervisor_t {
+struct ROTOR_API supervisor_wx_t : public supervisor_t {
 
     /** \brief injects an alias for supervisor_config_wx_t */
     using config_t = supervisor_config_wx_t;

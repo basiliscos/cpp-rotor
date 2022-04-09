@@ -22,8 +22,8 @@ namespace rotor {
  * The actual message payload meant to be provided by derived classes
  *
  */
-struct message_base_t : public arc_base_t<message_base_t> {
-    virtual ~message_base_t();
+struct ROTOR_API message_base_t : public arc_base_t<message_base_t> {
+    virtual ~message_base_t() = default;
 
     /**
      * \brief unique message type pointer.
@@ -38,10 +38,12 @@ struct message_base_t : public arc_base_t<message_base_t> {
     address_ptr_t address;
 
     /** \brief constructor which takes destination address */
-    message_base_t(const void *type_index_, const address_ptr_t &addr) : type_index{type_index_}, address{addr} {}
+    message_base_t(const void *type_index_, const address_ptr_t &addr) : type_index(type_index_), address{addr} {}
 };
 
-inline message_base_t::~message_base_t() {}
+namespace message_support {
+ROTOR_API const void *register_type(const std::type_index &type_index) noexcept;
+}
 
 /** \struct message_t
  *  \brief the generic message meant to hold user-specific payload
@@ -60,17 +62,16 @@ template <typename T> struct message_t : public message_base_t {
     /** \brief user-defined payload */
     T payload;
 
-    /** \brief static type which uniquely identifies payload-type specialized `message_t` */
-    static const void *message_type;
+    ROTOR_API static const void *message_type;
 };
+
+template <typename T> const void *message_t<T>::message_type = message_support::register_type(typeid(message_t<T>));
 
 /** \brief intrusive pointer for message */
 using message_ptr_t = intrusive_ptr_t<message_base_t>;
 
 /** \brief structure to hold messages (intrusive pointers) */
 using messages_queue_t = std::deque<message_ptr_t>;
-
-template <typename T> const void *message_t<T>::message_type = static_cast<const void *>(typeid(message_t<T>).name());
 
 /** \brief constucts message by constructing it's payload; intrusive pointer for the message is returned */
 template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&...args) -> message_ptr_t {

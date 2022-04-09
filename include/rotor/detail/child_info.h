@@ -15,9 +15,9 @@ namespace rotor::detail {
 enum class shutdown_state_t { none, sent, confirmed };
 
 namespace demand {
-struct no {};
-struct now {};
-struct escalate_failure {};
+struct ROTOR_API no {};
+struct ROTOR_API now {};
+struct ROTOR_API escalate_failure {};
 } // namespace demand
 
 using spawn_demand_t = std::variant<demand::no, demand::now, demand::escalate_failure, pt::time_duration>;
@@ -28,7 +28,7 @@ using spawn_demand_t = std::variant<demand::no, demand::now, demand::escalate_fa
  * Used by child_manager_plugin_t.
  *
  */
-struct child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_unsafe_counter> {
+struct ROTOR_API child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_unsafe_counter> {
     /** \brief an alias for used microsec clock */
     using clock_t = pt::microsec_clock;
 

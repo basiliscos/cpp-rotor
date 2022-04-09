@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,7 +15,7 @@ namespace wx {
 /** \struct supervisor_config_wx_t
  *  \brief wx supervisor config, which holds a pointer to the "context window".
  */
-struct supervisor_config_wx_t : public supervisor_config_t {
+struct ROTOR_API supervisor_config_wx_t : public supervisor_config_t {
     /** \brief the wx context, responsible for messages delivery
      *
      * Actual rotor-message delivery for actors running on the

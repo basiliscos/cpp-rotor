@@ -17,7 +17,7 @@ namespace rotor {
 /** \struct request_base_t
  *  \brief base class for request payload
  */
-struct request_base_t {
+struct ROTOR_API request_base_t {
     /** \brief unique (per supervisor) request id */
     request_id_t id;
 
@@ -224,7 +224,7 @@ template <typename T, typename... Args> inline constexpr bool is_constructible_v
 
 } // namespace details
 
-/* \struct wrapped_response_t
+/** \struct wrapped_response_t
  * \brief trackable templated response which holds user-supplied response payload.
  *
  * In addition to user-supplied response payload, the class contains `error_code`

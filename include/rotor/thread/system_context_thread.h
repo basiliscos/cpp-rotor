@@ -27,7 +27,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_thread_t>;
  *  \brief The thread system context, for blocking operations
  *
  */
-struct system_context_thread_t : public system_context_t {
+struct ROTOR_API system_context_thread_t : public system_context_t {
     /** \brief constructs thread system context
      *
      *  \param queue_size defines pre-allocated ibound queue size for messages from other threads

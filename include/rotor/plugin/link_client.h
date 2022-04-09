@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -26,7 +26,7 @@ namespace rotor::plugin {
  * timeout will trigger).
  *
  */
-struct link_client_plugin_t : public plugin_base_t {
+struct ROTOR_API link_client_plugin_t : public plugin_base_t {
     /** \brief callback action upon link */
     using link_callback_t = std::function<void(const extended_error_ptr_t &)>;
 

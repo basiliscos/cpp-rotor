@@ -895,7 +895,7 @@ int main(int argc, char **argv) {
         .request_timeout(request_timeout)
         .resolve_timeout(resolve_timeout + rotor_timeout * 2)
         .synchronize_start()
-        .shutdown_flag(shutdown_flag, rotor_timeout/2)
+        .shutdown_flag(shutdown_flag, rotor_timeout / 2)
         .finish();
 
     auto client = sup->create_actor<client_t>().timeout(worker_timeout).autoshutdown_supervisor().finish();

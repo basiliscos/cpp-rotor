@@ -62,7 +62,7 @@ namespace rotor {
  * to deliver message to a supervisor in a thread-safe way etc.
  *
  */
-struct supervisor_t : public actor_base_t {
+struct ROTOR_API supervisor_t : public actor_base_t {
 
     // clang-format off
     /** \brief the default list of plugins for an supervisor
