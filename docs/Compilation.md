@@ -24,7 +24,8 @@ The optional event-loop specific supervisors depend on corresponding loop librar
 - `BUILD_EV` build with [libev] support (`off` by default)
 - `BUILD_EXAMPLES` build examples (`off` by default)
 - `BUILD_DOC` generate doxygen documentation (`off` by default, only for release builds)
-- `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default)
+- `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default). Enable this option if you are sure, that
+rotor-objects (i.e. messages and actors) are accessed only from single thread.
 - `ROTOR_DEBUG_DELIVERY` allow runtime messages inspection (`off` by default, enabled by default for debug builds)
 
 ~~~
