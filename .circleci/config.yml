@@ -38,6 +38,21 @@ jobs:
               apt-get install -y curl
               bash <(curl -s https://codecov.io/bash) -X gcov
 
+  build_gcc_thread_unsafe:
+    docker:
+      - image: debian:10
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: "prepare & build"
+          command: |
+              apt-get update
+              apt-get install -y cmake g++ libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
+              mkdir build
+              cd build && cmake -DBUILD_DOC=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_THREAD_UNSAFE=on -DBUILD_EV=on -DBUILD_DOC=on ..
+              make -j2 && ctest .
+
   build_arm:
     machine:
       image: ubuntu-2004:202101-01
@@ -72,6 +87,7 @@ workflows:
   build-all-workflow:
     jobs:
       - build_gcc
+      - build_gcc_thread_unsafe
       - build_clang
       - build_arm
       - build_conan
