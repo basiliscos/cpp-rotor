@@ -37,6 +37,8 @@
 
 #ifndef _WIN32
 #include <signal.h>
+#else
+#include <windows.h>
 #endif
 
 namespace r = rotor;
@@ -200,8 +202,15 @@ struct sha_actor_t : public r::actor_base_t {
     }
 };
 
-#ifndef _WIN32
 std::atomic_bool shutdown_flag = false;
+
+#ifdef _WIN32
+BOOL WINAPI consoleHandler(DWORD signal) {
+    if (signal == CTRL_C_EVENT) {
+        shutdown_flag = true;
+    }
+    return TRUE; /* ignore */
+}
 #endif
 
 int main(int argc, char **argv) {
@@ -239,7 +248,12 @@ int main(int argc, char **argv) {
     memset(&action, 0, sizeof(action));
     action.sa_handler = [](int) { shutdown_flag = true; };
     if (sigaction(SIGINT, &action, nullptr) != 0) {
-        shutdown_flag = true;
+        std::cout << "sigaction failed\n";
+        return -1;
+    }
+#else
+    if (!SetConsoleCtrlHandler(consoleHandler, true)) {
+        std::cout << "SetConsoleCtrlHandler failed\n";
         return -1;
     }
 #endif
