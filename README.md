@@ -32,12 +32,12 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
 
-## performance
+## messaging performance
 
 
- inter-thread messaging (1)   | cross-thread messaging (2)
-------------------------------|-------------------------
-  ~23.5M messages/second      | ~ 2.5M messages/second
+      inter-thread (1)   | cross-thread (2)       | single thread (3)
+-------------------------|------------------------+-----------------------
+  ~23.5M messages/second | ~ 2.5M messages/second | ~30.8М messages/second
 
 
 Setup: Intel Core i7-8550U, Void Linux 5.13.
@@ -46,6 +46,10 @@ Setup: Intel Core i7-8550U, Void Linux 5.13.
 
 (2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
 `examples/boost-asio/ping-pong-2-theads`, `examples/ev/ping-pong-ev-2-threads`.
+
+(3) Backend-independent inter-thread messaging when build with `BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
+and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
+option is mainly targeted for single-threaded apps.
 
 
 ## license
