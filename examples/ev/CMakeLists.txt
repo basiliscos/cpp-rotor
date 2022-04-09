@@ -5,9 +5,9 @@ add_test(ping-pong-ev "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-ev")
 
 find_package(Threads)
 
-if (Threads_FOUND)
+if (Threads_FOUND AND NOT BUILD_THREAD_UNSAFE)
     add_executable(ping-pong-ev-2-threads ping-pong-ev-2-threads.cpp)
-    target_link_libraries(ping-pong-ev-2-threads rotor_ev  Threads::Threads)
+    target_link_libraries(ping-pong-ev-2-threads rotor_ev Threads::Threads)
     add_test(ping-pong-ev-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-ev-2-threads")
 endif()
 

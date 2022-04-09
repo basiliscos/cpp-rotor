@@ -8,7 +8,7 @@ if (BUILD_EV)
     add_subdirectory("ev")
 endif()
 
-if (BUILD_BOOST_ASIO AND BUILD_EV)
+if (BUILD_BOOST_ASIO AND BUILD_EV AND NOT BUILD_THREAD_UNSAFE)
     add_executable(ping-pong-ev_and_asio ping-pong-ev_and_asio.cpp)
     target_link_libraries(ping-pong-ev_and_asio rotor_ev rotor_asio)
     add_test(ping-pong-ev_and_asio "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-ev_and_asio")
