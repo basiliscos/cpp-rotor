@@ -35,9 +35,10 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 ## messaging performance
 
 
-      inter-thread (1)   | cross-thread (2)       | single thread (3)
--------------------------|------------------------|-----------------------
-  ~23.5M messages/second | ~ 2.5M messages/second | ~30.8М messages/second
+|      inter-thread (1)   | cross-thread (2)       | single thread (3)
+|:-----------------------:|:----------------------:|:---------------------:
+|  ~23.5M messages/second | ~ 2.5M messages/second | ~30.8М messages/second
+
 
 
 Setup: Intel Core i7-8550U, Void Linux 5.13.
