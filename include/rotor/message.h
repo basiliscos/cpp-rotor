@@ -54,7 +54,7 @@ ROTOR_API const void *register_type(const std::type_index &type_index) noexcept;
  *  \brief the generic message meant to hold user-specific payload
  *  \tparam T payload type
  */
-template <typename T> struct ROTOR_API message_t : public message_base_t {
+template <typename T> struct message_t : public message_base_t {
 
     /** \brief alias for payload type */
     using payload_t = T;
