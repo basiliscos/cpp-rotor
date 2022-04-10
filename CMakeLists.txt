@@ -275,6 +275,7 @@ install(FILES
 
 if (BUILD_SHARED_LIBS)
     set(type shared)
+    message(STATUS "going to build shared library/libraries")
 else ()
     set(type static)
 endif ()
