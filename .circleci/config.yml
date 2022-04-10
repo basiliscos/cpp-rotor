@@ -12,9 +12,9 @@ jobs:
               apt-get update
               apt-get install -y cmake clang wx-common libwxgtk3.0-gtk3-dev wx3.0-headers libev-dev libboost-system-dev libboost-date-time-dev libboost-regex-dev libboost-program-options-dev
               cmake -S . -B build.release -DCMAKE_BUILD_TYPE=Release -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_EV=on -DBUILD_DOC=on -DBUILD_EXAMPLES=on -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer -Wall -Wextra -pedantic -Werror"
-              cd build.release && make -j2 && ctest . && cd ..
+              cd build.release && make -j2 && ctest --output-on-failure .  && cd ..
               cmake -S . -B build.shared -DBUILD_SHARED_LIBS=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBUILD_WX=on -DBUILD_EV=on -DBUILD_EXAMPLES=on
-              cd build.shared && make -j2 && ctest . && cd ..
+              cd build.shared && make -j2 && ctest --output-on-failure . && cd ..
 
   build_gcc:
     docker:
