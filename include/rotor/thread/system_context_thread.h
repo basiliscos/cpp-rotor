@@ -9,6 +9,7 @@
 #include "rotor/arc.hpp"
 #include "rotor/system_context.h"
 #include "rotor/timer_handler.hpp"
+#include "rotor/thread/export.h"
 #include <chrono>
 #include <condition_variable>
 #include <list>
@@ -33,7 +34,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_thread_t>;
  *  \brief The thread system context, for blocking operations
  *
  */
-struct ROTOR_API system_context_thread_t : public system_context_t {
+struct ROTOR_THREAD_API system_context_thread_t : public system_context_t {
     /** \brief constructs thread system context
      *
      *  \param queue_size defines pre-allocated ibound queue size for messages from other threads

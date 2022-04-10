@@ -7,6 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
+#include "rotor/ev/export.h"
 #include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/ev/system_context_ev.h"
 #include "rotor/system_context.h"
@@ -31,7 +32,7 @@ namespace ev {
  * via rotor-messaging.
  *
  */
-struct ROTOR_API supervisor_ev_t : public supervisor_t {
+struct ROTOR_EV_API supervisor_ev_t : public supervisor_t {
     /** \brief injects an alias for supervisor_config_ev_t */
     using config_t = supervisor_config_ev_t;
 

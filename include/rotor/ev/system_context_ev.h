@@ -7,6 +7,7 @@
 //
 
 #include "rotor/arc.hpp"
+#include "rotor/ev/export.h"
 #include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/system_context.h"
 #include <ev.h>
@@ -14,7 +15,7 @@
 namespace rotor {
 namespace ev {
 
-struct ROTOR_API supervisor_ev_t;
+struct ROTOR_EV_API supervisor_ev_t;
 
 /** \brief intrusive pointer for ev supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;

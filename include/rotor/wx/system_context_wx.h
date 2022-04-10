@@ -7,6 +7,7 @@
 //
 
 #include "rotor/arc.hpp"
+#include "rotor/wx/export.h"
 #include "rotor/wx/supervisor_config_wx.h"
 #include "rotor/system_context.h"
 #include <wx/app.h>
@@ -24,7 +25,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_wx_t>;
  * root wx-supervisor
  *
  */
-struct ROTOR_API system_context_wx_t : public system_context_t {
+struct ROTOR_WX_API system_context_wx_t : public system_context_t {
     /** \brief intrusive pointer type for wx system context */
     using ptr_t = rotor::intrusive_ptr_t<system_context_wx_t>;
 

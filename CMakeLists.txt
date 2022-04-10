@@ -173,6 +173,8 @@ if (BUILD_BOOST_ASIO)
         include/rotor/asio/supervisor_config_asio.h
         include/rotor/asio/system_context_asio.h
     )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/asio/export.h
+        DESTINATION include/rotor)
 endif()
 
 if (BUILD_WX)
@@ -181,6 +183,10 @@ if (BUILD_WX)
     add_library(rotor_wx
         src/rotor/wx/supervisor_wx.cpp
         src/rotor/wx/system_context_wx.cpp
+    )
+    generate_export_header(rotor_wx
+        EXPORT_MACRO_NAME ROTOR_WX_API
+        EXPORT_FILE_NAME include/rotor/wx/export.h
     )
     target_link_libraries(rotor_wx PUBLIC rotor ${wxWidgets_LIBRARIES})
     add_library(rotor::wx ALIAS rotor_wx)
@@ -191,6 +197,8 @@ if (BUILD_WX)
         include/rotor/wx/supervisor_wx.h
         include/rotor/wx/system_context_wx.h
     )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/wx/export.h
+        DESTINATION include/rotor)
 endif()
 
 if (BUILD_EV)
@@ -198,6 +206,10 @@ if (BUILD_EV)
     add_library(rotor_ev
         src/rotor/ev/supervisor_ev.cpp
         src/rotor/ev/system_context_ev.cpp
+    )
+    generate_export_header(rotor_ev
+        EXPORT_MACRO_NAME ROTOR_EV_API
+        EXPORT_FILE_NAME include/rotor/ev/export.h
     )
     target_include_directories(rotor_ev PUBLIC ${LIBEV_INCLUDE_DIRS})
     target_link_libraries(rotor_ev PUBLIC rotor ${LIBEV_LIBRARY})
@@ -209,6 +221,8 @@ if (BUILD_EV)
         include/rotor/ev/supervisor_ev.h
         include/rotor/ev/system_context_ev.h
     )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/ev/export.h
+        DESTINATION include/rotor)
 endif()
 
 if (BUILD_THREAD)
@@ -216,6 +230,10 @@ if (BUILD_THREAD)
     add_library(rotor_thread
         src/rotor/thread/supervisor_thread.cpp
         src/rotor/thread/system_context_thread.cpp
+    )
+    generate_export_header(rotor_thread
+        EXPORT_MACRO_NAME ROTOR_THREAD_API
+        EXPORT_FILE_NAME include/rotor/thread/export.h
     )
     target_link_libraries(rotor_thread PUBLIC rotor Threads::Threads)
     add_library(rotor::thread ALIAS rotor_thread)
@@ -225,6 +243,8 @@ if (BUILD_THREAD)
         include/rotor/thread/supervisor_thread.h
         include/rotor/thread/system_context_thread.h
     )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/thread/export.h
+        DESTINATION include/rotor)
 endif()
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -276,12 +296,6 @@ endforeach()
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
     DESTINATION include/rotor)
-
-if (BUILD_BOOST_ASIO)
-    install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/asio/export.h
-        DESTINATION include/rotor)
-endif()
 
 if (BUILD_SHARED_LIBS)
     set(type shared)

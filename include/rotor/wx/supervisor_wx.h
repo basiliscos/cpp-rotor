@@ -6,6 +6,7 @@
 // Distributed under the MIT Software License
 //
 
+#include "rotor/wx/export.h"
 #include "rotor/supervisor.h"
 #include "rotor/wx/supervisor_config_wx.h"
 #include "rotor/wx/system_context_wx.h"
@@ -38,7 +39,7 @@ namespace wx {
  * -message send) should be also performed on wx-specific actors.
  *
  */
-struct ROTOR_API supervisor_wx_t : public supervisor_t {
+struct ROTOR_WX_API supervisor_wx_t : public supervisor_t {
 
     /** \brief injects an alias for supervisor_config_wx_t */
     using config_t = supervisor_config_wx_t;
@@ -61,7 +62,7 @@ struct ROTOR_API supervisor_wx_t : public supervisor_t {
     /** \struct timer_t
      *  \brief timer structure, adoped for wx-supervisor needs.
      */
-    struct timer_t : public wxTimer {
+    struct ROTOR_WX_API timer_t : public wxTimer {
         /** \brief alias for intrusive pointer for the supervisor */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_wx_t>;
 
