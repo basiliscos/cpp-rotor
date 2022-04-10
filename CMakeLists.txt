@@ -151,6 +151,10 @@ if (BUILD_BOOST_ASIO)
     add_library(rotor_asio
         src/rotor/asio/supervisor_asio.cpp
     )
+    generate_export_header(rotor_asio
+        EXPORT_MACRO_NAME ROTOR_ASIO_API
+        EXPORT_FILE_NAME include/rotor/asio/export.h
+    )
     if (WIN32)
         list(APPEND ROTOR_ASIO_PRIVATE_FLAGS
             _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
@@ -272,6 +276,12 @@ endforeach()
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
     DESTINATION include/rotor)
+
+if (BUILD_BOOST_ASIO)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/asio/export.h
+        DESTINATION include/rotor)
+endif()
 
 if (BUILD_SHARED_LIBS)
     set(type shared)

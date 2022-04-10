@@ -7,6 +7,7 @@
 //
 
 #include "rotor/supervisor_config.h"
+#include "rotor/asio/export.h"
 #include <boost/asio.hpp>
 #include <memory>
 
@@ -21,7 +22,7 @@ namespace asio {
 
 /** \struct supervisor_config_asio_t
  *  \brief boost::asio supervisor config, which holds pointer to strand */
-struct ROTOR_API supervisor_config_asio_t : public supervisor_config_t {
+struct ROTOR_ASIO_API supervisor_config_asio_t : public supervisor_config_t {
     /** \brief alias for boost::asio strand type */
     using strand_t = boost::asio::io_context::strand;
 

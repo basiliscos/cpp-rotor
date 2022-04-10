@@ -7,6 +7,7 @@
 //
 
 #include "rotor/supervisor.h"
+#include "rotor/asio/export.h"
 #include "supervisor_config_asio.h"
 #include "system_context_asio.h"
 #include "forwarder.hpp"
@@ -52,7 +53,7 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  * via `strand`.
  *
  */
-struct ROTOR_API supervisor_asio_t : public supervisor_t {
+struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
 
     /** \brief injects an alias for supervisor_config_asio_t */
     using config_t = supervisor_config_asio_t;
@@ -90,7 +91,7 @@ struct ROTOR_API supervisor_asio_t : public supervisor_t {
   protected:
     /** \struct timer_t
      * \brief boos::asio::deadline_timer with embedded timer handler */
-    struct ROTOR_API timer_t : public asio::deadline_timer {
+    struct ROTOR_ASIO_API timer_t : public asio::deadline_timer {
 
         /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;
