@@ -70,7 +70,7 @@ template <typename T> struct message_t : public message_base_t {
     ROTOR_API static const void *message_type;
 };
 
-template <typename T> const void *message_t<T>::message_type = message_support::register_type(typeid(message_t<T>));
+template <typename T> ROTOR_API const void *message_t<T>::message_type = message_support::register_type(typeid(message_t<T>));
 
 /** \brief intrusive pointer for message */
 using message_ptr_t = intrusive_ptr_t<message_base_t>;
