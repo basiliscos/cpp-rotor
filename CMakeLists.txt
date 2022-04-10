@@ -174,7 +174,7 @@ if (BUILD_BOOST_ASIO)
         include/rotor/asio/system_context_asio.h
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/asio/export.h
-        DESTINATION include/rotor)
+        DESTINATION include/rotor/asio)
 endif()
 
 if (BUILD_WX)
@@ -198,7 +198,7 @@ if (BUILD_WX)
         include/rotor/wx/system_context_wx.h
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/wx/export.h
-        DESTINATION include/rotor)
+        DESTINATION include/rotor/wx)
 endif()
 
 if (BUILD_EV)
@@ -222,7 +222,7 @@ if (BUILD_EV)
         include/rotor/ev/system_context_ev.h
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/ev/export.h
-        DESTINATION include/rotor)
+        DESTINATION include/rotor/ev)
 endif()
 
 if (BUILD_THREAD)
@@ -244,7 +244,7 @@ if (BUILD_THREAD)
         include/rotor/thread/system_context_thread.h
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/thread/export.h
-        DESTINATION include/rotor)
+        DESTINATION include/rotor/thread)
 endif()
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
