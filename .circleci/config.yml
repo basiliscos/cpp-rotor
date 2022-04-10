@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build_clang:
     docker:
-      - image: debian:10
+      - image: debian:11
     resource_class: medium
     steps:
       - checkout
