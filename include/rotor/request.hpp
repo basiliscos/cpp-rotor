@@ -12,6 +12,11 @@
 #include "forward.hpp"
 #include <unordered_map>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 /** \struct request_base_t
@@ -410,3 +415,7 @@ template <typename T> struct [[nodiscard]] request_builder_t {
 };
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

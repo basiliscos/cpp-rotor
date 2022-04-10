@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2021-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,11 @@
 #include "arc.hpp"
 #include <string>
 #include <system_error>
+
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
 
 namespace rotor {
 
@@ -62,3 +67,7 @@ ROTOR_API extended_error_ptr_t make_error(const std::string &context_, const std
                                           const extended_error_ptr_t &next_ = {}) noexcept;
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

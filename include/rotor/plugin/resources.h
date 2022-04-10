@@ -9,6 +9,12 @@
 #include "plugin_base.h"
 #include <vector>
 
+
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor::plugin {
 
 using resource_id_t = std::size_t;
@@ -78,3 +84,7 @@ struct ROTOR_API resources_plugin_t : public plugin_base_t {
 };
 
 } // namespace rotor::plugin
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

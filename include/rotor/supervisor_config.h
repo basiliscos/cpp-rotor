@@ -10,6 +10,11 @@
 #include "policy.h"
 #include "actor_config.h"
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 /** \struct supervisor_config_t
@@ -114,3 +119,7 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
 };
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

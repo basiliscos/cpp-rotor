@@ -10,6 +10,11 @@
 #include <unordered_set>
 #include "rotor/detail/child_info.h"
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor::plugin {
 
 /** \struct child_manager_plugin_t
@@ -115,3 +120,7 @@ struct ROTOR_API child_manager_plugin_t : public plugin_base_t {
 };
 
 } // namespace rotor::plugin
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

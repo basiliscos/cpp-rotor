@@ -14,6 +14,11 @@
 #include "forward.hpp"
 #include "extended_error.h"
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 /// namespace for rotor core payloads
@@ -386,3 +391,7 @@ using unlink_response_t = request_traits_t<payload::unlink_request_t>::response:
 } // namespace message
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

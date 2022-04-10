@@ -11,6 +11,11 @@
 #include <vector>
 #include <list>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 struct actor_base_t;
@@ -130,3 +135,7 @@ struct ROTOR_API subscription_container_t : public std::list<subscription_info_p
 };
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

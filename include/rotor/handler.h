@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,6 +14,11 @@
 #include <typeindex>
 #include <typeinfo>
 #include <type_traits>
+
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
 
 namespace rotor {
 
@@ -369,3 +374,7 @@ template <> struct hash<rotor::handler_ptr_t> {
     size_t operator()(const rotor::handler_ptr_t &handler) const noexcept { return handler->precalc_hash; }
 };
 } // namespace std
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

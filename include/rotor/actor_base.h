@@ -16,6 +16,11 @@
 #include "timer_handler.hpp"
 #include <set>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 /** \struct actor_base_t
@@ -477,3 +482,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 };
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

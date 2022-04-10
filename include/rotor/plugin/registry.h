@@ -12,6 +12,11 @@
 #include <string>
 #include <unordered_map>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor::plugin {
 
 /** \struct registry_plugin_t
@@ -152,3 +157,7 @@ struct ROTOR_API registry_plugin_t : public plugin_base_t {
 };
 
 } // namespace rotor::plugin
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

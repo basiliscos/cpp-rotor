@@ -9,6 +9,11 @@
 #include "forward.hpp"
 #include "policy.h"
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 namespace details {
@@ -71,3 +76,7 @@ struct ROTOR_API spawner_t {
 };
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif
