@@ -10,6 +10,11 @@
 #include "rotor/policy.h"
 #include <variant>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor::detail {
 
 enum class shutdown_state_t { none, sent, confirmed };
@@ -113,3 +118,8 @@ struct ROTOR_API child_info_t : boost::intrusive_ref_counter<child_info_t, boost
 using child_info_ptr_t = boost::intrusive_ptr<child_info_t>;
 
 } // namespace rotor::detail
+
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

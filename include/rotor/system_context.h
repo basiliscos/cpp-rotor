@@ -11,6 +11,11 @@
 #include "extended_error.h"
 #include <system_error>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 struct supervisor_t;
@@ -64,3 +69,7 @@ struct ROTOR_API system_context_t : arc_base_t<system_context_t> {
 using system_context_ptr_t = intrusive_ptr_t<system_context_t>;
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

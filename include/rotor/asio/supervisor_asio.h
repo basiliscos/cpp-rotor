@@ -14,6 +14,11 @@
 #include <unordered_map>
 #include <memory>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 namespace asio {
 
@@ -129,3 +134,7 @@ template <typename Actor> inline boost::asio::io_context::strand &get_strand(Act
 
 } // namespace asio
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif

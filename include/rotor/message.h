@@ -11,6 +11,11 @@
 #include <typeindex>
 #include <deque>
 
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 namespace rotor {
 
 /** \struct message_base_t
@@ -79,3 +84,7 @@ template <typename M, typename... Args> auto make_message(const address_ptr_t &a
 }
 
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif
