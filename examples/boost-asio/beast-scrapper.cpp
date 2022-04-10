@@ -477,6 +477,10 @@ struct http_worker_t : public r::actor_base_t {
             make_response(ee);
             return finish_response();
         }
+        if (state == r::state_t::SHUTTING_DOWN) {
+            make_response(make_error(r::make_error_code(r::error_code_t::cancelled)));
+            return finish_response();
+        }
 
         sys::error_code ec_sock;
         sock = std::make_unique<tcp::socket>(strand.context());
