@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,6 +14,12 @@
 #include <list>
 #include <mutex>
 #include <thread>
+
+#if defined( _MSC_VER )
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 
 namespace rotor {
 namespace thread {
@@ -98,3 +104,7 @@ using system_context_ptr_t = rotor::intrusive_ptr_t<system_context_thread_t>;
 
 } // namespace thread
 } // namespace rotor
+
+#if defined( _MSC_VER )
+#pragma warning(pop)
+#endif
