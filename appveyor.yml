@@ -38,5 +38,6 @@ test_script:
   - ps: cd "_build-static\tests"
   - ctest --timeout=5 -VV -C "%CONFIG%"
   - ps: cd "..\..\_build-shared\tests"
+  - ps: Get-ChildItem _build-shared\Debug -Recurse -filter *.dll | Copy -Destination _build-shared\tests\Debug
   - ctest --timeout=5 -VV -C "%CONFIG%"
 
