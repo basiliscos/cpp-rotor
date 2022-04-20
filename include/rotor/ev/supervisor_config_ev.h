@@ -7,7 +7,6 @@
 //
 
 #include "rotor/supervisor_config.h"
-#include "rotor/ev/export.h"
 #include <ev.h>
 
 namespace rotor {
@@ -17,7 +16,7 @@ namespace ev {
  *  \brief libev supervisor config, which holds  a pointer to the ev
  * event loop and a loop ownership flag
  */
-struct ROTOR_EV_API supervisor_config_ev_t : public supervisor_config_t {
+struct supervisor_config_ev_t : public supervisor_config_t {
     /** \brief a pointer to EV event loop */
     struct ev_loop *loop;
 

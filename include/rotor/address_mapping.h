@@ -11,9 +11,9 @@
 #include <unordered_map>
 #include <vector>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -71,6 +71,6 @@ struct ROTOR_API address_mapping_t {
 
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

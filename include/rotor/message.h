@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,9 +11,9 @@
 #include <typeindex>
 #include <deque>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -27,7 +27,7 @@ namespace rotor {
  * The actual message payload meant to be provided by derived classes
  *
  */
-struct ROTOR_API message_base_t : public arc_base_t<message_base_t> {
+struct message_base_t : public arc_base_t<message_base_t> {
     virtual ~message_base_t() = default;
 
     /**
@@ -43,7 +43,8 @@ struct ROTOR_API message_base_t : public arc_base_t<message_base_t> {
     address_ptr_t address;
 
     /** \brief constructor which takes destination address */
-    message_base_t(const void *type_index_, const address_ptr_t &addr) : type_index(type_index_), address{addr} {}
+    inline message_base_t(const void *type_index_, const address_ptr_t &addr)
+        : type_index(type_index_), address{addr} {}
 };
 
 namespace message_support {
@@ -85,6 +86,6 @@ template <typename M, typename... Args> auto make_message(const address_ptr_t &a
 
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

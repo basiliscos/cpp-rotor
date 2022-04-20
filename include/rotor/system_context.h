@@ -11,9 +11,9 @@
 #include "extended_error.h"
 #include <system_error>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -70,6 +70,6 @@ using system_context_ptr_t = intrusive_ptr_t<system_context_t>;
 
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

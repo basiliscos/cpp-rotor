@@ -15,9 +15,9 @@
 #include <typeinfo>
 #include <type_traits>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -375,6 +375,6 @@ template <> struct hash<rotor::handler_ptr_t> {
 };
 } // namespace std
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

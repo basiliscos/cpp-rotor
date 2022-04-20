@@ -16,11 +16,10 @@
 #include <mutex>
 #include <thread>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
-
 
 namespace rotor {
 namespace thread {
@@ -106,6 +105,6 @@ using system_context_ptr_t = rotor::intrusive_ptr_t<system_context_thread_t>;
 } // namespace thread
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

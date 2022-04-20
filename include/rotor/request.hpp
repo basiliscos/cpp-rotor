@@ -12,17 +12,12 @@
 #include "forward.hpp"
 #include <unordered_map>
 
-#if defined( _MSC_VER )
-#pragma warning(push)
-#pragma warning(disable: 4251)
-#endif
-
 namespace rotor {
 
 /** \struct request_base_t
  *  \brief base class for request payload
  */
-struct ROTOR_API request_base_t {
+struct request_base_t {
     /** \brief unique (per supervisor) request id */
     request_id_t id;
 
@@ -415,7 +410,3 @@ template <typename T> struct [[nodiscard]] request_builder_t {
 };
 
 } // namespace rotor
-
-#if defined( _MSC_VER )
-#pragma warning(pop)
-#endif

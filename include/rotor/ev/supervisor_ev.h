@@ -42,7 +42,7 @@ struct ROTOR_EV_API supervisor_ev_t : public supervisor_t {
     /** \struct timer_t
      * \brief inheritance of ev_timer, which holds rotor `timer_id`
      */
-    struct ROTOR_API timer_t : public ev_timer {
+    struct timer_t : public ev_timer {
 
         /** \brief intrusive pointer to ev supervistor (type) */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;

@@ -8,12 +8,11 @@
 
 #include "rotor/arc.hpp"
 #include "rotor/system_context.h"
-#include "rotor/asio/export.h"
 #include <boost/asio.hpp>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -21,7 +20,7 @@ namespace asio {
 
 namespace asio = boost::asio;
 
-struct ROTOR_ASIO_API supervisor_asio_t;
+struct supervisor_asio_t;
 
 /** \brief intrusive pointer for boost::asio supervisor */
 using supervisor_ptr_t = intrusive_ptr_t<supervisor_asio_t>;
@@ -30,7 +29,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_asio_t>;
  *  \brief The boost::asio system context, which holds a reference to
  * `boost::asio::io_context` and root supervisor
  */
-struct ROTOR_ASIO_API system_context_asio_t : public system_context_t {
+struct system_context_asio_t : public system_context_t {
     /** \brief intrusive pointer type for boost::asio system context */
     using ptr_t = rotor::intrusive_ptr_t<system_context_asio_t>;
 
@@ -53,6 +52,6 @@ using system_context_ptr_t = typename system_context_asio_t::ptr_t;
 } // namespace asio
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

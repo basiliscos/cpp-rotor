@@ -10,9 +10,9 @@
 #include "policy.h"
 #include "actor_config.h"
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -20,7 +20,7 @@ namespace rotor {
 /** \struct supervisor_config_t
  *  \brief base supervisor config, which holds shutdown timeout value
  */
-struct ROTOR_API supervisor_config_t : actor_config_t {
+struct supervisor_config_t : actor_config_t {
 
     using actor_config_t::actor_config_t;
 
@@ -120,6 +120,6 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
 
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

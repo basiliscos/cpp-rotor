@@ -7,7 +7,6 @@
 //
 
 #include "rotor/supervisor_config.h"
-#include "rotor/wx/export.h"
 #include <wx/event.h>
 
 namespace rotor {
@@ -16,7 +15,7 @@ namespace wx {
 /** \struct supervisor_config_wx_t
  *  \brief wx supervisor config, which holds a pointer to the "context window".
  */
-struct ROTOR_WX_API supervisor_config_wx_t : public supervisor_config_t {
+struct supervisor_config_wx_t : public supervisor_config_t {
     /** \brief the wx context, responsible for messages delivery
      *
      * Actual rotor-message delivery for actors running on the

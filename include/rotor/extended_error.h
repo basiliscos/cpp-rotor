@@ -10,9 +10,9 @@
 #include <string>
 #include <system_error>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -68,6 +68,6 @@ ROTOR_API extended_error_ptr_t make_error(const std::string &context_, const std
 
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

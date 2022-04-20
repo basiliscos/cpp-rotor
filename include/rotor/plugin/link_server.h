@@ -12,9 +12,9 @@
 #include <functional>
 #include <optional>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor::plugin {
@@ -78,7 +78,6 @@ struct ROTOR_API link_server_plugin_t : public plugin_base_t {
 
 } // namespace rotor::plugin
 
-
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

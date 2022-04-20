@@ -10,9 +10,9 @@
 #include "rotor/policy.h"
 #include <variant>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor::detail {
@@ -20,9 +20,9 @@ namespace rotor::detail {
 enum class shutdown_state_t { none, sent, confirmed };
 
 namespace demand {
-struct ROTOR_API no {};
-struct ROTOR_API now {};
-struct ROTOR_API escalate_failure {};
+struct no {};
+struct now {};
+struct escalate_failure {};
 } // namespace demand
 
 using spawn_demand_t = std::variant<demand::no, demand::now, demand::escalate_failure, pt::time_duration>;
@@ -119,7 +119,6 @@ using child_info_ptr_t = boost::intrusive_ptr<child_info_t>;
 
 } // namespace rotor::detail
 
-
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

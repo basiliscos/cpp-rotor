@@ -10,11 +10,10 @@
 #include <system_error>
 #include "rotor/export.h"
 
-
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
-#pragma warning(disable: 4275)
+#pragma warning(disable : 4251)
+#pragma warning(disable : 4275)
 #endif
 
 namespace rotor {
@@ -92,6 +91,6 @@ template <> struct is_error_code_enum<rotor::error_code_t> : std::true_type {};
 template <> struct is_error_code_enum<rotor::shutdown_code_t> : std::true_type {};
 } // namespace std
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

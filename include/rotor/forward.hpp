@@ -11,11 +11,11 @@
 
 namespace rotor {
 
-struct ROTOR_API address_t;
-struct ROTOR_API actor_base_t;
-struct ROTOR_API handler_base_t;
-struct ROTOR_API supervisor_t;
-struct ROTOR_API system_context_t;
+struct address_t;
+struct actor_base_t;
+struct handler_base_t;
+struct supervisor_t;
+struct system_context_t;
 
 using address_ptr_t = intrusive_ptr_t<address_t>;
 
@@ -47,5 +47,5 @@ using factory_t = std::function<actor_ptr_t(supervisor_t &, const address_ptr_t 
 } // namespace rotor
 
 namespace rotor::plugin {
-struct ROTOR_API plugin_base_t;
+struct plugin_base_t;
 }

@@ -7,14 +7,12 @@
 //
 
 #include "rotor/supervisor_config.h"
-#include "rotor/asio/export.h"
 #include <boost/asio.hpp>
 #include <memory>
 
-
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -22,7 +20,7 @@ namespace asio {
 
 /** \struct supervisor_config_asio_t
  *  \brief boost::asio supervisor config, which holds pointer to strand */
-struct ROTOR_ASIO_API supervisor_config_asio_t : public supervisor_config_t {
+struct supervisor_config_asio_t : public supervisor_config_t {
     /** \brief alias for boost::asio strand type */
     using strand_t = boost::asio::io_context::strand;
 
@@ -73,6 +71,6 @@ template <typename Supervisor> struct supervisor_config_asio_builder_t : supervi
 } // namespace asio
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

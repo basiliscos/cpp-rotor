@@ -14,9 +14,9 @@
 #include "forward.hpp"
 #include "extended_error.h"
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -28,13 +28,13 @@ namespace payload {
  *  \brief Message with this payload is sent from an actor to its supervisor to
  * confirm successful initialization
  */
-struct ROTOR_API initialize_confirmation_t {};
+struct initialize_confirmation_t {};
 
 /** \struct initialize_actor_t
  *  \brief Message with this payload is sent from a supervisor to an actor as
  *  initialization request
  */
-struct ROTOR_API initialize_actor_t {
+struct initialize_actor_t {
     /** \brief link to response payload type */
     using response_t = initialize_confirmation_t;
 };
@@ -43,7 +43,7 @@ struct ROTOR_API initialize_actor_t {
  *  \brief Message with this payload is sent from a supervisor to an actor as
  *  start confirmation
  */
-struct ROTOR_API start_actor_t {};
+struct start_actor_t {};
 
 /** \struct create_actor_t
  *  \brief Message with this payload is sent to supervisor when an actor is
@@ -52,7 +52,7 @@ struct ROTOR_API start_actor_t {};
  * The message is needed for internal {@link supervisor_t} housekeeping.
  *
  */
-struct ROTOR_API create_actor_t {
+struct create_actor_t {
     /** \brief the intrusive pointer to created actor */
     actor_ptr_t actor;
 
@@ -72,7 +72,7 @@ struct ROTOR_API create_actor_t {
  * The message is needed for internal {@link spawner_t} housekeeping.
  *
  */
-struct ROTOR_API spawn_actor_t {
+struct spawn_actor_t {
 
     /** \brief identifies the spawner */
     address_ptr_t spawner_address;
@@ -83,7 +83,7 @@ struct ROTOR_API spawn_actor_t {
  * to initate shutdown procedure.
  *
  */
-struct ROTOR_API shutdown_trigger_t {
+struct shutdown_trigger_t {
     /** \brief the actor to be shut down */
     address_ptr_t actor_address;
 
@@ -100,13 +100,13 @@ struct ROTOR_API shutdown_trigger_t {
  *  \brief Message with this payload is sent from an actor to its supervisor to
  * confirm successful shutdown.
  */
-struct ROTOR_API shutdown_confirmation_t {};
+struct shutdown_confirmation_t {};
 
 /** \struct shutdown_request_t
  *  \brief Message with this payload is sent from a supervisor to an actor as
  *  shutdown request
  */
-struct ROTOR_API shutdown_request_t {
+struct shutdown_request_t {
     /** \brief link to response payload type */
     using response_t = shutdown_confirmation_t;
 
@@ -129,7 +129,7 @@ struct ROTOR_API shutdown_request_t {
  * that supersior.
  *
  */
-struct ROTOR_API handler_call_t {
+struct handler_call_t {
     /** \brief The original message (intrusive pointer) sent to an address */
     message_ptr_t orig_message;
 
@@ -148,7 +148,7 @@ struct ROTOR_API handler_call_t {
  * supervisor.
  *
  */
-struct ROTOR_API external_subscription_t {
+struct external_subscription_t {
     /** \brief subscription details */
     subscription_point_t point;
 };
@@ -160,7 +160,7 @@ struct ROTOR_API external_subscription_t {
  * The message is needed for internal {@link actor_base_t} housekeeping.
  *
  */
-struct ROTOR_API subscription_confirmation_t {
+struct subscription_confirmation_t {
     /** \brief subscription details */
     subscription_point_t point;
 };
@@ -172,7 +172,7 @@ struct ROTOR_API subscription_confirmation_t {
  * The message is symmetrical to the {@link external_subscription_t}.
  *
  */
-struct ROTOR_API external_unsubscription_t {
+struct external_unsubscription_t {
     /** \brief subscription details */
     subscription_point_t point;
 };
@@ -184,7 +184,7 @@ struct ROTOR_API external_unsubscription_t {
  * The message is an actor-reply to {@link external_subscription_t} request.
  *
  */
-struct ROTOR_API commit_unsubscription_t {
+struct commit_unsubscription_t {
     /** \brief subscription details */
     subscription_point_t point;
 };
@@ -193,7 +193,7 @@ struct ROTOR_API commit_unsubscription_t {
  *  \brief Message with this payload is sent from a supervisor to an actor with
  *  confirmation that `pooint` is no longer active (subscribed).`
  */
-struct ROTOR_API unsubscription_confirmation_t {
+struct unsubscription_confirmation_t {
     /** \brief subscription details */
     subscription_point_t point;
 };
@@ -201,12 +201,12 @@ struct ROTOR_API unsubscription_confirmation_t {
 /** \struct registration_response_t
  *  \brief Successful registraction response (no content)
  */
-struct ROTOR_API registration_response_t {};
+struct registration_response_t {};
 
 /** \struct registration_request_t
  *  \brief "name - >service address mapping" request
  */
-struct ROTOR_API registration_request_t {
+struct registration_request_t {
     /** \brief link to registration response payload type */
     using response_t = registration_response_t;
 
@@ -221,7 +221,7 @@ struct ROTOR_API registration_request_t {
  *  \brief deregistration notification for all names associated
  *  with service address
  */
-struct ROTOR_API deregistration_notify_t {
+struct deregistration_notify_t {
     /** \brief service address for deregistration */
     address_ptr_t service_addr;
 };
@@ -229,7 +229,7 @@ struct ROTOR_API deregistration_notify_t {
 /** \struct deregistration_service_t
  *  \brief removes single service by name from a registry
  */
-struct ROTOR_API deregistration_service_t {
+struct deregistration_service_t {
     /** \brief the  name of the sevice address to be removed for a registry */
     std::string service_name;
 };
@@ -237,7 +237,7 @@ struct ROTOR_API deregistration_service_t {
 /** \struct discovery_reply_t
  *  \brief successful result of service discovery
  */
-struct ROTOR_API discovery_reply_t {
+struct discovery_reply_t {
     /**  \brief the service address found by name in a registry */
     address_ptr_t service_addr;
 };
@@ -245,7 +245,7 @@ struct ROTOR_API discovery_reply_t {
 /** \struct discovery_request_t
  *  \brief discover service by name in a registry
  */
-struct ROTOR_API discovery_request_t {
+struct discovery_request_t {
     /** \brief link to discovery response payload type */
     using response_t = discovery_reply_t;
 
@@ -256,7 +256,7 @@ struct ROTOR_API discovery_request_t {
 /** \struct discovery_future_t
  *  \brief delayed discovery response as soon as an address has been registered
  */
-struct ROTOR_API discovery_future_t {
+struct discovery_future_t {
     /**  \brief the service address found by name in a registry */
     address_ptr_t service_addr;
 };
@@ -265,7 +265,7 @@ struct ROTOR_API discovery_future_t {
  *  \brief ask registry for {@link discovery_future_t} when the target
  *  service name has been registered
  */
-struct ROTOR_API discovery_promise_t {
+struct discovery_promise_t {
     /** \brief link to discovery future payload type */
     using response_t = discovery_future_t;
     /**  \brief the service name to be looked in a registry */
@@ -275,12 +275,12 @@ struct ROTOR_API discovery_promise_t {
 /** \struct link_response_t
  *  \brief successful confirmation to {@link link_request_t}
  */
-struct ROTOR_API link_response_t {};
+struct link_response_t {};
 
 /** \struct link_request_t
  *  \brief requests target actor to be linked with the current one
  */
-struct ROTOR_API link_request_t {
+struct link_request_t {
     /** \brief link to link response payload type */
     using response_t = link_response_t;
 
@@ -292,7 +292,7 @@ struct ROTOR_API link_request_t {
  * \brief "client" notifies "server" that the connection has been closed
  * from its side
  */
-struct ROTOR_API unlink_notify_t {
+struct unlink_notify_t {
     /** \brief client actor address in unlinking */
     address_ptr_t client_addr;
 };
@@ -300,7 +300,7 @@ struct ROTOR_API unlink_notify_t {
 /** \struct unlink_request_t
  *  \brief "server" asks "client" for closing connection
  */
-struct ROTOR_API unlink_request_t {
+struct unlink_request_t {
     /** \brief link to unlink response payload type */
     using response_t = unlink_notify_t;
 
@@ -392,6 +392,6 @@ using unlink_response_t = request_traits_t<payload::unlink_request_t>::response:
 
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif

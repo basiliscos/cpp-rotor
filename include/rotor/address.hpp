@@ -9,11 +9,6 @@
 #include "arc.hpp"
 #include "forward.hpp"
 
-#if defined( _MSC_VER )
-#pragma warning(push)
-#pragma warning(disable: 4251)
-#endif
-
 namespace rotor {
 
 /** \struct address_t
@@ -35,7 +30,7 @@ namespace rotor {
  *
  */
 
-struct ROTOR_API address_t : public arc_base_t<address_t> {
+struct address_t : public arc_base_t<address_t> {
     /// reference to {@link supervisor_t}, which generated the address
     supervisor_t &supervisor;
 
@@ -75,7 +70,3 @@ template <> struct hash<rotor::address_ptr_t> {
 };
 
 } // namespace std
-
-#if defined( _MSC_VER )
-#pragma warning(pop)
-#endif

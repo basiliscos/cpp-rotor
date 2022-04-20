@@ -15,9 +15,9 @@
 #include <unordered_map>
 #include <memory>
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 namespace rotor {
@@ -91,7 +91,7 @@ struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
   protected:
     /** \struct timer_t
      * \brief boos::asio::deadline_timer with embedded timer handler */
-    struct ROTOR_ASIO_API timer_t : public asio::deadline_timer {
+    struct timer_t : public asio::deadline_timer {
 
         /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;
@@ -136,6 +136,6 @@ template <typename Actor> inline boost::asio::io_context::strand &get_strand(Act
 } // namespace asio
 } // namespace rotor
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
