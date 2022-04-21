@@ -1,5 +1,22 @@
 # Compiling & building
 
+## Conan
+
+The recommended way to install [rotor](https://github.com/basiliscos/cpp-rotor/) is to
+use [conan](https://conan.io/center/rotor) package manager.
+
+Among the [various ways](https://docs.conan.io/en/latest/using_packages.html) to
+[include rotor](https://conan.io/center/rotor?tab=recipe) in a project, but the
+most trivial one is to just check install it to local conan cache via:
+
+~~~
+conan install rotor/0.21@
+~~~
+
+Please note, that it might take some some time before the new `rotor` release
+appears in [conan center](https://conan.io/center/rotor) as this is intentionally
+non-automated and human-supervised process for inclusion.
+
 ## Dependencies
 
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"

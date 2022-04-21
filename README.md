@@ -64,6 +64,15 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+### 0.22 (21-Apr-2022)
+ - [feature] possibly to install via [conan center](https://conan.io/center/rotor)
+ - [feature, breaking] possibility to build `rotor` as shared library
+ - [feature] add shutdown flag checker (see [my blog](https://basiliscos.github.io/blog/2022/04/09/rotor-v022-and-thread-unsafety/))
+ - [bugfix] requests do not outlive actors (i.e. they are cancelled on `shutdown_finish`)
+ - [example] there is my another open-source project [syncspirit](https://github.com/basiliscos/syncspirit),
+which uses `rotor` under hood. I recommend to look at it, if the shipped examples are too-trivial, and
+don't give you an architectural insight of using `rotor`.
+
 ### 0.21 (25-Mar-2022)
  - [improvement] preliminary support of [conan](https://conan.io) package manager
  - [bugfix] fix compilation warnings on Windows/MSVC
