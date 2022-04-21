@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -19,7 +19,7 @@ namespace rotor::plugin {
  *
  * \brief basic local message delivery implementation
  */
-struct local_delivery_t {
+struct ROTOR_API local_delivery_t {
 
     /** \brief delivers an message for self of one of child-actors  (non-supervisors)
      *
@@ -38,7 +38,7 @@ struct local_delivery_t {
  *
  * \brief debugging local message delivery implementation with dumping details to stdout.
  */
-struct inspected_local_delivery_t {
+struct ROTOR_API inspected_local_delivery_t {
     /** \brief stringifies the message into human-readable debug form */
     static std::string identify(const message_base_t *message, int32_t threshold) noexcept;
 
@@ -59,7 +59,7 @@ using default_local_delivery_t = inspected_local_delivery_t;
  *
  * \brief base implementation for messages delivery plugin
  */
-struct delivery_plugin_base_t : public plugin_base_t {
+struct ROTOR_API delivery_plugin_base_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** \brief main messages dispatcher interface */

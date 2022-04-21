@@ -224,7 +224,7 @@ template <typename T, typename... Args> inline constexpr bool is_constructible_v
 
 } // namespace details
 
-/* \struct wrapped_response_t
+/** \struct wrapped_response_t
  * \brief trackable templated response which holds user-supplied response payload.
  *
  * In addition to user-supplied response payload, the class contains `error_code`

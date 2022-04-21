@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,11 @@
 #include "rotor/supervisor_config.h"
 #include <boost/asio.hpp>
 #include <memory>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor {
 namespace asio {
@@ -65,3 +70,7 @@ template <typename Supervisor> struct supervisor_config_asio_builder_t : supervi
 
 } // namespace asio
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

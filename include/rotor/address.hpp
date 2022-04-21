@@ -1,17 +1,15 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "arc.hpp"
+#include "forward.hpp"
 
 namespace rotor {
-
-struct actor_base_t;
-struct supervisor_t;
 
 /** \struct address_t
  *  \brief Message subscription and delivery point

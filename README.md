@@ -9,6 +9,7 @@
 
 `rotor` is event loop friendly C++ actor micro framework,
     [github](https://github.com/basiliscos/cpp-rotor)
+    [abf](https://abf.io/basiliscos/cpp-rotor)
     [gitee](https://gitee.com/basiliscos/cpp-rotor)
 
 [![https://t.me/cpp_rotor](https://raw.githubusercontent.com/wiki/erthink/libmdbx/img/telegram.png)](https://t.me/cpp_rotor)
@@ -32,12 +33,13 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 - cross-platform (windows, macosx, linux)
 - inspired by [The Reactive Manifesto](reactive) and [sobjectizer]
 
-## performance
+## messaging performance
 
 
- inter-thread messaging (1)   | cross-thread messaging (2)
-------------------------------|-------------------------
-  ~23.5M messages/second      | ~ 2.5M messages/second
+|      inter-thread (1)   | cross-thread (2)       | single thread (3)
+|:-----------------------:|:----------------------:|:---------------------:
+|  ~23.5M messages/second | ~ 2.5M messages/second | ~30.8М messages/second
+
 
 
 Setup: Intel Core i7-8550U, Void Linux 5.13.
@@ -46,6 +48,10 @@ Setup: Intel Core i7-8550U, Void Linux 5.13.
 
 (2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
 `examples/boost-asio/ping-pong-2-theads`, `examples/ev/ping-pong-ev-2-threads`.
+
+(3) Backend-independent inter-thread messaging when build with `BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
+and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
+option is mainly targeted for single-threaded apps.
 
 
 ## license
@@ -57,6 +63,15 @@ MIT
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
 
 ## Changelog
+
+### 0.22 (21-Apr-2022)
+ - [feature] possibly to install via [conan center](https://conan.io/center/rotor)
+ - [feature, breaking] possibility to build `rotor` as shared library
+ - [feature] add shutdown flag checker (see [my blog](https://basiliscos.github.io/blog/2022/04/09/rotor-v022-and-thread-unsafety/))
+ - [bugfix] requests do not outlive actors (i.e. they are cancelled on `shutdown_finish`)
+ - [example] there is my another open-source project [syncspirit](https://github.com/basiliscos/syncspirit),
+which uses `rotor` under hood. I recommend to look at it, if the shipped examples are too-trivial, and
+don't give you an architectural insight of using `rotor`.
 
 ### 0.21 (25-Mar-2022)
  - [improvement] preliminary support of [conan](https://conan.io) package manager

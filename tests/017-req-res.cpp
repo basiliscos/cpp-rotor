@@ -742,3 +742,26 @@ TEST_CASE("response arrives after requestee shutdown (on the same localities)", 
     sup1->do_process();
     REQUIRE(sup1->get_state() == r::state_t::SHUT_DOWN);
 }
+
+TEST_CASE("request timer should not outlive requestee", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto req = sup->create_actor<req_actor_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+
+    auto act = sup->create_actor<r::actor_base_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+
+    act->request<request_sample_t>(sup->get_address(), 5).send(rt::default_timeout);
+    CHECK(!act->access<rt::to::active_requests>().empty());
+
+    act->do_shutdown();
+    sup->do_process();
+
+    CHECK(act->access<rt::to::active_requests>().empty());
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+}

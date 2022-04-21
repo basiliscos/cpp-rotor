@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,11 @@
 #include "rotor/arc.hpp"
 #include "rotor/system_context.h"
 #include <boost/asio.hpp>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor {
 namespace asio {
@@ -46,3 +51,7 @@ using system_context_ptr_t = typename system_context_asio_t::ptr_t;
 
 } // namespace asio
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

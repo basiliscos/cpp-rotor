@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,6 +11,11 @@
 #include <unordered_map>
 #include <functional>
 #include <forward_list>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor::plugin {
 
@@ -26,7 +31,7 @@ namespace rotor::plugin {
  * timeout will trigger).
  *
  */
-struct link_client_plugin_t : public plugin_base_t {
+struct ROTOR_API link_client_plugin_t : public plugin_base_t {
     /** \brief callback action upon link */
     using link_callback_t = std::function<void(const extended_error_ptr_t &)>;
 
@@ -92,3 +97,7 @@ struct link_client_plugin_t : public plugin_base_t {
 };
 
 } // namespace rotor::plugin
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

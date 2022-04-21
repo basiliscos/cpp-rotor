@@ -13,6 +13,11 @@
 #include <unordered_map>
 #include <vector>
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor {
 
 /** \struct subscription_t
@@ -22,7 +27,7 @@ namespace rotor {
  * whether the hander's supervisor is external or not.
  *
  */
-struct subscription_t {
+struct ROTOR_API subscription_t {
     /** \brief alias for message type (i.e. stringized typeid) */
     using message_type_t = const void *;
 
@@ -86,3 +91,7 @@ struct subscription_t {
 };
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

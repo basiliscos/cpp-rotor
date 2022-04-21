@@ -23,6 +23,11 @@
 
 #include <boost/lockfree/queue.hpp>
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor {
 
 /** \struct supervisor_t
@@ -62,7 +67,7 @@ namespace rotor {
  * to deliver message to a supervisor in a thread-safe way etc.
  *
  */
-struct supervisor_t : public actor_base_t {
+struct ROTOR_API supervisor_t : public actor_base_t {
 
     // clang-format off
     /** \brief the default list of plugins for an supervisor
@@ -137,6 +142,8 @@ struct supervisor_t : public actor_base_t {
      * context. Once it becomes empty, the method returns
      */
     virtual void start() noexcept = 0;
+
+    void on_start() noexcept override;
 
     /** \brief thread-safe version of `do_shutdown`, i.e. send shutdown request
      * let it be processed by the supervisor */
@@ -295,6 +302,12 @@ struct supervisor_t : public actor_base_t {
     /** \brief how much time spend in active inbound queue polling */
     pt::time_duration poll_duration;
 
+    /** \brief when flag is set, the supervisor will shut self down */
+    const std::atomic_bool *shutdown_flag = nullptr;
+
+    /** \brief frequency to check atomic shutdown flag */
+    pt::time_duration shutdown_poll_frequency = pt::millisec{100};
+
   private:
     using actors_set_t = std::unordered_set<const actor_base_t *>;
 
@@ -315,6 +328,8 @@ struct supervisor_t : public actor_base_t {
     template <typename T> friend struct plugin::delivery_plugin_t;
 
     void discard_request(request_id_t request_id) noexcept;
+
+    void on_shutdown_check_timer(request_id_t, bool cancelled) noexcept;
 
     inline request_id_t next_request_id() noexcept {
     AGAIN:
@@ -498,6 +513,7 @@ template <typename T> request_id_t request_builder_t<T>::send(const pt::time_dur
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req, &actor});
     sup.put(req);
     sup.start_timer(request_id, timeout, sup, &supervisor_t::on_request_trigger);
+    actor.active_requests.emplace(request_id);
     return request_id;
 }
 
@@ -592,3 +608,7 @@ template <typename Actor> intrusive_ptr_t<Actor> actor_config_builder_t<Actor>::
 }
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -477,6 +477,10 @@ struct http_worker_t : public r::actor_base_t {
             make_response(ee);
             return finish_response();
         }
+        if (state == r::state_t::SHUTTING_DOWN) {
+            make_response(make_error(r::make_error_code(r::error_code_t::cancelled)));
+            return finish_response();
+        }
 
         sys::error_code ec_sock;
         sock = std::make_unique<tcp::socket>(strand.context());
@@ -546,6 +550,7 @@ struct http_worker_t : public r::actor_base_t {
 
     void on_timer(r::request_id_t, bool cancelled) noexcept {
         resources->release(resource::timer);
+        timer_request.reset();
         if (cancelled && !response) {
             make_response(make_error(r::make_error_code(r::error_code_t::cancelled)));
         }
@@ -566,7 +571,6 @@ struct http_worker_t : public r::actor_base_t {
     void cancel_timer() noexcept {
         if (timer_request) {
             r::actor_base_t::cancel_timer(*timer_request);
-            timer_request.reset();
         }
     }
 
@@ -895,6 +899,7 @@ int main(int argc, char **argv) {
         .request_timeout(request_timeout)
         .resolve_timeout(resolve_timeout + rotor_timeout * 2)
         .synchronize_start()
+        .shutdown_flag(shutdown_flag, rotor_timeout / 2)
         .finish();
 
     auto client = sup->create_actor<client_t>().timeout(worker_timeout).autoshutdown_supervisor().finish();
@@ -912,17 +917,10 @@ int main(int argc, char **argv) {
         std::cout << "critical :: cannot set signal handler\n";
         return -1;
     }
-    auto console_thread = std::thread([&] {
-        while (!shutdown_flag) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        sup->shutdown();
-    });
 #endif
     io_context.run();
 #ifndef _WIN32
     shutdown_flag = true;
-    console_thread.join();
 #endif
 
     return 0;

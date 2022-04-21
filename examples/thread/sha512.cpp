@@ -20,6 +20,9 @@
  * The "ctrl+c" can be anytime pressed on the terminal, and the program
  * will correctly shutdown (including sanitizer build). Try it!
  *
+ * As the additional std::threads are not spawned, this example is
+ * ok to compile it with BUILD_THREAD_UNSAFE mode.
+ *
  */
 
 #include "rotor.hpp"
@@ -34,6 +37,8 @@
 
 #ifndef _WIN32
 #include <signal.h>
+#else
+#include <windows.h>
 #endif
 
 namespace r = rotor;
@@ -197,8 +202,15 @@ struct sha_actor_t : public r::actor_base_t {
     }
 };
 
-#ifndef _WIN32
 std::atomic_bool shutdown_flag = false;
+
+#ifdef _WIN32
+BOOL WINAPI consoleHandler(DWORD signal) {
+    if (signal == CTRL_C_EVENT) {
+        shutdown_flag = true;
+    }
+    return TRUE; /* ignore */
+}
 #endif
 
 int main(int argc, char **argv) {
@@ -219,8 +231,11 @@ int main(int argc, char **argv) {
     }
 
     rth::system_context_thread_t ctx;
-    auto timeout = boost::posix_time::milliseconds{100};
-    auto sup = ctx.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).finish();
+    auto timeout = r::pt::milliseconds{100};
+    auto sup = ctx.create_supervisor<rth::supervisor_thread_t>()
+                   .timeout(timeout)
+                   .shutdown_flag(shutdown_flag, timeout / 2)
+                   .finish();
     auto act = sup->create_actor<sha_actor_t>()
                    .block_size(block_size)
                    .path(path)
@@ -233,24 +248,20 @@ int main(int argc, char **argv) {
     memset(&action, 0, sizeof(action));
     action.sa_handler = [](int) { shutdown_flag = true; };
     if (sigaction(SIGINT, &action, nullptr) != 0) {
-        std::cout << "critical :: cannot set signal handler\n";
+        std::cout << "sigaction failed\n";
         return -1;
     }
-    auto console_thread = std::thread([&] {
-        while (!shutdown_flag) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        std::cout << "going to terminate...\n";
-        sup->shutdown();
-    });
+#else
+    if (!SetConsoleCtrlHandler(consoleHandler, true)) {
+        std::cout << "SetConsoleCtrlHandler failed\n";
+        return -1;
+    }
 #endif
 
     ctx.run();
-
-#ifndef _WIN32
-    shutdown_flag = true;
-    console_thread.join();
-#endif
+    if (shutdown_flag) {
+        std::cout << "terminated due to ctrl+c press\n";
+    }
 
     std::cout << "normal exit\n";
     return 0;

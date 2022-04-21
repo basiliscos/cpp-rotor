@@ -10,6 +10,11 @@
 #include "rotor/policy.h"
 #include <variant>
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor::detail {
 
 enum class shutdown_state_t { none, sent, confirmed };
@@ -28,7 +33,7 @@ using spawn_demand_t = std::variant<demand::no, demand::now, demand::escalate_fa
  * Used by child_manager_plugin_t.
  *
  */
-struct child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_unsafe_counter> {
+struct ROTOR_API child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_unsafe_counter> {
     /** \brief an alias for used microsec clock */
     using clock_t = pt::microsec_clock;
 
@@ -113,3 +118,7 @@ struct child_info_t : boost::intrusive_ref_counter<child_info_t, boost::thread_u
 using child_info_ptr_t = boost::intrusive_ptr<child_info_t>;
 
 } // namespace rotor::detail
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

@@ -1,5 +1,22 @@
 # Compiling & building
 
+## Conan
+
+The recommended way to install [rotor](https://github.com/basiliscos/cpp-rotor/) is to
+use [conan](https://conan.io/center/rotor) package manager.
+
+Among the [various ways](https://docs.conan.io/en/latest/using_packages.html) to
+[include rotor](https://conan.io/center/rotor?tab=recipe) in a project, but the
+most trivial one is to just check install it to local conan cache via:
+
+~~~
+conan install rotor/0.21@
+~~~
+
+Please note, that it might take some some time before the new `rotor` release
+appears in [conan center](https://conan.io/center/rotor) as this is intentionally
+non-automated and human-supervised process for inclusion.
+
 ## Dependencies
 
 [boost-smartptr]: https://www.boost.org/doc/libs/release/libs/smart_ptr/ "Boost Smart Pointers"
@@ -24,7 +41,8 @@ The optional event-loop specific supervisors depend on corresponding loop librar
 - `BUILD_EV` build with [libev] support (`off` by default)
 - `BUILD_EXAMPLES` build examples (`off` by default)
 - `BUILD_DOC` generate doxygen documentation (`off` by default, only for release builds)
-- `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default)
+- `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default). Enable this option if you are sure, that
+rotor-objects (i.e. messages and actors) are accessed only from single thread.
 - `ROTOR_DEBUG_DELIVERY` allow runtime messages inspection (`off` by default, enabled by default for debug builds)
 
 ~~~

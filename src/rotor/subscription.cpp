@@ -35,7 +35,7 @@ subscription_info_ptr_t subscription_t::materialize(const subscription_point_t &
         auto &info_list = internal_infos[address];
         info_list.emplace_back(info);
 
-        auto insert_result = mine_handlers.try_emplace({address.get(), handler->message_type});
+        auto insert_result = mine_handlers.try_emplace({address.get(), handler->message_type()});
         auto &joint_handlers = insert_result.first->second;
         auto &handlers = internal_handler ? joint_handlers.internal : joint_handlers.external;
         handlers.emplace_back(handler.get());
@@ -50,7 +50,7 @@ void subscription_t::update(subscription_point_t &point, handler_ptr_t &new_hand
     bool internal_address = address->same_locality(*main_address);
     bool internal_handler = handler->actor_ptr->get_address()->same_locality(*main_address);
     if (internal_address) {
-        auto it = mine_handlers.find({address.get(), handler->message_type});
+        auto it = mine_handlers.find({address.get(), handler->message_type()});
         assert(it != mine_handlers.end());
         auto &joint_handlers = it->second;
         auto &handlers = internal_handler ? joint_handlers.internal : joint_handlers.external;
@@ -89,7 +89,7 @@ void subscription_t::forget(const subscription_info_ptr_t &info) noexcept {
     }
 
     auto handler_ptr = info->handler.get();
-    auto it = mine_handlers.find({info->address.get(), handler_ptr->message_type});
+    auto it = mine_handlers.find({info->address.get(), handler_ptr->message_type()});
     auto &joint_handlers = it->second;
     auto internal_handler = info->access<to::internal_handler>();
     auto &handlers = internal_handler ? joint_handlers.internal : joint_handlers.external;

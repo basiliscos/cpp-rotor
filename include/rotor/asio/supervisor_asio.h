@@ -1,18 +1,24 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "rotor/supervisor.h"
+#include "rotor/asio/export.h"
 #include "supervisor_config_asio.h"
 #include "system_context_asio.h"
 #include "forwarder.hpp"
 #include <boost/asio.hpp>
 #include <unordered_map>
 #include <memory>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor {
 namespace asio {
@@ -47,7 +53,7 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  * via `strand`.
  *
  */
-struct supervisor_asio_t : public supervisor_t {
+struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
 
     /** \brief injects an alias for supervisor_config_asio_t */
     using config_t = supervisor_config_asio_t;
@@ -129,3 +135,7 @@ template <typename Actor> inline boost::asio::io_context::strand &get_strand(Act
 
 } // namespace asio
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

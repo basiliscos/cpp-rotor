@@ -68,7 +68,7 @@ std::string inspected_local_delivery_t::identify(const message_base_t *message, 
             out << "A";
             break;
         }
-        out << "] m: " << demangle((const char *)p.handler->message_type) << ", addr: " << (void *)p.address.get()
+        out << "] m: " << demangle((const char *)p.handler->message_type()) << ", addr: " << (void *)p.address.get()
             << " ";
         return out.str();
     };

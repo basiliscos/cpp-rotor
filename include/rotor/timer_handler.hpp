@@ -29,10 +29,8 @@ struct timer_handler_base_t {
     /** \brief an action when timer was triggerd or cancelled */
     virtual void trigger(bool cancelled) noexcept = 0;
 
-    virtual inline ~timer_handler_base_t();
+    virtual ~timer_handler_base_t() = default;
 };
-
-inline timer_handler_base_t::~timer_handler_base_t() {}
 
 /** \brief alias for timer smart pointer */
 using timer_handler_ptr_t = std::unique_ptr<timer_handler_base_t>;

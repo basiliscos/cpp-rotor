@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,6 +11,11 @@
 #include "rotor/error_code.h"
 #include <string>
 #include <unordered_map>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor::plugin {
 
@@ -27,7 +32,7 @@ namespace rotor::plugin {
  * by {@link plugin::link_client_plugin_t} plugin.
  *
  */
-struct registry_plugin_t : public plugin_base_t {
+struct ROTOR_API registry_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** \brief phase for each discovery task: discovering or linking */
@@ -36,7 +41,7 @@ struct registry_plugin_t : public plugin_base_t {
     /** \struct discovery_task_t
      * \brief helper class to invoke callback upon address discovery
      */
-    struct discovery_task_t {
+    struct ROTOR_API discovery_task_t {
         /** \brief callback for the discovery progress */
         using callback_t = std::function<void(phase_t phase, const extended_error_ptr_t &)>;
 
@@ -152,3 +157,7 @@ struct registry_plugin_t : public plugin_base_t {
 };
 
 } // namespace rotor::plugin
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

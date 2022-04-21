@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-add_library(rotor_test_lib
+add_library(rotor_test_lib STATIC
     access.cpp
     actor_test.cpp
     supervisor_test.cpp
@@ -107,9 +107,11 @@ if (BUILD_BOOST_ASIO)
     target_link_libraries(102-asio_ping-pong-2-strands ${rotor_BOOTS_TEST_LIBS})
     add_test(102-asio_ping-pong-2-strands "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/102-asio_ping-pong-2-strands")
 
-    add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
-    target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
-    add_test(103-asio_ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/103-asio_ping-pong-2-threads")
+    if (NOT BUILD_THREAD_UNSAFE)
+        add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
+        target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
+        add_test(103-asio_ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/103-asio_ping-pong-2-threads")
+    endif()
 
     add_executable(104-asio_timer 104-asio_timer.cpp)
     target_link_libraries(104-asio_timer ${rotor_BOOTS_TEST_LIBS})
@@ -149,4 +151,8 @@ if (BUILD_THREAD)
     add_executable(142-thread_timer 142-thread_timer.cpp)
     target_link_libraries(142-thread_timer rotor::test rotor::thread)
     add_test(142-thread_timer "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/142-thread_timer")
+
+    add_executable(143-thread-shutdown_flag 143-thread-shutdown_flag.cpp)
+    target_link_libraries(143-thread-shutdown_flag rotor::test rotor::thread)
+    add_test(143-thread-shutdown_flag "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/143-thread-shutdown_flag")
 endif()

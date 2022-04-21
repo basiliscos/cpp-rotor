@@ -1,12 +1,13 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "rotor/supervisor.h"
+#include "rotor/ev/export.h"
 #include "rotor/ev/supervisor_config_ev.h"
 #include "rotor/ev/system_context_ev.h"
 #include "rotor/system_context.h"
@@ -31,7 +32,7 @@ namespace ev {
  * via rotor-messaging.
  *
  */
-struct supervisor_ev_t : public supervisor_t {
+struct ROTOR_EV_API supervisor_ev_t : public supervisor_t {
     /** \brief injects an alias for supervisor_config_ev_t */
     using config_t = supervisor_config_ev_t;
 

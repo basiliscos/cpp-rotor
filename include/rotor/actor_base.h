@@ -16,6 +16,11 @@
 #include "timer_handler.hpp"
 #include <set>
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor {
 
 /** \struct actor_base_t
@@ -39,7 +44,7 @@ namespace rotor {
  * to have multiple identities aka "virtual" addresses.
  *
  */
-struct actor_base_t : public arc_base_t<actor_base_t> {
+struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief injects an alias for actor_config_t */
     using config_t = actor_config_t;
 
@@ -241,7 +246,10 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
      * The shutdown response is sent and actor state is set to SHUT_DOWN.
      *
      * This is the last action in the shutdown sequence.
-     * No further methods will be invoked on the actor
+     * No further methods will be invoked on the actor.
+     *
+     * All unfinished requests and untriggered timers will be cancelled
+     * by force in the method.
      *
      */
     virtual void shutdown_finish() noexcept;
@@ -372,6 +380,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief timer-id to timer-handler map (type) */
     using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
 
+    /** \brief list of ids of active requests (type) */
+    using requests_t = std::unordered_set<request_id_t>;
+
     /** \brief triggers timer handler associated with the timer id */
     void on_timer_trigger(request_id_t request_id, bool cancelled) noexcept;
 
@@ -453,6 +464,9 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;
 
+    /** \brief list of ids of active requests */
+    requests_t active_requests;
+
     /** \brief set of currently proccessing states, i.e. init or shutdown
      *
      * This is not the same as `state_t` flag, which just marks the state.
@@ -473,3 +487,7 @@ struct actor_base_t : public arc_base_t<actor_base_t> {
 };
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

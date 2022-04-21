@@ -11,6 +11,11 @@
 #include <set>
 #include <list>
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor {
 
 /** \struct registry_t
@@ -38,7 +43,7 @@ namespace rotor {
  * (discovery promise/future).
  *
  */
-struct registry_t : public actor_base_t {
+struct ROTOR_API registry_t : public actor_base_t {
     using actor_base_t::actor_base_t;
 
     void configure(plugin::plugin_base_t &plugin) noexcept override;
@@ -91,3 +96,7 @@ struct registry_t : public actor_base_t {
 };
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

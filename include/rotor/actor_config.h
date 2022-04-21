@@ -15,6 +15,11 @@
 #include "policy.h"
 #include "forward.hpp"
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor {
 
 /** \brief list of raw plugin pointers*/
@@ -205,3 +210,7 @@ template <typename Actor> struct actor_config_builder_t {
 };
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

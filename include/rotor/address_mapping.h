@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -10,6 +10,11 @@
 #include "subscription.h"
 #include <unordered_map>
 #include <vector>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor {
 
@@ -25,7 +30,7 @@ namespace rotor {
  * `per-message-type` mapping.
  *
  */
-struct address_mapping_t {
+struct ROTOR_API address_mapping_t {
     /** \brief associates temporal destination point with actor's message type
      *
      * An actor is able to process message type indetified by `message`. So,
@@ -39,7 +44,7 @@ struct address_mapping_t {
     void set(actor_base_t &actor, const subscription_info_ptr_t &info) noexcept;
 
     /** \brief returns temporal destination address for the actor/message type */
-    address_ptr_t get_mapped_address(actor_base_t &actor, const void *message) noexcept;
+    address_ptr_t get_mapped_address(actor_base_t &actor, const void *) noexcept;
 
     /** \brief iterates on all subscriptions for an actor */
     template <typename Fn> void each_subscription(const actor_base_t &actor, Fn &&fn) const noexcept {
@@ -65,3 +70,7 @@ struct address_mapping_t {
 };
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

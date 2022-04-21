@@ -11,13 +11,18 @@
 #include <vector>
 #include <list>
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace rotor {
 
 struct actor_base_t;
 
 namespace tags {
 
-extern const void *io;
+ROTOR_API extern const void *io;
 
 }
 
@@ -42,7 +47,7 @@ enum class owner_tag_t {
 /** \struct subscription_point_t
  *  \brief pair of {@link handler_base_t} linked to particular {@link address_t}
  */
-struct subscription_point_t {
+struct ROTOR_API subscription_point_t {
     /** \brief intrusive pointer to messages' handler */
     handler_ptr_t handler;
 
@@ -77,7 +82,7 @@ struct subscription_point_t {
 /** \struct subscription_info_t
  *  \brief {@link subscription_point_t} with extended information (e.g. state)
  */
-struct subscription_info_t : public arc_base_t<subscription_info_t>, subscription_point_t {
+struct ROTOR_API subscription_info_t : public arc_base_t<subscription_info_t>, subscription_point_t {
     /** \brief subscription info state (subscribing, established, unsubscribing */
     enum state_t { SUBSCRIBING, ESTABLISHED, UNSUBSCRIBING };
 
@@ -124,9 +129,13 @@ using subscription_info_ptr_t = intrusive_ptr_t<subscription_info_t>;
 /** \struct subscription_container_t
  *  \brief list of {@link subscription_info_ptr_t} with possibility to find via {@link subscription_point_t}
  */
-struct subscription_container_t : public std::list<subscription_info_ptr_t> {
+struct ROTOR_API subscription_container_t : public std::list<subscription_info_ptr_t> {
     /** \brief looks up for the subscription info pointer (returned as iterator) via the subscription point */
     iterator find(const subscription_point_t &point) noexcept;
 };
 
 } // namespace rotor
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

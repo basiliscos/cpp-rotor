@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -11,6 +11,11 @@
 #include <unordered_set>
 #include <functional>
 #include <optional>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor::plugin {
 
@@ -24,7 +29,7 @@ namespace rotor::plugin {
  * timeout will trigger).
  *
  */
-struct link_server_plugin_t : public plugin_base_t {
+struct ROTOR_API link_server_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
@@ -72,3 +77,7 @@ struct link_server_plugin_t : public plugin_base_t {
 };
 
 } // namespace rotor::plugin
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

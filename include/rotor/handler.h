@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -14,6 +14,11 @@
 #include <typeindex>
 #include <typeinfo>
 #include <type_traits>
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
 
 namespace rotor {
 
@@ -113,10 +118,7 @@ template <typename M, typename H> struct handler_traits<lambda_holder_t<M, H>> {
  *
  * It holds reference to {@link actor_base_t}.
  */
-struct handler_base_t : public arc_base_t<handler_base_t> {
-    /** \brief pointer to unique message type ( `typeid(Message).name()` ) */
-    const void *message_type;
-
+struct ROTOR_API handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief pointer to unique handler type ( `typeid(Handler).name()` ) */
     const void *handler_type;
 
@@ -129,7 +131,7 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief constructs `handler_base_t` from raw pointer to actor, raw
      * pointer to message type and raw pointer to handler type
      */
-    explicit handler_base_t(actor_base_t &actor, const void *message_type_, const void *handler_type_) noexcept;
+    explicit handler_base_t(actor_base_t &actor, const void *handler_type_) noexcept;
 
     /** \brief compare two handler for equality */
     inline bool operator==(const handler_base_t &rhs) const noexcept {
@@ -162,6 +164,9 @@ struct handler_base_t : public arc_base_t<handler_base_t> {
      *
      */
     virtual void call_no_check(message_ptr_t &) noexcept = 0;
+
+    /** \brief unique per-message-type pointer used for routing */
+    virtual const void *message_type() const noexcept = 0;
 };
 
 /** \struct continuation_t
@@ -184,6 +189,7 @@ struct handler_intercepted_t : public handler_base_t {
     void call(message_ptr_t &) noexcept override;
     bool select(message_ptr_t &message) noexcept override;
     void call_no_check(message_ptr_t &message) noexcept override;
+    const void *message_type() const noexcept override;
 
   private:
     handler_ptr_t backend;
@@ -221,7 +227,7 @@ template <typename Handler, typename Enable = void> struct handler_t;
  *  \tparam Handler pointer-to-member function type
  */
 template <typename Handler>
-struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>> : public handler_base_t {
+struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>> final : public handler_base_t {
 
     /** \brief static pointer to unique pointer-to-member function name ( `typeid(Handler).name()` ) */
     static const void *handler_type;
@@ -231,7 +237,7 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
 
     /** \brief constructs handler from actor & pointer-to-member function  */
     explicit handler_t(actor_base_t &actor, Handler &&handler_)
-        : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{handler_} {}
+        : handler_base_t{actor, handler_type}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->type_index == final_message_t::message_type) {
@@ -251,6 +257,8 @@ struct handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Handler>>
         (final_obj.*handler)(*final_message);
     }
 
+    const void *message_type() const noexcept override { return final_message_t::message_type; }
+
   private:
     using traits = handler_traits<Handler>;
     using backend_t = typename traits::backend_t;
@@ -265,7 +273,7 @@ const void *handler_t<Handler, std::enable_if_t<details::is_actor_handler_v<Hand
  * \brief handler specialization for plugin
  */
 template <typename Handler>
-struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>> : public handler_base_t {
+struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>>> final : public handler_base_t {
     /** \brief typeid of Handler */
     static const void *handler_type;
 
@@ -277,8 +285,7 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
 
     /** \brief ctor form plugin and plugin handler (pointer-to-member function of the plugin) */
     explicit handler_t(plugin::plugin_base_t &plugin_, Handler &&handler_)
-        : handler_base_t{*plugin_.access<details::to::actor>(), final_message_t::message_type, handler_type},
-          plugin{plugin_}, handler{handler_} {}
+        : handler_base_t{*plugin_.access<details::to::actor>(), handler_type}, plugin{plugin_}, handler{handler_} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->type_index == final_message_t::message_type) {
@@ -298,6 +305,8 @@ struct handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Handler>
         (final_obj.*handler)(*final_message);
     }
 
+    const void *message_type() const noexcept override { return final_message_t::message_type; }
+
   private:
     using traits = handler_traits<Handler>;
     using backend_t = typename traits::backend_t;
@@ -313,7 +322,8 @@ const void *handler_t<Handler, std::enable_if_t<details::is_plugin_handler_v<Han
  */
 template <typename Handler, typename M>
 struct handler_t<lambda_holder_t<Handler, M>,
-                 std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>> : public handler_base_t {
+                 std::enable_if_t<details::is_lambda_handler_v<lambda_holder_t<Handler, M>>>>
+    final : public handler_base_t {
     /** \brief alias type for lambda, which will actually process messages */
     using handler_backend_t = lambda_holder_t<Handler, M>;
 
@@ -325,8 +335,7 @@ struct handler_t<lambda_holder_t<Handler, M>,
 
     /** \brief constructs handler from actor & lambda wrapper */
     explicit handler_t(actor_base_t &actor, handler_backend_t &&handler_)
-        : handler_base_t{actor, final_message_t::message_type, handler_type}, handler{std::forward<handler_backend_t>(
-                                                                                  handler_)} {}
+        : handler_base_t{actor, handler_type}, handler{std::forward<handler_backend_t>(handler_)} {}
 
     void call(message_ptr_t &message) noexcept override {
         if (message->type_index == final_message_t::message_type) {
@@ -343,6 +352,8 @@ struct handler_t<lambda_holder_t<Handler, M>,
         auto final_message = static_cast<final_message_t *>(message.get());
         handler.fn(*final_message);
     }
+
+    const void *message_type() const noexcept override { return final_message_t::message_type; }
 
   private:
     using final_message_t = typename handler_backend_t::message_t;
@@ -365,3 +376,7 @@ template <> struct hash<rotor::handler_ptr_t> {
     size_t operator()(const rotor::handler_ptr_t &handler) const noexcept { return handler->precalc_hash; }
 };
 } // namespace std
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
