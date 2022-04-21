@@ -164,6 +164,8 @@ struct ROTOR_API handler_base_t : public arc_base_t<handler_base_t> {
      *
      */
     virtual void call_no_check(message_ptr_t &) noexcept = 0;
+
+    /** \brief unique per-message-type pointer used for routing */
     virtual const void *message_type() const noexcept = 0;
 };
 

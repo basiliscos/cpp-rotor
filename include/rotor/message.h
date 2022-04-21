@@ -68,6 +68,7 @@ template <typename T> struct message_t : public message_base_t {
     /** \brief user-defined payload */
     T payload;
 
+    /** \brief unique per-message-type pointer used for routing */
     static const void *message_type;
 };
 

@@ -246,7 +246,10 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      * The shutdown response is sent and actor state is set to SHUT_DOWN.
      *
      * This is the last action in the shutdown sequence.
-     * No further methods will be invoked on the actor
+     * No further methods will be invoked on the actor.
+     *
+     * All unfinished requests and untriggered timers will be cancelled
+     * by force in the method.
      *
      */
     virtual void shutdown_finish() noexcept;
@@ -377,6 +380,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief timer-id to timer-handler map (type) */
     using timers_map_t = std::unordered_map<request_id_t, timer_handler_ptr_t>;
 
+    /** \brief list of ids of active requests (type) */
     using requests_t = std::unordered_set<request_id_t>;
 
     /** \brief triggers timer handler associated with the timer id */
@@ -460,6 +464,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;
 
+    /** \brief list of ids of active requests */
     requests_t active_requests;
 
     /** \brief set of currently proccessing states, i.e. init or shutdown

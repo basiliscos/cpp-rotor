@@ -51,8 +51,15 @@ struct supervisor_config_t : actor_config_t {
      */
     pt::time_duration poll_duration = pt::millisec{1};
 
+    /** \brief pointer to atomic shutdown flag for polling (optional)
+     *
+     *  When it is set, supervisor will periodically check that the flag
+     *  is set and then shut self down.
+     *
+     */
     const std::atomic_bool *shutdown_flag = nullptr;
 
+    /** \brief the period for checking atomic shutdown flag */
     pt::time_duration shutdown_poll_frequency = pt::millisec{100};
 };
 
@@ -103,6 +110,16 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
         return std::move(*static_cast<builder_t *>(this));
     }
 
+    /** \brief atomic shutdown flag and the period for polling it
+     *
+     * The thread-safe way to shutdown supervisor even when compiled with
+     * `BUILD_THREAD_UNSAFE` option. Might be useful in single-threaded
+     * applications.
+     *
+     * For more reactive behavior in thread-safe environment the
+     * `supervisor::shutdown()` should be used.
+     *
+     */
     builder_t &&shutdown_flag(const std::atomic_bool &value, const pt::time_duration &interval) && {
         parent_t::config.shutdown_flag = &value;
         parent_t::config.shutdown_poll_frequency = interval;

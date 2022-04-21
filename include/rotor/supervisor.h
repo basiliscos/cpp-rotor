@@ -302,8 +302,10 @@ struct ROTOR_API supervisor_t : public actor_base_t {
     /** \brief how much time spend in active inbound queue polling */
     pt::time_duration poll_duration;
 
+    /** \brief when flag is set, the supervisor will shut self down */
     const std::atomic_bool *shutdown_flag = nullptr;
 
+    /** \brief frequency to check atomic shutdown flag */
     pt::time_duration shutdown_poll_frequency = pt::millisec{100};
 
   private:
