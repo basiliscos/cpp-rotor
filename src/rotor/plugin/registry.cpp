@@ -212,7 +212,7 @@ void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_ad
 }
 
 void registry_plugin_t::discovery_task_t::post_discovery(const extended_error_ptr_t &ec) noexcept {
-    auto &plugin = this->plugin;
+    auto plugin = this->plugin;
     auto &dm = plugin->discovery_map;
     auto it = dm.find(service_name);
     assert(it != dm.end());
