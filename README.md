@@ -64,6 +64,11 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
+## 0.23 (23-Apr-2022)
+ - [bugfix] fix compilation issues of `messages.cpp` on some platforms
+ - [bugfix, msvc] fix compilation issues of `registry` plugin for `shared` library
+on msvc-16+
+
 ### 0.22 (21-Apr-2022)
  - [feature] possibly to install via [conan center](https://conan.io/center/rotor)
  - [feature, breaking] possibility to build `rotor` as shared library
