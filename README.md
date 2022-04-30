@@ -12,7 +12,7 @@
     [abf](https://abf.io/basiliscos/cpp-rotor)
     [gitee](https://gitee.com/basiliscos/cpp-rotor)
 
-[![https://t.me/cpp_rotor](https://raw.githubusercontent.com/wiki/erthink/libmdbx/img/telegram.png)](https://t.me/cpp_rotor)
+[telegram](https://t.me/cpp_rotor)
 [![CircleCI](https://circleci.com/gh/basiliscos/cpp-rotor.svg?style=svg)](https://circleci.com/gh/basiliscos/cpp-rotor)
 [![appveyor](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43/branch/master?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
 [![codecov](https://codecov.io/gh/basiliscos/cpp-rotor/branch/master/graph/badge.svg)](https://codecov.io/gh/basiliscos/cpp-rotor)
