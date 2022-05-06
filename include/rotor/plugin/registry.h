@@ -140,6 +140,8 @@ struct ROTOR_API registry_plugin_t : public plugin_base_t {
         state_t state;
     };
     using register_map_t = std::unordered_map<std::string, register_info_t>;
+    using names_t = std::vector<std::string>;
+    using aliases_map_t = std::unordered_map<address_ptr_t, names_t>;
 
     enum plugin_state_t : std::uint32_t {
         CONFIGURED = 1 << 0,
@@ -150,6 +152,7 @@ struct ROTOR_API registry_plugin_t : public plugin_base_t {
 
     register_map_t register_map;
     discovery_map_t discovery_map;
+    aliases_map_t aliases_map;
 
     void link_registry() noexcept;
     void on_link(const extended_error_ptr_t &ec) noexcept;
