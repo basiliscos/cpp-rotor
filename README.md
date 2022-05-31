@@ -38,11 +38,11 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 
 |      inter-thread (1)   | cross-thread (2)       | single thread (3)
 |:-----------------------:|:----------------------:|:---------------------:
-|  ~23.5M messages/second | ~ 2.5M messages/second | ~30.8М messages/second
+|  ~23.6M messages/second | ~ 2.5M messages/second | ~34.6М messages/second
 
 
 
-Setup: Intel Core i7-8550U, Void Linux 5.13.
+Setup: Intel Core i7-8550U, Void Linux 5.15.
 
 (1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
 

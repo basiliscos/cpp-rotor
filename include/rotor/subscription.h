@@ -10,7 +10,7 @@
 #include "rotor/address.hpp"
 #include "rotor/subscription_point.h"
 #include "rotor/message.h"
-#include <unordered_map>
+#include <boost/unordered_map.hpp>
 #include <vector>
 
 #if defined(_MSC_VER)
@@ -82,9 +82,9 @@ struct ROTOR_API subscription_t {
         }
     };
 
-    using addressed_handlers_t = std::unordered_map<subscrption_key_t, joint_handlers_t, subscrption_key_hash_t>;
+    using addressed_handlers_t = boost::unordered_map<subscrption_key_t, joint_handlers_t, subscrption_key_hash_t>;
 
-    using info_container_t = std::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
+    using info_container_t = boost::unordered_map<address_ptr_t, std::vector<subscription_info_ptr_t>>;
     address_t *main_address;
     info_container_t internal_infos;
     addressed_handlers_t mine_handlers;
