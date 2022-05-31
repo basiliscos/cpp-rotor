@@ -47,7 +47,12 @@ struct supervisor_config_t : actor_config_t {
 
     /**
      * \brief How much time it will spend in polling inbound queue before switching into
-     * sleep mode (i.e. waiting external messages)
+     * sleep mode (i.e. waiting external messages).
+     *
+     * This value might affect I/O latency on event-loops, so set it to zero to
+     * minimizer I/O latency on event-loops by the rising cross-thread rotor messagging
+     * latency.
+     *
      */
     pt::time_duration poll_duration = pt::millisec{1};
 

@@ -125,8 +125,11 @@ struct ROTOR_API supervisor_t : public actor_base_t {
      *
      * The method should be invoked in event-loop context only.
      *
+     * Tthe method returns amount of messages it enqueued for other locality leaders
+     * (i.e. to be processed externally).
+     *
      */
-    inline void do_process() noexcept { locality_leader->delivery->process(); }
+    inline size_t do_process() noexcept { return locality_leader->delivery->process(); }
 
     /** \brief creates new {@link address_t} linked with the supervisor */
     virtual address_ptr_t make_address() noexcept;
@@ -433,7 +436,8 @@ subscription_info_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler, con
     return info;
 }
 
-template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() noexcept {
+template <> inline size_t delivery_plugin_t<plugin::local_delivery_t>::process() noexcept {
+    size_t enqueued_messages{0};
     while (queue->size()) {
         auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
@@ -446,11 +450,14 @@ template <> inline void delivery_plugin_t<plugin::local_delivery_t>::process() n
             }
         } else {
             dest->supervisor.enqueue(std::move(message));
+            ++enqueued_messages;
         }
     }
+    return enqueued_messages;
 }
 
-template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::process() noexcept {
+template <> inline size_t delivery_plugin_t<plugin::inspected_local_delivery_t>::process() noexcept {
+    size_t enqueued_messages{0};
     while (queue->size()) {
         auto message = message_ptr_t(queue->front().detach(), false);
         auto &dest = message->address;
@@ -463,6 +470,7 @@ template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::p
             delivery_attempt = true;
         } else {
             dest->supervisor.enqueue(std::move(message));
+            ++enqueued_messages;
         }
         if (local_recipients) {
             plugin::inspected_local_delivery_t::delivery(message, *local_recipients);
@@ -472,6 +480,7 @@ template <> inline void delivery_plugin_t<plugin::inspected_local_delivery_t>::p
             }
         }
     }
+    return enqueued_messages;
 }
 
 } // namespace plugin

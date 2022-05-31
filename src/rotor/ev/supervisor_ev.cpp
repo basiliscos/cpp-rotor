@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -119,21 +119,24 @@ void supervisor_ev_t::on_async() noexcept {
     move_inbound_queue();
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
     auto &queue = leader->queue;
+    auto enqueued_messages = size_t{0};
     if (!queue.empty()) {
-        do_process();
+        enqueued_messages = do_process();
     }
 
-    ev_now_update(loop);
-    auto now = ev_now(loop);
-    auto deadline = now + poll_duration;
-    while (now < deadline && queue.empty()) {
-        move_inbound_queue();
+    if (enqueued_messages) {
         ev_now_update(loop);
-        now = ev_now(loop);
-    }
+        auto now = ev_now(loop);
+        auto deadline = now + poll_duration;
+        while (now < deadline && queue.empty()) {
+            move_inbound_queue();
+            ev_now_update(loop);
+            now = ev_now(loop);
+        }
 
-    if (!queue.empty()) {
-        do_process();
+        if (!queue.empty()) {
+            do_process();
+        }
     }
 }
 
