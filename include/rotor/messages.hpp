@@ -111,7 +111,8 @@ struct shutdown_request_t {
     using response_t = shutdown_confirmation_t;
 
     /** \brief constructs shutdown request with shutdown reason */
-    template <typename Reason> shutdown_request_t(Reason &&reason_) noexcept : reason(std::forward<Reason>(reason_)) {}
+    template <typename Reason>
+    explicit shutdown_request_t(Reason &&reason_) noexcept : reason(std::forward<Reason>(reason_)) {}
 
     /** \brief shutdown reason */
     extended_error_ptr_t reason;

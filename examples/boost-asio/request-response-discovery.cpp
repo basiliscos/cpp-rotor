@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -106,8 +106,8 @@ int main() {
                    .create_registry()
                    .timeout(timeout)
                    .finish();
-    auto server = sup->create_actor<server_actor>().timeout(timeout).finish();
-    auto client = sup->create_actor<client_actor>().timeout(timeout).autoshutdown_supervisor().finish();
+    sup->create_actor<server_actor>().timeout(timeout).finish();
+    sup->create_actor<client_actor>().timeout(timeout).autoshutdown_supervisor().finish();
     sup->do_process();
     return 0;
 }
