@@ -478,3 +478,9 @@ shutdown reason: supervisor 0x55d3b09a4350 normal shutdown
 ```
 
 The whole code is available at [examples/thread/ping-pong-spawner.cpp].
+
+## need more?
+
+There is my another open-source project [syncspirit](https://github.com/basiliscos/syncspirit),
+which uses `rotor` under hood. I recommend to look at it, if the shipped examples are too-trivial, and
+don't give you an architectural insight of using `rotor`.
