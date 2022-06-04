@@ -17,6 +17,8 @@ struct init_request {};
 struct init_timeout {};
 struct get_plugin {};
 struct on_discovery {};
+struct aliases_map {};
+struct discovery_map {};
 } // namespace to
 } // namespace
 
@@ -32,6 +34,9 @@ auto registry_plugin_t::discovery_task_t::access<to::on_discovery, address_ptr_t
     address_ptr_t *address, const extended_error_ptr_t &ec) noexcept {
     return on_discovery(address, ec);
 }
+
+template <> auto &registry_plugin_t::access<to::aliases_map>() noexcept { return aliases_map; }
+template <> auto &registry_plugin_t::access<to::discovery_map>() noexcept { return discovery_map; }
 
 template <typename Message> void process_discovery(registry_plugin_t::discovery_map_t &dm, Message &message) noexcept;
 
@@ -169,6 +174,8 @@ bool registry_plugin_t::handle_shutdown(message::shutdown_request_t *req) noexce
             return false;
         // discovery_map.clear();
     }
+
+    aliases_map.clear();
     return plugin_base_t::handle_shutdown(req);
 }
 
@@ -198,13 +205,25 @@ void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_ad
     auto actor_state = plugin->actor->access<to::state>();
     if (actor_state == rotor::state_t::INITIALIZING) {
         if (!ec) {
-            auto p = plugin->actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
-            auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
-            link_plugin.link(*address, operational_only, [this](auto &ec) {
-                if (task_callback)
-                    task_callback(phase_t::linking, ec);
-                post_discovery(ec);
-            });
+            auto &aliases = plugin->access<to::aliases_map>();
+            if (!aliases.count(*address)) {
+                auto p = plugin->actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
+                auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
+                link_plugin.link(*address, operational_only, [this](auto &ec) {
+                    auto &am = plugin->access<to::aliases_map>();
+                    auto &dm = plugin->access<to::discovery_map>();
+                    for (auto &alias : am.at(*address)) {
+                        auto &callback = dm.at(alias).task_callback;
+                        if (callback) {
+                            callback(phase_t::linking, ec);
+                        }
+                    }
+                    post_discovery(ec);
+                });
+                aliases.emplace(*address, names_t{service_name});
+            } else {
+                aliases.at(*address).emplace_back(service_name);
+            }
             return;
         }
     }
@@ -216,7 +235,17 @@ void registry_plugin_t::discovery_task_t::post_discovery(const extended_error_pt
     auto &dm = plugin->discovery_map;
     auto it = dm.find(service_name);
     assert(it != dm.end());
-    dm.erase(it);
+
+    auto &am = plugin->aliases_map;
+    auto ait = am.find(*it->second.address);
+    if (ait != am.end()) {
+        for (auto &alias : ait->second) {
+            dm.erase(alias);
+        }
+    } else {
+        dm.erase(it);
+    }
+
     if (dm.empty() || ec) {
         auto actor_state = plugin->actor->access<to::state>();
         if (actor_state == rotor::state_t::INITIALIZING) {

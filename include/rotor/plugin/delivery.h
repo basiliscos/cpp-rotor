@@ -63,7 +63,7 @@ struct ROTOR_API delivery_plugin_base_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** \brief main messages dispatcher interface */
-    virtual void process() noexcept = 0;
+    virtual size_t process() noexcept = 0;
     void activate(actor_base_t *actor) noexcept override;
 
   protected:
@@ -84,7 +84,7 @@ template <typename LocalDelivery = local_delivery_t> struct delivery_plugin_t : 
     /** The plugin unique identity to allow further static_cast'ing*/
     static const void *class_identity;
     const void *identity() const noexcept override { return class_identity; }
-    inline void process() noexcept override;
+    inline size_t process() noexcept override;
 };
 
 template <typename LocalDelivery>

@@ -236,12 +236,12 @@ int main(int argc, char **argv) {
                    .timeout(timeout)
                    .shutdown_flag(shutdown_flag, timeout / 2)
                    .finish();
-    auto act = sup->create_actor<sha_actor_t>()
-                   .block_size(block_size)
-                   .path(path)
-                   .timeout(timeout)
-                   .autoshutdown_supervisor()
-                   .finish();
+    sup->create_actor<sha_actor_t>()
+        .block_size(block_size)
+        .path(path)
+        .timeout(timeout)
+        .autoshutdown_supervisor()
+        .finish();
 
 #ifndef _WIN32
     struct sigaction action;

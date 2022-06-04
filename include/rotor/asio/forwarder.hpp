@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -132,7 +132,7 @@ struct forwarder_t<Actor, Handler, details::count::_0, ErrHandler> : forwarder_b
         auto &sup = static_cast<supervisor_asio_t &>(typed_actor->get_supervisor());
         auto &strand = get_strand(sup);
         if (ec) {
-            asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::err_handler), ec = ec]() {
+            asio::defer(strand, [actor = base_t::typed_actor, handler = std::move(base_t::err_handler), ec]() {
                 ((*actor).*handler)(ec);
                 actor->get_supervisor().do_process();
             });

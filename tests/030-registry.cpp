@@ -265,7 +265,6 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
                    .timeout(rt::default_timeout)
                    .create_registry(true)
                    .finish();
-
     SECTION("common case (just discover)") {
         auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
         act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
@@ -318,6 +317,48 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
         CHECK(act_c->service_addr == act_s->get_address());
         CHECK(succeses == 2);
+
+        sup->do_shutdown();
+        sup->do_process();
+        CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(act_s->get_state() == r::state_t::SHUT_DOWN);
+        CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+    }
+
+    SECTION("aliasing (discover & link)") {
+        auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        act_s->configurer = [&](auto &actor, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::registry_plugin_t>([&actor](auto &p) {
+                p.register_name("service-name", actor.get_address());
+                p.register_name("service-alias", actor.get_address());
+            });
+        };
+
+        sup->do_process();
+        REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+        auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
+        int succeses = 0;
+        act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
+            plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
+                p.discover_name("service-name", act_c->service_addr)
+                    .link(true)
+                    .callback([&](auto /*phase*/, auto &ec) mutable {
+                        REQUIRE(!ec);
+                        ++succeses;
+                    });
+                p.discover_name("service-alias", act_c->service_addr)
+                    .link(true)
+                    .callback([&](auto /*phase*/, auto &ec) mutable {
+                        REQUIRE(!ec);
+                        ++succeses;
+                    });
+            });
+        };
+        sup->do_process();
+        CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
+        CHECK(act_c->service_addr == act_s->get_address());
+        CHECK(succeses == 4);
 
         sup->do_shutdown();
         sup->do_process();

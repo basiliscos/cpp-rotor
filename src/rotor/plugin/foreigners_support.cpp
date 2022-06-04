@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -49,7 +49,6 @@ void foreigners_support_plugin_t::deactivate() noexcept {
 
 void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noexcept {
     auto &handler = message.payload.handler;
-    auto &orig_message = message.payload.orig_message;
     auto child_actor = handler->actor_ptr;
     // need to check, that
     // 1. children exists
@@ -59,6 +58,7 @@ void foreigners_support_plugin_t::on_call(message::handler_call_t &message) noex
     auto &sup = static_cast<supervisor_t &>(*actor);
     if (sup.access<to::alive_actors>().count(child_actor)) {
         if (child_actor->access<to::state>() < state_t::SHUT_DOWN) {
+            auto &orig_message = message.payload.orig_message;
             auto point = subscription_point_t(handler, orig_message->address);
             auto lifetime = child_actor->access<to::lifetime>();
             if (lifetime) {
