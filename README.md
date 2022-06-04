@@ -64,7 +64,14 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## Changelog
 
-## 0.23 (23-Apr-2022)
+### 0.24 (04-Jun-2022)
+ - [feature] improve inter-thread messaging performance up to 15% by using `boost::unordered_map`
+instead of `std::unordered_map`
+ - [bugfix, breaking] avoid introducing unnecessary event loops latency by intensive polling of
+rotor queues; affects `asio` and `ev` loops
+ - [bugfix] `registry_plugin_t`, allow to discover aliased services (#46)
+
+### 0.23 (23-Apr-2022)
  - [bugfix] fix compilation issues of `messages.cpp` on some platforms
  - [bugfix, msvc] fix compilation issues of `registry` plugin for `shared` library
 on msvc-16+
