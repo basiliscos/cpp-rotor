@@ -62,6 +62,12 @@ MIT
 
 Please read tutorial, design principles and manual [here](https://basiliscos.github.io/cpp-rotor-docs/index.html)
 
+## embedded
+
+Looking for something actor-flawored, but suiteable for embedded applications?
+Take a look into my [rotor-light](https://notabug.org/basiliscos/cpp-rotor-light)
+project.
+
 ## Changelog
 
 ### 0.24 (04-Jun-2022)
