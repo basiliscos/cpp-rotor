@@ -160,3 +160,12 @@ void supervisor_t::on_shutdown_check_timer(request_id_t, bool cancelled) noexcep
         start_timer(shutdown_poll_frequency, *this, &supervisor_t::on_shutdown_check_timer);
     }
 }
+
+// makes last message in the queue the 1st one
+void supervisor_t::uplift_last_message() noexcept {
+    auto &queue = locality_leader->queue;
+    assert(!queue.empty());
+    auto message = message_ptr_t(queue.back().detach(), false);
+    queue.push_front(std::move(message));
+    queue.pop_back();
+}
