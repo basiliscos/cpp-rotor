@@ -107,7 +107,7 @@ void supervisor_asio_t::do_process() noexcept {
     auto leader = static_cast<supervisor_asio_t *>(locality_leader);
     auto &inbound = leader->inbound_queue;
     auto &queue = leader->queue;
-    auto enqueued_messages{0};
+    auto enqueued_messages = size_t{0};
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
         queue.emplace_back(ptr, false);
