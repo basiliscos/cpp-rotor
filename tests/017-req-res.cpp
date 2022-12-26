@@ -438,7 +438,7 @@ struct order_actor_t : r::actor_base_t {
 
     void on_response(traits_t::response::message_t &) noexcept { order *= 10; }
 
-    void on_notify(notify_msg_t &msg) noexcept { order += 3; }
+    void on_notify(notify_msg_t &) noexcept { order += 3; }
 
     int order;
 };
