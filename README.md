@@ -70,6 +70,10 @@ project.
 
 ## Changelog
 
+### 0.25 (26-Dec-2022)
+ - [bugfix] avoid response messages loose their order relative to regular message
+ - [bugfix, example] add missing header
+
 ### 0.24 (04-Jun-2022)
  - [feature] improve inter-thread messaging performance up to 15% by using `boost::unordered_map`
 instead of `std::unordered_map`

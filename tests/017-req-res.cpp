@@ -34,6 +34,8 @@ struct req2_t {
     int value;
 };
 
+struct notify_t {};
+
 struct res3_t : r::arc_base_t<res3_t> {
     int value;
     explicit res3_t(int value_) : value{value_} {}
@@ -59,6 +61,7 @@ static_assert(std::is_base_of_v<r::arc_base_t<req3_t>, req3_t>, "zzz");
 using traits_t = r::request_traits_t<request_sample_t>;
 using req_ptr_t = r::intrusive_ptr_t<traits_t::request::message_t>;
 using res_ptr_t = r::intrusive_ptr_t<traits_t::response::message_t>;
+using notify_msg_t = r::message_t<notify_t>;
 
 struct good_actor_t : public r::actor_base_t {
     using r::actor_base_t::actor_base_t;
@@ -414,6 +417,32 @@ struct res_actor_t : r::actor_base_t {
     req_ptr_t req;
 };
 
+struct order_actor_t : r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+
+    void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+        plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {
+            order = 5;
+            p.subscribe_actor(&order_actor_t::on_request);
+            p.subscribe_actor(&order_actor_t::on_response);
+            p.subscribe_actor(&order_actor_t::on_notify);
+        });
+    }
+
+    void on_start() noexcept override { request<request_sample_t>(address).send(rt::default_timeout); }
+
+    void on_request(traits_t::request::message_t &msg) noexcept {
+        reply_to(msg);
+        send<notify_t>(address);
+    }
+
+    void on_response(traits_t::response::message_t &) noexcept { order *= 10; }
+
+    void on_notify(notify_msg_t &) noexcept { order += 3; }
+
+    int order;
+};
+
 TEST_CASE("request-response successfull delivery", "[actor]") {
     r::system_context_t system_context;
 
@@ -760,6 +789,20 @@ TEST_CASE("request timer should not outlive requestee", "[actor]") {
     sup->do_process();
 
     CHECK(act->access<rt::to::active_requests>().empty());
+
+    sup->do_shutdown();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+}
+
+TEST_CASE("response and regual messages keep send order", "[actor]") {
+    r::system_context_t system_context;
+
+    auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<order_actor_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+
+    CHECK(act->order == 53);
 
     sup->do_shutdown();
     sup->do_process();

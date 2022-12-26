@@ -18,6 +18,7 @@
 #include <utility>
 #include <optional>
 #include <unordered_map>
+#include <thread>
 
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
