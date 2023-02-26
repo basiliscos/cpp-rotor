@@ -81,6 +81,7 @@ jobs:
               apt-get update
               apt-get install -y cmake clang python3-pip
               pip3 install conan
+              conan profile detect
               conan create .
 
 
