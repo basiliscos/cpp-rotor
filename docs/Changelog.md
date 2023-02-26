@@ -4,6 +4,9 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+## 0.26 (xx-xxx-xxxx)
+-  [bugfix, breaking] make plugins more dll-friendly
+
 ## 0.25 (26-Dec-2022)
  - [bugfix] avoid response messages loose their order relative to regular message
  - [bugfix, example] add missing header

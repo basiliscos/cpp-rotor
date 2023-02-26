@@ -70,6 +70,9 @@ project.
 
 ## Changelog
 
+### 0.26 (xx-xxx-2023)
+ -  [bugfix, breaking] make plugins more dll-friendly
+ 
 ### 0.25 (26-Dec-2022)
  - [bugfix] avoid response messages loose their order relative to regular message
  - [bugfix, example] add missing header

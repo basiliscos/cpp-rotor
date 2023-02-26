@@ -1,8 +1,12 @@
-from conans import ConanFile, CMake, tools
-from conans.errors import ConanInvalidConfiguration
+import os
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.build import check_min_cppstd
+from conan.tools.scm import Version
+from conan.tools.files import apply_conandata_patches, export_conandata_patches, get, rmdir, copy
+from conan.tools.cmake import CMakeToolchain, CMake, CMakeDeps, cmake_layout
 
-required_conan_version = ">=1.43.0"
-
+required_conan_version = ">=1.52.0"
 
 class RotorConan(ConanFile):
     name = "rotor"
@@ -13,35 +17,55 @@ class RotorConan(ConanFile):
         "Event loop friendly C++ actor micro-framework, supervisable"
     )
     topics = ("concurrency", "actor-framework", "actors", "actor-model", "erlang", "supervising", "supervisor")
+    exports_sources = "CMakeLists.txt", "src/*", "include/*", "test_package/*", "cmake/*"
 
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "fPIC": [True, False],
-        "boost_asio": [True, False],
-        "thread": [True, False],
+        "shared": [True, False],
+        "enable_asio": [True, False],
+        "enable_thread": [True, False],
+        "multithreading": [True, False],  # enables multithreading support
     }
     default_options = {
         "fPIC": True,
-        "boost_asio": True,
-        "thread": True,
+        "shared": False,
+        "enable_asio": True,
+        "enable_thread": True,
+        "multithreading": True,
     }
-
-    exports_sources = ["CMakeLists.txt", "include*", "src*", "test_package*", "cmake*"]
-    generators = "cmake_find_package"
-    _cmake = None
 
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
 
-    def requirements(self):
-        self.requires("boost/1.69.0")
+    def configure(self):
+        if self.options.shared:
+            try:
+                del self.options.fPIC
+            except Exception:
+                pass
 
+    def requirements(self):
+        self.requires("boost/1.81.0")
+
+#    def layout(self):
+#        cmake_layout(self, src_folder="src")
+
+    def generate(self):
+        tc = CMakeToolchain(self)
+        tc.variables["BUILD_BOOST_ASIO"] = self.options.enable_asio
+        tc.variables["BUILD_THREAD"] = self.options.enable_thread
+        tc.variables["BUILD_THREAD_UNSAFE"] = not self.options.multithreading
+        tc.variables["BUILD_TESTING"] = False
+        tc.generate()
+        tc = CMakeDeps(self)
+        tc.generate()
 
     def validate(self):
         minimal_cpp_standard = "17"
         if self.settings.compiler.get_safe("cppstd"):
-            tools.check_min_cppstd(self, minimal_cpp_standard)
+            check_min_cppstd(self, minimal_cpp_standard)
         minimal_version = {
             "gcc": "7",
             "clang": "6",
@@ -51,45 +75,41 @@ class RotorConan(ConanFile):
         compiler = str(self.settings.compiler)
         if compiler not in minimal_version:
             self.output.warn(
-                "%s recipe lacks information about the %s compiler standard version support" % (self.name, compiler))
+                f"{self.ref} recipe lacks information about the {compiler} compiler standard version support")
             self.output.warn(
-                "%s requires a compiler that supports at least C++%s" % (self.name, minimal_cpp_standard))
+                f"{self.ref} requires a compiler that supports at least C++{minimal_cpp_standard}")
             return
 
-        version = tools.Version(self.settings.compiler.version)
-        if version < minimal_version[compiler]:
-            raise ConanInvalidConfiguration("%s requires a compiler that supports at least C++%s" % (self.name, minimal_cpp_standard))
+        compiler_version = Version(self.settings.compiler.version)
+        if compiler_version < minimal_version[compiler]:
+            raise ConanInvalidConfiguration(f"{self.ref} requires a compiler that supports at least C++{minimal_cpp_standard}")
 
-    def _configure_cmake(self):
-        if self._cmake:
-            return self._cmake
+        if self.options.shared and Version(self.version) < "0.23":
+            raise ConanInvalidConfiguration("shared option is available from v0.23")
 
-        self._cmake = CMake(self)
-        self._cmake.definitions["BUILD_BOOST_ASIO"] = self.options.boost_asio
-        self._cmake.definitions["BUILD_THREAD"] = self.options.thread
-        self._cmake.definitions["BUILD_TESTING"] = False
-        self._cmake.configure()
-        return self._cmake
 
     def build(self):
-        cmake = self._configure_cmake()
+        cmake = CMake(self)
+        cmake.configure()
         cmake.build()
 
     def package(self):
-        cmake = self._configure_cmake()
+        copy(self, pattern="LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
+        cmake = CMake(self)
         cmake.install()
+        rmdir(self, os.path.join(self.package_folder, "lib", "cmake"))
 
     def package_info(self):
         self.cpp_info.components["core"].libs = ["rotor"]
         self.cpp_info.components["core"].requires = ["boost::date_time", "boost::system", "boost::regex"]
 
-        self.cpp_info.components["asio"].libs = ["rotor_asio"]
-        self.cpp_info.components["asio"].requires = ["core"]
+        if not self.options.multithreading:
+            self.cpp_info.components["core"].defines.append("BUILD_THREAD_UNSAFE")
 
-        self.cpp_info.components["thread"].libs = ["rotor_thread"]
-        self.cpp_info.components["thread"].requires = ["core"]
+        if self.options.enable_asio:
+            self.cpp_info.components["asio"].libs = ["rotor_asio"]
+            self.cpp_info.components["asio"].requires = ["core"]
 
-        # TODO: to remove in conan v2 once cmake_find_package* generators removed
-        self.cpp_info.names["cmake_find_package"] = "rotor"
-        self.cpp_info.names["cmake_find_package_multi"] = "rotor"
-
+        if self.options.enable_thread:
+            self.cpp_info.components["thread"].libs = ["rotor_thread"]
+            self.cpp_info.components["thread"].requires = ["core"]
