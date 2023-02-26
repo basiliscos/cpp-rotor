@@ -29,7 +29,7 @@ before_build:
 
 build_script:
   - py -m pip install conan
-  - conan create conanfile.py rotor/0.20@
+  - conan create conanfile.py .
   - cmake -G "Visual Studio 15 2017 Win64" -H. -B_build-shared -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_SHARED_LIBS=on  -DBUILD_EXAMPLES=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
   - cmake --build _build-shared
   - cmake -G "Visual Studio 15 2017 Win64" -H. -B_build-static -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_SHARED_LIBS=off -DBUILD_EXAMPLES=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
