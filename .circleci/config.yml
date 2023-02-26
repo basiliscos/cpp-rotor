@@ -82,7 +82,7 @@ jobs:
               apt-get install -y cmake clang python3-pip
               pip3 install conan
               conan profile detect
-              conan create .
+              conan create --version 0.26 .
 
 
 workflows:
