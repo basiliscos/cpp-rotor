@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -475,7 +475,8 @@ TEST_CASE("link errors", "[actor]") {
             sup1->do_process();
             CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
 
-            auto plugin1 = act_c->access<rt::to::get_plugin>(r::plugin::link_client_plugin_t::class_identity);
+            auto id = &std::as_const(r::plugin::link_client_plugin_t::class_identity);
+            auto plugin1 = act_c->access<rt::to::get_plugin>(id);
             auto p1 = static_cast<r::plugin::link_client_plugin_t *>(plugin1);
             p1->link(act_s->get_address(), false, [&](auto &) {});
             act_c->access<rt::to::resources>()->acquire();

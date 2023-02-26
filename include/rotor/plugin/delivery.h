@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -82,13 +82,14 @@ template <typename LocalDelivery = local_delivery_t> struct delivery_plugin_t : 
     using delivery_plugin_base_t::delivery_plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
-    const void *identity() const noexcept override { return class_identity; }
+    static const std::type_index class_identity;
+
+    const std::type_index &identity() const noexcept override { return class_identity; }
+
     inline size_t process() noexcept override;
 };
 
 template <typename LocalDelivery>
-const void *
-    delivery_plugin_t<LocalDelivery>::class_identity = static_cast<const void *>(typeid(local_delivery_t).name());
+const std::type_index delivery_plugin_t<LocalDelivery>::class_identity = typeid(local_delivery_t);
 
 } // namespace rotor::plugin

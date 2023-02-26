@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -40,9 +40,9 @@ struct ROTOR_API resources_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
+    static const std::type_index class_identity;
 
-    const void *identity() const noexcept override;
+    const std::type_index &identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;

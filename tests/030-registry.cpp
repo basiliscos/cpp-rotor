@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -242,8 +242,8 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
             auto req_id = act->promise_name("s1");
             act->cancel_name(req_id);
             sup->do_process();
-            auto plugin = static_cast<r::actor_base_t *>(sup.get())->access<rt::to::get_plugin>(
-                r::plugin::child_manager_plugin_t::class_identity);
+            auto id = &std::as_const(r::plugin::child_manager_plugin_t::class_identity);
+            auto plugin = static_cast<r::actor_base_t *>(sup.get())->access<rt::to::get_plugin>(id);
             auto &reply = act->future_reply;
             CHECK(reply->payload.ee);
             CHECK(reply->payload.ee->ec.message() == "request has been cancelled");
@@ -402,7 +402,8 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
             act_c->do_shutdown();
             sup->do_process();
             CHECK(act_c->get_state() == r::state_t::SHUT_DOWN);
-            auto plugin = act_c->access<rt::to::get_plugin>(r::plugin::registry_plugin_t::class_identity);
+            auto id = &std::as_const(r::plugin::registry_plugin_t::class_identity);
+            auto plugin = act_c->access<rt::to::get_plugin>(id);
             auto p = static_cast<r::plugin::registry_plugin_t *>(plugin);
             auto &dm = p->access<rt::to::discovery_map>();
             CHECK(dm.size() == 0);

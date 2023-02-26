@@ -116,7 +116,10 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief sends message to the destination address
      *
-     * Internally it just constructs new message in supervisor's outbound queue.
+     * The provided arguments are used for the construction of **payload**, which
+     * is, in turn, is wrapped into message.
+     *
+     * Internally the new message is placed into supervisor's outbound queue.
      *
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&...args);
@@ -453,13 +456,13 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      *
      * `nullptr` is returned when plugin cannot be found
      */
-    plugin::plugin_base_t *get_plugin(const void *identity) const noexcept;
+    plugin::plugin_base_t *get_plugin(const std::type_index &) const noexcept;
 
     /** \brief set of activating plugin identities */
-    std::set<const void *> activating_plugins;
+    std::set<const std::type_index *> activating_plugins;
 
     /** \brief set of deactivating plugin identities */
-    std::set<const void *> deactivating_plugins;
+    std::set<const std::type_index *> deactivating_plugins;
 
     /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;

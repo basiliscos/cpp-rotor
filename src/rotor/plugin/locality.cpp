@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -24,9 +24,9 @@ template <> auto &supervisor_t::access<to::locality_leader>() noexcept { return 
 template <> auto &supervisor_t::access<to::inbound_queue>() noexcept { return inbound_queue; }
 template <> auto &supervisor_t::access<to::inbound_queue_size>() noexcept { return inbound_queue_size; }
 
-const void *locality_plugin_t::class_identity = static_cast<const void *>(typeid(locality_plugin_t).name());
+const std::type_index locality_plugin_t::class_identity = typeid(locality_plugin_t);
 
-const void *locality_plugin_t::identity() const noexcept { return class_identity; }
+const std::type_index &locality_plugin_t::identity() const noexcept { return class_identity; }
 
 void locality_plugin_t::activate(actor_base_t *actor_) noexcept {
     auto &address = actor_->get_address();

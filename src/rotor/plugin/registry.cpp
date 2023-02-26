@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -25,8 +25,9 @@ struct discovery_map {};
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
-template <> auto actor_base_t::access<to::get_plugin, const void *>(const void *identity) noexcept {
-    return get_plugin(identity);
+template <>
+auto actor_base_t::access<to::get_plugin, const std::type_index *>(const std::type_index *identity) noexcept {
+    return get_plugin(*identity);
 }
 
 template <>
@@ -40,9 +41,9 @@ template <> auto &registry_plugin_t::access<to::discovery_map>() noexcept { retu
 
 template <typename Message> void process_discovery(registry_plugin_t::discovery_map_t &dm, Message &message) noexcept;
 
-const void *registry_plugin_t::class_identity = static_cast<const void *>(typeid(registry_plugin_t).name());
+const std::type_index registry_plugin_t::class_identity = typeid(registry_plugin_t);
 
-const void *registry_plugin_t::identity() const noexcept { return class_identity; }
+const std::type_index &registry_plugin_t::identity() const noexcept { return class_identity; }
 
 void registry_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
@@ -116,7 +117,7 @@ void registry_plugin_t::continue_init(const error_code_t &possible_ec, const ext
 
 void registry_plugin_t::link_registry() noexcept {
     plugin_state = plugin_state | LINKING;
-    auto plugin = actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
+    auto plugin = actor->access<to::get_plugin>(&link_client_plugin_t::class_identity);
     auto p = static_cast<link_client_plugin_t *>(plugin);
     auto &registry_addr = actor->get_supervisor().get_registry_address();
     assert(registry_addr && "supervisor has registry address");
@@ -207,7 +208,7 @@ void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_ad
         if (!ec) {
             auto &aliases = plugin->access<to::aliases_map>();
             if (!aliases.count(*address)) {
-                auto p = plugin->actor->access<to::get_plugin>(link_client_plugin_t::class_identity);
+                auto p = plugin->actor->access<to::get_plugin>(&link_client_plugin_t::class_identity);
                 auto &link_plugin = *static_cast<link_client_plugin_t *>(p);
                 link_plugin.link(*address, operational_only, [this](auto &ec) {
                     auto &am = plugin->access<to::aliases_map>();

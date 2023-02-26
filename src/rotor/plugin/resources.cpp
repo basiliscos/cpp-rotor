@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -23,9 +23,9 @@ template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::resources>() noexcept { return resources; }
 template <> auto &actor_base_t::access<to::continuation_mask>() noexcept { return continuation_mask; }
 
-const void *resources_plugin_t::class_identity = static_cast<const void *>(typeid(resources_plugin_t).name());
+const std::type_index resources_plugin_t::class_identity = typeid(resources_plugin_t);
 
-const void *resources_plugin_t::identity() const noexcept { return class_identity; }
+const std::type_index &resources_plugin_t::identity() const noexcept { return class_identity; }
 
 void resources_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -77,8 +77,9 @@ struct fail_plugin_t : public r::plugin::plugin_base_t {
     static bool allow_init;
     bool allow_shutdown = true;
 
-    static const void *class_identity;
-    const void *identity() const noexcept override { return class_identity; }
+    static std::type_index class_id;
+
+    const std::type_index &identity() const noexcept override { return class_id; }
 
     void activate(r::actor_base_t *actor_) noexcept override {
         reaction_on(reaction_t::INIT);
@@ -90,6 +91,8 @@ struct fail_plugin_t : public r::plugin::plugin_base_t {
 
     bool handle_shutdown(r::message::shutdown_request_t *) noexcept override { return allow_shutdown; }
 };
+
+std::type_index fail_plugin_t::class_id = typeid(fail_plugin_t);
 
 TEST_CASE("actor litetimes", "[actor]") {
     r::system_context_t system_context;
@@ -146,8 +149,8 @@ TEST_CASE("fail shutdown test", "[actor]") {
     REQUIRE(sup->get_children_count() == 1);
     CHECK(act->get_state() == r::state_t::SHUTTING_DOWN);
 
-    auto plugin =
-        static_cast<r::actor_base_t &>(*sup).access<rt::to::get_plugin>(custom_child_manager_t::class_identity);
+    auto id = &std::as_const(custom_child_manager_t::class_identity);
+    auto plugin = static_cast<r::actor_base_t &>(*sup).access<rt::to::get_plugin>(id);
     auto cm_plugin = static_cast<custom_child_manager_t *>(plugin);
 
     REQUIRE(cm_plugin->fail_addr == act->get_address());

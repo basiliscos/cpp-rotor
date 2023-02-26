@@ -1,13 +1,14 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "../subscription.h"
 #include "rotor/messages.hpp"
+#include <typeinfo>
 
 namespace rotor::plugin {
 
@@ -35,7 +36,7 @@ struct ROTOR_API plugin_base_t {
     virtual ~plugin_base_t() = default;
 
     /** \brief returns pointer, which uniquely identifes plugin type */
-    virtual const void *identity() const noexcept = 0;
+    virtual const std::type_index &identity() const noexcept = 0;
 
     /** \brief invoked by actor upon initialization.
      *

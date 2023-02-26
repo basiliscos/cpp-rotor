@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -78,9 +78,9 @@ struct init_shutdown_plugin_t : r::plugin::init_shutdown_plugin_t {
 struct sample_plugin_t : r::plugin::plugin_base_t {
     using parent_t = r::plugin::plugin_base_t;
 
-    static const void *class_identity;
+    static std::type_index class_id;
 
-    const void *identity() const noexcept override { return class_identity; }
+    const std::type_index &identity() const noexcept override { return class_id; }
 
     void activate(r::actor_base_t *actor_) noexcept override {
         parent_t::activate(actor_);
@@ -96,7 +96,7 @@ struct sample_plugin_t : r::plugin::plugin_base_t {
     bool message_received = false;
 };
 
-const void *sample_plugin_t::class_identity = &sample_plugin_t::class_identity;
+std::type_index sample_plugin_t::class_id = typeid(sample_plugin_t);
 
 struct sample_sup2_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
@@ -492,7 +492,7 @@ TEST_CASE("io tagging (in plugin) & intercepting", "[actor]") {
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
     CHECK(sup->counter == 2);
-    auto plugin = act->access<rt::to::get_plugin>(sample_plugin_t::class_identity);
+    auto plugin = act->access<rt::to::get_plugin>(&std::as_const(sample_plugin_t::class_id));
     CHECK(plugin);
     CHECK(static_cast<sample_plugin_t *>(plugin)->message_received);
 

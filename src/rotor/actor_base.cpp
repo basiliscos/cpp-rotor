@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -26,7 +26,7 @@ actor_base_t::actor_base_t(actor_config_t &cfg)
         continuation_mask |= AUTOSHUTDOWN_SUPERVISOR;
     }
     for (auto plugin : plugins) {
-        activating_plugins.insert(plugin->identity());
+        activating_plugins.insert(&plugin->identity());
     }
 }
 
@@ -55,7 +55,13 @@ void actor_base_t::activate_plugins() noexcept {
 
 void actor_base_t::commit_plugin_activation(plugin_base_t &plugin, bool success) noexcept {
     if (success) {
-        activating_plugins.erase(plugin.identity());
+        auto begin = std::begin(activating_plugins);
+        auto end = std::end(activating_plugins);
+        auto &id = plugin.identity();
+        auto predicate = [&id](auto it) { return *it == id; };
+        auto it = std::find_if(begin, end, predicate);
+        assert(it != end);
+        activating_plugins.erase(it);
     } else {
         deactivate_plugins();
     }
@@ -65,14 +71,21 @@ void actor_base_t::deactivate_plugins() noexcept {
     for (auto it = plugins.rbegin(); it != plugins.rend(); ++it) {
         auto &plugin = *--(it.base());
         if (plugin->access<actor_base_t>()) { // may be it is already inactive
-            deactivating_plugins.insert(plugin->identity());
+            deactivating_plugins.insert(&plugin->identity());
             plugin->deactivate();
         }
     }
 }
 
 void actor_base_t::commit_plugin_deactivation(plugin_base_t &plugin) noexcept {
-    deactivating_plugins.erase(plugin.identity());
+    auto begin = std::begin(deactivating_plugins);
+    auto end = std::end(deactivating_plugins);
+    auto &id = plugin.identity();
+    auto predicate = [&id](auto it) { return *it == id; };
+    auto it = std::find_if(begin, end, predicate);
+    if (it != end) {
+        deactivating_plugins.erase(it);
+    }
 }
 
 void actor_base_t::init_start() noexcept { state = state_t::INITIALIZING; }
@@ -228,7 +241,7 @@ void actor_base_t::on_unsubscription_external(message::unsubscription_external_t
 
 address_ptr_t actor_base_t::create_address() noexcept { return address_maker->create_address(); }
 
-plugin_base_t *actor_base_t::get_plugin(const void *identity) const noexcept {
+plugin_base_t *actor_base_t::get_plugin(const std::type_index &identity) const noexcept {
     for (auto plugin : plugins) {
         if (plugin->identity() == identity) {
             return plugin;
