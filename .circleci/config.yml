@@ -71,7 +71,7 @@ jobs:
 
   build_conan:
     docker:
-      - image: debian:10
+      - image: debian:11
     resource_class: medium
     steps:
       - checkout
