@@ -47,10 +47,10 @@ class RotorConan(ConanFile):
                 pass
 
     def requirements(self):
-        self.requires("boost/1.81.0")
+        self.requires("boost/1.81.0", transitive_headers=True)
 
-#    def layout(self):
-#        cmake_layout(self, src_folder="src")
+    def layout(self):
+        cmake_layout(self)
 
     def generate(self):
         tc = CMakeToolchain(self)
