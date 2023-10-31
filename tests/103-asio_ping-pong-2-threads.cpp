@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "rotor/asio.hpp"
 #include "supervisor_asio_test.h"

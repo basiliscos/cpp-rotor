@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "access.h"
@@ -63,7 +62,7 @@ struct sub_t : public r::actor_base_t {
     r::address_ptr_t pub_addr;
 };
 
-TEST_CASE("ping-pong", "[supervisor]") {
+TEST_CASE("ping-pong-pub-sub", "[supervisor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();

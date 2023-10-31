@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 
 #ifdef __unix__
 #include "rotor.hpp"

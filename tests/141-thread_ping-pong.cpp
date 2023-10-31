@@ -4,7 +4,7 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "rotor.hpp"
 #include "rotor/thread.hpp"
 #include "access.h"

@@ -5,7 +5,7 @@
 //
 // Distributed under the MIT Software License
 //
-
+#include <catch2/catch_test_macros.hpp>
 #include "rotor/asio/supervisor_asio.h"
 #include "access.h"
 

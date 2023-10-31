@@ -19,6 +19,7 @@ class RotorConan(ConanFile):
     topics = ("concurrency", "actor-framework", "actors", "actor-model", "erlang", "supervising", "supervisor")
     exports_sources = "CMakeLists.txt", "src/*", "include/*", "test_package/*", "cmake/*"
 
+    test_requires = "catch2/3.4.0"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "fPIC": [True, False],
@@ -47,7 +48,7 @@ class RotorConan(ConanFile):
                 pass
 
     def requirements(self):
-        self.requires("boost/1.81.0", transitive_headers=True)
+        self.requires("boost/1.71.0", transitive_headers=True)
 
     def layout(self):
         cmake_layout(self)
@@ -57,7 +58,7 @@ class RotorConan(ConanFile):
         tc.variables["BUILD_BOOST_ASIO"] = self.options.enable_asio
         tc.variables["BUILD_THREAD"] = self.options.enable_thread
         tc.variables["BUILD_THREAD_UNSAFE"] = not self.options.multithreading
-        tc.variables["BUILD_TESTING"] = False
+        tc.variables["BUILD_TESTING"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
         tc.generate()
         tc = CMakeDeps(self)
         tc.generate()
@@ -92,6 +93,8 @@ class RotorConan(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+        if not self.conf.get("tools.build:skip_test", default=True):
+            cmake.test()
 
     def package(self):
         copy(self, pattern="LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))

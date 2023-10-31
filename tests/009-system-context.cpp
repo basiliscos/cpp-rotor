@@ -4,10 +4,12 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
+
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "system_context_test.h"
+#include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 namespace r = rotor;
 namespace rt = rotor::test;
@@ -18,7 +20,7 @@ TEST_CASE("misconfigured root supervisor", "[system_context]") {
     REQUIRE(!sup);
     REQUIRE(system_context.reason->ec.value() == static_cast<int>(r::error_code_t::actor_misconfigured));
     REQUIRE(system_context.reason == system_context.reason->root());
-    CHECK_THAT(system_context.reason->message(), Catch::EndsWith("actor is misconfigured"));
+    CHECK_THAT(system_context.reason->message(), Catch::Matchers::EndsWith("actor is misconfigured"));
     REQUIRE(!system_context.get_supervisor());
 }
 
@@ -45,7 +47,7 @@ TEST_CASE("root supervisor cannot be created twice", "[system_context]") {
     REQUIRE(!sup2);
     REQUIRE(system_context.get_supervisor() == sup1);
     REQUIRE(system_context.reason->ec.value() == static_cast<int>(r::error_code_t::supervisor_defined));
-    CHECK_THAT(system_context.reason->message(), Catch::EndsWith("supervisor is already defined"));
+    CHECK_THAT(system_context.reason->message(), Catch::Matchers::EndsWith("supervisor is already defined"));
 
     sup1->do_process();
     sup1->do_shutdown();

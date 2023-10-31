@@ -247,11 +247,10 @@ if (BUILD_THREAD)
         DESTINATION include/rotor/thread)
 endif()
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    include(CTest)
-    if (BUILD_TESTING)
-        add_subdirectory("tests")
-    endif()
+
+if (NOT BUILD_TESTING STREQUAL OFF)
+    enable_testing()
+    add_subdirectory("tests")
 endif()
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_EXAMPLES)
@@ -303,6 +302,7 @@ if (BUILD_SHARED_LIBS)
 else ()
     set(type static)
 endif ()
+
 install(
     EXPORT ROTOR_ALL_TARGETS
     FILE rotor-${type}-targets.cmake
