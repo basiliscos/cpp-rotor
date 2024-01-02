@@ -34,7 +34,7 @@ struct plugin_storage_base_t {
     virtual plugins_t get_plugins() noexcept = 0;
 };
 
-/** \brief smaprt pointer for {@link plugin_storage_base_t} */
+/** \brief smart pointer for {@link plugin_storage_base_t} */
 using plugin_storage_ptr_t = std::unique_ptr<plugin_storage_base_t>;
 
 /** \brief templated plugin storage implementation */
@@ -99,7 +99,7 @@ template <typename Actor> struct actor_config_builder_t {
     /** \brief intrusive pointer to actor */
     using actor_ptr_t = intrusive_ptr_t<Actor>;
 
-    /** \brief actor post-consturctor callback type
+    /** \brief actor post-constructor callback type
      *
      * For example, supervisor on_init() is invoked early (right after instantiation)
      *

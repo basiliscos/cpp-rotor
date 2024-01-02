@@ -75,7 +75,7 @@ struct ROTOR_API subscription_point_t {
     /** \brief move-ctor */
     subscription_point_t(subscription_point_t &&) = default;
 
-    /** \brief patrial comparison by handler and address */
+    /** \brief partial comparison by handler and address */
     bool operator==(const subscription_point_t &other) const noexcept;
 };
 

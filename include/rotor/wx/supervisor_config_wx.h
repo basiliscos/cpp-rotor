@@ -22,7 +22,7 @@ struct supervisor_config_wx_t : public supervisor_config_t {
      * top of wx-loop is performed via wx-events, i.e. rotor-messages
      * are **wrapped**  into wx-events.
      *
-     * The wx-supervisor subscribes to the `wx-events` and unswraps
+     * The wx-supervisor subscribes to the `wx-events` and unwraps
      * the rotor-messages from the events.
      *
      * The wx event handler is used as a transport medium.

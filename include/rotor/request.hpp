@@ -34,7 +34,7 @@ struct request_base_t {
 
 /** \brief optionally wraps request type into intrusive pointer
  *
- * The transformation (`T -> iptr<T>`) occures only if the type
+ * The transformation (`T -> iptr<T>`) occurs only if the type
  * `T` is descendant of  `arc_base_t<T>`.
  *
  * Otherwise, the user supplied request type `T` remains the same.
@@ -47,13 +47,13 @@ template <typename T, typename = void> struct request_wrapper_t {
 
 /** \brief request_wrapper_t specialization for refcounted item */
 template <typename T> struct request_wrapper_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>>> {
-    /** \brief an alias for the original request type, wrapped into intrusive poitner */
+    /** \brief an alias for the original request type, wrapped into intrusive pointer */
     using request_t = intrusive_ptr_t<T>;
 };
 
-/** \brief optionally unwwraps request type from intrusive pointer
+/** \brief optionally unwraps request type from intrusive pointer
  *
- * The transformation (`iptr<T> -> T`) occures only if the type
+ * The transformation (`iptr<T> -> T`) occurs only if the type
  * `T` already wraps T into intrusive pointer
  *
  * Otherwise, the user supplied request type `T` remains the same.
@@ -122,7 +122,7 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
 
     /** \brief makes an intrusive pointer for already constructed user-supplied payload
      *
-     * The differnt `request-id` and `reply_to` address argruments are supplied
+     * The different `request-id` and `reply_to` address arguments are supplied
      * to make it possible cheaply forward requests.
      */
     wrapped_request_t(request_id_t id_, const address_ptr_t &reply_to_, const address_ptr_t &origin_,
@@ -142,13 +142,13 @@ struct wrapped_request_t<T, std::enable_if_t<std::is_base_of_v<arc_base_t<T>, T>
 /** \struct response_helper_t
  * \brief generic helper, which helps to construct user-defined response payload
  */
-template <typename Responce> struct response_helper_t {
+template <typename Response> struct response_helper_t {
     /** original user-supplied response type */
-    using response_t = Responce;
+    using response_t = Response;
 
     /** \brief constructs user defined response payload */
-    template <typename... Args> static Responce construct(Args &&...args) {
-        return Responce{std::forward<Args>(args)...};
+    template <typename... Args> static Response construct(Args &&...args) {
+        return Response{std::forward<Args>(args)...};
     }
 };
 
@@ -156,16 +156,16 @@ template <typename Responce> struct response_helper_t {
  * \brief specific helper, which helps to construct intrusive pointer to user-defined
  *  response payload
  */
-template <typename Responce> struct response_helper_t<intrusive_ptr_t<Responce>> {
+template <typename Response> struct response_helper_t<intrusive_ptr_t<Response>> {
     /** \brief type for intrusive pointer user defined response payload  */
-    using res_ptr_t = intrusive_ptr_t<Responce>;
+    using res_ptr_t = intrusive_ptr_t<Response>;
 
     /** original user-supplied response type */
-    using response_t = Responce;
+    using response_t = Response;
 
     /** \brief constructs intrusive pointer to user defined response payload */
     template <typename... Args> static res_ptr_t construct(Args &&...args) {
-        return res_ptr_t{new Responce{std::forward<Args>(args)...}};
+        return res_ptr_t{new Response{std::forward<Args>(args)...}};
     }
 
     /** \brief constructs user defined response payload and wraps it into intrusive pointer */
@@ -268,17 +268,17 @@ template <typename Request> struct wrapped_response_t {
     /** \brief "forward-constructor"
      *
      * The request message, error code are copied, while the response (possible intrusive
-     * poitner to the original request) is forwarded.
+     * pointer to the original request) is forwarded.
      *
      */
-    template <typename Responce, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Responce>>>>
-    wrapped_response_t(req_message_ptr_t message_, const extended_error_ptr_t &ee_, Responce &&res_)
-        : ee{ee_}, req{std::move(message_)}, res{std::forward<Responce>(res_)} {}
+    template <typename Response, typename E = std::enable_if_t<std::is_same_v<response_t, std::remove_cv_t<Response>>>>
+    wrapped_response_t(req_message_ptr_t message_, const extended_error_ptr_t &ee_, Response &&res_)
+        : ee{ee_}, req{std::move(message_)}, res{std::forward<Response>(res_)} {}
 
     /** \brief successful-response constructor.
      *
      * The request message is copied, the error code is set to success,
-     * the response (possible intrusive poitner to the original request) constructed from
+     * the response (possible intrusive pointer to the original request) constructed from
      * the arguments.
      *
      */
@@ -313,7 +313,7 @@ struct request_curry_t {
 };
 
 /** \struct request_traits_t
- * \brief type helper to deduce request/reqsponce messages from original (user-supplied) request type
+ * \brief type helper to deduce request/response messages from original (user-supplied) request type
  */
 template <typename R> struct request_traits_t {
     /** \brief alias for original request payload type */
@@ -325,7 +325,7 @@ template <typename R> struct request_traits_t {
         /** \brief alias for possibly wrapped (to intrusive pointer) request payload type */
         using type = request_t;
 
-        /** \brief wrapped (trackeable) request payload */
+        /** \brief wrapped (trackable) request payload */
         using wrapped_t = wrapped_request_t<type>;
 
         /** \brief message type with with wrapped request payload */
@@ -356,7 +356,7 @@ template <typename R> struct request_traits_t {
         /** \brief the payload needed to cancel a request */
         using cancel_payload_t = cancelation_t<request_t>;
 
-        /** \brief request cancellaction message */
+        /** \brief request cancellation message */
         using message_t = rotor::message_t<cancel_payload_t>;
     };
 
@@ -373,11 +373,11 @@ template <typename R> struct request_traits_t {
 };
 
 /** \struct request_builder_t
- * \brief builder pattern implentation for the original request
+ * \brief builder pattern implementation for the original request
  */
 template <typename T> struct [[nodiscard]] request_builder_t {
 
-    /** \brief constructs request message but still does not dispath it */
+    /** \brief constructs request message but still does not dispatch it */
     template <typename... Args>
     request_builder_t(supervisor_t &sup_, actor_base_t &actor_, const address_ptr_t &destination_,
                       const address_ptr_t &reply_to_, Args &&...args);

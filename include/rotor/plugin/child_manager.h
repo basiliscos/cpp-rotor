@@ -63,7 +63,7 @@ struct ROTOR_API child_manager_plugin_t : public plugin_base_t {
     /** \brief sends initialization request upon actor creation message */
     virtual void on_create(message::create_actor_t &message) noexcept;
 
-    /** \brief reaction on (maybe unsuccessful) init confirmatinon
+    /** \brief reaction on (maybe unsuccessful) init confirmation
      *
      * Possibilities:
      *  - shutdown child
@@ -111,7 +111,7 @@ struct ROTOR_API child_manager_plugin_t : public plugin_base_t {
 
     size_t active_actors() noexcept;
 
-    /** \brief type for keeping list of initializing actors (during supervisor inititalization) */
+    /** \brief type for keeping list of initializing actors (during supervisor initialization) */
     using initializing_actors_t = std::unordered_set<address_ptr_t>;
 
     /** \brief local address to local actor (intrusive pointer) mapping */

@@ -12,9 +12,9 @@ namespace rotor::plugin {
 
 /** \struct locality_plugin_t
  *
- * \brief detects and assings locality leader to the supevisor
+ * \brief detects and assigns locality leader to the supervisor
  *
- * For the supervisors hierarchy it detecs top-level supervisor which uses
+ * For the supervisors hierarchy it detects top-level supervisor which uses
  * the same locality and assigns it's queue to each of the supervisors
  * in the tree.
  *

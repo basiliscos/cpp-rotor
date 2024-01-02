@@ -24,7 +24,7 @@ namespace rotor {
  *  \brief Holds and classifies message handlers on behalf of supervisor
  *
  * The handlers are classified by message type and by the source supervisor, i.e.
- * whether the hander's supervisor is external or not.
+ * whether the handler's supervisor is external or not.
  *
  */
 struct ROTOR_API subscription_t {
@@ -49,7 +49,7 @@ struct ROTOR_API subscription_t {
     /** \brief upgrades subscription_point_t into subscription_info smart pointer
      *
      * Performs the classification of the point, i.e. whether handler and address
-     * are internal or external, records the state subcription state and records
+     * are internal or external, records the state subscription state and records
      * the handler among address handlers.
      *
      */

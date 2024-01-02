@@ -26,7 +26,7 @@ namespace rotor::plugin {
  * Can use {@link registry_t} to register name/address during actor init phase
  * and perform the reverse operation to deregister name/address during shutdown phase.
  *
- * Simialary the {@link registry_t} can be used to discover name in the registry
+ * Similary the {@link registry_t} can be used to discover name in the registry
  * and link the current actor to the target address during init phase; there is
  * no reverse operation during shutdown phase, because unlinking will be handled
  * by {@link plugin::link_client_plugin_t} plugin.

@@ -78,7 +78,7 @@ struct ROTOR_API child_info_t : boost::intrusive_ref_counter<child_info_t, boost
     /** \brief actor's factory (used by spawner) */
     factory_t factory;
 
-    /** \brief owning reference to current actor instanance */
+    /** \brief owning reference to current actor instance */
     actor_ptr_t actor;
 
     /** \brief restart policy (used by spawner) */

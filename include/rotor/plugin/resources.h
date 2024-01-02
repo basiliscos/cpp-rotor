@@ -27,7 +27,7 @@ using resource_id_t = std::size_t;
  * suspended until they will be released.
  *
  * The suspension will happen during init and shutdown phases, e.g.:
- * - actor can wait, until connection will be estableshed
+ * - actor can wait, until connection will be established
  * - actor can wait, until it receives handshake from remote system
  * - etc...
  *

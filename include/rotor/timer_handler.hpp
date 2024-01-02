@@ -26,7 +26,7 @@ struct timer_handler_base_t {
     timer_handler_base_t(actor_base_t *owner_, request_id_t request_id_) noexcept
         : owner{owner_}, request_id{request_id_} {}
 
-    /** \brief an action when timer was triggerd or cancelled */
+    /** \brief an action when timer was triggered or cancelled */
     virtual void trigger(bool cancelled) noexcept = 0;
 
     virtual ~timer_handler_base_t() = default;

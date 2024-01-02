@@ -15,7 +15,7 @@ namespace rotor::plugin {
  * \brief manages all actor subscriptions (i.e. from plugins or actor itself).
  *
  * The plugin main focus to properly cancel subscriptions, i.e. every address
- * where an actor plugin or the actor itslef was subscribscribed to.
+ * where an actor plugin or the actor itself was subscribscribed to.
  *
  */
 struct ROTOR_API lifetime_plugin_t : public plugin_base_t {
@@ -38,7 +38,7 @@ struct ROTOR_API lifetime_plugin_t : public plugin_base_t {
     /** \brief triggers unsubscription
      *
      * For internal subscriptions it answers with unsubscription
-     * confirimation; for foreign subscription it sends external unsubscription
+     * confirmation; for foreign subscription it sends external unsubscription
      * request
      */
     void unsubscribe(const subscription_info_ptr_t &info) noexcept;

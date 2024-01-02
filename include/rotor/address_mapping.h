@@ -33,8 +33,8 @@ namespace rotor {
 struct ROTOR_API address_mapping_t {
     /** \brief associates temporal destination point with actor's message type
      *
-     * An actor is able to process message type indetified by `message`. So,
-     * the temporal subscription point (hander and temporal address) will
+     * An actor is able to process message type identified by `message`. So,
+     * the temporal subscription point (handler and temporal address) will
      * be associated with the actor/message type pair.
      *
      * In the routing the temporal destination address is usually some

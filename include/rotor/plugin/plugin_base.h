@@ -35,7 +35,7 @@ struct ROTOR_API plugin_base_t {
     plugin_base_t(const plugin_base_t &) = delete;
     virtual ~plugin_base_t() = default;
 
-    /** \brief returns pointer, which uniquely identifes plugin type */
+    /** \brief returns pointer, which uniquely identifiess plugin type */
     virtual const std::type_index &identity() const noexcept = 0;
 
     /** \brief invoked by actor upon initialization.
@@ -131,7 +131,7 @@ struct ROTOR_API plugin_base_t {
      *
      * Upon successful match plugin is casted to the final type, and only then
      * passed by reference to the callback. Used in the generic actors plugin
-     * confuguration to inject custom (per-plugin-type) configuration.
+     * configuration to inject custom (per-plugin-type) configuration.
      *
      */
     template <typename Plugin, typename Fn>
