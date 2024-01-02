@@ -65,7 +65,14 @@ struct pinger_t : public rotor::actor_base_t {
         rotor::actor_base_t::on_start();
         do_ping();
 
-        timer_id = start_timer(constants::check_interval, *this, &pinger_t::on_custom_timeout);
+        timer_id = start_timer(constants::check_interval, *this, [](pinger_t* pinger, rotor::request_id_t, bool cancelled){
+            pinger->resources->release(resource::timer);
+            pinger->timer_id.reset();
+            std::cout << "pinger_t, (" << (void *)pinger << "), on_custom_timeout, cancelled: " << cancelled << "\n";
+            if (!cancelled) {
+                pinger->do_shutdown();
+            }
+        });
         resources->acquire(resource::timer);
     }
 
@@ -76,12 +83,7 @@ struct pinger_t : public rotor::actor_base_t {
     }
 
     void on_custom_timeout(rotor::request_id_t, bool cancelled) {
-        resources->release(resource::timer);
-        timer_id.reset();
-        std::cout << "pinger_t, (" << (void *)this << "), on_custom_timeout, cancelled: " << cancelled << "\n";
-        if (!cancelled) {
-            do_shutdown();
-        }
+        
     }
 
     void shutdown_start() noexcept override {

@@ -386,6 +386,7 @@ request_id_t actor_base_t::start_timer(const pt::time_duration &interval, Delega
     return request_id;
 }
 
+
 /** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
 template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Handler &&handler) {
     using final_handler_t = handler_t<Handler>;

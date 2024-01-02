@@ -19,7 +19,7 @@ option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: 
 option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
 option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
 option(BUILD_THREAD         "Enable building with thread support  [default: ON]"          ON)
-option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
+option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                     ON)
 option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
 option(BUILD_THREAD_UNSAFE  "Enable building thead-unsafe library [default: OFF]"        OFF)
 option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"            OFF)

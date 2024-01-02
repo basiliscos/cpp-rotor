@@ -305,18 +305,23 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      *
      * \param interval specifies amount of time, after which the timer will trigger.
      * \param delegate is an object of arbitrary class.
-     * \param method is the pointer-to-member-function of the object, which will be
+     * \param method is the pointer-to-member-function of the object or callback, which will be
      * invoked upon timer triggering or cancellation.
      *
-     * The `method` parameter should have the following signature:
+     * The `method` parameter should have the following signatures:
      *
      * void Delegate::on_timer(request_id_t, bool cancelled) noexcept;
+     *  
+     * or 
+     * 
+     * void(Delegate*,request_id_t, bool cancelled) noexcept 
      *
      * `start_timer` returns timer identity. It will be supplied to the specified callback,
      * or the timer can be cancelled via it.
      */
     template <typename Delegate, typename Method>
     request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
+
 
     /** \brief cancels previously started timer
      *
