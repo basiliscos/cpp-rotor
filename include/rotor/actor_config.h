@@ -121,7 +121,7 @@ template <typename Actor> struct actor_config_builder_t {
     /** \brief raw pointer to `supervisor_t` (is `null` for top-level supervisors) */
     supervisor_t *supervisor;
 
-    /** \brief refernce to `system_context_t` */
+    /** \brief reference to `system_context_t` */
     system_context_t &system_context;
 
     /** \brief the currently build config */

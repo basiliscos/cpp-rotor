@@ -83,13 +83,13 @@ struct ROTOR_API registry_t : public actor_base_t {
     using registered_names_t = std::set<std::string>;
 
     /** \brief service address to registered names mapping type */
-    using revese_map_t = std::unordered_map<address_ptr_t, registered_names_t>;
+    using receive_map_t = std::unordered_map<address_ptr_t, registered_names_t>;
 
     /** \brief name-to-address mapping */
     registered_map_t registered_map;
 
     /** \brief address-to-list_of_names mapping */
-    revese_map_t revese_map;
+    receive_map_t receive_map;
 
     /** \brief list of intrusive pointers to discovery promise messages */
     promises_list_t promises;

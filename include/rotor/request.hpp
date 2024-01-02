@@ -21,9 +21,9 @@ struct request_base_t {
     /** \brief unique (per supervisor) request id */
     request_id_t id;
 
-    /** \brief destination addrress for reply
+    /** \brief destination address for reply
      *
-     * It is not neccessary that the address be the original actor
+     * It is not necessary that the address be the original actor
      *
      */
     address_ptr_t reply_to;
@@ -94,11 +94,11 @@ template <typename T, typename = void> struct wrapped_request_t : request_base_t
     T request_payload;
 };
 
-/** \struct cancelation_t
+/** \struct cancellation_t
  * \brief Request cancellation payload
  *
  */
-template <typename T> struct cancelation_t {
+template <typename T> struct cancellation_t {
     /** \brief unique (per supervisor) request id */
     request_id_t id;
 
@@ -354,7 +354,7 @@ template <typename R> struct request_traits_t {
     struct cancel {
 
         /** \brief the payload needed to cancel a request */
-        using cancel_payload_t = cancelation_t<request_t>;
+        using cancel_payload_t = cancellation_t<request_t>;
 
         /** \brief request cancellation message */
         using message_t = rotor::message_t<cancel_payload_t>;
