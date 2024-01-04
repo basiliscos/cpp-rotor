@@ -2,13 +2,13 @@ image:
   - Visual Studio 2017
   - Visual Studio 2019
   - Visual Studio 2022
-  - Ubuntu
 
 configuration:
   - Debug
   - Release
 
 environment:
+  PYTHON: "C:\\Python38-x64"
   matrix:
     - SHARED: true
     - SHARED: false
@@ -19,8 +19,8 @@ platform:
 for:
   -
     install:
-      - python3 -m pip install conan cmake
-      - conan profile detect
+      - "%PYTHON%\\python.exe" -m pip install conan cmake
       - cmake --version
+      - conan profile detect
     test_script:
       - conan create . -s build_type=%CONFIGURATION% -c tools.build:skip_test=False -o shared=%SHARED%
