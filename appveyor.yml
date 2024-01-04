@@ -9,6 +9,8 @@ configuration:
 
 environment:
   PYTHON: "C:\\Python38-x64"
+  PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
+  
   matrix:
     - SHARED: true
     - SHARED: false
@@ -19,6 +21,8 @@ platform:
 for:
   -
     install:
+      - set PATH=%PY_SCRIPTS%;%PATH%
+      - echo %PATH%
       - "%PYTHON%\\python.exe -m pip install conan cmake"
       - cmake --version
       - conan profile detect
