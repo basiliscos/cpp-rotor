@@ -319,7 +319,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      * `start_timer` returns timer identity. It will be supplied to the specified callback,
      * or the timer can be cancelled via it.
      */
-    template <typename Delegate, typename Method>
+    template <typename Delegate, typename Method, typename = std::enable_if_t<std::is_invocable_v<Method, Delegate*, request_id_t, bool>>>
     request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
 
 

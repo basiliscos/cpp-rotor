@@ -379,7 +379,7 @@ void actor_base_t::start_timer(request_id_t request_id, const pt::time_duration 
     timers_map.emplace(request_id, std::move(handler));
 }
 
-template <typename Delegate, typename Method>
+template <typename Delegate, typename Method, typename>
 request_id_t actor_base_t::start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept {
     auto request_id = supervisor->next_request_id();
     start_timer(request_id, interval, delegate, std::forward<Method>(method));
