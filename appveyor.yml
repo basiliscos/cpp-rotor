@@ -1,45 +1,27 @@
-# Operating system (build VM template)
-os: Visual Studio 2017
+image:
+  - Visual Studio 2017
+  - Visual Studio 2019
+  - Visual Studio 2022
+  - Ubuntu
 
-platform:
-#    x64
-    - Win32
-#configuration: Release
-
-# enable rdp
-#init:
-#  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
-#on_finish:
-#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+configuration:
+  - Debug
+  - Release
 
 environment:
-    BOOST_ROOT: "C:\\Libraries\\boost_1_69_0"
-    PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
+  matrix:
+    - SHARED: true
+    - SHARED: false
 
+platform:
+    - x64
 
-before_build:
-    # boost
+for:
+  -
+    matrix:
+  install:
+    - python -m pip install conan cmake
+    - conan profile detect
     - cmake --version
-    - echo %BOOST_ROOT%
-    - dir "C:\Libraries"
-    - dir "%BOOST_ROOT%"
-    - set PATH=%BOOST_ROOT%\lib64-msvc-14.1;%PY_SCRIPTS%;%PATH%
-    - echo %PATH%
-
-build_script:
-  - py -m pip install conan
-  - conan profile detect
-  - conan create --version 0.26 --build=missing .
-  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_build-shared -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_SHARED_LIBS=on  -DBUILD_EXAMPLES=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
-  - cmake --build _build-shared
-  - cmake -G "Visual Studio 15 2017 Win64" -H. -B_build-static -DBOOST_ROOT="%BOOST_ROOT%" -DBUILD_SHARED_LIBS=off -DBUILD_EXAMPLES=on -DBUILD_THREAD=on -DBUILD_BOOST_ASIO=on -DBoost_USE_STATIC_LIBS=on -DBoost_USE_MULTITHREADED=on
-  - cmake --build _build-static
-test_script:
-  - ps: cd "_build-static\tests"
-  - ctest --timeout=5 -VV -C "%CONFIG%"
-  - ps: cd "..\.."
-  - ps: Get-ChildItem _build-shared\Debug -Recurse -filter *.dll | Copy -Destination _build-shared\tests\Debug
-  - ps: cd "_build-shared\tests"
-  - ctest --timeout=5 -VV -C "%CONFIG%"
-
+  test_script:
+    - conan create . -s build_type=%CONFIGURATION% -c tools.build:skip_test=False -o shared=%SHARED%
