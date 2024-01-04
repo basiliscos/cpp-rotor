@@ -19,7 +19,7 @@ platform:
 for:
   -
     install:
-      - "%PYTHON%\\python.exe" -m pip install conan cmake
+      - "%PYTHON%\\python.exe -m pip install conan cmake"
       - cmake --version
       - conan profile detect
     test_script:
