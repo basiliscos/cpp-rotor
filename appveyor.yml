@@ -28,4 +28,4 @@ for:
       - cmake --version
       - conan profile detect
     test_script:
-      - conan create . -s build_type=%CONFIGURATION% -s compiler.cppstd=17 -c tools.build:skip_test=False -o shared=%SHARED%
+      - conan create . -s build_type=%CONFIGURATION% -s compiler.cppstd=17 -c tools.build:skip_test=False -o shared=%SHARED% --version 0.26
