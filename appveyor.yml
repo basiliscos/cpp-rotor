@@ -19,7 +19,7 @@ platform:
 for:
   -
     install:
-      - python -m pip install conan cmake
+      - python3 -m pip install conan cmake
       - conan profile detect
       - cmake --version
     test_script:
