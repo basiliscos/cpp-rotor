@@ -9,8 +9,8 @@ Among the [various ways](https://docs.conan.io/en/latest/using_packages.html) to
 [include rotor](https://conan.io/center/rotor?tab=recipe) in a project, but the
 most trivial one is to just check install it to local conan cache via:
 
-~~~
-conan install rotor/0.21@
+~~~bash
+conan install rotor/0.26
 ~~~
 
 Please note, that it might take some some time before the new `rotor` release
@@ -45,7 +45,7 @@ The optional event-loop specific supervisors depend on corresponding loop librar
 rotor-objects (i.e. messages and actors) are accessed only from single thread.
 - `ROTOR_DEBUG_DELIVERY` allow runtime messages inspection (`off` by default, enabled by default for debug builds)
 
-~~~
+~~~bash
 git clone https://github.com/basiliscos/cpp-rotor rotor
 cd rotor
 mkdir build
@@ -57,7 +57,7 @@ cmake --build .. --config Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on
 
 Your `CMakeLists.txt` should have something like
 
-~~~
+~~~cmake
 include(FetchContent)
 
 set(BUILD_BOOST_ASIO ON CACHE BOOL "with asio") # pick options you need
@@ -74,13 +74,13 @@ target_link_libraries(my_target rotor::asio)
 
 ## Adding rotor into a project (classical way)
 
-~~~
+~~~bash
 git clone https://github.com/basiliscos/cpp-rotor.git external/rotor lib/rotor --branch=v0.09
 ~~~
 
 Your `CMakeLists.txt` should have something like
 
-~~~
+~~~cmake
 set(BUILD_BOOST_ASIO ON CACHE BOOL "with asio")
 add_subdirectory("lib/rotor")
 

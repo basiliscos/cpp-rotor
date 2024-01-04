@@ -442,7 +442,7 @@ struct order_actor_t : r::actor_base_t {
     int order;
 };
 
-TEST_CASE("request-response successfull delivery", "[actor]") {
+TEST_CASE("request-response successful delivery", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
@@ -478,7 +478,7 @@ TEST_CASE("request-response successfull delivery", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-response successfull delivery indentical message to 2 actors", "[actor]") {
+TEST_CASE("request-response successful delivery identical message to 2 actors", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
@@ -568,7 +568,7 @@ TEST_CASE("response with custom error", "[actor]") {
     CHECK(rt::empty(sup->get_subscription()));
 }
 
-TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") {
+TEST_CASE("request-response successful delivery (supervisor)", "[supervisor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
@@ -591,7 +591,7 @@ TEST_CASE("request-response successfull delivery (supervisor)", "[supervisor]") 
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-response successfull delivery, ref-counted response", "[actor]") {
+TEST_CASE("request-response successful delivery, ref-counted response", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
@@ -615,7 +615,7 @@ TEST_CASE("request-response successfull delivery, ref-counted response", "[actor
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("request-response successfull delivery, twice", "[actor]") {
+TEST_CASE("request-response successful delivery, twice", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
@@ -639,7 +639,7 @@ TEST_CASE("request-response successfull delivery, twice", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("responce is sent twice, but received once", "[supervisor]") {
+TEST_CASE("response is sent twice, but received once", "[supervisor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
@@ -687,7 +687,7 @@ TEST_CASE("ref-counted response forwarding", "[actor]") {
     REQUIRE(sup->active_timers.size() == 0);
 }
 
-TEST_CASE("intrusive pointer request/responce", "[actor]") {
+TEST_CASE("intrusive pointer request/response", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<good_supervisor_t>().timeout(rt::default_timeout).finish();
@@ -794,7 +794,7 @@ TEST_CASE("request timer should not outlive requestee", "[actor]") {
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
-TEST_CASE("response and regual messages keep send order", "[actor]") {
+TEST_CASE("response and regular messages keep send order", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();

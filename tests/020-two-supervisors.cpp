@@ -241,7 +241,7 @@ TEST_CASE("two supervisors & external subscription", "[supervisor]") {
         process();
     }
 
-    SECTION("client-server shutdown order, wiht message in progress") {
+    SECTION("client-server shutdown order, with message in progress") {
         process();
         REQUIRE(sup1->get_state() == r::state_t::OPERATIONAL);
         REQUIRE(sup2->get_state() == r::state_t::OPERATIONAL);

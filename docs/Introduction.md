@@ -60,7 +60,7 @@ int main() {
 }
 ~~~
 
-It prints "hello world" and exits. The example uses `dummy_supervisor_t` (sources ommited),
+It prints "hello world" and exits. The example uses `dummy_supervisor_t` (sources omitted),
 which does almost nothing, but gives you idea what supervisor should do. The code with "real"
 supervisor is shown below, however for pure messaging the kind of supervisor does not matter. 
 
@@ -275,7 +275,7 @@ The address in the line `(1)` is arbitrary: the address of pub-actor itself
 as well as the address of the supervisor can be used... even address of different
 supervisor can be used.
 
-Please note, that sinse `v0.09` there is a new way of subscribing an actor to
+Please note, that since `v0.09` there is a new way of subscribing an actor to
 messages: now it is done via `starter_plugin_t` and overriding `configure`
 method of the actor.
 

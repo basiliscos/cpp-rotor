@@ -9,6 +9,7 @@
 #include "../subscription.h"
 #include "rotor/messages.hpp"
 #include <typeinfo>
+#include <cstdint>
 
 namespace rotor::plugin {
 

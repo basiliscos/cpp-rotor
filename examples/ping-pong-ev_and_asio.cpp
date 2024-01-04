@@ -6,7 +6,7 @@
 
 /*
  *
- * The example below works because the lifetimes of supervisor's is known apriory, i.e.
+ * The example below works because the lifetimes of supervisor's is known a priory, i.e.
  * sup_ev is shutted down while sup_asio is still operational. As the last don't have
  * more job to do, we initiate it's shutdown. In other words, shutdown is partly
  * controlled outside of actors the the sake of simplification.

@@ -120,7 +120,7 @@ enters into `operational` state, providing its services (i.e. starting to react 
 the incoming messages).
 
 The `init` and `shut down` actor states are similar to constructor and destructor
-for an object, with one noteable exception: they are *asynchronous*. If `init`
+for an object, with one notable exception: they are *asynchronous*. If `init`
 fails, an actor does not enters into `operational` state and starts to shut down.
 
 ![lifetime-full](lifecycle-full.png)
@@ -165,13 +165,13 @@ from user since `v0.09`.
 
 **Supervisor** is an actor, so it has exactly the same lifecycle. It has the peculiarity,
 that it waits it's children, i.e. supervisor enters into `INITIALIZING` state before
-any of it's children actors, then it waits until all of its childern confirm that
+any of it's children actors, then it waits until all of its children confirm that
 they are `INITIALIZED`, and only after that the supervisor confirms that its own
 initialization is accomplished (the similar procedure is done for shutdown procedure).
 
 That reveals very important property of an actor lifecycle - it is **composeable**.
 In a simple words it can be explained as the following: it makes it possible that
-whole tree (hierarchy) of actors and supervisors either becames ready (`OPERATIONAL`)
+whole tree (hierarchy) of actors and supervisors either became ready (`OPERATIONAL`)
 or not (`SHUT DOWN`) without any special intervention from a user.
 
 What makes it distinguishing supervisors from actors? It is the mechanism of plugins.
@@ -205,7 +205,7 @@ with an other actor(s) ("server(s)"). This can be seen as "virtual TCP-connectio
 i.e. making sure that "server" will outlive "client", i.e. all messages from
 "client" to "server" will be eventually delivered, i.e. "server" will not spontaneously
 shut self down having alive client connected to it. The "server" have to confirm
-successful linkig of a "client", while "client" waiting the response confirmation
+successful linking of a "client", while "client" waiting the response confirmation
 suspends its own initialization (i.e its state is `INITIALIZING`). It
 should be noted, that actors linking is performed by actor addresses only,
 i.e. "client" and "server" actors might belong to different threads, supervisors,
@@ -215,7 +215,7 @@ The `registry` plugin is the continued development of the `link_client` plugin. 
 allows for "server" to register self in the "registry" (special actor, shipped
 with `rotor`), and for "client" to discover "server" address via some symbolic
 name (string) and then link to it (using, `link_client`, of course). This makes
-it possible to encapsulate actors dependencies (i.e. to work I need "servcieA"
+it possible to encapsulate actors dependencies (i.e. to work I need "serviceA"
 and "serviceB") as well as export actors services (i.e. once I'm working
 I provide "serviceC").
 
@@ -235,7 +235,7 @@ asked to shutdown, probably with up-scaling the problem; however **fail shutdown
 for `rotor` is violation of the contract, similar to an exception in destructor
 in C++. What can the micro framework do in that situation? Out of the box
 it delegates the issue to the `system_context_t` which default implementation
-is to print the error and invoke `std::termiate`.
+is to print the error and invoke `std::terminate`.
 
 You can override the `on_error` method and hope, that it will continue to work.
 The most likely it will, however, there will be a memory leak. The *rotor part*
@@ -260,8 +260,7 @@ is to spawn additional timer at `shutdown_start` and cancel all non-rotor I/O
 or move and send them to some other actor, which can deal with that.
 
 It is recommended to launch code under memory sanitizer tool like `valgrind`
-to make sure everything is correctly cleaned. This relates to program 
-shutdown too.
+to make sure everything is correctly cleaned. This relates to program shutdown too.
 
 ### Debugging messaging
 
@@ -269,7 +268,7 @@ To see the messages traffic in *non-release* build, the special environment
 variable `ROTOR_INSPECT_DELIVERY=1` should be used. The `delivery` plugin
 will dump messages routing via a supervisor. Here is an excerpt:
 
-~~~
+~~~cpp
 >> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::payload::unsubscription_confirmation_t>, addr: 0x5567c50db770  for 0x5567c50db770
 >> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::payload::external_unsubscription_t>, addr: 0x5567c50db770  for 0x5567c50db770
 >> rotor::message_t<rotor::payload::subscription_confirmation_t> [P] m: rotor::message_t<rotor::payload::subscription_confirmation_t>, addr: 0x5567c50db770  for 0x5567c50db770
@@ -295,14 +294,11 @@ For further details, please consult an [article][blog-cpp-permission] in my blog
 
 ### Actor (configuration) builder
 
-Since `v0.09` every actor (including supervisors) should have a config. It is just 
-a plain `struct` with the minimal set of properties like: init and shutdown timeouts,
+Since `v0.09` every actor (including supervisors) should have a config. It is just a plain `struct` with the minimal set of properties like: init and shutdown timeouts,
 parent supervisor pointer etc.
 
 However, it is not handy to deal with plain `struct`, especially if there are aliases
-and optional fields. That's why dedicated `config_builder_t` was introduced to 
-mark that some required fields have been filled and other convenient things like 
-actor instantiation.
+and optional fields. That's why dedicated `config_builder_t` was introduced to mark that some required fields have been filled and other convenient things like actor instantiation.
 
 To cover the cases, when any *derived* actor/config can have custom properties, the 
 [Curiously recurring template pattern aka CRTP pattern][crtp] was used.

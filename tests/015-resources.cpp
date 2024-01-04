@@ -12,7 +12,7 @@
 namespace r = rotor;
 namespace rt = r::test;
 
-TEST_CASE("release/aquire resources, when other actor is in progress of configuration", "[plugin]") {
+TEST_CASE("release/acquire resources, when other actor is in progress of configuration", "[plugin]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>()
                    .timeout(rt::default_timeout)

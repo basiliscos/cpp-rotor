@@ -107,7 +107,7 @@ struct pinger_t : public rotor::actor_base_t {
         request_id.reset();
         auto &ec = msg.payload.ee;
         if (!ec) {
-            std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attemps : " << attempts << "\n";
+            std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attempts : " << attempts << "\n";
             do_shutdown();
         } else {
             std::cout << "pinger_t, (" << (void *)this << ") pong failed (" << attempts << ")\n";
@@ -125,13 +125,13 @@ struct pinger_t : public rotor::actor_base_t {
 
 struct ponger_t : public rotor::actor_base_t {
     using generator_t = std::mt19937;
-    using distrbution_t = std::uniform_real_distribution<double>;
+    using distribution_t = std::uniform_real_distribution<double>;
     using message_ptr_t = rotor::intrusive_ptr_t<message::ping_t>;
     using requests_map_t = std::unordered_map<rotor::request_id_t, message_ptr_t>;
 
     std::random_device rd;
     generator_t gen;
-    distrbution_t dist;
+    distribution_t dist;
     requests_map_t requests;
 
     explicit ponger_t(config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
@@ -314,7 +314,7 @@ pinger_t, (0x55f9f90048a0) pong failed (7)
 pinger_t, (0x55f9f90048a0) pong failed (8)
 pinger_t, (0x55f9f90048a0) pong failed (9)
 pinger_t, (0x55f9f90048a0) pong failed (10)
-pinger_t, (0x55f9f90048a0) success!, pong received, attemps : 11
+pinger_t, (0x55f9f90048a0) success!, pong received, attempts : 11
 pinger_t, (0x55f9f90048a0) shutdown_start()
 pinger_t, (0x55f9f90048a0), on_custom_timeout, cancelled: 1
 pinger_t, (0x55f9f90048a0) finished attempts done 11

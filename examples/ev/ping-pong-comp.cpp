@@ -76,11 +76,11 @@ struct pinger_t : public rotor::actor_base_t {
 
 struct ponger_t : public rotor::actor_base_t {
     using generator_t = std::mt19937;
-    using distrbution_t = std::uniform_real_distribution<double>;
+    using distribution_t = std::uniform_real_distribution<double>;
 
     std::random_device rd;
     generator_t gen;
-    distrbution_t dist;
+    distribution_t dist;
 
     explicit ponger_t(config_t &cfg) : rotor::actor_base_t(cfg), gen(rd()) {}
 

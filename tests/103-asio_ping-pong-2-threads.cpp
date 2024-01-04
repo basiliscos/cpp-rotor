@@ -130,7 +130,7 @@ TEST_CASE("ping/pong on 2 threads", "[supervisor][asio]") {
         // this might happen due to unavoidable race between threads, system scheduler etc.
         // can be artificially archived launching tool like `stress-ng --cpu 8`
         // and/or set small timeout
-        // no special acetion is needed, as the pinger will trigger shutdown for the
+        // no special action is needed, as the pinger will trigger shutdown for the
         // both threads
     }
 

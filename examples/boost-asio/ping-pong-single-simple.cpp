@@ -83,7 +83,7 @@ struct ponger_t : public rotor::actor_base_t {
     void configure(rotor::plugin::plugin_base_t &plugin) noexcept override {
         rotor::actor_base_t::configure(plugin);
         plugin.with_casted<rotor::plugin::starter_plugin_t>([](auto &p) {
-            std::cout << "pinger_t::configure, subscriping on_ping\n";
+            std::cout << "pinger_t::configure, subscribing on_ping\n";
             p.subscribe_actor(&ponger_t::on_ping);
         });
     }

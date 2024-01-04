@@ -42,7 +42,7 @@ struct ROTOR_API child_manager_plugin_t : public plugin_base_t {
     virtual void create_child(const actor_ptr_t &actor) noexcept;
 
     /** \brief records spawner (via generating a new address) and sends
-     * spawn_actor_t message to the supersior */
+     * spawn_actor_t message to the supervisor */
     virtual void spawn(factory_t factory, const pt::time_duration &period, restart_policy_t policy, size_t max_attempts,
                        bool escalate) noexcept;
 

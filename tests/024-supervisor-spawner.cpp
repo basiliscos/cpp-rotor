@@ -301,7 +301,7 @@ TEST_CASE("normal flow", "[spawner]") {
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
-TEST_CASE("trees of supervisorts", "[spawner]") {
+TEST_CASE("trees of supervisors", "[spawner]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<sample_supervisor_t>().timeout(rt::default_timeout).finish();
     size_t samples = 0;

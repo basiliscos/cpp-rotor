@@ -66,7 +66,7 @@ struct ROTOR_API child_info_t : boost::intrusive_ref_counter<child_info_t, boost
     /** \brief checks whether new actor should be spawned
      *
      * New actor can be spawned right now, a bit later,
-     * not spawned at all possibly with triggering supersior
+     * not spawned at all possibly with triggering supervisor
      * shutdown.
      *
      */
@@ -99,7 +99,7 @@ struct ROTOR_API child_info_t : boost::intrusive_ref_counter<child_info_t, boost
     /** \brief whether the spawner is active */
     bool active = true;
 
-    /** \brief whether an actor failure should be escalated to supersior */
+    /** \brief whether an actor failure should be escalated to supervisor */
     bool escalate_failure = false;
 
     /** \brief the timer_id when actor should be spawned */

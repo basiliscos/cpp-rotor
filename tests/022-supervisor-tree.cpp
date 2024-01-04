@@ -73,7 +73,7 @@ struct custom_sup : rt::supervisor_test_t {
  *
  * 2. Ponger should receive the message, and initiate it's own shutdown procedure
  *
- * 3. As all supervisors have the same localitiy, the S_2 supervisor should
+ * 3. As all supervisors have the same locality, the S_2 supervisor should
  * receive ponger shutdown request and spawn a new ponger.
  *
  * 4. All messaging (except initialization) should happen in single do_process

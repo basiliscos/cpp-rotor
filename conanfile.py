@@ -48,7 +48,7 @@ class RotorConan(ConanFile):
                 pass
 
     def requirements(self):
-        self.requires("boost/1.71.0", transitive_headers=True)
+        self.requires("boost/1.83.0", transitive_headers=True)
 
     def layout(self):
         cmake_layout(self)

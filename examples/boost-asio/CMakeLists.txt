@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.23)
 find_package(Boost
     COMPONENTS
         date_time system regex program_options
@@ -37,9 +37,9 @@ target_link_libraries(one-shot-lambda-subscriber rotor_asio ${Boost_LIBRARIES})
 add_test(one-shot-lambda-subscriber "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/one-shot-lambda-subscriber")
 
 if (NOT BUILD_THREAD_UNSAFE)
-    add_executable(ping-pong-2-theads ping-pong-2-theads.cpp)
-    target_link_libraries(ping-pong-2-theads rotor_asio ${Boost_LIBRARIES})
-    add_test(ping-pong-2-theads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-2-theads")
+    add_executable(ping-pong-2-threads ping-pong-2-threads.cpp)
+    target_link_libraries(ping-pong-2-threads rotor_asio ${Boost_LIBRARIES})
+    add_test(ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-2-threads")
 
     add_executable(ping-pong-2-threads-preemt ping-pong-2-threads-preemt.cpp)
     target_link_libraries(ping-pong-2-threads-preemt rotor_asio ${Boost_LIBRARIES})

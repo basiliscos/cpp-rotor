@@ -127,7 +127,7 @@ struct shutdown_request_t {
  * supervisor is the same as the message address supervisor, the handler is invoked
  * immediately. Otherwise, if a handler belongs to different supervisor (i.e. may
  * be to different event loop), then the delivery of the message is forwarded to
- * that supersior.
+ * that supervisor.
  *
  */
 struct handler_call_t {

@@ -72,7 +72,7 @@ struct foo_observer_t : public r::actor_base_t {
     std::uint32_t foo_count = 0;
 };
 
-TEST_CASE("obsrever", "[actor]") {
+TEST_CASE("observer", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();

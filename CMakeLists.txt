@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 3.13)
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.12)
-    cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.23)
+
+cmake_policy(SET CMP0074 NEW)
 
 set(ROTOR_VERSION "0.26")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
@@ -18,28 +17,24 @@ include(CMakePrintHelpers)
 option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
 option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
 option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
-option(BUILD_THREAD         "Enable building with thread support  [default: ON]"          ON)
+option(BUILD_THREAD         "Enable building with thread support  [default: ON]"         ON)
 option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
 option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
-option(BUILD_THREAD_UNSAFE  "Enable building thead-unsafe library [default: OFF]"        OFF)
-option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debuging [default: OFF]"            OFF)
+option(BUILD_THREAD_UNSAFE  "Enable building thread-unsafe library [default: OFF]"       OFF)
+option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debugging [default: OFF]"           OFF)
 
 
 find_package(Boost COMPONENTS
         date_time
         system
         regex
-    REQUIRED)
+        REQUIRED)
 
 include(GenerateExportHeader)
 
 if (DEFINED rotor_SHARED_LIBS)
     set(BUILD_SHARED_LIBS "${rotor_SHARED_LIBS}")
 endif ()
-
-
-set(ROTOR_TARGETS_TO_INSTALL)
-set(ROTOR_HEADERS_TO_INSTALL)
 
 add_library(rotor)
 
