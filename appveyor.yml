@@ -12,8 +12,8 @@ environment:
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
   
   matrix:
-    - SHARED: true
-    - SHARED: false
+    - SHARED: True
+    - SHARED: False
 
 platform:
     - x64
