@@ -2,6 +2,7 @@ image:
   - Visual Studio 2017
   - Visual Studio 2019
   - Visual Studio 2022
+  - Ubuntu2022
 
 configuration:
   - Debug
@@ -10,22 +11,22 @@ configuration:
 environment:
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
-  
-  matrix:
-    - SHARED: True
-    - SHARED: False
+  APPVEYOR_YML_DISABLE_PS_LINUX: true
 
 platform:
     - x64
+    
+stack: python 3.12.0
 
 for:
   -
     install:
-      - set PATH=%PY_SCRIPTS%;%PATH%
-      - echo %PATH%
-      - "%PYTHON%\\python.exe -m pip install conan cmake"
+      - ps: set PATH=%PY_SCRIPTS%;%PATH%
+      - ps: echo %PATH%
+      - ps: "%PYTHON%\\python.exe -m pip install conan cmake"
+      - sh: sudo python3 -m pip install conan cmake
     build_script:
       - cmake --version
       - conan profile detect
     test_script:
-      - conan create . -s build_type=%CONFIGURATION% -s compiler.cppstd=17 -c tools.build:skip_test=False -o shared=%SHARED% --version 0.26 --build=missing
+      - conan create . -s build_type=%CONFIGURATION% -s compiler.cppstd=17 -c tools.build:skip_test=False --version 0.26 --build=missing
