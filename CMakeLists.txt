@@ -32,8 +32,8 @@ find_package(Boost COMPONENTS
 
 include(GenerateExportHeader)
 
-if (DEFINED rotor_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS "${rotor_SHARED_LIBS}")
+if (BUILD_SHARED_LIBS)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
 endif ()
 
 add_library(rotor)

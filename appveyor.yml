@@ -10,7 +10,9 @@ configuration:
 environment:
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
-
+  matrix:
+    - SHARED: True
+    - SHARED: False
 
 platform:
     - x64
@@ -23,8 +25,9 @@ for:
       - set PATH=%PY_SCRIPTS%;%PATH%
       - echo %PATH%
       - "%PYTHON%\\python.exe -m pip install conan cmake"
+
     build_script:
       - cmake --version
       - conan profile detect
     test_script:
-      - conan create . -s build_type=%CONFIGURATION% -s compiler.cppstd=17 -c tools.build:skip_test=False --version 0.26 --build=missing
+      - conan create . -s build_type=%CONFIGURATION% -s compiler.cppstd=17 -c tools.build:skip_test=False -o shared=%SHARED% --version 0.26 --build=missing
