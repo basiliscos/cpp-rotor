@@ -17,7 +17,7 @@ class RotorConan(ConanFile):
         "Event loop friendly C++ actor micro-framework, supervisable"
     )
     topics = ("concurrency", "actor-framework", "actors", "actor-model", "erlang", "supervising", "supervisor")
-    exports_sources = "CMakeLists.txt", "src/*", "include/*", "test_package/*", "cmake/*"
+    exports_sources = "CMakeLists.txt", "src/*", "include/*", "test_package/*", "cmake/*", "tests/*"
 
     test_requires = "catch2/3.4.0"
     settings = "os", "arch", "compiler", "build_type"
