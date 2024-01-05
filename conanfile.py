@@ -17,7 +17,7 @@ class RotorConan(ConanFile):
         "Event loop friendly C++ actor micro-framework, supervisable"
     )
     topics = ("concurrency", "actor-framework", "actors", "actor-model", "erlang", "supervising", "supervisor")
-    exports_sources = "CMakeLists.txt", "src/*", "include/*", "test_package/*", "cmake/*", "tests/*"
+    exports_sources = "CMakeLists.txt", "src/*", "include/*", "test_package/*", "cmake/*", "tests/*", "examples/*"
 
     test_requires = "catch2/3.4.0"
     settings = "os", "arch", "compiler", "build_type"
@@ -25,6 +25,7 @@ class RotorConan(ConanFile):
         "fPIC": [True, False],
         "shared": [True, False],
         "enable_asio": [True, False],
+        "enable_ev" : [True, False],
         "enable_thread": [True, False],
         "multithreading": [True, False],  # enables multithreading support
     }
@@ -32,6 +33,7 @@ class RotorConan(ConanFile):
         "fPIC": True,
         "shared": False,
         "enable_asio": True,
+        "enable_ev" : False,
         "enable_thread": True,
         "multithreading": True,
     }
@@ -49,6 +51,8 @@ class RotorConan(ConanFile):
 
     def requirements(self):
         self.requires("boost/1.83.0", transitive_headers=True)
+        if self.options.enable_ev:
+            self.requires("libev/4.33")
 
     def layout(self):
         cmake_layout(self)
@@ -57,6 +61,8 @@ class RotorConan(ConanFile):
         tc = CMakeToolchain(self)
         tc.variables["BUILD_BOOST_ASIO"] = self.options.enable_asio
         tc.variables["BUILD_THREAD"] = self.options.enable_thread
+        tc.variables["BUILD_EV"] = self.options.enable_ev
+        tc.variables["BUILD_EXAMPLES"] = os.environ.get('ROTOR_BUILD_EXAMPLES', 'OFF')
         tc.variables["BUILD_THREAD_UNSAFE"] = not self.options.multithreading
         tc.variables["BUILD_TESTING"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
         tc.generate()
@@ -116,3 +122,7 @@ class RotorConan(ConanFile):
         if self.options.enable_thread:
             self.cpp_info.components["thread"].libs = ["rotor_thread"]
             self.cpp_info.components["thread"].requires = ["core"]
+
+        if self.options.enable_ev:
+            self.cpp_info.components["ev"].libs = ["rotor_ev"]
+            self.cpp_info.components["ev"].requires = ["core"]

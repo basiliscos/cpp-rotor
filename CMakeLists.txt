@@ -237,7 +237,7 @@ if (BUILD_EV)
     )
 
     list(APPEND EV_HEADERS 
-        ${CMAKE_SOURCE_DIR}/include/ev/ev.hpp
+        ${CMAKE_SOURCE_DIR}/include/rotor/ev.hpp
         ${CMAKE_BINARY_DIR}/include/rotor/ev/export.h
     )
 
@@ -253,7 +253,7 @@ if (BUILD_EV)
 
 
     target_include_directories(rotor_ev PUBLIC ${LIBEV_INCLUDE_DIRS})
-    target_link_libraries(rotor_ev PUBLIC rotor ${LIBEV_LIBRARY})
+    target_link_libraries(rotor_ev PUBLIC rotor libev::libev)
     add_library(rotor::ev ALIAS rotor_ev)
 
     install(
