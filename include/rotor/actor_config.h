@@ -199,6 +199,7 @@ template <typename Actor> struct actor_config_builder_t {
     /** \brief constructs actor from the current config */
     actor_ptr_t finish() &&;
 
+    virtual ~actor_config_builder_t() = default;
   private:
     void init_ctor() noexcept {
         config.plugins_constructor = []() -> plugin_storage_ptr_t {

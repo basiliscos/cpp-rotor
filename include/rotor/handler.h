@@ -176,6 +176,7 @@ struct continuation_t {
 
     /** \brief continue handler invocation */
     virtual void operator()() const noexcept = 0;
+    virtual ~continuation_t() = default;
 };
 
 /** \struct handler_intercepted_t

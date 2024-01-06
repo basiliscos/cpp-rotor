@@ -125,4 +125,4 @@ class RotorConan(ConanFile):
 
         if self.options.enable_ev:
             self.cpp_info.components["ev"].libs = ["rotor_ev"]
-            self.cpp_info.components["ev"].requires = ["core"]
+            self.cpp_info.components["ev"].requires = ["core", "libev::libev"]

@@ -22,7 +22,7 @@ enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
  */
 struct ROTOR_API plugin_base_t {
     /** \brief possible plugin's reactions on actor lifetime events */
-    enum reaction_t {
+    enum reaction_t : std::uint32_t {
         INIT = 1 << 0,
         SHUTDOWN = 1 << 1,
         SUBSCRIPTION = 1 << 2,
