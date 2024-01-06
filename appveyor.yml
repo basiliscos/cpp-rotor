@@ -19,7 +19,7 @@ environment:
 platform:
     - x64
 
-stack: python 3.11.5
+stack: python 3.11
 
 for:
   -
