@@ -53,10 +53,7 @@ template <typename Object, typename Method> struct timer_handler_t : timer_handl
 
     void trigger(bool cancelled) noexcept override 
     { 
-        if constexpr ( std::is_member_function_pointer_v<Method>)
-            ((*object).*method)(request_id, cancelled); 
-        else
-            method(object, request_id, cancelled);
+        std::invoke(method, object, request_id, cancelled);
     }
 };
 
