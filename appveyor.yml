@@ -27,7 +27,7 @@ for:
       - cmd: set PATH=%PY_SCRIPTS%;%PATH%
       - cmd: echo %PATH%
       - cmd: "%PYTHON%\\python.exe -m pip install conan cmake"
-      - sh: sudo python3 -m pip install conan cmake
+      - sh: python3 -m pip install conan cmake
     build_script:
       - cmake --version
       - conan profile detect
