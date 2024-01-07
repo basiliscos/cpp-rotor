@@ -69,7 +69,7 @@ project.
 ### 0.26 (xx-xxx-2024)
  - [bugfix, breaking] make plugins more dll-friendly
  - [breaking] CMake minimum version 3.23
- - [breaking] ```registry_t::revese_map_t revese_map``` -> ```registry_t::receive_map_t receive_map```
+ - [breaking] ```registry_t::revese_map_t revese_map``` -> ```registry_t::reverse_map_t reverse_map```
  - [breaking] struct ```cancelation_t``` -> ```cancellation_t```
  - [breaking, conan] boost minimum version 1.83.0
  - [feature, conan] enable_ev option which add libev

@@ -35,7 +35,7 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
 
     auto &service_addr = request.payload.request_payload.service_addr;
     registered_map.emplace(name, service_addr);
-    auto &names = receive_map[service_addr];
+    auto &names = reverse_map[service_addr];
     names.insert(name);
 
     reply_to(request);
@@ -51,12 +51,12 @@ void registry_t::on_reg(message::registration_request_t &request) noexcept {
 
 void registry_t::on_dereg(message::deregistration_notify_t &message) noexcept {
     auto &service_addr = message.payload.service_addr;
-    auto it = receive_map.find(service_addr);
-    if (it != receive_map.end()) {
+    auto it = reverse_map.find(service_addr);
+    if (it != reverse_map.end()) {
         for (auto &name : it->second) {
             registered_map.erase(name);
         }
-        receive_map.erase(it);
+        reverse_map.erase(it);
     }
 }
 
@@ -65,7 +65,7 @@ void registry_t::on_dereg_service(message::deregistration_service_t &message) no
     auto it = registered_map.find(name);
     if (it != registered_map.end()) {
         auto &service_addr = it->second;
-        auto &names = receive_map.at(service_addr);
+        auto &names = reverse_map.at(service_addr);
         names.erase(name);
         registered_map.erase(it);
     }
