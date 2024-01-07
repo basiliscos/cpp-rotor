@@ -4,16 +4,16 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-### 0.26 (xx-xxx-2024)
+### 0.26 (08-Jan-2024)
+ - [feature] `start_timer` callback not only method, but any invocable
+ - [feature, conan] `enable_ev` option which add `libev`
+ - [breaking, conan] `boost` minimum version `1.83.0`
+ - [testing, conan] remove `catch2` from sources and make it dependencies
  - [bugfix, breaking] make plugins more dll-friendly
- - [breaking] CMake minimum version 3.23
- - [breaking] ```registry_t::revese_map_t revese_map``` -> ```registry_t::reverse_map_t reverse_map```
- - [breaking] struct ```cancelation_t``` -> ```cancellation_t```
- - [breaking, conan] boost minimum version 1.83.0
- - [feature, conan] enable_ev option which add libev
- - [feature, conan] remove catch2 from sources and make it dependencies
- - [feature] start_timer callback not only method, but any invocable
-
+ - [breaking] `cmake` minimum version `3.23`
+ - [breaking] rename ```registry_t::revese_map_t revese_map``` -> ```registry_t::reverse_map_t reverse_map```
+ - [breaking] rename struct ```cancelation_t``` -> ```cancellation_t```
+ - [doc] fix multiple typos
 
 ### 0.25 (26-Dec-2022)
  - [bugfix] avoid response messages loose their order relative to regular message
