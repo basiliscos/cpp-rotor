@@ -1,10 +1,9 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "actor_test.h"
 #include "supervisor_test.h"
@@ -448,7 +447,7 @@ TEST_CASE("link errors", "[actor]") {
         CHECK(act_c->message2->payload.ee->ec.message() == std::string("already linked"));
     }
 
-    SECTION("not linkeable") {
+    SECTION("not linkable") {
         auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
         sup2->do_process();
 
@@ -475,7 +474,8 @@ TEST_CASE("link errors", "[actor]") {
             sup1->do_process();
             CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
 
-            auto plugin1 = act_c->access<rt::to::get_plugin>(r::plugin::link_client_plugin_t::class_identity);
+            auto id = &std::as_const(r::plugin::link_client_plugin_t::class_identity);
+            auto plugin1 = act_c->access<rt::to::get_plugin>(id);
             auto p1 = static_cast<r::plugin::link_client_plugin_t *>(plugin1);
             p1->link(act_s->get_address(), false, [&](auto &) {});
             act_c->access<rt::to::resources>()->acquire();
@@ -489,7 +489,7 @@ TEST_CASE("link errors", "[actor]") {
         act_s->access<rt::to::resources>()->release();
     }
 
-    SECTION("unlink during shutring down") {
+    SECTION("unlink during shutting down") {
         auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
         auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
@@ -626,7 +626,7 @@ TEST_CASE("ignore unlink", "[actor]") {
     sup->do_process();
 }
 
-TEST_CASE("unlink in supervisor", "[supervisort]") {
+TEST_CASE("unlink in supervisor", "[supervisor]") {
     rt::system_context_test_t ctx1;
     rt::system_context_test_t ctx2;
     auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality("abc").finish();

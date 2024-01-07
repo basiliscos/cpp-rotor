@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -24,10 +24,9 @@ template <> auto &actor_base_t::access<to::lifetime>() noexcept { return lifetim
 template <> auto &lifetime_plugin_t::access<to::points>() noexcept { return points; }
 template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 
-const void *foreigners_support_plugin_t::class_identity =
-    static_cast<const void *>(typeid(foreigners_support_plugin_t).name());
+const std::type_index foreigners_support_plugin_t::class_identity = typeid(foreigners_support_plugin_t);
 
-const void *foreigners_support_plugin_t::identity() const noexcept { return class_identity; }
+const std::type_index &foreigners_support_plugin_t::identity() const noexcept { return class_identity; }
 
 void foreigners_support_plugin_t::activate(actor_base_t *actor_) noexcept {
     actor = actor_;

@@ -71,7 +71,7 @@ jobs:
 
   build_conan:
     docker:
-      - image: debian:10
+      - image: debian:11
     resource_class: medium
     steps:
       - checkout
@@ -81,7 +81,8 @@ jobs:
               apt-get update
               apt-get install -y cmake clang python3-pip
               pip3 install conan
-              conan create conanfile.py rotor/0.20@
+              conan profile detect
+              conan create --build=missing --version 0.26 .
 
 
 workflows:

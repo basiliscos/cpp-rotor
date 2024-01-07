@@ -51,7 +51,7 @@ it some breadth to pull external messages, trigger timeouts, and, finally, give 
 chance to react to cancellation notice.
 
 When there are no messages, the backend uses `sleep_for` / `sleep_until` functions to
-wait either external message message or until nearest timout occurs. To let the things
+wait either external message message or until nearest timeout occurs. To let the things
 work properly, the message handlers with blocking operations should specially marked
 (`tag_io()`), to correctly update timers before, after and inside the handler.
 
@@ -111,7 +111,7 @@ void shutdown() noexcept override;
 void enqueue(rotor::message_ptr_t) noexcept override;
 ~~~
 
-The `enqueue` method is responsible for puting an `message` into `supervisor`
+The `enqueue` method is responsible for putting an `message` into `supervisor`
 inbound queue *probably* in **thread-safe manner** to allow accept messages
 from other supervisors/loops (thread-safety requirement) or just from some
 outer context, when supervisor is still not running on the loop (can be
@@ -144,7 +144,7 @@ void some_supervisor_t::enqueue(message_ptr_t message) noexcept {
 ~~~
 
 How to get loop and what method invoke on it, is the implementation-specific information.
-For example, loop refrence can be passed on `supervisor` constructor. The `invoke_later`
+For example, loop reference can be passed on `supervisor` constructor. The `invoke_later`
 (alternative names: `postpone`, `CallAfter`, `delay`, `dispatch`) is loop-specific
 method how to invoke something on in a thread-safe way. Please note, that `supervisor`
 instance is captured via intrusive pointer to make sure it is alive in the loop context

@@ -78,7 +78,7 @@ struct ponger_t : public rotor::actor_base_t {
     }
 
     void on_ping(message::ping_t &req) noexcept {
-        std::cout << "ponger recevied ping request\n";
+        std::cout << "ponger received ping request\n";
         reply_to(req);
     }
 
@@ -117,7 +117,7 @@ sample output:
 
 discovered & linked with ponger : yes
 lets send ping
-ponger recevied ping request
+ponger received ping request
 pong received, going to shutdown
 exiting...
 

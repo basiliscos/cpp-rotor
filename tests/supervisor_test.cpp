@@ -6,15 +6,15 @@
 
 #include "supervisor_test.h"
 #include "access.h"
-#include "catch.hpp"
 #include "cassert"
 
 using namespace rotor::test;
 using namespace rotor;
 
 supervisor_test_t::supervisor_test_t(supervisor_config_test_t &config_)
-    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)}, interceptor{std::move(config_.interceptor)} {
-    supervisor_t* root_sup = this;
+    : supervisor_t{config_}, locality{config_.locality}, configurer{std::move(config_.configurer)},
+      interceptor{std::move(config_.interceptor)} {
+    supervisor_t *root_sup = this;
     if (!locality) {
         while (root_sup->access<test::to::parent_supervisor>()) {
             root_sup = root_sup->access<test::to::parent_supervisor>();
@@ -27,18 +27,18 @@ supervisor_test_t::~supervisor_test_t() { printf("~supervisor_test_t, %p(%p)\n",
 
 address_ptr_t supervisor_test_t::make_address() noexcept { return instantiate_address(locality); }
 
-void supervisor_test_t::do_start_timer(const pt::time_duration &, timer_handler_base_t& handler) noexcept {
-    printf("starting timer %zu (%p)\n", handler.request_id, (void*)this);
+void supervisor_test_t::do_start_timer(const pt::time_duration &, timer_handler_base_t &handler) noexcept {
+    printf("starting timer %zu (%p)\n", handler.request_id, (void *)this);
     active_timers.emplace_back(&handler);
 }
 
 void supervisor_test_t::do_cancel_timer(request_id_t timer_id) noexcept {
-    printf("cancelling timer %zu (%p)\n", timer_id, (void*)this);
+    printf("cancelling timer %zu (%p)\n", timer_id, (void *)this);
     auto it = active_timers.begin();
     while (it != active_timers.end()) {
-        auto& handler = *it;
+        auto &handler = *it;
         if (handler->request_id == timer_id) {
-            auto& actor_ptr = handler->owner;
+            auto &actor_ptr = handler->owner;
             actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
             active_timers.erase(it);
             return;
@@ -50,16 +50,15 @@ void supervisor_test_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_test_t::do_invoke_timer(request_id_t timer_id) noexcept {
-    printf("invoking timer %zu (%p)\n", timer_id, (void*)this);
-    auto predicate = [&](auto& handler) { return handler->request_id == timer_id;  };
+    printf("invoking timer %zu (%p)\n", timer_id, (void *)this);
+    auto predicate = [&](auto &handler) { return handler->request_id == timer_id; };
     auto it = std::find_if(active_timers.begin(), active_timers.end(), predicate);
     assert(it != active_timers.end());
-    auto& handler = *it;
-    auto& actor_ptr = handler->owner;
+    auto &handler = *it;
+    auto &actor_ptr = handler->owner;
     actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
     active_timers.erase(it);
 }
-
 
 subscription_container_t &supervisor_test_t::get_points() noexcept {
     auto plugin = get_plugin(plugin::lifetime_plugin_t::class_identity);
@@ -86,26 +85,26 @@ supervisor_test_t &supervisor_test_t::get_leader() {
 
 void supervisor_test_t::configure(plugin::plugin_base_t &plugin) noexcept {
     supervisor_t::configure(plugin);
-    if (configurer){
+    if (configurer) {
         configurer(*this, plugin);
     }
 }
 
-void supervisor_test_t::intercept(message_ptr_t &message, const void *tag, const continuation_t &continuation) noexcept {
+void supervisor_test_t::intercept(message_ptr_t &message, const void *tag,
+                                  const continuation_t &continuation) noexcept {
     if (interceptor) {
         return interceptor(message, tag, continuation);
     }
     continuation();
 }
 
-
 // let trigger memory leaks
 system_test_context_t::~system_test_context_t() {
-    auto& sup = access<to::supervisor>();
+    auto &sup = access<to::supervisor>();
     if (sup) {
-        auto& queue = sup->access<to::queue>();
-        auto& inbound = sup->access<to::inbound_queue>();
-        while(!queue.empty()) {
+        auto &queue = sup->access<to::queue>();
+        auto &inbound = sup->access<to::inbound_queue>();
+        while (!queue.empty()) {
             inbound.push(queue.front().detach());
             queue.pop_front();
         }

@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "access.h"
@@ -23,12 +22,12 @@ struct simpleton_actor_t : public r::actor_base_t {
 
     void on_start() noexcept override {
         r::actor_base_t::on_start();
-        INFO("simpleton_actor_t::on_start()")
+        INFO("simpleton_actor_t::on_start()");
         send<foo_t>(address);
     }
 
     void on_foo(r::message_t<foo_t> &) noexcept {
-        INFO("simpleton_actor_t::on_foo()")
+        INFO("simpleton_actor_t::on_foo()");
         ++foo_count;
     }
 
@@ -66,14 +65,14 @@ struct foo_observer_t : public r::actor_base_t {
 
     void on_foo(r::message_t<foo_t> &) noexcept {
         ++foo_count;
-        INFO("foo_observer_t::on_foo")
+        INFO("foo_observer_t::on_foo");
     }
 
     r::address_ptr_t simpleton_addr;
     std::uint32_t foo_count = 0;
 };
 
-TEST_CASE("obsrever", "[actor]") {
+TEST_CASE("observer", "[actor]") {
     r::system_context_t system_context;
 
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();

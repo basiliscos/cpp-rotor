@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,16 +15,16 @@ namespace rotor::plugin {
  * \brief manages all actor subscriptions (i.e. from plugins or actor itself).
  *
  * The plugin main focus to properly cancel subscriptions, i.e. every address
- * where an actor plugin or the actor itslef was subscribscribed to.
+ * where an actor plugin or the actor itself was subscribscribed to.
  *
  */
 struct ROTOR_API lifetime_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
+    static const std::type_index class_identity;
 
-    const void *identity() const noexcept override;
+    const std::type_index &identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
@@ -38,7 +38,7 @@ struct ROTOR_API lifetime_plugin_t : public plugin_base_t {
     /** \brief triggers unsubscription
      *
      * For internal subscriptions it answers with unsubscription
-     * confirimation; for foreign subscription it sends external unsubscription
+     * confirmation; for foreign subscription it sends external unsubscription
      * request
      */
     void unsubscribe(const subscription_info_ptr_t &info) noexcept;

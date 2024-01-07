@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -26,7 +26,7 @@ namespace rotor::plugin {
  * Can use {@link registry_t} to register name/address during actor init phase
  * and perform the reverse operation to deregister name/address during shutdown phase.
  *
- * Simialary the {@link registry_t} can be used to discover name in the registry
+ * Similary the {@link registry_t} can be used to discover name in the registry
  * and link the current actor to the target address during init phase; there is
  * no reverse operation during shutdown phase, because unlinking will be handled
  * by {@link plugin::link_client_plugin_t} plugin.
@@ -89,9 +89,9 @@ struct ROTOR_API registry_plugin_t : public plugin_base_t {
     };
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
+    static const std::type_index class_identity;
 
-    const void *identity() const noexcept override;
+    const std::type_index &identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
 

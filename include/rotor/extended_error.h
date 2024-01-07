@@ -19,7 +19,7 @@ namespace rotor {
 
 struct extended_error_t;
 
-/** \brief intrusive pointer to exteneded error type */
+/** \brief intrusive pointer to extended error type */
 using extended_error_ptr_t = intrusive_ptr_t<extended_error_t>;
 
 /** \struct extended_error_t
@@ -33,10 +33,10 @@ using extended_error_ptr_t = intrusive_ptr_t<extended_error_t>;
  *
  */
 struct ROTOR_API extended_error_t : arc_base_t<extended_error_t> {
-    /** \brief error context, ususally actor identity */
+    /** \brief error context, usually actor identity */
     std::string context;
 
-    /** \brief abstract error code, describing occured error */
+    /** \brief abstract error code, describing occurred error */
     std::error_code ec;
 
     /** \brief pointer to the root error */
@@ -47,11 +47,11 @@ struct ROTOR_API extended_error_t : arc_base_t<extended_error_t> {
                      const extended_error_ptr_t &next_ = {}) noexcept
         : context{context_}, ec{ec_}, next{next_} {}
 
-    /** \brief human-readeable detailed description of the error
+    /** \brief human-readable detailed description of the error
      *
      * First, it stringifies own error in accordance with the context.
      *
-     * Second, it recursively ask details on all following errors, appedning them
+     * Second, it recursively ask details on all following errors, appending them
      * into the result. The result string is returned.
      */
     std::string message() const noexcept;

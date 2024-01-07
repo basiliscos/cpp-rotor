@@ -17,7 +17,7 @@ is useful when the **same type** of messages arrive in response to different que
 
 For example, let's assume that there is an "http-actor", which is able to "execute"
 http requests in generic way and return back the replies. If there is a SOAP/WSDL
--webservice, the first query will be "get list of serices", and the second query
+-webservice, the first query will be "get list of services", and the second query
 will be "execute an action X". The both responses will be HTTP-replies.
 
 Something like the following can be done:
@@ -55,7 +55,7 @@ struct client_t: public r::actor_base_t {
 ~~~
 
 
-## Request/Responce
+## Request/Response
 
 While [request-response] approach is widely know, it has it's own specific
 on the actor-model:
@@ -67,7 +67,7 @@ the original request (message)
 The first issue is solved in rotor via including full original message
 (intrusive pointer) into response (message). This also means, that the receiver
 (the "server") replies not to the message with the original user-defined payload, but
-slightly enreached one; the same relates to the response (the "client" side).
+slightly enriched one; the same relates to the response (the "client" side).
 
 The second issues is solved via spawning a *timer*. Obviously, that the timer
 should be spawned on the client-side. In the case of timeout, the client-side
@@ -330,14 +330,14 @@ start simultaneously. The special option `synchronized_start` is response for th
 ### Blocking I/O multiplexing
 
 This is mostly related to `thread` backend. When there is a need to perform long/blocking
-/synchronous work, like disk I/O or interraction with database, or matrices computation
+/synchronous work, like disk I/O or interaction with database, or matrices computation
 etc., still there is need of **being reactive**, i.e. actor should respond on other
 messages or timers should fire.
 
 Implementing blocking I/O naively, i.e. doing all work at once will make an actor (and
-the entire thread) unresponsible. So, the solution is the following: break the whole
+the entire thread) unresponsive. So, the solution is the following: break the whole
 job into smaller pieces (read from disk a by a few megabytes chunks, read/write a
-thousands of rows into DB or multiply a few colums/rows in matrices) and pack
+thousands of rows into DB or multiply a few columns/rows in matrices) and pack
 whole job into a message. Then, send a message to an actor. The actor will process
 the message, and if the job has yet not being complete, send it as a message to
 self again, asking to process the next chunk etc. Other messages will be processed
@@ -354,7 +354,7 @@ void configure(r::plugin::plugin_base_t &plugin) noexcept override {
 }
 ~~~
 
-There is an example demostrating the technique, see `examples/thread/sha512.cpp`.
+There is an example demonstrating the technique, see `examples/thread/sha512.cpp`.
 
 ## Multiple Producers Multiple Consumers (MPMC aka pub-sub)
 
@@ -436,7 +436,7 @@ That way it is possible to "spy" messages of the sensor actor. To avoid synchron
 issues the client should discover and link to the sensor actor.
 
 The distinguish of *foreign and non-foreign* actors or MPMC pattern is completely
-**architectural** and application specific, i.e. whether it is known apriori that
+**architectural** and application specific, i.e. whether it is known a priori that
 there are multiple subscribers (MPMC) or single subscriber and other subscribes
 are are hidden from the original message flow. There is no difference between them
 at the `rotor` core, i.e.
@@ -475,8 +475,8 @@ certainly be overloaded.
 There can be at least two approaches, depending how fast the reaction to overload
 should be triggered. In the simplest case, when there is no timeframe guarantee
 for overload reaction, it can be do as the following: an custom `supervisor`
-shoud be written, messages to protected supervisor should be delivered not
-immediately, but with some delay (i.e. `loop->postone([&](supervisor->do_process())`)
+should be written, messages to protected supervisor should be delivered not
+immediately, but with some delay (i.e. `loop->postpone([&](supervisor->do_process())`)
 and before message delivery to the actor the queue size (or other criteria for
 overloading condition) should be checked, then overload-reaction should be performed.
 
@@ -484,7 +484,7 @@ Another approach will be write an front-actor, which will run on dedicated super
 / thread. The actor will forward requests to protected worker-actor, if the
 worker-actor answers within certain timeframe, or immediately react with overload
 action. This will work, if the request-message, contains reply address, which
-will be remembered and overwritten by front-actor, before forwaring the message
+will be remembered and overwritten by front-actor, before forwarding the message
 to worker-actor, and in the reply-message the address might be needed to be
 overwritten too. The strategy can be extended to use several workers, and,
 hence, provide application-specific load balancing.

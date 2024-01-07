@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -15,7 +15,7 @@ namespace rotor::plugin {
  * \brief create actor's addresses
  *
  * The plugin is executed on very early stage of actor creation
- * to assing its main address as soon as possible.
+ * to assign its main address as soon as possible.
  *
  * If additional addresses are needed by the actor, they can be
  * asked via the plugin.
@@ -25,16 +25,16 @@ struct ROTOR_API address_maker_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
+    static const std::type_index class_identity;
 
-    const void *identity() const noexcept override;
+    const std::type_index &identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
     void deactivate() noexcept override;
 
     /** \brief smart identity setter
      *
-     * It can set the actor identity, and optionally append actor's main addres
+     * It can set the actor identity, and optionally append actor's main address
      * to let it be something like "net::http10 0x7fc0d0013c60"
      *
      */

@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "rotor/wx.hpp"
 #include "supervisor_wx_test.h"

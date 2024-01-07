@@ -82,7 +82,7 @@ struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
         return forwarder_t{*this, std::move(handler)};
     }
 
-    /** \brief returns exeuction strand */
+    /** \brief returns execution strand */
     inline asio::io_context::strand &get_strand() noexcept { return *strand; }
 
     /** \brief process queue of messages of locality leader */

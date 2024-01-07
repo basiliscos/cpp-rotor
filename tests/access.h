@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -50,8 +50,10 @@ template <> inline auto &actor_base_t::access<test::to::state>() noexcept { retu
 template <> inline auto &actor_base_t::access<test::to::active_requests>() noexcept { return active_requests; }
 template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { return resources; }
 
-template <> inline auto rotor::actor_base_t::access<test::to::get_plugin, const void *>(const void *identity) noexcept {
-    return get_plugin(identity);
+template <>
+inline auto
+rotor::actor_base_t::access<test::to::get_plugin, const std::type_index *>(const std::type_index *identity) noexcept {
+    return get_plugin(*identity);
 }
 
 template <>

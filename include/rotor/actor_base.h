@@ -35,7 +35,7 @@ namespace rotor {
  *
  * Every actor belong to some {@link supervisor_t}, which "injects" the thread-safe
  * execution context, in a sense, that the actor can call it's own methods as well
- * as supervisors without any need of synchonization.
+ * as supervisors without any need of synchronization.
  *
  * All actor methods are thread-unsafe, i.e. should not be called with except of
  * it's own supervisor. Communication with actor should be performed via messages.
@@ -53,7 +53,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief SFINAE handler detector
      *
-     * Either handler can be constructed from  memeber-to-function-pointer or
+     * Either handler can be constructed from  member-to-function-pointer or
      * it is already constructed and have a base `handler_base_t`
      */
     template <typename Handler>
@@ -64,7 +64,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief the default list of plugins for an actor
      *
      * The order of plugins is very important, as they are initialized in the direct order
-     * and deinitilized in the reverse order.
+     * and deinitialized in the reverse order.
      *
      */
     using plugins_list_t = std::tuple<
@@ -116,7 +116,10 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief sends message to the destination address
      *
-     * Internally it just constructs new message in supervisor's outbound queue.
+     * The provided arguments are used for the construction of **payload**, which
+     * is, in turn, is wrapped into message.
+     *
+     * Internally the new message is placed into supervisor's outbound queue.
      *
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&...args);
@@ -148,7 +151,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief convenient method for constructing and sending response to a request
      *
-     * `args` are forwarded to response payload constuction
+     * `args` are forwarded to response payload construction
      */
     template <typename Request, typename... Args> void reply_to(Request &message, Args &&...args);
 
@@ -194,7 +197,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      * otherwise {@link payload::external_subscription_t} request is sent to the external
      * supervisor, which owns the address.
      *
-     * The optional call can be providded to be called upon message destruction.
+     * The optional call can be provided to be called upon message destruction.
      *
      */
 
@@ -213,13 +216,13 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief finishes plugin deactivation */
     void commit_plugin_deactivation(plugin::plugin_base_t &plugin) noexcept;
 
-    /** \brief propaagtes subscription message to corresponding actors */
+    /** \brief propagates subscription message to corresponding actors */
     void on_subscription(message::subscription_t &message) noexcept;
 
-    /** \brief propaagtes unsubscription message to corresponding actors */
+    /** \brief propagates unsubscription message to corresponding actors */
     void on_unsubscription(message::unsubscription_t &message) noexcept;
 
-    /** \brief propaagtes external unsubscription message to corresponding actors */
+    /** \brief propagates external unsubscription message to corresponding actors */
     void on_unsubscription_external(message::unsubscription_external_t &message) noexcept;
 
     /** \brief creates new unique address for an actor (via address_maker plugin) */
@@ -302,18 +305,23 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      *
      * \param interval specifies amount of time, after which the timer will trigger.
      * \param delegate is an object of arbitrary class.
-     * \param method is the pointer-to-member-function of the object, which will be
+     * \param method is the pointer-to-member-function of the object or callback, which will be
      * invoked upon timer triggering or cancellation.
      *
-     * The `method` parameter should have the following signature:
+     * The `method` parameter should have the following signatures:
      *
      * void Delegate::on_timer(request_id_t, bool cancelled) noexcept;
+     *  
+     * or 
+     * 
+     * void(Delegate*,request_id_t, bool cancelled) noexcept 
      *
      * `start_timer` returns timer identity. It will be supplied to the specified callback,
      * or the timer can be cancelled via it.
      */
-    template <typename Delegate, typename Method>
+    template <typename Delegate, typename Method, typename = std::enable_if_t<std::is_invocable_v<Method, Delegate*, request_id_t, bool>>>
     request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
+
 
     /** \brief cancels previously started timer
      *
@@ -324,7 +332,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      */
     void cancel_timer(request_id_t request_id) noexcept;
 
-    /** \brief returns actor shutdwon reason
+    /** \brief returns actor shutdown reason
      *
      *  The shutdown reason should be available if actors' state is already `SHUTTING_DOWN`
      *
@@ -367,7 +375,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief whether spawner should create a new instance of the actor
      *
      * When then actor is spawned via a spawner, and it becomes down,
-     * the spawner will ask the curretn instance whether it should
+     * the spawner will ask the current instance whether it should
      * spawn another one.
      *
      * This method is consulted, only when spawner's restart_policy_t is
@@ -399,7 +407,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief notification, when actor has been unlinked from server actor
      *
-     * Returns boolean, meaning whether actor should initate shutdown. Default value is `true`.
+     * Returns boolean, meaning whether actor should initiate shutdown. Default value is `true`.
      *
      */
     virtual bool on_unlink(const address_ptr_t &server_addr) noexcept;
@@ -416,7 +424,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief actor spawner address */
     address_ptr_t spawner_address;
 
-    /** \brief actor identity, wich might have some meaning for developers */
+    /** \brief actor identity, which might have some meaning for developers */
     std::string identity;
 
     /** \brief non-owning pointer to actor's execution / infrastructure context */
@@ -425,13 +433,13 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief opaque plugins storage (owning) */
     plugin_storage_ptr_t plugins_storage;
 
-    /** \brief non-ownling list of plugins */
+    /** \brief non-owning list of plugins */
     plugins_t plugins;
 
     /** \brief timeout for actor initialization (used by supervisor) */
     pt::time_duration init_timeout;
 
-    /** \brief timeout for actor shutdown (used by supervisorr) */
+    /** \brief timeout for actor shutdown (used by supervisor) */
     pt::time_duration shutdown_timeout;
 
     /** \brief current actor state */
@@ -453,13 +461,13 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      *
      * `nullptr` is returned when plugin cannot be found
      */
-    plugin::plugin_base_t *get_plugin(const void *identity) const noexcept;
+    plugin::plugin_base_t *get_plugin(const std::type_index &) const noexcept;
 
     /** \brief set of activating plugin identities */
-    std::set<const void *> activating_plugins;
+    std::set<const std::type_index *> activating_plugins;
 
     /** \brief set of deactivating plugin identities */
-    std::set<const void *> deactivating_plugins;
+    std::set<const std::type_index *> deactivating_plugins;
 
     /** \brief timer-id to timer-handler map */
     timers_map_t timers_map;
@@ -467,7 +475,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     /** \brief list of ids of active requests */
     requests_t active_requests;
 
-    /** \brief set of currently proccessing states, i.e. init or shutdown
+    /** \brief set of currently processing states, i.e. init or shutdown
      *
      * This is not the same as `state_t` flag, which just marks the state.
      *

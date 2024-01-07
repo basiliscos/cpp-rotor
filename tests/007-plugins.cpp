@@ -1,10 +1,9 @@
 //
-// Copyright (c) 2019-2020 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "actor_test.h"
 #include "system_context_test.h"
@@ -35,9 +34,9 @@ struct sample_actor2_t : public sample_actor_t {
 };
 
 struct sample_plugin1_t : public r::plugin::plugin_base_t {
-    const void *identity() const noexcept override {
-        return static_cast<const void *>(typeid(sample_plugin1_t).name());
-    }
+    static std::type_index class_id;
+
+    const std::type_index &identity() const noexcept override { return class_id; }
 
     void activate(r::actor_base_t *actor_) noexcept override {
         auto &init_seq = static_cast<sample_actor_t *>(actor_)->init_seq;
@@ -51,15 +50,19 @@ struct sample_plugin1_t : public r::plugin::plugin_base_t {
     }
 };
 
+std::type_index sample_plugin1_t::class_id = typeid(sample_plugin1_t);
+
 struct sample_plugin2_t : public r::plugin::plugin_base_t {
-    const void *identity() const noexcept override {
-        return static_cast<const void *>(typeid(sample_plugin2_t).name());
-    }
+    static std::type_index class_id;
+
+    const std::type_index &identity() const noexcept override { return class_id; }
+
     void activate(r::actor_base_t *actor_) noexcept override {
         auto &init_seq = static_cast<sample_actor_t *>(actor_)->init_seq;
         init_seq = (init_seq << 8 | PID_2);
         return r::plugin::plugin_base_t::activate(actor_);
     }
+
     void deactivate() noexcept override {
         auto &deinit_seq = static_cast<sample_actor_t *>(actor)->deinit_seq;
         deinit_seq = (deinit_seq << 8 | PID_2);
@@ -67,13 +70,20 @@ struct sample_plugin2_t : public r::plugin::plugin_base_t {
     }
 };
 
+std::type_index sample_plugin2_t::class_id = typeid(sample_plugin2_t);
+
 struct buggy_plugin_t : public r::plugin::plugin_base_t {
-    const void *identity() const noexcept override { return static_cast<const void *>(typeid(buggy_plugin_t).name()); }
+    static std::type_index class_id;
+
+    const std::type_index &identity() const noexcept override { return class_id; }
+
     void activate(r::actor_base_t *actor_) noexcept override {
         actor = actor_;
         actor_->commit_plugin_activation(*this, false);
     }
 };
+
+std::type_index buggy_plugin_t::class_id = typeid(buggy_plugin_t);
 
 TEST_CASE("init/deinit sequence", "[plugin]") {
     rt::system_context_test_t system_context;
@@ -81,8 +91,8 @@ TEST_CASE("init/deinit sequence", "[plugin]") {
     auto builder = builder_t([&](auto &) {}, system_context);
     auto actor = std::move(builder).timeout(rt::default_timeout).finish();
 
-    const void *ptr = actor.get();
-    CHECK(actor->access<rt::to::get_plugin>(ptr) == nullptr);
+    std::type_index ptr = typeid(actor);
+    CHECK(actor->access<rt::to::get_plugin>(&std::as_const(ptr)) == nullptr);
 
     REQUIRE(actor->get_activating_plugins().size() == 2);
     REQUIRE(actor->get_deactivating_plugins().size() == 0);

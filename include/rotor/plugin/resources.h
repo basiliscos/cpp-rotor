@@ -1,13 +1,14 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "plugin_base.h"
 #include <vector>
+
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -27,7 +28,7 @@ using resource_id_t = std::size_t;
  * suspended until they will be released.
  *
  * The suspension will happen during init and shutdown phases, e.g.:
- * - actor can wait, until connection will be estableshed
+ * - actor can wait, until connection will be established
  * - actor can wait, until it receives handshake from remote system
  * - etc...
  *
@@ -40,9 +41,9 @@ struct ROTOR_API resources_plugin_t : public plugin_base_t {
     using plugin_base_t::plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
+    static const std::type_index class_identity;
 
-    const void *identity() const noexcept override;
+    const std::type_index &identity() const noexcept override;
 
     void activate(actor_base_t *actor) noexcept override;
     bool handle_init(message::init_request_t *message) noexcept override;

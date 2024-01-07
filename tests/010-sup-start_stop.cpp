@@ -1,10 +1,11 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
+#include <catch2/matchers/catch_matchers_string.hpp>
+
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "actor_test.h"
@@ -78,9 +79,9 @@ struct init_shutdown_plugin_t : r::plugin::init_shutdown_plugin_t {
 struct sample_plugin_t : r::plugin::plugin_base_t {
     using parent_t = r::plugin::plugin_base_t;
 
-    static const void *class_identity;
+    static std::type_index class_id;
 
-    const void *identity() const noexcept override { return class_identity; }
+    const std::type_index &identity() const noexcept override { return class_id; }
 
     void activate(r::actor_base_t *actor_) noexcept override {
         parent_t::activate(actor_);
@@ -96,7 +97,7 @@ struct sample_plugin_t : r::plugin::plugin_base_t {
     bool message_received = false;
 };
 
-const void *sample_plugin_t::class_identity = &sample_plugin_t::class_identity;
+std::type_index sample_plugin_t::class_id = typeid(sample_plugin_t);
 
 struct sample_sup2_t : public rt::supervisor_test_t {
     using sup_base_t = rt::supervisor_test_t;
@@ -363,6 +364,7 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
+    
     CHECK_THAT(act->get_identity(), StartsWith("actor"));
 
     /* for better coverage */
@@ -390,8 +392,8 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto &reason = sup->shutdown_child->get_shutdown_reason();
     REQUIRE(reason);
     CHECK(reason->ec == r::shutdown_code_t::supervisor_shutdown);
-    CHECK_THAT(reason->message(), Catch::Contains("shutdown has been requested by supervisor"));
-    CHECK_THAT(reason->message(), Catch::Contains("normal shutdown"));
+    CHECK_THAT(reason->message(), Catch::Matchers::ContainsSubstring("shutdown has been requested by supervisor"));
+    CHECK_THAT(reason->message(), Catch::Matchers::ContainsSubstring("normal shutdown"));
     auto &root = reason->next;
     CHECK(root);
     CHECK(root->ec.value() == static_cast<int>(r::shutdown_code_t::normal));
@@ -437,9 +439,10 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor2_t>().timeout(rt::default_timeout).finish();
 
-    CHECK(act->get_identity() == "specific_name");
+     CHECK(act->get_identity() == "specific_name");
 
     sup->do_process();
+  
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->received == 1);
@@ -492,7 +495,7 @@ TEST_CASE("io tagging (in plugin) & intercepting", "[actor]") {
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
 
     CHECK(sup->counter == 2);
-    auto plugin = act->access<rt::to::get_plugin>(sample_plugin_t::class_identity);
+    auto plugin = act->access<rt::to::get_plugin>(&std::as_const(sample_plugin_t::class_id));
     CHECK(plugin);
     CHECK(static_cast<sample_plugin_t *>(plugin)->message_received);
 

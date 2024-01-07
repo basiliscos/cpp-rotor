@@ -14,7 +14,7 @@
 There are few main actor frameworks in C++ world: [sobjectizer], [c++ actor framework][caf]
 and [QP/C++][qpcpp]. There is major a issue with them, as they offer some actor runtime, which
 has *own* rules for execution, which user have to comply. On the other hand there are a lot of
-third-party libraries, which offten have other runtime. As the result, the seamless usage of
+third-party libraries, which often have other runtime. As the result, the seamless usage of
 them together becomes hard or even impossible, or it might come at rather high costs (i.e.
 running each environment /runtime  on it's own thread). In the other words they are **intrusive**.
 
@@ -38,13 +38,13 @@ The messaging rules and **asynchronous and composeable lifetime** of actors, mak
 create [erlang-like](https://en.wikipedia.org/wiki/Erlang_(programming_language)#Supervisor_trees)
 **hierarchies of supervisors**, i.e. hierarchies of responsibilities. As far as I now neither
 [caf] nor [sobjectizer] have something similar. It is better to familiarize yourself
-with the original [erlang supervisros concepts][erlang-sup] or from my
+with the original [erlang supervisors concepts][erlang-sup] or from my
 [article][bas-suprevisors] explaining problems of supervisors related to C++ world.
 
 Another design feature of [rotor] is it's **testability**: as long as core application
 logic is I/O-pure, the whole testing scenario is fully deterministic and without event loop.
 Rotor-based applications should have moderate complexity test-environment setup. This can
-be achieved via two corner stones: unintrusivness (feature of [rotor]) and interface weakly
+be achieved via two corner stones: unintrusiveness (feature of [rotor]) and interface weakly
 coupling because actors just react on  incoming messages (common feature of all actor frameworks).
 
 As the last point, it should be noted, that [sobjectizer] is not that intrusive as [caf],

@@ -110,14 +110,14 @@ struct ROTOR_API supervisor_t : public actor_base_t {
      * The locality leaders queue `queue` of messages is processed.
      *
      * -# It takes message from the queue
-     * -# If the message destination address belongs to the foreing the supervisor,
+     * -# If the message destination address belongs to the foreign the supervisor,
      * then it is forwarded to it immediately.
      * -# Otherwise, the message is local, i.e. either for the supervisor or one
      * of its non-supervisor children (internal), or to other supervisor within
      * the same locality.
      * -# in the former case the message is immediately delivered locally in
      * the context  of current supervisor; in the latter case in the context
-     * of other supervsior. In the both cases `deliver_local` method is used.
+     * of other supervisor. In the both cases `deliver_local` method is used.
      *
      * It is expected, that derived classes should invoke `do_process` message,
      * whenever it is known that there are messages for processing. The invocation
@@ -125,7 +125,7 @@ struct ROTOR_API supervisor_t : public actor_base_t {
      *
      * The method should be invoked in event-loop context only.
      *
-     * Tthe method returns amount of messages it enqueued for other locality leaders
+     * The method returns amount of messages it enqueued for other locality leaders
      * (i.e. to be processed externally).
      *
      */
@@ -175,7 +175,7 @@ struct ROTOR_API supervisor_t : public actor_base_t {
      */
     virtual void enqueue(message_ptr_t message) noexcept = 0;
 
-    /** \brief puts a message into internal supevisor queue for further processing
+    /** \brief puts a message into internal supervisor queue for further processing
      *
      * This is thread-unsafe method. The `enqueue` method should be used to put
      * a new message from external context in thread-safe way.
@@ -214,12 +214,12 @@ struct ROTOR_API supervisor_t : public actor_base_t {
     /**
      * \brief main subscription implementation
      *
-     * The subscription point is materialized inot subscription info. If address is
+     * The subscription point is materialized into subscription info. If address is
      * internal/local, then it is immediately confirmed to the source actor as
      * {@link payload::subscription_confirmation_t}.
      *
      * Otherwise, if the address is external (foreign), then subscription request
-     * is forwarded to approriate supervisor as {@link payload::external_subscription_t}
+     * is forwarded to appropiate supervisor as {@link payload::external_subscription_t}
      * request.
      *
      * The materialized subscription info is returned.
@@ -254,7 +254,7 @@ struct ROTOR_API supervisor_t : public actor_base_t {
     /** \brief creates new address with respect to supervisor locality mark */
     virtual address_ptr_t instantiate_address(const void *locality) noexcept;
 
-    /** \brief timer to response with timeout procuder type */
+    /** \brief timer to response with timeout procedure type */
     using request_map_t = std::unordered_map<request_id_t, request_curry_t>;
 
     /** \brief invoked as timer callback; creates response or just clean up for previously set request */
@@ -278,7 +278,7 @@ struct ROTOR_API supervisor_t : public actor_base_t {
     /** \brief counter for request/timer ids */
     request_id_t last_req_id;
 
-    /** \brief timer to response with timeout procuder */
+    /** \brief timer to response with timeout procedure */
     request_map_t request_map;
 
     /** \brief main subscription support class  */
@@ -379,12 +379,13 @@ void actor_base_t::start_timer(request_id_t request_id, const pt::time_duration 
     timers_map.emplace(request_id, std::move(handler));
 }
 
-template <typename Delegate, typename Method>
+template <typename Delegate, typename Method, typename>
 request_id_t actor_base_t::start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept {
     auto request_id = supervisor->next_request_id();
     start_timer(request_id, interval, delegate, std::forward<Method>(method));
     return request_id;
 }
+
 
 /** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
 template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Handler &&handler) {
@@ -542,7 +543,7 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
             auto &orig_addr = curry.origin;
             supervisor->template send<wrapped_res_t>(orig_addr, msg.payload);
             supervisor->discard_request(request_id);
-            // keep order, i.e. deliver response immediatedly
+            // keep order, i.e. deliver response immediately
             supervisor->uplift_last_message();
         }
     });
@@ -551,7 +552,7 @@ template <typename T> void request_builder_t<T>::install_handler() noexcept {
     sup.address_mapping.set(actor, info);
 }
 
-/** \brief makes an reqest to the destination address with the message constructed from `args`
+/** \brief makes an request to the destination address with the message constructed from `args`
  *
  * The `reply_to` address is defaulted to actor's main address.1
  *
@@ -563,9 +564,9 @@ request_builder_t<typename request_wrapper_t<Request>::request_t> actor_base_t::
     return supervisor->do_request<request_t>(*this, dest_addr, address, std::forward<Args>(args)...);
 }
 
-/** \brief makes an reqest to the destination address with the message constructed from `args`
+/** \brief makes an request to the destination address with the message constructed from `args`
  *
- * The `reply_addr` is used to specify the exact destinatiion address, where reply should be
+ * The `reply_addr` is used to specify the exact destination address, where reply should be
  * delivered.
  *
  */

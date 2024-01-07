@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 
 #ifdef __unix__
 #include "rotor.hpp"
@@ -36,11 +35,11 @@ TEST_CASE("throw in factory", "[spawner]") {
     auto system_context = rth::system_context_thread_t();
     auto timeout = r::pt::milliseconds{100};
     auto sup = system_context.create_supervisor<rth::supervisor_thread_t>()
-            .timeout(timeout)
-            .shutdown_flag(my_flag, r::pt::millisec{1})
-            .finish();
+                   .timeout(timeout)
+                   .shutdown_flag(my_flag, r::pt::millisec{1})
+                   .finish();
 
-    auto r = signal(SIGALRM, [](int){my_flag = true;});
+    auto r = signal(SIGALRM, [](int) { my_flag = true; });
     REQUIRE(r != SIG_ERR);
 
     alarm(1);

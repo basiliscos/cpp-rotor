@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -59,9 +59,9 @@ auto actor_base_t::access<to::assign_shutdown_reason, const extended_error_ptr_t
     return assign_shutdown_reason(reason);
 }
 
-const void *child_manager_plugin_t::class_identity = static_cast<const void *>(typeid(child_manager_plugin_t).name());
+const std::type_index child_manager_plugin_t::class_identity = typeid(child_manager_plugin_t);
 
-const void *child_manager_plugin_t::identity() const noexcept { return class_identity; }
+const std::type_index &child_manager_plugin_t::identity() const noexcept { return class_identity; }
 
 void child_manager_plugin_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);

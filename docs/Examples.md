@@ -25,7 +25,7 @@ if the `pinger` actor does not receive any successful `pong` response during som
 attempts, it should shut self down too. The rules are reified as the constants like:
 
 
-```
+```cpp
 namespace constants {
 static float failure_probability = 0.97f;
 static pt::time_duration ping_timeout = pt::milliseconds{100};
@@ -164,7 +164,7 @@ void on_pong(message::pong_t &msg) noexcept {
     request_id.reset();
     auto &ee = msg.payload.ee;
     if (!ee) {
-        std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attemps : " << attempts << "\n";
+        std::cout << "pinger_t, (" << (void *)this << ") success!, pong received, attempts : " << attempts << "\n";
         do_shutdown();
     } else {
         std::cout << "pinger_t, (" << (void *)this << ") pong failed (" << attempts << ")\n";
@@ -212,7 +212,7 @@ void on_ping(message::ping_t &req) noexcept {
 ~~~
 
 As usual with async operations, the timer resource is acquired. However, there is additional check for the actor
-state, as we don't want even to start asyns operation (timer), when actor is shutting down; in case actor
+state, as we don't want even to start async operation (timer), when actor is shutting down; in case actor
 replies immediately with error.
 
 The timer handler implementation isn't difficult:
@@ -267,7 +267,7 @@ void on_cancel(message::cancel_t &notify) noexcept {
 ~~~
 
 The `ponger` shutdown procedure is trivial: it just cancels all pending ping responses;
-responces are deleted during cancellation callback invocation.
+responses are deleted during cancellation callback invocation.
 
 ~~~{.cpp}
     void shutdown_start() noexcept override {
@@ -360,7 +360,7 @@ pinger_t, (0x55f9f90048a0) pong failed (7)
 pinger_t, (0x55f9f90048a0) pong failed (8)
 pinger_t, (0x55f9f90048a0) pong failed (9)
 pinger_t, (0x55f9f90048a0) pong failed (10)
-pinger_t, (0x55f9f90048a0) success!, pong received, attemps : 11
+pinger_t, (0x55f9f90048a0) success!, pong received, attempts : 11
 pinger_t, (0x55f9f90048a0) shutdown_start()
 pinger_t, (0x55f9f90048a0), on_custom_timeout, cancelled: 1
 pinger_t, (0x55f9f90048a0) finished attempts done 11
@@ -453,13 +453,13 @@ struct pinger_t : public rotor::actor_base_t {
             return do_shutdown(ee);
         }
         std::cout << "pong received\n";
-        // succesfull branch: manually shutdown supervisor
+        // successful branch: manually shutdown supervisor
         supervisor->do_shutdown();
     }
 };
 ```
 
-The sample output (succesfully terminated, eventually):
+The sample output (successfully terminated, eventually):
 
 ```
 ping (pinger #1 0x55d3b09ab130)

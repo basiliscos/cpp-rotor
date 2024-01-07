@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -23,7 +23,7 @@ struct ROTOR_API local_delivery_t {
 
     /** \brief delivers an message for self of one of child-actors  (non-supervisors)
      *
-     * Supervisor iterates on subscriptions (handlers) on the message destination adddress:
+     * Supervisor iterates on subscriptions (handlers) on the message destination address:
      *
      * - If the handler is local (i.e. it's actor belongs to the same supervisor),
      * - Otherwise the message is forwarded for delivery for the foreign supervisor,
@@ -42,7 +42,7 @@ struct ROTOR_API inspected_local_delivery_t {
     /** \brief stringifies the message into human-readable debug form */
     static std::string identify(const message_base_t *message, int32_t threshold) noexcept;
 
-    /** \brief delivers the message to the recipients, possbily dumping it to console */
+    /** \brief delivers the message to the recipients, possibly dumping it to console */
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
 
     /** \brief dumps discarded message */
@@ -82,13 +82,14 @@ template <typename LocalDelivery = local_delivery_t> struct delivery_plugin_t : 
     using delivery_plugin_base_t::delivery_plugin_base_t;
 
     /** The plugin unique identity to allow further static_cast'ing*/
-    static const void *class_identity;
-    const void *identity() const noexcept override { return class_identity; }
+    static const std::type_index class_identity;
+
+    const std::type_index &identity() const noexcept override { return class_identity; }
+
     inline size_t process() noexcept override;
 };
 
 template <typename LocalDelivery>
-const void *
-    delivery_plugin_t<LocalDelivery>::class_identity = static_cast<const void *>(typeid(local_delivery_t).name());
+const std::type_index delivery_plugin_t<LocalDelivery>::class_identity = typeid(local_delivery_t);
 
 } // namespace rotor::plugin

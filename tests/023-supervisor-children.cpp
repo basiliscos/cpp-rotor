@@ -1,10 +1,9 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "actor_test.h"
 #include "supervisor_test.h"
@@ -119,7 +118,9 @@ struct fail_init_actor6_t : public rt::actor_test_t {
 };
 
 struct custom_init_plugin2_t : r::plugin::plugin_base_t {
-    static const void *class_identity;
+    static std::type_index class_id;
+
+    const std::type_index &identity() const noexcept override { return class_id; }
 
     void activate(r::actor_base_t *actor) noexcept override {
         r::plugin::plugin_base_t::activate(actor);
@@ -132,14 +133,14 @@ struct custom_init_plugin2_t : r::plugin::plugin_base_t {
         actor->access<to::init_request>().reset();
         return false;
     }
-
-    const void *identity() const noexcept override { return class_identity; }
 };
 
-const void *custom_init_plugin2_t::class_identity = static_cast<const void *>(typeid(custom_init_plugin2_t).name());
+std::type_index custom_init_plugin2_t::class_id = typeid(custom_init_plugin2_t);
 
 struct custom_shutdown_plugin_t : r::plugin::plugin_base_t {
-    static const void *class_identity;
+    static std::type_index class_id;
+
+    const std::type_index &identity() const noexcept override { return class_id; }
 
     void activate(r::actor_base_t *actor) noexcept override {
         r::plugin::plugin_base_t::activate(actor);
@@ -152,12 +153,9 @@ struct custom_shutdown_plugin_t : r::plugin::plugin_base_t {
         actor->access<to::shutdown_request>().reset();
         return false;
     }
-
-    const void *identity() const noexcept override { return class_identity; }
 };
 
-const void *custom_shutdown_plugin_t::class_identity =
-    static_cast<const void *>(typeid(custom_shutdown_plugin_t).name());
+std::type_index custom_shutdown_plugin_t::class_id = typeid(custom_shutdown_plugin_t);
 
 struct sample_supervisor_t : public rt::supervisor_test_t {
     using rt::supervisor_test_t::supervisor_test_t;

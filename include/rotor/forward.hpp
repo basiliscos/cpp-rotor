@@ -38,8 +38,8 @@ using request_id_t = std::size_t;
  * The spawner address MUST be set to the newly created actor to
  * allow further spawning.
  *
- * This function might throw an exception, which is hovewer ignored,
- * but spawner migth attempt to create new actor instance.
+ * This function might throw an exception, which is however ignored,
+ * but spawner might attempt to create new actor instance.
  *
  */
 using factory_t = std::function<actor_ptr_t(supervisor_t &, const address_ptr_t &)>;

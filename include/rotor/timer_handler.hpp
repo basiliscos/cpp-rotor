@@ -26,7 +26,7 @@ struct timer_handler_base_t {
     timer_handler_base_t(actor_base_t *owner_, request_id_t request_id_) noexcept
         : owner{owner_}, request_id{request_id_} {}
 
-    /** \brief an action when timer was triggerd or cancelled */
+    /** \brief an action when timer was triggered or cancelled */
     virtual void trigger(bool cancelled) noexcept = 0;
 
     virtual ~timer_handler_base_t() = default;
@@ -51,7 +51,10 @@ template <typename Object, typename Method> struct timer_handler_t : timer_handl
     timer_handler_t(actor_base_t *owner_, request_id_t request_id_, Object *object_, Method method_) noexcept
         : timer_handler_base_t{owner_, request_id_}, object{object_}, method{std::forward<Method>(method_)} {}
 
-    void trigger(bool cancelled) noexcept override { ((*object).*method)(request_id, cancelled); }
+    void trigger(bool cancelled) noexcept override 
+    { 
+        std::invoke(method, object, request_id, cancelled);
+    }
 };
 
 } // namespace rotor
