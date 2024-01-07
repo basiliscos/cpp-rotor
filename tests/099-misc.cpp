@@ -4,8 +4,8 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 namespace r = rotor;
 

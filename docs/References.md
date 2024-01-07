@@ -38,7 +38,7 @@
  - [blog-cpp-permissions] "Experimental C++ access model" (my blog article)
  - [blog-cpp-req_res] "Request-Response pattern" (my blog article)
  - [Learn You Some Erlang for great good!][erlang-book] very recommended free ebook about erlang reliability and supervisors
- - [documentation][akka-doc] of famous java actor framerwork [akka][akka]; good for gaining insights
+ - [documentation][akka-doc] of famous java actor framework [akka][akka]; good for gaining insights
  - [overview of actor frameworks][yt-my] (my video in Russian)
  - you can view examples in the `examples` source dir as well as in the `tests` dir
  

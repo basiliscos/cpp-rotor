@@ -15,7 +15,7 @@ namespace rotor::plugin {
  * \brief create actor's addresses
  *
  * The plugin is executed on very early stage of actor creation
- * to assing its main address as soon as possible.
+ * to assign its main address as soon as possible.
  *
  * If additional addresses are needed by the actor, they can be
  * asked via the plugin.
@@ -34,7 +34,7 @@ struct ROTOR_API address_maker_plugin_t : public plugin_base_t {
 
     /** \brief smart identity setter
      *
-     * It can set the actor identity, and optionally append actor's main addres
+     * It can set the actor identity, and optionally append actor's main address
      * to let it be something like "net::http10 0x7fc0d0013c60"
      *
      */

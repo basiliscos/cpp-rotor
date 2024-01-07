@@ -80,7 +80,7 @@ struct spawn_actor_t {
 
 /** \struct shutdown_trigger_t
  *  \brief Message with this payload is sent to ask an actor's supervisor
- * to initate shutdown procedure.
+ * to initiate shutdown procedure.
  *
  */
 struct shutdown_trigger_t {
@@ -127,7 +127,7 @@ struct shutdown_request_t {
  * supervisor is the same as the message address supervisor, the handler is invoked
  * immediately. Otherwise, if a handler belongs to different supervisor (i.e. may
  * be to different event loop), then the delivery of the message is forwarded to
- * that supersior.
+ * that supervisor.
  *
  */
 struct handler_call_t {
@@ -156,7 +156,7 @@ struct external_subscription_t {
 
 /** \struct subscription_confirmation_t
  *  \brief Message with this payload is sent from a supervisor to an actor when
- *  successfull subscription to the `target` address occurs.
+ *  successful subscription to the `target` address occurs.
  *
  * The message is needed for internal {@link actor_base_t} housekeeping.
  *
@@ -192,7 +192,7 @@ struct commit_unsubscription_t {
 
 /** \struct unsubscription_confirmation_t
  *  \brief Message with this payload is sent from a supervisor to an actor with
- *  confirmation that `pooint` is no longer active (subscribed).`
+ *  confirmation that `point` is no longer active (subscribed).`
  */
 struct unsubscription_confirmation_t {
     /** \brief subscription details */
@@ -200,7 +200,7 @@ struct unsubscription_confirmation_t {
 };
 
 /** \struct registration_response_t
- *  \brief Successful registraction response (no content)
+ *  \brief Successful registration response (no content)
  */
 struct registration_response_t {};
 
@@ -211,7 +211,7 @@ struct registration_request_t {
     /** \brief link to registration response payload type */
     using response_t = registration_response_t;
 
-    /** \brief (unique) name of the sevice address in the registry */
+    /** \brief (unique) name of the service address in the registry */
     std::string service_name;
 
     /** \brief actual service address */
@@ -231,7 +231,7 @@ struct deregistration_notify_t {
  *  \brief removes single service by name from a registry
  */
 struct deregistration_service_t {
-    /** \brief the  name of the sevice address to be removed for a registry */
+    /** \brief the  name of the service address to be removed for a registry */
     std::string service_name;
 };
 
@@ -329,7 +329,7 @@ using commit_unsubscription_t = message_t<payload::commit_unsubscription_t>;
 
 /** \brief delivers foreign message to the actor's supervisor
  *
- * Unpon delivery the appropriate handler on the actor will be thread-safely
+ * Upon delivery the appropriate handler on the actor will be thread-safely
  * called by it's supervisor
  */
 using handler_call_t = message_t<payload::handler_call_t>;

@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "actor_test.h"
@@ -94,7 +93,7 @@ struct fail_plugin_t : public r::plugin::plugin_base_t {
 
 std::type_index fail_plugin_t::class_id = typeid(fail_plugin_t);
 
-TEST_CASE("actor litetimes", "[actor]") {
+TEST_CASE("actor lifetimes", "[actor]") {
     r::system_context_t system_context;
     auto sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();

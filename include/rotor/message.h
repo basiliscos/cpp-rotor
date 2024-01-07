@@ -21,7 +21,7 @@ namespace rotor {
 /** \struct message_base_t
  *  \brief Base class for `rotor` message.
  *
- *  The base class contains destinanation address (in the form of intrusive
+ *  The base class contains destination address (in the form of intrusive
  *  pointer to `address_t`) and possibility to detect final message type.
  *
  * The actual message payload meant to be provided by derived classes
@@ -80,7 +80,7 @@ using message_ptr_t = intrusive_ptr_t<message_base_t>;
 /** \brief structure to hold messages (intrusive pointers) */
 using messages_queue_t = std::deque<message_ptr_t>;
 
-/** \brief constucts message by constructing it's payload; intrusive pointer for the message is returned */
+/** \brief constructs message by constructing it's payload; intrusive pointer for the message is returned */
 template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&...args) -> message_ptr_t {
     return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
 }

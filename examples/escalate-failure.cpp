@@ -74,12 +74,12 @@ struct ponger_t : public rotor::actor_base_t {
 
     void on_ping(message::ping_t &request) noexcept {
         using generator_t = std::mt19937;
-        using distrbution_t = std::uniform_real_distribution<double>;
+        using distribution_t = std::uniform_real_distribution<double>;
 
         std::cout << "received ping\n";
         std::random_device rd;
         generator_t gen(rd());
-        distrbution_t dist;
+        distribution_t dist;
 
         auto dice = dist(gen);
         std::cout << "pong, dice = " << dice << std::endl;

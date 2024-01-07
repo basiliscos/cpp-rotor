@@ -23,7 +23,7 @@ struct ROTOR_API local_delivery_t {
 
     /** \brief delivers an message for self of one of child-actors  (non-supervisors)
      *
-     * Supervisor iterates on subscriptions (handlers) on the message destination adddress:
+     * Supervisor iterates on subscriptions (handlers) on the message destination address:
      *
      * - If the handler is local (i.e. it's actor belongs to the same supervisor),
      * - Otherwise the message is forwarded for delivery for the foreign supervisor,
@@ -42,7 +42,7 @@ struct ROTOR_API inspected_local_delivery_t {
     /** \brief stringifies the message into human-readable debug form */
     static std::string identify(const message_base_t *message, int32_t threshold) noexcept;
 
-    /** \brief delivers the message to the recipients, possbily dumping it to console */
+    /** \brief delivers the message to the recipients, possibly dumping it to console */
     static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
 
     /** \brief dumps discarded message */

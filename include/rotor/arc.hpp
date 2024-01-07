@@ -20,7 +20,7 @@ using counter_policy_t = boost::thread_unsafe_counter;
 using counter_policy_t = boost::thread_safe_counter;
 #endif
 
-/** \brief base class to inject ref-counter with the specified policiy */
+/** \brief base class to inject ref-counter with the specified policy */
 template <typename T> using arc_base_t = boost::intrusive_ref_counter<T, counter_policy_t>;
 
 /** \brief alias for intrusive pointer */

@@ -35,7 +35,7 @@ namespace wx {
  * wx-application system, i.e. hold refences to appropriate fields/windows
  * etc.
  *
- * The commands translaton (i.e. from click on the button to the `rotor`
+ * The commands translator (i.e. from click on the button to the `rotor`
  * -message send) should be also performed on wx-specific actors.
  *
  */

@@ -5,7 +5,6 @@
 //
 
 #include "access.h"
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "actor_test.h"
@@ -154,7 +153,7 @@ TEST_CASE("registry actor (server)", "[registry][supervisor]") {
     act->registry_addr = sup->access<rt::to::registry>();
     sup->do_process();
 
-    SECTION("discovery non-exsiting name") {
+    SECTION("discovery non-existing name") {
         act->query_name("some-name");
         sup->do_process();
 
@@ -302,21 +301,21 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        int succeses = 0;
+        int successes = 0;
         act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
                 p.discover_name("service-name", act_c->service_addr)
                     .link(true)
                     .callback([&](auto /*phase*/, auto &ec) mutable {
                         REQUIRE(!ec);
-                        ++succeses;
+                        ++successes;
                     });
             });
         };
         sup->do_process();
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
         CHECK(act_c->service_addr == act_s->get_address());
-        CHECK(succeses == 2);
+        CHECK(successes == 2);
 
         sup->do_shutdown();
         sup->do_process();
@@ -338,27 +337,27 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
         REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
 
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        int succeses = 0;
+        int successes = 0;
         act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
                 p.discover_name("service-name", act_c->service_addr)
                     .link(true)
                     .callback([&](auto /*phase*/, auto &ec) mutable {
                         REQUIRE(!ec);
-                        ++succeses;
+                        ++successes;
                     });
                 p.discover_name("service-alias", act_c->service_addr)
                     .link(true)
                     .callback([&](auto /*phase*/, auto &ec) mutable {
                         REQUIRE(!ec);
-                        ++succeses;
+                        ++successes;
                     });
             });
         };
         sup->do_process();
         CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
         CHECK(act_c->service_addr == act_s->get_address());
-        CHECK(succeses == 4);
+        CHECK(successes == 4);
 
         sup->do_shutdown();
         sup->do_process();
@@ -369,19 +368,19 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
 
     SECTION("common case (promise & link)") {
         auto act_c = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
-        int succeses = 0;
+        int successes = 0;
         act_c->configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
             plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) {
                 p.discover_name("service-name", act_c->service_addr, true)
                     .link(true)
                     .callback([&](auto /*phase*/, auto &ec) mutable {
                         REQUIRE(!ec);
-                        ++succeses;
+                        ++successes;
                     });
             });
         };
         sup->do_process();
-        CHECK(succeses == 0);
+        CHECK(successes == 0);
 
         SECTION("successful link") {
             auto act_s = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
@@ -391,7 +390,7 @@ TEST_CASE("registry plugin (client)", "[registry][supervisor]") {
             };
 
             sup->do_process();
-            CHECK(succeses == 2);
+            CHECK(successes == 2);
             CHECK(sup->get_state() == r::state_t::OPERATIONAL);
             CHECK(act_c->get_state() == r::state_t::OPERATIONAL);
             CHECK(act_c->service_addr == act_s->get_address());

@@ -38,7 +38,7 @@ namespace rotor {
  *  The discovery response returned to "client-actor" might contain
  *  error code if there is no address associated with the asked name.
  *
- *  The actor has syncornization facilities, i.e. it is possible to
+ *  The actor has syncronization facilities, i.e. it is possible to
  *  ask the actor to notify when some name has been registered
  * (discovery promise/future).
  *
@@ -54,7 +54,7 @@ struct ROTOR_API registry_t : public actor_base_t {
     /** \brief deregisters the name in the registry */
     virtual void on_dereg_service(message::deregistration_service_t &message) noexcept;
 
-    /** \brief deregisters all names assosiccated with the service address */
+    /** \brief deregisters all names associated with the service address */
     virtual void on_dereg(message::deregistration_notify_t &message) noexcept;
 
     /** \brief returns service address associated with the name or error */
@@ -83,13 +83,13 @@ struct ROTOR_API registry_t : public actor_base_t {
     using registered_names_t = std::set<std::string>;
 
     /** \brief service address to registered names mapping type */
-    using revese_map_t = std::unordered_map<address_ptr_t, registered_names_t>;
+    using reverse_map_t = std::unordered_map<address_ptr_t, registered_names_t>;
 
     /** \brief name-to-address mapping */
     registered_map_t registered_map;
 
     /** \brief address-to-list_of_names mapping */
-    revese_map_t revese_map;
+    reverse_map_t reverse_map;
 
     /** \brief list of intrusive pointers to discovery promise messages */
     promises_list_t promises;

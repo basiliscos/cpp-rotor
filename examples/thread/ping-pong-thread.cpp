@@ -96,7 +96,7 @@ struct ponger_t : public r::actor_base_t {
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) {
-            std::cout << "pinger_t::configure, subscriping on_ping\n";
+            std::cout << "pinger_t::configure, subscribing on_ping\n";
             p.subscribe_actor(&ponger_t::on_announce);
             p.subscribe_actor(&ponger_t::on_ping);
         });

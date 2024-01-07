@@ -25,7 +25,7 @@ namespace ev {
  * on top of ev event loop.
  *
  * Since ev event loop is not thread-safe and do not provide different
- * execution context (theads), creating sub-supervisors (non-root) will
+ * execution context (threads), creating sub-supervisors (non-root) will
  * not bring concurrency advantages. It is possible, however, create
  * different event loops and let them be used by different threads;
  * in that case different supervisors, and they will be able to communicate
@@ -44,7 +44,7 @@ struct ROTOR_EV_API supervisor_ev_t : public supervisor_t {
      */
     struct timer_t : public ev_timer {
 
-        /** \brief intrusive pointer to ev supervistor (type) */
+        /** \brief intrusive pointer to ev supervisor (type) */
         using supervisor_ptr_t = intrusive_ptr_t<supervisor_ev_t>;
 
         /** \brief non-owning pointer to timer handler */

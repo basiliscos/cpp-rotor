@@ -6,9 +6,11 @@
 // Distributed under the MIT Software License
 //
 
+
 #include "rotor/supervisor.h"
 #include "actor_test.h"
 #include <list>
+#include <catch2/catch_test_macros.hpp>
 
 namespace rotor {
 namespace test {

@@ -12,7 +12,7 @@ namespace rotor::plugin {
 
 /** \struct starter_plugin_t
  *
- * \brief allows custom (actor) subscriptions and it is responsibe
+ * \brief allows custom (actor) subscriptions and it is responsible
  * for starting actor when it receives {@link message::start_trigger_t}.
  *
  */
@@ -38,7 +38,7 @@ struct ROTOR_API starter_plugin_t : public plugin_base_t {
     void handle_start(message::start_trigger_t *message) noexcept override;
     bool handle_subscription(message::subscription_t &message) noexcept override;
 
-    /** \brief start mesage reaction */
+    /** \brief start message reaction */
     void on_start(message::start_trigger_t &message) noexcept;
 
   private:

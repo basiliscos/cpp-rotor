@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-#include "catch.hpp"
 #include "rotor.hpp"
 #include "actor_test.h"
 #include "supervisor_test.h"
@@ -448,7 +447,7 @@ TEST_CASE("link errors", "[actor]") {
         CHECK(act_c->message2->payload.ee->ec.message() == std::string("already linked"));
     }
 
-    SECTION("not linkeable") {
+    SECTION("not linkable") {
         auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
         sup2->do_process();
 
@@ -490,7 +489,7 @@ TEST_CASE("link errors", "[actor]") {
         act_s->access<rt::to::resources>()->release();
     }
 
-    SECTION("unlink during shutring down") {
+    SECTION("unlink during shutting down") {
         auto act_c = sup1->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
         auto act_s = sup2->create_actor<rt::actor_test_t>().timeout(rt::default_timeout).finish();
 
@@ -627,7 +626,7 @@ TEST_CASE("ignore unlink", "[actor]") {
     sup->do_process();
 }
 
-TEST_CASE("unlink in supervisor", "[supervisort]") {
+TEST_CASE("unlink in supervisor", "[supervisor]") {
     rt::system_context_test_t ctx1;
     rt::system_context_test_t ctx2;
     auto sup1 = ctx1.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).locality("abc").finish();

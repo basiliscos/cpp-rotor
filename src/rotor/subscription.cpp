@@ -64,7 +64,7 @@ void subscription_t::update(subscription_point_t &point, handler_ptr_t &new_hand
 const subscription_t::joint_handlers_t *subscription_t::get_recipients(const message_base_t &message) const noexcept {
     auto address = message.address.get();
     auto message_type = message.type_index;
-    auto key = subscrption_key_t{address, message_type};
+    auto key = subscription_key_t{address, message_type};
     auto it = mine_handlers.find(key);
     if (it != mine_handlers.end()) {
         return &it->second;

@@ -157,7 +157,7 @@ struct ROTOR_API handler_base_t : public arc_base_t<handler_base_t> {
     /** \brief returns `true` if the message can be handled by the handler */
     virtual bool select(message_ptr_t &) noexcept = 0;
 
-    /** \brief unconditionlally invokes the handler for the message
+    /** \brief unconditionally invokes the handler for the message
      *
      * It assumes that the handler is able to handle the message. See
      * `select` method.
@@ -176,6 +176,7 @@ struct continuation_t {
 
     /** \brief continue handler invocation */
     virtual void operator()() const noexcept = 0;
+    virtual ~continuation_t() = default;
 };
 
 /** \struct handler_intercepted_t
@@ -327,7 +328,7 @@ struct handler_t<lambda_holder_t<Handler, M>,
     /** \brief alias type for lambda, which will actually process messages */
     using handler_backend_t = lambda_holder_t<Handler, M>;
 
-    /** \brief actuall lambda function for message processing */
+    /** \brief actually lambda function for message processing */
     handler_backend_t handler;
 
     /** \brief static pointer to unique pointer-to-member function name ( `typeid(Handler).name()` ) */

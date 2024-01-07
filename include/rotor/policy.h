@@ -34,7 +34,7 @@ enum class restart_policy_t {
     /** \brief restart actor only when it terminated normally (without error) */
     normal_only,
 
-    /** \brief restart actor only when it tarminated abmormally (with error) */
+    /** \brief restart actor only when it terminated abnormally (with error) */
     fail_only,
 };
 

@@ -6,7 +6,6 @@
 
 #include "supervisor_test.h"
 #include "access.h"
-#include "catch.hpp"
 #include "cassert"
 
 using namespace rotor::test;

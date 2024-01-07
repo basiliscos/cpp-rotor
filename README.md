@@ -26,7 +26,7 @@
 see [this](https://basiliscos.github.io/blog/2022/02/20/supervising-in-c-how-to-make-your-programs-reliable)
 and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 - various event loops supported (wx, boost-asio, ev) or planned (uv, gtk, etc.)
-- asynchornous message passing interface
+- asynchronous message passing interface
 - [request-response](https://en.wikipedia.org/wiki/Request%E2%80%93response) messaging with cancellation capabilities,
 [see](https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/)
 - MPMC (multiple producers multiple consumers) messaging, aka pub-sub
@@ -35,24 +35,20 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 
 ## messaging performance
 
-
 |      inter-thread (1)   | cross-thread (2)       | single thread (3)
 |:-----------------------:|:----------------------:|:---------------------:
 |  ~23.6M messages/second | ~ 2.5M messages/second | ~34.6М messages/second
-
-
 
 Setup: Intel Core i7-8550U, Void Linux 5.15.
 
 (1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
 
 (2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
-`examples/boost-asio/ping-pong-2-theads`, `examples/ev/ping-pong-ev-2-threads`.
+`examples/boost-asio/ping-pong-2-threads`, `examples/ev/ping-pong-ev-2-threads`.
 
 (3) Backend-independent inter-thread messaging when build with `BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
 and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
 option is mainly targeted for single-threaded apps.
-
 
 ## license
 
@@ -64,15 +60,22 @@ Please read tutorial, design principles and manual [here](https://basiliscos.git
 
 ## embedded
 
-Looking for something actor-flawored, but suiteable for embedded applications?
+Looking for something actor-flavored, but suitable for embedded applications?
 Take a look into my [rotor-light](https://notabug.org/basiliscos/cpp-rotor-light)
 project.
 
 ## Changelog
 
-### 0.26 (xx-xxx-2023)
- -  [bugfix, breaking] make plugins more dll-friendly
- 
+### 0.26 (xx-xxx-2024)
+ - [bugfix, breaking] make plugins more dll-friendly
+ - [breaking] CMake minimum version 3.23
+ - [breaking] ```registry_t::revese_map_t revese_map``` -> ```registry_t::reverse_map_t reverse_map```
+ - [breaking] struct ```cancelation_t``` -> ```cancellation_t```
+ - [breaking, conan] boost minimum version 1.83.0
+ - [feature, conan] enable_ev option which add libev
+ - [feature, conan] remove catch2 from sources and make it dependencies
+ - [feature] start_timer callback not only method, but any invocable
+
 ### 0.25 (26-Dec-2022)
  - [bugfix] avoid response messages loose their order relative to regular message
  - [bugfix, example] add missing header
@@ -111,11 +114,11 @@ see [dedicated article](https://basiliscos.github.io/blog/2022/02/20/supervising
  - [improvement] actor can now `autoshutdown_supervisor()`, when it shutdown
  - [improvement] actor can now `escalate_failure()`, i.e. trigger shutdown own supervisor
 when it finished with failure
- - [improvement] messages delivery order is preseverd per-locality (see issue #41)
+ - [improvement] messages delivery order is persevered per-locality (see issue #41)
  - [example] `examples/thread/ping-pong-spawner` (new)
  - [example] `examples/autoshutdown` (new)
  - [example] `examples/escalate-failure` (new)
- - [documentation] updated `Design principes`
+ - [documentation] updated `Design principles`
  - [documentation] updated `Examples`
  - [documentation] updated `Introduction`
 
@@ -160,7 +163,7 @@ subscriber (actor)
  - [improvement] `actor::do_shutdown()` - optionally takes shutdown reason
  - [improvement/breaking] instead of using `std::error_code` the `extended_error` class
 is used. It wraps `std::error_code`, provides string context and pointer to the next
-`extended_error` cause. This greatly simplfies error tracking of errors. Every response
+`extended_error` cause. This greatly simplifies error tracking of errors. Every response
 now contains `ee` field instead of `ec`.
  - [improvement] `actor` has shutdown reason (in form of `extended_error` pointer)
  - [improvement] delivery plugin in debug mode it dumps shutdown reason in shutdown trigger
@@ -168,14 +171,14 @@ now contains `ee` field instead of `ec`.
  - [improvement] actor identity has `on_unlink` method to get it know, when it has been
 unlinked from server actor
  - [improvement] add `resources` plugin for supervisor
- - [breaking] all responses now have `extended_error` pointer instread of `std::error_code`
+ - [breaking] all responses now have `extended_error` pointer instead of `std::error_code`
  - [breaking] `shutdown_request_t` and `shutdown_trigger_t` messages how have
 shutdown reason (in form of `extended_error` pointer)
  - [bugfix] `link_client_plugin_t` do not invoke custom callback, before erasing request
 in case of failure
  - [bugfix] `child_manager_plugin_t` reactivate self if a child was created from other
 plugin.
- - [bugfix] `registy actor` incorrectly resolves postponed requests to wrong addresses
+ - [bugfix] `registry actor` incorrectly resolves postponed requests to wrong addresses
 
 ### 0.13 (26-Dec-2020)
  - [improvement] delivery plugin in debug mode dumps discarded messages
@@ -241,8 +244,8 @@ appropriate config is taken as single parameter. All descendant classes should
 be changed
 - [breaking] if a custom config type is used for actors/supervisors, they
 should define `config_t` inside the class, and templated `config_builder_t`.
-- [breaking] supervisor in actor is now accessibe via pointer instead of
-refence
+- [breaking] supervisor in actor is now accessible via pointer instead of
+reference
 - [bugfix] `supervisor_ev_t` not always correctly released EV-resources, which
 lead to leak
 - [bugfix] `actor_base_t` can be shutted down properly even if it did not
@@ -266,10 +269,10 @@ creation in`rotor::supervisor_t` and `rotor::asio::supervisor_asio_t`
 
 ### 0.06 (09-Nov-2019)
 
-- [improvement] registy actor was added to allow via name/address runtime
+- [improvement] registry actor was added to allow via name/address runtime
 matching do services discovery
 - [improvement, breaking] minor changes in supervisor behavior: now it
-is considered initialied when all its children confirmed initialization
+is considered initialized when all its children confirmed initialization
 - [improvement] `supervisor_policy_t` was introduced to control supervisor
 behavior on a child-actor startup failure
 - [example] `examples/ev/pong-registry.cpp` how to use registry
@@ -287,7 +290,7 @@ demonstrates an app with pool of actor workers with request-response forwarding
 - [improvement] the [request-response] approach is integrated to support basic
 [reliable] messaging: response notification failure will be delivered,
 if the expected response will not arrive in-time
-- [improvement] lambda subscribiers are supported
+- [improvement] lambda subscribers are supported
 - [improvement] actor behavior has been introduced to offload actor's
 interface
 - [breaking] supervisor is constructed with help of `supervisor_config_t`,
@@ -310,19 +313,19 @@ corresponding suffix.
 
 ### 0.03 (25-Aug-2019)
 
- - [improvement] locality notion was introduced, which led to possibilty
-to build superving trees, see [blog-cpp-supervisors]
+ - [improvement] locality notion was introduced, which led to possibility
+to build supervising trees, see [blog-cpp-supervisors]
  - [breaking] the `outbound` field in `rotor::supervisor_t` was renamed just to `queue`
  - [breaking] `rotor::address_t` now contains `const void*` locality
  - [breaking] `rotor::asio::supervisor_config_t` now contains
 `std::shared_ptr` to `strand`, instead of creating private strand
 for each supervisor
  - [bugfix] redundant `do_start()` method in `rotor::supervisor_t` was
-removed, since supervisor now is able to start self after compliting
+removed, since supervisor now is able to start self after completing
 initialization.
  - [bugfix] `rotor::supervisor_t` sends `initialize_actor_t` to self
 to advance own state to `INITIALIZED` via common actor mechanism,
-instead of changeing state directly on early initialization phase
+instead of changing state directly on early initialization phase
 (`do_initialize`)
  - [bugfix] `rotor::asio::forwarder_t` now more correctly dispatches
 boost::asio events to actor methods
@@ -334,4 +337,4 @@ boost::asio events to actor methods
 
 ### 0.01 (24-Jul-2019)
 
-Initial version
+ - Initial version

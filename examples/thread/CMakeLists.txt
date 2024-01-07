@@ -1,5 +1,9 @@
-cmake_minimum_required(VERSION 3.8)
-find_package(OpenSSL COMPONENTS Crypto)
+cmake_minimum_required(VERSION 3.23)
+find_package(OpenSSL  1.1.1...3.2.0 COMPONENTS Crypto)
+
+if (BUILD_SHARED_LIBS)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../../bin)
+endif ()
 
 if (OPENSSL_FOUND)
     add_executable(sha512 sha512.cpp)

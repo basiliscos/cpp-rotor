@@ -36,7 +36,7 @@ using _0 = std::integral_constant<size_t, 0>;
 using _1 = std::integral_constant<size_t, 1>;
 } // namespace count
 
-/** \brief asio callback decomposer into 1 possible argument type and total argruments count (0 or 1) */
+/** \brief asio callback decomposer into 1 possible argument type and total arguments count (0 or 1) */
 template <typename T> struct callback_traits {};
 
 /** \brief callback decomposer specialization for reference argument */
@@ -74,12 +74,12 @@ template <typename Actor> inline boost::asio::io_context::strand &get_strand(Act
 /** \brief templated forwarder base class */
 template <typename Actor, typename Handler, typename ErrHandler> struct forwarder_base_t;
 
-/** \brief patrial specialization of forwarder base when there is no error handler */
+/** \brief partial specialization of forwarder base when there is no error handler */
 template <typename Actor, typename Handler> struct forwarder_base_t<Actor, Handler, void> {
     /** \brief alias for intrusive pointer for an actor type */
     using typed_actor_ptr_t = intrusive_ptr_t<Actor>;
 
-    /** \brief alias for boost::asio supervior */
+    /** \brief alias for boost::asio supervisor */
     using typed_sup_t = supervisor_asio_t;
 
     /** \brief constructs forwarder_base for the actor from it handler function */
@@ -112,7 +112,7 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
 
 /**
  * \brief dispatches single boost::asio callback with `error_code` and non-error results
- * into two differnt functions of the `actor`. After the invocation, actor's supervisor
+ * into two different functions of the `actor`. After the invocation, actor's supervisor
  * `do_process` method is called to process message queue.
  *
  * The invocation is `strand`-aware.
