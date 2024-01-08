@@ -28,7 +28,7 @@ for:
       - cmd: echo %PATH%
       - cmd: "%PYTHON%\\python.exe -m pip install conan cmake"
       - sh: python3 -m pip install conan cmake
-      - sh: if [ "$CONFIGURATION $SHARED" == "Debug False" ]; then sudo apt-get update && sudo apt-get install lcov curl; fi
+      - sh: if [ "$CONFIGURATION $SHARED" == "Debug False" ]; then sudo apt-get update && sudo apt-get install -y lcov curl; fi
     build_script:
       - cmake --version
       - conan profile detect
