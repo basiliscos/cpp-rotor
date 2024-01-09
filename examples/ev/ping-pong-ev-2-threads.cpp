@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <thread>
+#include <boost/asio/detail/winsock_init.hpp> // for calling WSAStartup on Windows
 
 struct ping_t {};
 struct pong_t {};

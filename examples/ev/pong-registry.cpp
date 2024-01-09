@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <chrono>
 #include <cstdlib>
+#include <boost/asio/detail/winsock_init.hpp> // for calling WSAStartup on Windows
+
 
 /* NB: there is some race-condition, as the ponger might be register self in the registry
  * later then pinger asks for ponger address; then pinger receives discovery falilure
