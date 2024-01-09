@@ -14,7 +14,7 @@
 
 
 /* NB: there is some race-condition, as the ponger might be register self in the registry
- * later then pinger asks for ponger address; then pinger receives discovery falilure
+ * later then pinger asks for ponger address; then pinger receives discovery failure
  * reply and shuts self down.
  *
  * The correct behavior will be introduced later in rotor with erlang-like actor restart
