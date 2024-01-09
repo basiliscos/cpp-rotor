@@ -145,13 +145,17 @@ struct ROTOR_API plugin_base_t {
     }
 
     /** \brief returns the current set of plugin reactions */
-    std::size_t get_reaction() const noexcept { return reaction; }
+    reaction_t get_reaction() const noexcept { return reaction; }
 
     /** \brief turns on the specified reaction of the plugin */
-    void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
+    void reaction_on(reaction_t value) noexcept {
+        reaction = static_cast<reaction_t>(static_cast<std::uint32_t>(reaction) | static_cast<std::uint32_t>(value));
+    }
 
     /** \brief turns off the specified reaction of the plugin */
-    void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
+    void reaction_off(reaction_t value) noexcept {
+        reaction = static_cast<reaction_t>(static_cast<std::uint32_t>(reaction) & ~static_cast<std::uint32_t>(value));
+    }
 
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
@@ -176,7 +180,7 @@ struct ROTOR_API plugin_base_t {
 
   private:
     subscription_container_t own_subscriptions;
-    std::size_t reaction = 0;
+    reaction_t reaction = static_cast<reaction_t>(0u);
     config_phase_t phase = config_phase_t::PREINIT;
 };
 

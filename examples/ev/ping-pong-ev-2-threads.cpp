@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
             count = static_cast<std::uint32_t>(std::atoi(argv[1]));
         }
 
-        auto timeout = boost::posix_time::milliseconds{10};
+        auto timeout = boost::posix_time::milliseconds{100};
 
         auto *loop1 = ev_loop_new(0);
         auto ctx1 = rotor::ev::system_context_ev_t();

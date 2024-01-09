@@ -37,7 +37,7 @@ void plugin_base_t::deactivate() noexcept {
         if (own_subscriptions.empty()) {
             actor->commit_plugin_deactivation(*this);
             actor = nullptr;
-            reaction = 0;
+            reaction = static_cast<reaction_t>(0u);
         } else {
             auto lifetime = actor->access<to::lifetime>();
             assert(lifetime);
