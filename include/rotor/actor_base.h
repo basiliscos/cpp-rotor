@@ -311,17 +311,17 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      * The `method` parameter should have the following signatures:
      *
      * void Delegate::on_timer(request_id_t, bool cancelled) noexcept;
-     *  
-     * or 
-     * 
-     * void(Delegate*,request_id_t, bool cancelled) noexcept 
+     *
+     * or
+     *
+     * void(Delegate*,request_id_t, bool cancelled) noexcept
      *
      * `start_timer` returns timer identity. It will be supplied to the specified callback,
      * or the timer can be cancelled via it.
      */
-    template <typename Delegate, typename Method, typename = std::enable_if_t<std::is_invocable_v<Method, Delegate*, request_id_t, bool>>>
+    template <typename Delegate, typename Method,
+              typename = std::enable_if_t<std::is_invocable_v<Method, Delegate *, request_id_t, bool>>>
     request_id_t start_timer(const pt::time_duration &interval, Delegate &delegate, Method method) noexcept;
-
 
     /** \brief cancels previously started timer
      *

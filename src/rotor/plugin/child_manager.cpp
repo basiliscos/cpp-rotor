@@ -6,7 +6,6 @@
 
 #include "rotor/plugin/child_manager.h"
 #include "rotor/supervisor.h"
-//#include <iostream>
 
 using namespace rotor;
 using namespace rotor::plugin;

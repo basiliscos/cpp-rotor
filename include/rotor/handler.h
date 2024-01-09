@@ -208,7 +208,7 @@ template <typename Handler> inline constexpr bool is_lambda_handler_v = handler_
 
 template <typename Handler>
 inline constexpr bool is_plugin_handler_v =
-    handler_traits<Handler>::has_valid_message &&handler_traits<Handler>::is_plugin &&
+    handler_traits<Handler>::has_valid_message && handler_traits<Handler>::is_plugin &&
     !handler_traits<Handler>::is_actor && !handler_traits<Handler>::is_lambda;
 
 namespace {

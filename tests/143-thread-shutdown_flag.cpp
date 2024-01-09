@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-
 #ifdef __unix__
 #include "rotor.hpp"
 #include "rotor/thread.hpp"

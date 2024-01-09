@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -17,6 +17,12 @@
 #endif
 
 namespace rotor {
+
+struct message_base_t;
+
+struct message_visitior_t {
+    virtual bool try_visit(const message_base_t &message) const = 0;
+};
 
 /** \struct message_base_t
  *  \brief Base class for `rotor` message.
@@ -59,6 +65,11 @@ template <typename T> struct message_t : public message_base_t {
 
     /** \brief alias for payload type */
     using payload_t = T;
+
+    struct visitor_t {
+        virtual ~visitor_t() = default;
+        virtual void on(const message_t &) {}
+    };
 
     /** \brief forwards `args` for payload construction */
     template <typename... Args>

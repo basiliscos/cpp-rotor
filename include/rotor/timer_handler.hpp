@@ -51,10 +51,7 @@ template <typename Object, typename Method> struct timer_handler_t : timer_handl
     timer_handler_t(actor_base_t *owner_, request_id_t request_id_, Object *object_, Method method_) noexcept
         : timer_handler_base_t{owner_, request_id_}, object{object_}, method{std::forward<Method>(method_)} {}
 
-    void trigger(bool cancelled) noexcept override 
-    { 
-        std::invoke(method, object, request_id, cancelled);
-    }
+    void trigger(bool cancelled) noexcept override { std::invoke(method, object, request_id, cancelled); }
 };
 
 } // namespace rotor

@@ -38,11 +38,17 @@ endif ()
 
 add_library(rotor)
 
-file(GLOB PLUGIN_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/plugin/*.cpp")
-file(GLOB DETAIL_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/detail/*.cpp")
 file(GLOB CORE_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/*.cpp")
+file(GLOB DETAIL_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/detail/*.cpp")
+file(GLOB PLUGIN_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/plugin/*.cpp")
+file(GLOB MISC_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/misc/*.cpp")
 
-target_sources(rotor PRIVATE ${PLUGIN_SOURCES} ${DETAIL_SOURCES} ${CORE_SOURCES})
+target_sources(rotor PRIVATE
+    ${CORE_SOURCES}
+    ${DETAIL_SOURCES}
+    ${PLUGIN_SOURCES}
+    ${MISC_SOURCES}
+)
 
 generate_export_header(rotor
     EXPORT_MACRO_NAME ROTOR_API
@@ -84,6 +90,7 @@ list(APPEND ROTOR_TARGETS_TO_INSTALL rotor)
 
 file(GLOB PLUGIN_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/plugin/*.h*")
 file(GLOB DETAIL_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/detail/*.h*")
+file(GLOB MISC_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/misc/*.h*")
 
 set(CORE_HEADERS 
     include/rotor/actor_base.h
@@ -97,6 +104,7 @@ set(CORE_HEADERS
     include/rotor/forward.hpp
     include/rotor/handler.h
     include/rotor/message.h
+    include/rotor/message_stringifier.h
     include/rotor/messages.hpp
     include/rotor/plugins.h
     include/rotor/policy.h
@@ -114,7 +122,8 @@ set(CORE_HEADERS
 
 list(APPEND CORE_HEADERS 
         ${DETAIL_HEADERS}
-        ${PLUGIN_HEADERS}
+	${PLUGIN_HEADERS}
+	${MISC_HEADERS}
         ${CMAKE_BINARY_DIR}/include/rotor/export.h
         ${CMAKE_SOURCE_DIR}/include/rotor.hpp)
 

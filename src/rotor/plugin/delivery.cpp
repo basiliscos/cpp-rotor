@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -18,10 +18,12 @@ using namespace rotor::plugin;
 namespace {
 namespace to {
 struct main_address {};
+struct context {};
 } // namespace to
 } // namespace
 
 template <> auto &subscription_t::access<to::main_address>() noexcept { return main_address; }
+template <> auto &supervisor_t::access<to::context>() noexcept { return context; }
 
 void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
     plugin_base_t::activate(actor_);
@@ -31,6 +33,7 @@ void delivery_plugin_base_t::activate(actor_base_t *actor_) noexcept {
     subscription_map = &sup->subscription_map;
     subscription_map->access<to::main_address>() = address;
     sup->delivery = this;
+    stringifier = &actor->get_supervisor().access<to::context>()->get_stringifier();
 }
 
 void local_delivery_t::delivery(message_ptr_t &message,
@@ -46,138 +49,89 @@ void local_delivery_t::delivery(message_ptr_t &message,
     }
 }
 
-std::string inspected_local_delivery_t::identify(const message_base_t *message, std::int32_t threshold) noexcept {
-    using boost::core::demangle;
-    using T = owner_tag_t;
-    std::string info = demangle((const char *)message->type_index);
-    std::int32_t level = 5;
-    auto dump_point = [](const subscription_point_t &p) -> std::string {
-        std::stringstream out;
-        out << " [";
-        switch (p.owner_tag) {
-        case T::PLUGIN:
-            out << "P";
-            break;
-        case T::SUPERVISOR:
-            out << "S";
-            break;
-        case T::FOREIGN:
-            out << "F";
-            break;
-        case T::ANONYMOUS:
-            out << "A";
-            break;
-        }
-        out << "] m: " << demangle((const char *)p.handler->message_type()) << ", addr: " << (void *)p.address.get()
-            << " ";
-        return out.str();
-    };
-
-    if (auto m = dynamic_cast<const message::unsubscription_t *>(message); m) {
-        level = 9;
-        info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<const message::subscription_t *>(message); m) {
-        level = 9;
-        info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<const message::unsubscription_external_t *>(message); m) {
-        level = 9;
-        info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<const message::external_subscription_t *>(message); m) {
-        level = 9;
-        info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<const message::commit_unsubscription_t *>(message); m) {
-        level = 9;
-        info += dump_point(m->payload.point);
-    } else if (auto m = dynamic_cast<const message::deregistration_service_t *>(message); m) {
-        level = 1;
-        info += ", service = ";
-        info += m->payload.service_name;
-    } else if (auto m = dynamic_cast<const message::registration_request_t *>(message); m) {
-        level = 1;
-        info += ", name = ";
-        info += m->payload.request_payload.service_name;
-    } else if (auto m = dynamic_cast<const message::registration_response_t *>(message); m) {
-        level = 1;
-        info += ", name = ";
-        info += m->payload.req->payload.request_payload.service_name;
-        auto &ee = m->payload.ee;
-        if (ee) {
-            info += ", failure(!) = ";
-            info += ee->message() + " ";
-        } else {
-            info += ", success; ";
-        }
-    } else if (auto m = dynamic_cast<const message::discovery_request_t *>(message); m) {
-        level = 1;
-        info += ", service = ";
-        info += m->payload.request_payload.service_name;
-    } else if (auto m = dynamic_cast<const message::discovery_promise_t *>(message); m) {
-        level = 1;
-        info += ", service = ";
-        info += m->payload.request_payload.service_name;
-    } else if (auto m = dynamic_cast<const message::discovery_future_t *>(message); m) {
-        level = 1;
-        std::stringstream out;
-        out << ", service = " << m->payload.req->payload.request_payload.service_name;
-        auto &ee = m->payload.ee;
-        if (ee) {
-            out << ", failure = " << ee->message() << " ";
-        } else {
-            auto &addr = m->payload.res.service_addr;
-            out << ", success, addr =  " << addr.get() << " ";
-        }
-        info += out.str();
-    } else if (auto m = dynamic_cast<const message::discovery_response_t *>(message); m) {
-        level = 1;
-        std::stringstream out;
-        out << ", service = " << m->payload.req->payload.request_payload.service_name;
-        auto &ee = m->payload.ee;
-        if (ee) {
-            out << ", failure = " << ee->message() << " ";
-        } else {
-            auto &addr = m->payload.res.service_addr;
-            out << ", success, addr =  " << addr.get() << " ";
-        }
-        info += out.str();
-    } else if (auto m = dynamic_cast<const message::link_response_t *>(message); m) {
-        level = 2;
-        std::stringstream out;
-        out << ", service addr = " << m->payload.req->payload.origin.get();
-        auto &ee = m->payload.ee;
-        if (ee) {
-            out << ", failure(!) = " << ee->message() + " ";
-        } else {
-            out << ", success; ";
-        }
-        info += out.str();
-    } else if (auto m = dynamic_cast<const message::shutdown_trigger_t *>(message); m) {
-        level = 0;
-        std::stringstream out;
-        out << ", target = " << ((void *)m->payload.actor_address.get())
-            << ", reason = " << m->payload.reason->message();
-        info += out.str();
+static int get_message_level(const message_base_t *message) noexcept {
+    auto type = message->type_index;
+    if (type == message::unsubscription_t::message_type) {
+        return 9;
+    } else if (type == message::unsubscription_t::message_type) {
+        return 9;
+    } else if (type == message::subscription_t::message_type) {
+        return 9;
+    } else if (type == message::unsubscription_external_t::message_type) {
+        return 9;
+    } else if (type == message::external_subscription_t::message_type) {
+        return 9;
+    } else if (type == message::commit_unsubscription_t::message_type) {
+        return 9;
+    } else if (type == message::deregistration_service_t::message_type) {
+        return 2;
+    } else if (type == message::registration_request_t::message_type) {
+        return 2;
+    } else if (type == message::registration_response_t::message_type) {
+        return 2;
+    } else if (type == message::discovery_request_t::message_type) {
+        return 2;
+    } else if (type == message::discovery_response_t::message_type) {
+        return 2;
+    } else if (type == message::discovery_promise_t::message_type) {
+        return 2;
+    } else if (type == message::discovery_future_t::message_type) {
+        return 2;
+    } else if (type == message::discovery_cancel_t::message_type) {
+        return 2;
+    } else if (type == message::link_request_t::message_type) {
+        return 5;
+    } else if (type == message::link_response_t::message_type) {
+        return 3;
+    } else if (type == message::shutdown_trigger_t::message_type) {
+        return 1;
+    } else if (type == message::handler_call_t::message_type) {
+        return 20;
+    } else if (type == message::init_request_t::message_type) {
+        return 11;
+    } else if (type == message::init_response_t::message_type) {
+        return 11;
+    } else if (type == message::start_trigger_t::message_type) {
+        return 10;
+    } else if (type == message::shutdown_request_t::message_type) {
+        return 15;
+    } else if (type == message::shutdown_response_t::message_type) {
+        return 15;
+    } else if (type == message::create_actor_t::message_type) {
+        return 7;
+    } else if (type == message::spawn_actor_t::message_type) {
+        return 7;
+    } else if (type == message::deregistration_notify_t::message_type) {
+        return 3;
+    } else if (type == message::unlink_notify_t::message_type) {
+        return 8;
+    } else if (type == message::unlink_request_t::message_type) {
+        return 8;
+    } else if (type == message::unlink_response_t::message_type) {
+        return 8;
     }
-
-    if (level > threshold)
-        return "";
-    return info;
+    return 0;
 }
 
-static void dump_message(const char *prefix, const message_ptr_t &message) noexcept {
+static void dump_message(const char *prefix, const message_ptr_t &message,
+                         const message_stringifier_t *stringifier) noexcept {
     auto var = std::getenv("ROTOR_INSPECT_DELIVERY");
     if (var) {
         int threshold = atoi(var);
-        auto dump = inspected_local_delivery_t::identify(message.get(), threshold);
-        if (dump.size() > 0) {
-            std::cout << prefix << dump << " for " << message->address.get() << "\n";
+        auto level = get_message_level(message.get());
+        if (level <= threshold) {
+            std::cout << prefix << "{" << level << "} " << stringifier->stringify(*message) << "\n";
         }
     }
 }
 
 void inspected_local_delivery_t::delivery(message_ptr_t &message,
-                                          const subscription_t::joint_handlers_t &local_recipients) noexcept {
-    dump_message(">> ", message);
+                                          const subscription_t::joint_handlers_t &local_recipients,
+                                          const message_stringifier_t *stringifier) noexcept {
+    dump_message(">> ", message, stringifier);
     local_delivery_t::delivery(message, local_recipients);
 }
 
-void inspected_local_delivery_t::discard(message_ptr_t &message) noexcept { dump_message("<DISCARDED> ", message); }
+void inspected_local_delivery_t::discard(message_ptr_t &message, const message_stringifier_t *stringifier) noexcept {
+    dump_message("<DISCARDED> ", message, stringifier);
+}

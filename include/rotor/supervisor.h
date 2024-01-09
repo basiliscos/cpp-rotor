@@ -386,7 +386,6 @@ request_id_t actor_base_t::start_timer(const pt::time_duration &interval, Delega
     return request_id;
 }
 
-
 /** \brief wraps handler (pointer to member function) and actor address into intrusive pointer */
 template <typename Handler> handler_ptr_t wrap_handler(actor_base_t &actor, Handler &&handler) {
     using final_handler_t = handler_t<Handler>;
@@ -475,10 +474,10 @@ template <> inline size_t delivery_plugin_t<plugin::inspected_local_delivery_t>:
             ++enqueued_messages;
         }
         if (local_recipients) {
-            plugin::inspected_local_delivery_t::delivery(message, *local_recipients);
+            plugin::inspected_local_delivery_t::delivery(message, *local_recipients, stringifier);
         } else {
             if (delivery_attempt) {
-                plugin::inspected_local_delivery_t::discard(message);
+                plugin::inspected_local_delivery_t::discard(message, stringifier);
             }
         }
     }

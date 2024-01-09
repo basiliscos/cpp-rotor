@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -9,6 +9,8 @@
 #include "address.hpp"
 #include "supervisor_config.h"
 #include "extended_error.h"
+#include "message_stringifier.h"
+
 #include <system_error>
 
 #if defined(_MSC_VER)
@@ -60,9 +62,15 @@ struct ROTOR_API system_context_t : arc_base_t<system_context_t> {
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
+    const message_stringifier_t &get_stringifier();
+
+  protected:
+    virtual message_stringifier_ptr_t make_stringifier() const noexcept;
+
   private:
     friend struct supervisor_t;
     supervisor_ptr_t supervisor;
+    message_stringifier_ptr_t stringifier;
 };
 
 /** \brief intrusive pointer for system context */

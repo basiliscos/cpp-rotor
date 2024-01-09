@@ -6,8 +6,6 @@
 
 #include "rotor/actor_base.h"
 #include "rotor/supervisor.h"
-//#include <iostream>
-//#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 using namespace rotor::plugin;

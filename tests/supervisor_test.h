@@ -6,7 +6,6 @@
 // Distributed under the MIT Software License
 //
 
-
 #include "rotor/supervisor.h"
 #include "actor_test.h"
 #include <list>
