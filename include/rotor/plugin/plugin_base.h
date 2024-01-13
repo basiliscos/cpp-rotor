@@ -152,7 +152,6 @@ struct ROTOR_API plugin_base_t {
 
     /** \brief turns off the specified reaction of the plugin */
     void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
-
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 

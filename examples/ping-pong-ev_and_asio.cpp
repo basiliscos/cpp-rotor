@@ -21,6 +21,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <thread>
+#include <boost/asio/detail/winsock_init.hpp> // for calling WSAStartup on Windows
 
 namespace asio = boost::asio;
 
