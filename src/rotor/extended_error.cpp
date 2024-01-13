@@ -5,13 +5,19 @@
 //
 
 #include "rotor/extended_error.h"
+#include "rotor/message_stringifier.h"
 #include <sstream>
 
 namespace rotor {
 
-std::string extended_error_t::message() const noexcept {
+std::string extended_error_t::message(const message_stringifier_t *stringifier) const noexcept {
     std::stringstream out;
     out << context << " " << ec.message();
+    if (request && stringifier) {
+        out << " [";
+        stringifier->stringify(out, *request);
+        out << "]";
+    }
     if (next) {
         out << " <- " << next->message();
     }

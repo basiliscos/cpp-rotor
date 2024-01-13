@@ -19,6 +19,7 @@
 namespace rotor {
 
 struct extended_error_t;
+struct message_stringifier_t;
 
 /** \brief intrusive pointer to extended error type */
 using extended_error_ptr_t = intrusive_ptr_t<extended_error_t>;
@@ -58,7 +59,7 @@ struct ROTOR_API extended_error_t : arc_base_t<extended_error_t> {
      * Second, it recursively ask details on all following errors, appending them
      * into the result. The result string is returned.
      */
-    std::string message() const noexcept;
+    std::string message(const message_stringifier_t *stringifier = nullptr) const noexcept;
 
     /**
      * \brief returns root (inner-most) extended error
