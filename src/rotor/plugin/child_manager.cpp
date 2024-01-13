@@ -110,7 +110,7 @@ void child_manager_plugin_t::remove_child(const actor_base_t &child) noexcept {
                 auto &init_request = actor->access<to::init_request>();
                 if (init_request) {
                     auto ec = make_error_code(error_code_t::failure_escalation);
-                    actor->reply_with_error(*init_request, make_error(ec));
+                    actor->reply_with_error(*init_request, make_error(ec, {}, init_request));
                     init_request.reset();
                 }
             }
@@ -233,7 +233,7 @@ void child_manager_plugin_t::on_spawn(message::spawn_actor_t &message) noexcept 
                 auto &init_request = actor->access<to::init_request>();
                 if (init_request) {
                     auto ec = make_error_code(error_code_t::failure_escalation);
-                    actor->reply_with_error(*init_request, make_error(ec));
+                    actor->reply_with_error(*init_request, make_error(ec, {}, init_request));
                     init_request.reset();
                 } else {
                     auto reason = make_error(make_error_code(shutdown_code_t::child_init_failed));
@@ -272,7 +272,7 @@ void child_manager_plugin_t::on_init(message::init_response_t &message) noexcept
             if (init_request) {
                 if (init_request != message.payload.req) {
                     auto reply_ec = make_error_code(error_code_t::failure_escalation);
-                    actor->reply_with_error(*init_request, make_error(reply_ec, ec));
+                    actor->reply_with_error(*init_request, make_error(reply_ec, ec, init_request));
                     init_request.reset();
                 } else {
                     actor->do_shutdown(ec);

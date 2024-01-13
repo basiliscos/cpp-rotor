@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2021-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -31,8 +31,8 @@ extended_error_ptr_t extended_error_t::root() const noexcept {
 }
 
 extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
-                                const extended_error_ptr_t &next_) noexcept {
-    return new extended_error_t(context_, ec_, next_);
+                                const extended_error_ptr_t &next_, const message_ptr_t &request_) noexcept {
+    return new extended_error_t(context_, ec_, next_, request_);
 }
 
 } // namespace rotor

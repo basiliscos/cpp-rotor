@@ -108,7 +108,7 @@ void registry_plugin_t::continue_init(const error_code_t &possible_ec, const ext
     auto &init_request = actor->access<to::init_request>();
     assert(init_request);
     if (root_ec) {
-        auto reason = make_error(possible_ec, root_ec);
+        auto reason = make_error(possible_ec, root_ec, init_request);
         actor->reply_with_error(*init_request, reason);
     } else {
         actor->init_continue();

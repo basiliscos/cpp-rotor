@@ -11,7 +11,6 @@
 #include <ev.h>
 #include <boost/asio/detail/winsock_init.hpp> // for calling WSAStartup on Windows
 
-
 namespace r = rotor;
 namespace re = rotor::ev;
 namespace pt = boost::posix_time;

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -403,7 +403,8 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
     void assign_shutdown_reason(extended_error_ptr_t reason) noexcept;
 
     /** \brief makes extended error within the context of the actor */
-    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
+    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {},
+                                    const message_ptr_t &request = {}) noexcept;
 
     /** \brief notification, when actor has been unlinked from server actor
      *

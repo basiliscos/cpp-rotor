@@ -1,12 +1,13 @@
 #pragma once
 
 //
-// Copyright (c) 2021-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2021-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "arc.hpp"
+#include "message.h"
 #include <string>
 #include <system_error>
 
@@ -39,13 +40,16 @@ struct ROTOR_API extended_error_t : arc_base_t<extended_error_t> {
     /** \brief abstract error code, describing occurred error */
     std::error_code ec;
 
-    /** \brief pointer to the root error */
+    /** \brief pointer to the parent error */
     extended_error_ptr_t next;
 
+    /** \brief pointer request caused error */
+    message_ptr_t request;
+
     /** \brief extened error constructor */
-    extended_error_t(const std::string &context_, const std::error_code &ec_,
-                     const extended_error_ptr_t &next_ = {}) noexcept
-        : context{context_}, ec{ec_}, next{next_} {}
+    extended_error_t(const std::string &context_, const std::error_code &ec_, const extended_error_ptr_t &next_ = {},
+                     const message_ptr_t &request_ = {}) noexcept
+        : context{context_}, ec{ec_}, next{next_}, request{request_} {}
 
     /** \brief human-readable detailed description of the error
      *
@@ -64,7 +68,8 @@ struct ROTOR_API extended_error_t : arc_base_t<extended_error_t> {
 
 /** \brief constructs smart pointer to the extened error */
 ROTOR_API extended_error_ptr_t make_error(const std::string &context_, const std::error_code &ec_,
-                                          const extended_error_ptr_t &next_ = {}) noexcept;
+                                          const extended_error_ptr_t &next_ = {},
+                                          const message_ptr_t &request_ = {}) noexcept;
 
 } // namespace rotor
 
