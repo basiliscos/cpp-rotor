@@ -53,8 +53,6 @@ static int get_message_level(const message_base_t *message) noexcept {
     auto type = message->type_index;
     if (type == message::unsubscription_t::message_type) {
         return 9;
-    } else if (type == message::unsubscription_t::message_type) {
-        return 9;
     } else if (type == message::subscription_t::message_type) {
         return 9;
     } else if (type == message::unsubscription_external_t::message_type) {

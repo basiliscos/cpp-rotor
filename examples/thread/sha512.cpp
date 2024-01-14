@@ -86,7 +86,7 @@ struct work_t {
         }
         // printf("read %llu bytes\n", bytes_to_read);
         bytes_read += bytes_to_read;
-        auto r = EVP_DigestUpdate(evp_ctx.get(), buff.data(), bytes_to_read);
+        auto r = EVP_DigestUpdate(evp_ctx.get(), buff.data(), static_cast<std::streamsize>(bytes_to_read));
         if (r != 1) {
             error = "sha update failed";
             return work_result_t::errored;
