@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.15)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.26")
+set(ROTOR_VERSION "0.27")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -13,6 +13,9 @@ if (NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET AND
 endif ()
 
 include(CMakePrintHelpers)
+include(GNUInstallDirs)
+include(GenerateExportHeader)
+include(CMakePackageConfigHelpers)
 
 option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
 option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
@@ -29,8 +32,6 @@ find_package(Boost COMPONENTS
         system
         regex
         REQUIRED)
-
-include(GenerateExportHeader)
 
 if (BUILD_SHARED_LIBS)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
@@ -88,11 +89,16 @@ set_target_properties(rotor PROPERTIES
 add_library(rotor::core ALIAS rotor)
 list(APPEND ROTOR_TARGETS_TO_INSTALL rotor)
 
-file(GLOB PLUGIN_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/plugin/*.h*")
-file(GLOB DETAIL_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/detail/*.h*")
-file(GLOB MISC_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/misc/*.h*")
+install(
+    TARGETS rotor
+    EXPORT ROTOR_ALL_TARGETS
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+)
 
-set(CORE_HEADERS 
+set(ROTOR_HEADERS_TO_INSTALL
+    include/rotor.hpp
     include/rotor/actor_base.h
     include/rotor/actor_config.h
     include/rotor/address.hpp
@@ -106,6 +112,20 @@ set(CORE_HEADERS
     include/rotor/message.h
     include/rotor/message_stringifier.h
     include/rotor/messages.hpp
+    include/rotor/misc/default_stringifier.h
+    include/rotor/plugin/address_maker.h
+    include/rotor/plugin/child_manager.h
+    include/rotor/plugin/delivery.h
+    include/rotor/plugin/foreigners_support.h
+    include/rotor/plugin/init_shutdown.h
+    include/rotor/plugin/lifetime.h
+    include/rotor/plugin/link_client.h
+    include/rotor/plugin/link_server.h
+    include/rotor/plugin/locality.h
+    include/rotor/plugin/plugin_base.h
+    include/rotor/plugin/registry.h
+    include/rotor/plugin/resources.h
+    include/rotor/plugin/starter.h
     include/rotor/plugins.h
     include/rotor/policy.h
     include/rotor/registry.h
@@ -117,32 +137,10 @@ set(CORE_HEADERS
     include/rotor/supervisor.h
     include/rotor/supervisor_config.h
     include/rotor/system_context.h
-    include/rotor/timer_handler.hpp
 )
-
-list(APPEND CORE_HEADERS 
-        ${DETAIL_HEADERS}
-	${PLUGIN_HEADERS}
-	${MISC_HEADERS}
-        ${CMAKE_BINARY_DIR}/include/rotor/export.h
-        ${CMAKE_SOURCE_DIR}/include/rotor.hpp)
-
-target_sources(rotor 
-    PUBLIC
-    FILE_SET "core" 
-    TYPE HEADERS
-    BASE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include
-    FILES "${CORE_HEADERS}"
-)
-
-install(
-    TARGETS rotor
-    EXPORT ROTOR_ALL_TARGETS
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    FILE_SET "core" 
-)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
+    DESTINATION include/rotor)
 
 if (BUILD_BOOST_ASIO)
     find_package(Threads)
@@ -156,20 +154,14 @@ if (BUILD_BOOST_ASIO)
         EXPORT_FILE_NAME include/rotor/asio/export.h
     )
 
-    list(APPEND ASIO_HEADERS 
-        ${CMAKE_SOURCE_DIR}/include/rotor/asio.hpp 
-        ${CMAKE_BINARY_DIR}/include/rotor/asio/export.h
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/asio.hpp
+        include/rotor/asio/forwarder.hpp
+        include/rotor/asio/supervisor_asio.h
+        include/rotor/asio/supervisor_config_asio.h
+        include/rotor/asio/system_context_asio.h
     )
-
     target_sources(rotor_asio PRIVATE src/rotor/asio/supervisor_asio.cpp)
-
-    target_sources(rotor_asio 
-            PUBLIC
-            FILE_SET "asio" 
-            TYPE HEADERS
-            BASE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include
-            FILES "${ASIO_HEADERS}"
-    )
 
     if (WIN32)
         list(APPEND ROTOR_ASIO_PRIVATE_FLAGS
@@ -187,9 +179,9 @@ if (BUILD_BOOST_ASIO)
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        FILE_SET "asio" 
     )
-    
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/asio/export.h
+        DESTINATION include/rotor/asio)
 endif()
 
 if (BUILD_WX)
@@ -205,20 +197,14 @@ if (BUILD_WX)
         EXPORT_FILE_NAME include/rotor/wx/export.h
     )
 
-    list(APPEND THREAD_HEADERS 
-        ${CMAKE_SOURCE_DIR}/include/rotor/wx.hpp
-        ${CMAKE_BINARY_DIR}/include/rotor/wx/export.h
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/wx.hpp
+        include/rotor/wx/supervisor_config_wx.h
+        include/rotor/wx/supervisor_wx.h
+        include/rotor/wx/system_context_wx.h
     )
 
-    target_sources(rotor_wx PRIVATE ${THREAD_SOURCES})
-
-    target_sources(rotor_wx 
-            PUBLIC
-            FILE_SET "wx" 
-            TYPE HEADERS
-            BASE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include
-            FILES "${WX_HEADERS}"
-    )
+    target_sources(rotor_wx PRIVATE ${WX_SOURCES})
 
     target_link_libraries(rotor_wx PUBLIC rotor ${wxWidgets_LIBRARIES})
     add_library(rotor::wx ALIAS rotor_wx)
@@ -229,8 +215,9 @@ if (BUILD_WX)
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        FILE_SET "wx" 
     )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/wx/export.h
+        DESTINATION include/rotor/wx)
 endif()
 
 if (BUILD_EV)
@@ -238,28 +225,20 @@ if (BUILD_EV)
     add_library(rotor_ev)
 
     file(GLOB EV_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/ev/*.cpp")
-    file(GLOB EV_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/ev/*.h*")
 
     generate_export_header(rotor_ev
         EXPORT_MACRO_NAME ROTOR_EV_API
         EXPORT_FILE_NAME include/rotor/ev/export.h
     )
 
-    list(APPEND EV_HEADERS 
-        ${CMAKE_SOURCE_DIR}/include/rotor/ev.hpp
-        ${CMAKE_BINARY_DIR}/include/rotor/ev/export.h
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/ev.hpp
+        include/rotor/ev/supervisor_config_ev.h
+        include/rotor/ev/supervisor_ev.h
+        include/rotor/ev/system_context_ev.h
     )
 
     target_sources(rotor_ev PRIVATE ${EV_SOURCES})
-
-    target_sources(rotor_ev 
-        PUBLIC
-        FILE_SET "ev" 
-        TYPE HEADERS
-        BASE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include
-        FILES "${EV_HEADERS}"
-    )
-
 
     target_include_directories(rotor_ev PUBLIC ${LIBEV_INCLUDE_DIRS})
     target_link_libraries(rotor_ev PUBLIC rotor libev::libev)
@@ -271,9 +250,9 @@ if (BUILD_EV)
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        FILE_SET "ev" 
     )
-
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/ev/export.h
+        DESTINATION include/rotor/ev)
 endif()
 
 if (BUILD_THREAD)
@@ -282,28 +261,19 @@ if (BUILD_THREAD)
     add_library(rotor_thread)
 
     file(GLOB THREAD_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/thread/*.cpp")
-    file(GLOB THREAD_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/thread/*.h*")
 
     generate_export_header(rotor_thread
         EXPORT_MACRO_NAME ROTOR_THREAD_API
         EXPORT_FILE_NAME include/rotor/thread/export.h
     )
 
-    list(APPEND THREAD_HEADERS 
-        ${CMAKE_SOURCE_DIR}/include/rotor/thread.hpp
-        ${CMAKE_BINARY_DIR}/include/rotor/thread/export.h
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/thread.hpp
+        include/rotor/thread/supervisor_thread.h
+        include/rotor/thread/system_context_thread.h
+        include/rotor/timer_handler.hpp
     )
-
     target_sources(rotor_thread PRIVATE ${THREAD_SOURCES})
-
-    target_sources(rotor_thread 
-            PUBLIC
-            FILE_SET "thread" 
-            TYPE HEADERS
-            BASE_DIRS ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include
-            FILES "${THREAD_HEADERS}"
-    )
-
     target_link_libraries(rotor_thread PUBLIC rotor Threads::Threads)
     add_library(rotor::thread ALIAS rotor_thread)
 
@@ -313,8 +283,9 @@ if (BUILD_THREAD)
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        FILE_SET "thread" 
     )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/thread/export.h
+        DESTINATION include/rotor/thread)
 endif()
 
 
@@ -366,7 +337,6 @@ install(
 set(ROTOR_CONFIG_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/rotor-config-version.cmake")
 set(ROTOR_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/rotor-config.cmake")
 
-include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     ${ROTOR_CONFIG_VERSION_FILE}
     VERSION ${ROTOR_VERSION}
@@ -383,3 +353,8 @@ install(
     FILES ${ROTOR_CONFIG_FILE} ${ROTOR_CONFIG_VERSION_FILE}
     DESTINATION ${ROTOR_CMAKE_FILES_DEST}
 )
+
+foreach( HEADER_FILE ${ROTOR_HEADERS_TO_INSTALL} )
+    get_filename_component( DIR ${HEADER_FILE} PATH )
+    install( FILES ${HEADER_FILE} DESTINATION ${DIR} )
+endforeach()
