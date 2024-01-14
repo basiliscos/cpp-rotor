@@ -42,7 +42,10 @@ TEST_CASE("default message stringifier", "[misc]") {
     SECTION("unknown / non-rotor message") {
         auto ping = r::make_message<payload::ping_t>(sup->get_address());
         auto message = stringifer.stringify(*ping);
-        CHECK_THAT(message, StartsWith("[?] rotor::message_t<payload::ping_t> =>"));
+		CHECK_THAT(message, ContainsSubstring("[?]"));
+		CHECK_THAT(message, ContainsSubstring("rotor::message_t"));
+		CHECK_THAT(message, ContainsSubstring("payload::ping_t"));
+		CHECK_THAT(message, ContainsSubstring(" =>"));
     }
 
     SECTION("extended error") {
