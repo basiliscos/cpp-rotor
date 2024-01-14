@@ -21,6 +21,7 @@ namespace rotor {
 struct message_base_t;
 
 struct message_visitior_t {
+	virtual ~message_visitior_t() = default;
     virtual bool try_visit(const message_base_t &message) const = 0;
 };
 
