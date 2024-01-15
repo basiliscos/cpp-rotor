@@ -79,14 +79,14 @@ struct work_t {
         auto bytes_left = file_size - bytes_read;
         auto final = bytes_left < buff.size();
         auto bytes_to_read = final ? bytes_left : buff.size();
-        in.read(reinterpret_cast<char *>(buff.data()), bytes_to_read);
+        in.read(reinterpret_cast<char *>(buff.data()), static_cast<std::streamsize>(bytes_to_read));
         if (!in) {
             error = "reading file error";
             return work_result_t::errored;
         }
         // printf("read %llu bytes\n", bytes_to_read);
         bytes_read += bytes_to_read;
-        auto r = EVP_DigestUpdate(evp_ctx.get(), buff.data(), static_cast<std::streamsize>(bytes_to_read));
+        auto r = EVP_DigestUpdate(evp_ctx.get(), buff.data(), bytes_to_read);
         if (r != 1) {
             error = "sha update failed";
             return work_result_t::errored;
