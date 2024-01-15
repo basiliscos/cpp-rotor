@@ -34,7 +34,7 @@ using pong_t = rotor::request_traits_t<payload::ping_t>::response::message_t;
 } // namespace message
 
 static const char ponger_name[] = "service:ponger";
-static const auto timeout = boost::posix_time::milliseconds{5};
+static const auto timeout = boost::posix_time::milliseconds{10};
 
 struct pinger_t : public rotor::actor_base_t {
 
@@ -90,7 +90,6 @@ int main() {
     try {
         auto *loop = ev_loop_new(0);
         auto system_context = rotor::ev::system_context_ptr_t{new rotor::ev::system_context_ev_t()};
-        auto timeout = boost::posix_time::milliseconds{10};
 
         auto sup = system_context->create_supervisor<rotor::ev::supervisor_ev_t>()
                        .loop(loop)

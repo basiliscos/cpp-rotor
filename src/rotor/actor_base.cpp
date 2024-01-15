@@ -239,9 +239,9 @@ void actor_base_t::on_unsubscription_external(message::unsubscription_external_t
 
 address_ptr_t actor_base_t::create_address() noexcept { return address_maker->create_address(); }
 
-plugin_base_t *actor_base_t::get_plugin(const std::type_index &identity) const noexcept {
+plugin_base_t *actor_base_t::get_plugin(const std::type_index &identity_) const noexcept {
     for (auto plugin : plugins) {
-        if (plugin->identity() == identity) {
+        if (plugin->identity() == identity_) {
             return plugin;
         }
     }

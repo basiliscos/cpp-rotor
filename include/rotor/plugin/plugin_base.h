@@ -21,13 +21,17 @@ enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
  *
  */
 struct ROTOR_API plugin_base_t {
+
     /** \brief possible plugin's reactions on actor lifetime events */
-    enum reaction_t : std::uint32_t {
-        INIT = 1 << 0,
-        SHUTDOWN = 1 << 1,
-        SUBSCRIPTION = 1 << 2,
-        START = 1 << 3,
+    // clang-format off
+    enum reaction_t: std::uint32_t {
+        INIT         = 0b00000001,
+        SHUTDOWN     = 0b00000010,
+        SUBSCRIPTION = 0b00000100,
+        START        = 0b00001000,
     };
+    // clang-format on
+    using reaction_underlying_t = std::uint32_t;
 
     /** \brief default plugin ctor */
     plugin_base_t() = default;
@@ -145,13 +149,13 @@ struct ROTOR_API plugin_base_t {
     }
 
     /** \brief returns the current set of plugin reactions */
-    std::size_t get_reaction() const noexcept { return reaction; }
+    reaction_underlying_t get_reaction() const noexcept { return reaction; }
 
     /** \brief turns on the specified reaction of the plugin */
     void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
 
     /** \brief turns off the specified reaction of the plugin */
-    void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
+    void reaction_off(reaction_t value) noexcept { reaction = reaction & static_cast<reaction_underlying_t>(~value); }
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
@@ -176,7 +180,7 @@ struct ROTOR_API plugin_base_t {
 
   private:
     subscription_container_t own_subscriptions;
-    std::size_t reaction = 0;
+    reaction_underlying_t reaction = 0;
     config_phase_t phase = config_phase_t::PREINIT;
 };
 

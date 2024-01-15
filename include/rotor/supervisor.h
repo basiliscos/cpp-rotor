@@ -514,14 +514,14 @@ request_builder_t<T>::request_builder_t(supervisor_t &sup_, actor_base_t &actor_
         new request_message_t{destination, request_id, imaginary_address, reply_to_, std::forward<Args>(args)...});
 }
 
-template <typename T> request_id_t request_builder_t<T>::send(const pt::time_duration &timeout) noexcept {
+template <typename T> request_id_t request_builder_t<T>::send(const pt::time_duration &timeout_) noexcept {
     if (do_install_handler) {
         install_handler();
     }
     auto fn = &request_traits_t<T>::make_error_response;
     sup.request_map.emplace(request_id, request_curry_t{fn, reply_to, req, &actor});
     sup.put(req);
-    sup.start_timer(request_id, timeout, sup, &supervisor_t::on_request_trigger);
+    sup.start_timer(request_id, timeout_, sup, &supervisor_t::on_request_trigger);
     actor.active_requests.emplace(request_id);
     return request_id;
 }
@@ -583,9 +583,9 @@ template <typename Request> auto actor_base_t::make_response(Request &message, c
 
 template <typename Request, typename... Args> auto actor_base_t::make_response(Request &message, Args &&...args) {
     using payload_t = typename Request::payload_t::request_t;
-    using traits_t = request_traits_t<payload_t>;
-    using response_t = typename traits_t::response::wrapped_t;
-    using request_ptr_t = typename traits_t::request::message_ptr_t;
+    using req_traits_t = request_traits_t<payload_t>;
+    using response_t = typename req_traits_t::response::wrapped_t;
+    using request_ptr_t = typename req_traits_t::request::message_ptr_t;
     return make_message<response_t>(message.payload.reply_to, request_ptr_t{&message}, std::forward<Args>(args)...);
 }
 

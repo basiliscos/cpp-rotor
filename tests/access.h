@@ -52,8 +52,8 @@ template <> inline auto &actor_base_t::access<test::to::resources>() noexcept { 
 
 template <>
 inline auto
-rotor::actor_base_t::access<test::to::get_plugin, const std::type_index *>(const std::type_index *identity) noexcept {
-    return get_plugin(*identity);
+rotor::actor_base_t::access<test::to::get_plugin, const std::type_index *>(const std::type_index *identity_) noexcept {
+    return get_plugin(*identity_);
 }
 
 template <>

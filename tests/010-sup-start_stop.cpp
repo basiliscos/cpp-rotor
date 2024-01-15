@@ -265,7 +265,7 @@ struct sample_actor6_t : public rt::actor_test_t {
         start_timer(r::pt::minutes(1), *this, &sample_actor6_t::on_timer);
     }
 
-    void on_timer(r::request_id_t, bool cancelled) noexcept { this->cancelled = cancelled; }
+    void on_timer(r::request_id_t, bool cancelled_) noexcept { cancelled = cancelled_; }
     bool cancelled = false;
 };
 
@@ -278,7 +278,7 @@ struct sample_actor7_t : public rt::actor_test_t {
                     [](sample_actor7_t *actor, r::request_id_t, bool cancelled) { actor->cancelled = cancelled; });
     }
 
-    void on_timer(r::request_id_t, bool cancelled) noexcept { this->cancelled = cancelled; }
+    void on_timer(r::request_id_t, bool cancelled_) noexcept { cancelled = cancelled_; }
     bool cancelled = false;
 };
 

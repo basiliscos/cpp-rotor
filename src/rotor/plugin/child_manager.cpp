@@ -201,8 +201,8 @@ void child_manager_plugin_t::create_child(const actor_ptr_t &child) noexcept {
 
 void child_manager_plugin_t::on_create(message::create_actor_t &message) noexcept {
     auto &sup = static_cast<supervisor_t &>(*actor);
-    auto &actor = message.payload.actor;
-    auto &actor_address = actor->get_address();
+    auto &child_actor = message.payload.actor;
+    auto &actor_address = child_actor->get_address();
     assert(actors_map.count(actor_address) == 1);
     sup.template request<payload::initialize_actor_t>(actor_address).send(message.payload.timeout);
 }
@@ -315,8 +315,8 @@ void child_manager_plugin_t::on_shutdown_trigger(message::shutdown_trigger_t &me
     request_shutdown(*actor_state, message.payload.reason);
 }
 
-void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor, const extended_error_ptr_t &ec) noexcept {
-    actor.get_supervisor().access<to::system_context>()->on_error(&actor, ec);
+void child_manager_plugin_t::on_shutdown_fail(actor_base_t &actor_, const extended_error_ptr_t &ec) noexcept {
+    actor_.get_supervisor().access<to::system_context>()->on_error(&actor_, ec);
 }
 
 void child_manager_plugin_t::cancel_init(const actor_base_t *child) noexcept {

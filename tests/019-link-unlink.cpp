@@ -640,7 +640,7 @@ TEST_CASE("unlink in supervisor", "[supervisor]") {
     sup1->do_process();
 
     auto p = sup1->get_casted_plugin<r::plugin::resources_plugin_t>();
-	REQUIRE(p);
+    REQUIRE(p);
     p->acquire(0);
     sup1->do_shutdown();
     sup1->do_process();

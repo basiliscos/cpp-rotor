@@ -57,8 +57,8 @@ struct sample_actor_t : public r::actor_base_t {
 struct custom_child_manager_t : public r::plugin::child_manager_plugin_t {
     r::address_ptr_t fail_addr;
     r::extended_error_ptr_t fail_ec;
-    void on_shutdown_fail(r::actor_base_t &actor, const r::extended_error_ptr_t &ec) noexcept override {
-        fail_addr = actor.get_address();
+    void on_shutdown_fail(r::actor_base_t &actor_, const r::extended_error_ptr_t &ec) noexcept override {
+        fail_addr = actor_.get_address();
         fail_ec = ec;
     }
 };

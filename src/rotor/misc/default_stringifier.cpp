@@ -98,13 +98,14 @@ bool default_stringifier_t::try_visit(const message_base_t &message) const {
     return true;
 }
 
-void default_stringifier_t::stringify_to(std::stringstream &stream, const message_base_t &message) const {
+void default_stringifier_t::stringify_to(std::stringstream &stream_, const message_base_t &message) const {
     using boost::core::demangle;
-    this->stream = &stream;
+    stream = &stream_;
     if (!try_visit(message)) {
-        stream << "[?] " << demangle((const char *)message.type_index);
+        stream_ << "[?] " << demangle((const char *)message.type_index);
     }
-    stream << " => " << message.address;
+    stream_ << " => " << message.address;
+    stream = nullptr;
 }
 
 void default_stringifier_t::on(const message::unsubscription_t &message) {
