@@ -52,7 +52,7 @@ struct ROTOR_API default_stringifier_t : message_stringifier_t,
                                          protected message::unlink_notify_t::visitor_t,
                                          protected message::unlink_request_t::visitor_t,
                                          protected message::unlink_response_t::visitor_t {
-    void stringify(std::stringstream &, const message_base_t &) const override;
+    void stringify_to(std::stringstream &, const message_base_t &) const override;
     bool try_visit(const message_base_t &message) const override;
 
   protected:

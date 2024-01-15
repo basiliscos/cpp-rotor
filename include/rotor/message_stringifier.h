@@ -24,7 +24,7 @@ struct message_base_t;
 struct ROTOR_API message_stringifier_t {
     virtual ~message_stringifier_t() = default;
     virtual std::string stringify(const message_base_t &) const;
-    virtual void stringify(std::stringstream &, const message_base_t &) const = 0;
+    virtual void stringify_to(std::stringstream &, const message_base_t &) const = 0;
 };
 
 using message_stringifier_ptr_t = std::unique_ptr<message_stringifier_t>;

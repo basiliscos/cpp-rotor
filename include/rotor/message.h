@@ -20,7 +20,7 @@ namespace rotor {
 
 struct message_base_t;
 
-struct message_visitior_t {
+struct ROTOR_API message_visitior_t {
     virtual ~message_visitior_t() = default;
     virtual bool try_visit(const message_base_t &message) const = 0;
 };
@@ -67,7 +67,7 @@ template <typename T> struct message_t : public message_base_t {
     /** \brief alias for payload type */
     using payload_t = T;
 
-    struct visitor_t {
+    struct ROTOR_API visitor_t {
         virtual ~visitor_t() = default;
         virtual void on(const message_t &) {}
     };

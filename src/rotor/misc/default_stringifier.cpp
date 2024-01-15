@@ -98,7 +98,7 @@ bool default_stringifier_t::try_visit(const message_base_t &message) const {
     return true;
 }
 
-void default_stringifier_t::stringify(std::stringstream &stream, const message_base_t &message) const {
+void default_stringifier_t::stringify_to(std::stringstream &stream, const message_base_t &message) const {
     using boost::core::demangle;
     this->stream = &stream;
     if (!try_visit(message)) {
@@ -129,7 +129,7 @@ void default_stringifier_t::on(const message::commit_unsubscription_t &message) 
 
 void default_stringifier_t::on(const message::handler_call_t &message) {
     (*stream) << "r::handler_call {";
-    stringify(*stream, *message.payload.orig_message);
+    stringify_to(*stream, *message.payload.orig_message);
     (*stream) << "} @ " << (const void *)message.payload.handler->actor_ptr;
 }
 

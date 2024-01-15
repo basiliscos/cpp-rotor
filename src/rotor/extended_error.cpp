@@ -15,7 +15,7 @@ std::string extended_error_t::message(const message_stringifier_t *stringifier) 
     out << context << " " << ec.message();
     if (request && stringifier) {
         out << " [";
-        stringifier->stringify(out, *request);
+        stringifier->stringify_to(out, *request);
         out << "]";
     }
     if (next) {
