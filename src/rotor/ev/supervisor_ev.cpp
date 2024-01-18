@@ -49,7 +49,7 @@ static void timer_cb(struct ev_loop *, ev_timer *w, int revents) noexcept {
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
         timers_map.erase(timer_id);
         sup->do_process();
-	} catch (std::out_of_range &) {
+    } catch (std::out_of_range &) {
         // no-op
     }
     intrusive_ptr_release(sup);
@@ -110,7 +110,7 @@ void supervisor_ev_t::do_cancel_timer(request_id_t timer_id) noexcept {
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, true);
         timers_map.erase(timer_id);
         intrusive_ptr_release(this);
-	} catch (std::out_of_range &) {
+    } catch (std::out_of_range &) {
         // no-op
     }
 }
@@ -118,9 +118,9 @@ void supervisor_ev_t::do_cancel_timer(request_id_t timer_id) noexcept {
 void supervisor_ev_t::on_async() noexcept {
     move_inbound_queue();
     auto leader = static_cast<supervisor_ev_t *>(locality_leader);
-	auto &q = leader->queue;
+    auto &q = leader->queue;
     auto enqueued_messages = size_t{0};
-	if (!q.empty()) {
+    if (!q.empty()) {
         enqueued_messages = do_process();
     }
 
@@ -128,13 +128,13 @@ void supervisor_ev_t::on_async() noexcept {
         ev_now_update(loop);
         auto now = ev_now(loop);
         auto deadline = now + poll_duration;
-		while (now < deadline && q.empty()) {
+        while (now < deadline && q.empty()) {
             move_inbound_queue();
             ev_now_update(loop);
             now = ev_now(loop);
         }
 
-		if (!q.empty()) {
+        if (!q.empty()) {
             do_process();
         }
     }

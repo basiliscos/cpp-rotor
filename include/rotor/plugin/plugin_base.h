@@ -155,7 +155,7 @@ struct ROTOR_API plugin_base_t {
     void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
 
     /** \brief turns off the specified reaction of the plugin */
-    void reaction_off(reaction_t value) noexcept { reaction = reaction & static_cast<reaction_underlying_t>(~value); }
+    void reaction_off(reaction_t value) noexcept { reaction = reaction & negate(value); }
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
@@ -179,6 +179,14 @@ struct ROTOR_API plugin_base_t {
                                     const message_ptr_t &request = {}) noexcept;
 
   private:
+    inline static reaction_underlying_t negate(reaction_t value) {
+        if constexpr (std::is_same_v<reaction_underlying_t, decltype(~value)>) {
+            return ~value;
+        } else {
+            return static_cast<reaction_underlying_t>(~value);
+        }
+    }
+
     subscription_container_t own_subscriptions;
     reaction_underlying_t reaction = 0;
     config_phase_t phase = config_phase_t::PREINIT;
