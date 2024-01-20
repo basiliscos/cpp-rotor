@@ -20,21 +20,21 @@ namespace rotor {
 
 struct message_base_t;
 
-/** \struct message_visitior_t
+/** \struct message_visitor_t
  *  \brief Abstract message visitor interface
  *
  *  As the message type is dynamic and might not be known at compile type,
  *  the `try_visit` method returns `true` or `false` to indicate whether
- *  a message has been succesfully processed. If it returns `false`,
+ *  a message has been successfully processed. If it returns `false`,
  *  that might indicate, that some other message visitor should try a luck.
  *
- *  It should be noted, that it is potentially slow (not very performat)
- *  as it invoves multiple visitors and multiple message try attemps
- *  (the doulbe dispatch visitor pattern is not available).
+ *  It should be noted, that it is potentially slow (not very performant)
+ *  as it involves multiple visitors and multiple message try attemps
+ *  (the double dispatch visitor pattern is not available).
  *
  */
-struct ROTOR_API message_visitior_t {
-    virtual ~message_visitior_t() = default;
+struct ROTOR_API message_visitor_t {
+    virtual ~message_visitor_t() = default;
 
     /** \brief returns `true` if a message has been successfully processed */
     virtual bool try_visit(const message_base_t &message) const = 0;
@@ -86,7 +86,7 @@ template <typename T> struct message_t : public message_base_t {
      *
      * The `visitor_t` class is intentionally not related to
      * `message_visitor_t`, as there is no `try_visit`,
-     * because concrete message visitor always "succesfully"
+     * because concrete message visitor always "successfully"
      * visits concrete message type.
      *
      */

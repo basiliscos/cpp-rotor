@@ -25,15 +25,15 @@ namespace misc {
  *
  * The custom message stringifier should override the `try_visit` method
  * and do message stringification of own custom messages, and only then
- * call `try_visit` of the `default_stringifier`
+ * call `try_visit` of the `default_stringifier`.
  *
  * The stringifier is potentially slow and should be used for
- * debugging or problems identification
+ * debugging or problems identification.
  *
  */
 
 struct ROTOR_API default_stringifier_t : message_stringifier_t,
-                                         protected message_visitior_t,
+                                         protected message_visitor_t,
                                          protected message::unsubscription_t::visitor_t,
                                          protected message::unsubscription_external_t::visitor_t,
                                          protected message::subscription_t::visitor_t,

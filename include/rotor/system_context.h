@@ -64,7 +64,7 @@ struct ROTOR_API system_context_t : arc_base_t<system_context_t> {
 
     /** \brief returns the default stringifier
      *
-     *  The stringifier is lazyly constructed on demand via `make_stringifier` method.
+     *  The stringifier is lazily constructed on demand via `make_stringifier` method.
      *
      */
     const message_stringifier_t &get_stringifier();
