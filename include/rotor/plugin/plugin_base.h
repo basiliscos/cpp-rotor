@@ -31,7 +31,10 @@ struct ROTOR_API plugin_base_t {
         START        = 0b00001000,
     };
     // clang-format on
+    /** \brief the underlying type of `reaction_t` */
     using reaction_underlying_t = std::underlying_type_t<reaction_t>;
+
+    /** \brief the bit mask for all reactions enabled */
     static constexpr reaction_underlying_t REACTION_MASK = 0b00001111;
 
     /** \brief default plugin ctor */

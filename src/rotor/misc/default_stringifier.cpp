@@ -98,7 +98,7 @@ bool default_stringifier_t::try_visit(const message_base_t &message) const {
     return true;
 }
 
-void default_stringifier_t::stringify_to(std::stringstream &stream_, const message_base_t &message) const {
+void default_stringifier_t::stringify_to(std::ostream &stream_, const message_base_t &message) const {
     using boost::core::demangle;
     stream = &stream_;
     if (!try_visit(message)) {

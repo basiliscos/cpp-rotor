@@ -62,9 +62,15 @@ struct ROTOR_API system_context_t : arc_base_t<system_context_t> {
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
+    /** \brief returns the default stringifier
+     *
+     *  The stringifier is lazyly constructed on demand via `make_stringifier` method.
+     *
+     */
     const message_stringifier_t &get_stringifier();
 
   protected:
+    /** \brief constructs message stringifier */
     virtual message_stringifier_ptr_t make_stringifier() const noexcept;
 
   private:

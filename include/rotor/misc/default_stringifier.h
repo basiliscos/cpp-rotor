@@ -20,7 +20,17 @@ struct subscription_point_t;
 
 namespace misc {
 
-std::ostream &operator<<(std::ostream &, const subscription_point_t &);
+/** \struct default_stringifier_t
+ *  \brief Default stringifier of rotor messages
+ *
+ * The custom message stringifier should override the `try_visit` method
+ * and do message stringification of own custom messages, and only then
+ * call `try_visit` of the `default_stringifier`
+ *
+ * The stringifier is potentially slow and should be used for
+ * debugging or problems identification
+ *
+ */
 
 struct ROTOR_API default_stringifier_t : message_stringifier_t,
                                          protected message_visitior_t,
@@ -52,10 +62,10 @@ struct ROTOR_API default_stringifier_t : message_stringifier_t,
                                          protected message::unlink_notify_t::visitor_t,
                                          protected message::unlink_request_t::visitor_t,
                                          protected message::unlink_response_t::visitor_t {
-    void stringify_to(std::stringstream &, const message_base_t &) const override;
+    void stringify_to(std::ostream &, const message_base_t &) const override;
     bool try_visit(const message_base_t &message) const override;
 
-  protected:
+  private:
     void on(const message::unsubscription_t &) override;
     void on(const message::unsubscription_external_t &) override;
     void on(const message::subscription_t &) override;
@@ -85,7 +95,7 @@ struct ROTOR_API default_stringifier_t : message_stringifier_t,
     void on(const message::unlink_request_t &) override;
     void on(const message::unlink_response_t &) override;
 
-    mutable std::stringstream *stream = nullptr;
+    mutable std::ostream *stream = nullptr;
 };
 
 } // namespace misc

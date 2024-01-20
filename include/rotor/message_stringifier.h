@@ -21,12 +21,29 @@ namespace rotor {
 
 struct message_base_t;
 
+/** \struct message_stringifier_t
+ *  \brief Abstract interface for making textual/string representation of a message
+ *
+ * As the concrete/final message type might not be known at compile time
+ * the message stringifier tries to do it's best by guessing final message type.
+ * (In other words, because the double dispatch visitor pattern is not available).
+ *
+ * That means that the message stringifier potentially has **LOW PERFORMANCE**
+ * and should NOT be used, for example, for logging every message at least in
+ * production code.
+ *
+ */
 struct ROTOR_API message_stringifier_t {
     virtual ~message_stringifier_t() = default;
+
+    /** \brief returns string representation of a message */
     virtual std::string stringify(const message_base_t &) const;
-    virtual void stringify_to(std::stringstream &, const message_base_t &) const = 0;
+
+    /** \brief dumps string representation of a message to output stream */
+    virtual void stringify_to(std::ostream &, const message_base_t &) const = 0;
 };
 
+/** \brief smart pointer for message stringifier */
 using message_stringifier_ptr_t = std::unique_ptr<message_stringifier_t>;
 
 }; // namespace rotor
