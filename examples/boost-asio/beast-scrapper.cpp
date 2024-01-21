@@ -839,7 +839,7 @@ int main(int argc, char **argv) {
         ("workers_count", po::value<std::size_t>()->default_value(10), "concurrency (number of http workers)")
         ("timeout", po::value<std::size_t>()->default_value(5000), "generic timeout (in milliseconds)")
         ("resolve_timeout", po::value<std::size_t>()->default_value(1000), "resolve timeout (in milliseconds)")
-		("rotor_timeout", po::value<std::size_t>()->default_value(50), "rotor timeout (in milliseconds)")
+        ("rotor_timeout", po::value<std::size_t>()->default_value(50), "rotor timeout (in milliseconds)")
         ("max_requests", po::value<std::size_t>()->default_value(20), "maximum amount of requests before shutting down");
     // clang-format on
 
