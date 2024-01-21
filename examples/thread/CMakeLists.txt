@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.15)
 find_package(OpenSSL  1.1.1...3.2.0 COMPONENTS Crypto)
 
 if (BUILD_SHARED_LIBS)
