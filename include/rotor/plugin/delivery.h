@@ -7,6 +7,7 @@
 //
 
 #include "plugin_base.h"
+#include "../message_stringifier.h"
 #include <string>
 
 #if !defined(NDEBUG) && !defined(ROTOR_DEBUG_DELIVERY)
@@ -39,14 +40,13 @@ struct ROTOR_API local_delivery_t {
  * \brief debugging local message delivery implementation with dumping details to stdout.
  */
 struct ROTOR_API inspected_local_delivery_t {
-    /** \brief stringifies the message into human-readable debug form */
-    static std::string identify(const message_base_t *message, int32_t threshold) noexcept;
 
     /** \brief delivers the message to the recipients, possibly dumping it to console */
-    static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients) noexcept;
+    static void delivery(message_ptr_t &message, const subscription_t::joint_handlers_t &local_recipients,
+                         const message_stringifier_t *stringifier) noexcept;
 
     /** \brief dumps discarded message */
-    static void discard(message_ptr_t &message) noexcept;
+    static void discard(message_ptr_t &message, const message_stringifier_t *stringifier) noexcept;
 };
 
 #if !defined(ROTOR_DO_DELIVERY_DEBUG)
@@ -75,6 +75,9 @@ struct ROTOR_API delivery_plugin_base_t : public plugin_base_t {
 
     /** \brief non-owning raw pointer to supervisor's subscriptions map */
     subscription_t *subscription_map;
+
+    /** \brief non-owning raw pointer to system's stringifier */
+    const message_stringifier_t *stringifier;
 };
 
 /** \brief templated message delivery plugin, to allow local message delivery be customized */

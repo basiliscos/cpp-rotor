@@ -528,6 +528,7 @@ TEST_CASE("request-response timeout", "[actor]") {
     REQUIRE(actor->ee);
     REQUIRE(actor->ee->ec == r::error_code_t::request_timeout);
     REQUIRE(actor->ee->ec.message() == std::string("request timeout"));
+    REQUIRE(actor->ee->request);
 
     sup->active_timers.clear();
 

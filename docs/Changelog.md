@@ -4,6 +4,20 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+### 0.27 (21-Jan-2024)
+ - [feature] new interface `message_visitor_t`
+ - [feature] new interface `message_stringifier_t` and the default implementation
+`default_stringifier_t` which allows to dump messages. It is not a production but
+a diagnostic/debug tool, due to performance restrictions.
+ - [feature] `system_context_t` provides a reference to default `message_stringifier_t`;
+it is possible to have a custom one
+ - [feature, breaking] `extended_error_t` holds a reference to a request message,
+which caused an error
+ - [examples, tests, win32] fix `ev` examples and tests
+ - [example] modernize `examples/thread/sha512.cpp` to use recent `openssl` version
+ - [breaking] cmake requirements are lowered to `3.15`
+ - [breaking] fix minor compilation warnings
+
 ### 0.26 (08-Jan-2024)
  - [feature] `start_timer` callback not only method, but any invocable
  - [feature, conan] `enable_ev` option which add `libev`

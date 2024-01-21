@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -42,14 +42,14 @@ void link_server_plugin_t::on_link_request(message::link_request_t &message) noe
     auto state = actor->access<to::state>();
     if (state > state_t::OPERATIONAL) {
         auto ec = make_error_code(error_code_t::actor_not_linkable);
-        actor->reply_with_error(message, make_error(ec));
+        actor->reply_with_error(message, make_error(ec, {}, &message));
         return;
     }
 
     auto &client_addr = message.payload.origin;
     if (linked_clients.find(client_addr) != linked_clients.end()) {
         auto ec = make_error_code(error_code_t::already_linked);
-        actor->reply_with_error(message, make_error(ec));
+        actor->reply_with_error(message, make_error(ec, {}, &message));
         return;
     }
 

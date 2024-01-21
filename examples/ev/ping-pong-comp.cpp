@@ -8,6 +8,7 @@
 #include <iostream>
 #include <random>
 #include <unordered_map>
+#include <boost/asio/detail/winsock_init.hpp> // for calling WSAStartup on Windows
 
 namespace payload {
 struct pong_t {};

@@ -10,6 +10,7 @@
 
 #include "rotor/supervisor.h"
 #include "rotor/system_context.h"
+#include "rotor/misc/default_stringifier.h"
 
 namespace rotor {
 
@@ -46,4 +47,15 @@ system_context_t::~system_context_t() {
             intrusive_ptr_release(ptr);
         }
     }
+}
+
+auto system_context_t::get_stringifier() -> const message_stringifier_t & {
+    if (!stringifier) {
+        stringifier = make_stringifier();
+    }
+    return *stringifier;
+}
+
+auto system_context_t::make_stringifier() const noexcept -> message_stringifier_ptr_t {
+    return message_stringifier_ptr_t(new misc::default_stringifier_t());
 }

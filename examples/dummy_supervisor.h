@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2022-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+//
+// Distributed under the MIT Software License
+//
+
 #pragma once
 #include <rotor/supervisor.h>
 #include <unordered_map>
@@ -28,9 +34,11 @@ struct dummy_supervisor_t : public rotor::supervisor_t {
 
     void do_cancel_timer(rotor::request_id_t timer_id) noexcept override {
         auto it = timers_map.find(timer_id);
-        auto &actor_ptr = it->second->owner;
-        actor_ptr->access<to::on_timer_trigger, rotor::request_id_t, bool>(timer_id, true);
-        timers_map.erase(it);
+        if (it != timers_map.end()) {
+            auto &actor_ptr = it->second->owner;
+            actor_ptr->access<to::on_timer_trigger, rotor::request_id_t, bool>(timer_id, true);
+            timers_map.erase(it);
+        }
     }
 
     void start() noexcept override {}

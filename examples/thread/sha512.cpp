@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -34,6 +34,7 @@
 #include <memory>
 #include <atomic>
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 
 #ifndef _WIN32
 #include <signal.h>
@@ -45,14 +46,17 @@ namespace r = rotor;
 namespace rth = rotor::thread;
 
 using buffer_t = std::vector<std::byte>;
+template <typename T> using guard_t = std::unique_ptr<T, std::function<void(T *)>>;
 
 enum class work_result_t { done, completed, errored };
 
 struct work_t {
+    using evp_ctx_t = guard_t<EVP_MD_CTX>;
 
     work_t(std::ifstream &&in_, size_t file_size_, size_t buff_sz_)
         : in(std::move(in_)), file_size{file_size_}, buff(buff_sz_) {
-        if (SHA512_Init(&sha_ctx) != 1) {
+        evp_ctx = evp_ctx_t(EVP_MD_CTX_new(), [](auto ptr) { EVP_MD_CTX_free(ptr); });
+        if (EVP_DigestInit_ex(evp_ctx.get(), EVP_sha512(), NULL) != 1) {
             error = "fail to init sha";
         }
     }
@@ -75,14 +79,14 @@ struct work_t {
         auto bytes_left = file_size - bytes_read;
         auto final = bytes_left < buff.size();
         auto bytes_to_read = final ? bytes_left : buff.size();
-        in.read(reinterpret_cast<char *>(buff.data()), bytes_to_read);
+        in.read(reinterpret_cast<char *>(buff.data()), static_cast<std::streamsize>(bytes_to_read));
         if (!in) {
             error = "reading file error";
             return work_result_t::errored;
         }
         // printf("read %llu bytes\n", bytes_to_read);
         bytes_read += bytes_to_read;
-        auto r = SHA512_Update(&sha_ctx, buff.data(), bytes_to_read);
+        auto r = EVP_DigestUpdate(evp_ctx.get(), buff.data(), bytes_to_read);
         if (r != 1) {
             error = "sha update failed";
             return work_result_t::errored;
@@ -92,22 +96,23 @@ struct work_t {
             return work_result_t::done;
         }
 
+        unsigned int trailing_bytes = SHA512_DIGEST_LENGTH;
         unsigned char digest[SHA512_DIGEST_LENGTH];
-        r = SHA512_Final(digest, &sha_ctx);
+        r = EVP_DigestFinal_ex(evp_ctx.get(), digest, &trailing_bytes);
         if (r != 1) {
             error = "sha final failed";
             return work_result_t::errored;
         }
-        result = std::string((char *)digest, SHA512_DIGEST_LENGTH);
+        result = std::string((char *)digest, trailing_bytes);
         return work_result_t::completed;
     }
 
   private:
+    evp_ctx_t evp_ctx;
     std::ifstream in;
     size_t file_size;
     buffer_t buff;
     size_t bytes_read = 0;
-    SHA512_CTX sha_ctx;
     std::string error;
     std::string result;
 };

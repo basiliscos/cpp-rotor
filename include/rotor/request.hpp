@@ -333,6 +333,9 @@ template <typename R> struct request_traits_t {
 
         /** \brief intrusive pointer type for request message */
         using message_ptr_t = intrusive_ptr_t<message_t>;
+
+        /** \brief alias for concrete message type visitor */
+        using visitor_t = typename message_t::visitor_t;
     };
 
     /** \struct response
@@ -347,6 +350,9 @@ template <typename R> struct request_traits_t {
 
         /** \brief intrusive pointer type for response message */
         using message_ptr_t = intrusive_ptr_t<message_t>;
+
+        /** \brief alias for concrete message type visitor */
+        using visitor_t = typename message_t::visitor_t;
     };
 
     /** \struct cancel
@@ -358,6 +364,9 @@ template <typename R> struct request_traits_t {
 
         /** \brief request cancellation message */
         using message_t = rotor::message_t<cancel_payload_t>;
+
+        /** \brief alias for concrete message type visitor */
+        using visitor_t = typename message_t::visitor_t;
     };
 
     /** \brief helper free function to produce error reply to the original request */

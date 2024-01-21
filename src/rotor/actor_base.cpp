@@ -1,13 +1,11 @@
 //
-// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "rotor/actor_base.h"
 #include "rotor/supervisor.h"
-//#include <iostream>
-//#include <boost/core/demangle.hpp>
 
 using namespace rotor;
 using namespace rotor::plugin;
@@ -241,9 +239,9 @@ void actor_base_t::on_unsubscription_external(message::unsubscription_external_t
 
 address_ptr_t actor_base_t::create_address() noexcept { return address_maker->create_address(); }
 
-plugin_base_t *actor_base_t::get_plugin(const std::type_index &identity) const noexcept {
+plugin_base_t *actor_base_t::get_plugin(const std::type_index &identity_) const noexcept {
     for (auto plugin : plugins) {
-        if (plugin->identity() == identity) {
+        if (plugin->identity() == identity_) {
             return plugin;
         }
     }
@@ -269,8 +267,9 @@ void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept 
     }
 }
 
-extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next) noexcept {
-    return ::make_error(identity, ec, next);
+extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next,
+                                              const message_ptr_t &request) noexcept {
+    return ::make_error(identity, ec, next, request);
 }
 
 bool actor_base_t::on_unlink(const address_ptr_t &) noexcept { return true; }

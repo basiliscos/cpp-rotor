@@ -26,14 +26,14 @@ template <> auto &actor_base_t::access<to::state>() noexcept { return state; }
 template <> auto &actor_base_t::access<to::init_request>() noexcept { return init_request; }
 template <> auto &actor_base_t::access<to::init_timeout>() noexcept { return init_timeout; }
 template <>
-auto actor_base_t::access<to::get_plugin, const std::type_index *>(const std::type_index *identity) noexcept {
-    return get_plugin(*identity);
+auto actor_base_t::access<to::get_plugin, const std::type_index *>(const std::type_index *identity_) noexcept {
+    return get_plugin(*identity_);
 }
 
 template <>
 auto registry_plugin_t::discovery_task_t::access<to::on_discovery, address_ptr_t *, const extended_error_ptr_t &>(
-    address_ptr_t *address, const extended_error_ptr_t &ec) noexcept {
-    return on_discovery(address, ec);
+    address_ptr_t *address_, const extended_error_ptr_t &ec) noexcept {
+    return on_discovery(address_, ec);
 }
 
 template <> auto &registry_plugin_t::access<to::aliases_map>() noexcept { return aliases_map; }
@@ -108,7 +108,7 @@ void registry_plugin_t::continue_init(const error_code_t &possible_ec, const ext
     auto &init_request = actor->access<to::init_request>();
     assert(init_request);
     if (root_ec) {
-        auto reason = make_error(possible_ec, root_ec);
+        auto reason = make_error(possible_ec, root_ec, init_request);
         actor->reply_with_error(*init_request, reason);
     } else {
         actor->init_continue();
@@ -232,12 +232,12 @@ void registry_plugin_t::discovery_task_t::on_discovery(address_ptr_t *service_ad
 }
 
 void registry_plugin_t::discovery_task_t::post_discovery(const extended_error_ptr_t &ec) noexcept {
-    auto plugin = this->plugin;
-    auto &dm = plugin->discovery_map;
+    auto p = plugin;
+    auto &dm = p->discovery_map;
     auto it = dm.find(service_name);
     assert(it != dm.end());
 
-    auto &am = plugin->aliases_map;
+    auto &am = p->aliases_map;
     auto ait = am.find(*it->second.address);
     if (ait != am.end()) {
         for (auto &alias : ait->second) {
@@ -248,33 +248,33 @@ void registry_plugin_t::discovery_task_t::post_discovery(const extended_error_pt
     }
 
     if (dm.empty() || ec) {
-        auto actor_state = plugin->actor->access<to::state>();
+        auto actor_state = p->actor->access<to::state>();
         if (actor_state == rotor::state_t::INITIALIZING) {
-            plugin->continue_init(error_code_t::discovery_failed, ec);
+            p->continue_init(error_code_t::discovery_failed, ec);
         } else {
-            plugin->actor->shutdown_continue();
+            p->actor->shutdown_continue();
         }
     }
 }
 
 void registry_plugin_t::discovery_task_t::do_discover() noexcept {
     state = state_t::DISCOVERING;
-    auto &actor = plugin->actor;
-    auto &registry_addr = actor->get_supervisor().get_registry_address();
-    auto timeout = actor->access<to::init_timeout>();
+    auto &actor_ = plugin->actor;
+    auto &registry_addr = actor_->get_supervisor().get_registry_address();
+    auto timeout = actor_->access<to::init_timeout>();
     if (!delayed) {
-        actor->request<payload::discovery_request_t>(registry_addr, service_name).send(timeout);
+        actor_->request<payload::discovery_request_t>(registry_addr, service_name).send(timeout);
     } else {
-        request_id = actor->request<payload::discovery_promise_t>(registry_addr, service_name).send(timeout);
+        request_id = actor_->request<payload::discovery_promise_t>(registry_addr, service_name).send(timeout);
     }
 }
 
 bool registry_plugin_t::discovery_task_t::do_cancel() noexcept {
     if (delayed && state == state_t::DISCOVERING) {
         using payload_t = rotor::message::discovery_cancel_t::payload_t;
-        auto &actor = plugin->actor;
-        auto &registry_addr = actor->get_supervisor().get_registry_address();
-        actor->send<payload_t>(registry_addr, request_id, actor->get_address());
+        auto &actor_ = plugin->actor;
+        auto &registry_addr = actor_->get_supervisor().get_registry_address();
+        actor_->send<payload_t>(registry_addr, request_id, actor_->get_address());
         state = state_t::CANCELLING;
         return false;
     }

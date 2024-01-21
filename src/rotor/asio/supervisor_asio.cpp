@@ -106,25 +106,24 @@ void supervisor_asio_t::do_process() noexcept {
 
     auto leader = static_cast<supervisor_asio_t *>(locality_leader);
     auto &inbound = leader->inbound_queue;
-    auto &queue = leader->queue;
+    auto &leader_queue = leader->queue;
     auto enqueued_messages = size_t{0};
     message_base_t *ptr;
     while (inbound.pop(ptr)) {
-        queue.emplace_back(ptr, false);
+        leader_queue.emplace_back(ptr, false);
     }
-    if (!queue.empty()) {
+    if (!leader_queue.empty()) {
         enqueued_messages = supervisor_t::do_process();
     }
 
     if (enqueued_messages) {
         auto deadline = clock_t::now() + time_units_t{poll_duration.total_microseconds()};
-        while (clock_t::now() < deadline && queue.empty()) {
-            message_base_t *ptr;
+        while (clock_t::now() < deadline && leader_queue.empty()) {
             while (inbound.pop(ptr)) {
-                queue.emplace_back(ptr, false);
+                leader_queue.emplace_back(ptr, false);
             }
         }
-        if (!queue.empty()) {
+        if (!leader_queue.empty()) {
             supervisor_t::do_process();
         }
     }

@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -21,13 +21,21 @@ enum class config_phase_t { PREINIT = 0b01, INITIALIZING = 0b10 };
  *
  */
 struct ROTOR_API plugin_base_t {
+
     /** \brief possible plugin's reactions on actor lifetime events */
-    enum reaction_t : std::uint32_t {
-        INIT = 1 << 0,
-        SHUTDOWN = 1 << 1,
-        SUBSCRIPTION = 1 << 2,
-        START = 1 << 3,
+    // clang-format off
+    enum reaction_t: unsigned {
+        INIT         = 0b00000001,
+        SHUTDOWN     = 0b00000010,
+        SUBSCRIPTION = 0b00000100,
+        START        = 0b00001000,
     };
+    // clang-format on
+    /** \brief the underlying type of `reaction_t` */
+    using reaction_underlying_t = std::underlying_type_t<reaction_t>;
+
+    /** \brief the bit mask for all reactions enabled */
+    static constexpr reaction_underlying_t REACTION_MASK = 0b00001111;
 
     /** \brief default plugin ctor */
     plugin_base_t() = default;
@@ -145,14 +153,13 @@ struct ROTOR_API plugin_base_t {
     }
 
     /** \brief returns the current set of plugin reactions */
-    std::size_t get_reaction() const noexcept { return reaction; }
+    reaction_underlying_t get_reaction() const noexcept { return reaction; }
 
     /** \brief turns on the specified reaction of the plugin */
     void reaction_on(reaction_t value) noexcept { reaction = reaction | value; }
 
     /** \brief turns off the specified reaction of the plugin */
-    void reaction_off(reaction_t value) noexcept { reaction = reaction & ~value; }
-
+    void reaction_off(reaction_t value) noexcept { reaction = reaction & (REACTION_MASK ^ value); }
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 
@@ -172,11 +179,12 @@ struct ROTOR_API plugin_base_t {
     actor_base_t *actor;
 
     /** \brief makes an error within the context of actor */
-    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {}) noexcept;
+    extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {},
+                                    const message_ptr_t &request = {}) noexcept;
 
   private:
     subscription_container_t own_subscriptions;
-    std::size_t reaction = 0;
+    reaction_underlying_t reaction = 0;
     config_phase_t phase = config_phase_t::PREINIT;
 };
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -640,6 +640,7 @@ TEST_CASE("unlink in supervisor", "[supervisor]") {
     sup1->do_process();
 
     auto p = sup1->get_casted_plugin<r::plugin::resources_plugin_t>();
+    REQUIRE(p);
     p->acquire(0);
     sup1->do_shutdown();
     sup1->do_process();

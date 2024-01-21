@@ -70,9 +70,6 @@ struct ROTOR_EV_API supervisor_ev_t : public supervisor_t {
     /** \brief retuns ev-loop associated with the supervisor */
     inline struct ev_loop *get_loop() noexcept { return loop; }
 
-    /** \brief returns pointer to the ev system context */
-    inline system_context_ev_t *get_context() noexcept { return static_cast<system_context_ev_t *>(context); }
-
     /** \brief generic non-public fields accessor */
     template <typename T> auto &access() noexcept;
 

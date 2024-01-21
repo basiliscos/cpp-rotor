@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2023 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -265,17 +265,30 @@ struct sample_actor6_t : public rt::actor_test_t {
         start_timer(r::pt::minutes(1), *this, &sample_actor6_t::on_timer);
     }
 
-    void on_timer(r::request_id_t, bool cancelled) noexcept { this->cancelled = cancelled; }
+    void on_timer(r::request_id_t, bool cancelled_) noexcept { cancelled = cancelled_; }
     bool cancelled = false;
 };
 
 struct sample_actor7_t : public rt::actor_test_t {
     using rt::actor_test_t::actor_test_t;
+
+    void on_start() noexcept override {
+        rt::actor_test_t::on_start();
+        start_timer(r::pt::minutes(1), *this,
+                    [](sample_actor7_t *actor, r::request_id_t, bool cancelled) { actor->cancelled = cancelled; });
+    }
+
+    void on_timer(r::request_id_t, bool cancelled_) noexcept { cancelled = cancelled_; }
+    bool cancelled = false;
+};
+
+struct sample_actor8_t : public rt::actor_test_t {
+    using rt::actor_test_t::actor_test_t;
     r::message_ptr_t msg;
 
     void on_start() noexcept override {
         rt::actor_test_t::on_start();
-        subscribe(&sample_actor7_t::on_message);
+        subscribe(&sample_actor8_t::on_message);
         do_shutdown();
     }
 
@@ -364,7 +377,6 @@ TEST_CASE("start/shutdown 1 child & 1 supervisor", "[supervisor]") {
     auto sup = system_context->create_supervisor<sample_sup2_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor_t>().timeout(rt::default_timeout).finish();
 
-    
     CHECK_THAT(act->get_identity(), StartsWith("actor"));
 
     /* for better coverage */
@@ -439,10 +451,10 @@ TEST_CASE("alternative address subscriber", "[actor]") {
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor2_t>().timeout(rt::default_timeout).finish();
 
-     CHECK(act->get_identity() == "specific_name");
+    CHECK(act->get_identity() == "specific_name");
 
     sup->do_process();
-  
+
     CHECK(sup->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->get_state() == r::state_t::OPERATIONAL);
     CHECK(act->received == 1);
@@ -506,7 +518,7 @@ TEST_CASE("io tagging (in plugin) & intercepting", "[actor]") {
     CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
 }
 
-TEST_CASE("timers cancellation", "[actor]") {
+TEST_CASE("timers cancellation (1)", "[actor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor6_t>().timeout(rt::default_timeout).finish();
@@ -523,10 +535,27 @@ TEST_CASE("timers cancellation", "[actor]") {
     CHECK(act->access<rt::to::timers_map>().empty());
 }
 
-TEST_CASE("subscription confirmation arrives on non-init phase", "[actor]") {
+TEST_CASE("timers cancellation (2)", "[actor]") {
     r::system_context_ptr_t system_context = new r::system_context_t();
     auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
     auto act = sup->create_actor<sample_actor7_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    CHECK(act->get_state() == r::state_t::OPERATIONAL);
+    CHECK(sup->get_state() == r::state_t::OPERATIONAL);
+    CHECK(!act->access<rt::to::timers_map>().empty());
+
+    sup->do_shutdown();
+    sup->do_process();
+
+    CHECK(act->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(sup->get_state() == r::state_t::SHUT_DOWN);
+    CHECK(act->access<rt::to::timers_map>().empty());
+}
+
+TEST_CASE("subscription confirmation arrives on non-init phase", "[actor]") {
+    r::system_context_ptr_t system_context = new r::system_context_t();
+    auto sup = system_context->create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<sample_actor8_t>().timeout(rt::default_timeout).finish();
 
     auto act_configurer = [&](auto &, r::plugin::plugin_base_t &plugin) {
         plugin.with_casted<r::plugin::starter_plugin_t>([&](auto &p) {

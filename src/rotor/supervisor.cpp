@@ -127,7 +127,7 @@ void supervisor_t::on_request_trigger(request_id_t timer_id, bool cancelled) noe
             message_ptr_t &request = request_curry.request_message;
             auto ec = make_error_code(error_code_t::request_timeout);
             auto &source = actor.access<to::identity>();
-            auto reason = ::make_error(source, ec);
+            auto reason = ::make_error(source, ec, {}, request);
             auto timeout_message = request_curry.fn(request_curry.origin, *request, reason);
             put(std::move(timeout_message));
         }
@@ -163,9 +163,9 @@ void supervisor_t::on_shutdown_check_timer(request_id_t, bool cancelled) noexcep
 
 // makes last message in the queue the 1st one
 void supervisor_t::uplift_last_message() noexcept {
-    auto &queue = locality_leader->queue;
-    assert(!queue.empty());
-    auto message = message_ptr_t(queue.back().detach(), false);
-    queue.push_front(std::move(message));
-    queue.pop_back();
+    auto &q = locality_leader->queue;
+    assert(!q.empty());
+    auto message = message_ptr_t(q.back().detach(), false);
+    q.push_front(std::move(message));
+    q.pop_back();
 }

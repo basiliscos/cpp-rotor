@@ -4,7 +4,6 @@
 // Distributed under the MIT Software License
 //
 
-
 #include "rotor.hpp"
 #include "supervisor_test.h"
 #include "system_context_test.h"

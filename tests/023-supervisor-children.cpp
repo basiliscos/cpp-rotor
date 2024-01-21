@@ -122,8 +122,8 @@ struct custom_init_plugin2_t : r::plugin::plugin_base_t {
 
     const std::type_index &identity() const noexcept override { return class_id; }
 
-    void activate(r::actor_base_t *actor) noexcept override {
-        r::plugin::plugin_base_t::activate(actor);
+    void activate(r::actor_base_t *actor_) noexcept override {
+        r::plugin::plugin_base_t::activate(actor_);
         reaction_on(reaction_t::INIT);
     }
 
@@ -142,8 +142,8 @@ struct custom_shutdown_plugin_t : r::plugin::plugin_base_t {
 
     const std::type_index &identity() const noexcept override { return class_id; }
 
-    void activate(r::actor_base_t *actor) noexcept override {
-        r::plugin::plugin_base_t::activate(actor);
+    void activate(r::actor_base_t *actor_) noexcept override {
+        r::plugin::plugin_base_t::activate(actor_);
         reaction_on(reaction_t::SHUTDOWN);
     }
 

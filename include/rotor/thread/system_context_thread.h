@@ -34,13 +34,7 @@ using supervisor_ptr_t = intrusive_ptr_t<supervisor_thread_t>;
  *
  */
 struct ROTOR_THREAD_API system_context_thread_t : public system_context_t {
-    /** \brief constructs thread system context
-     *
-     *  \param queue_size defines pre-allocated inbound queue size for messages from other threads
-     *
-     *  \param poll_time how much time it will spend in polling inbound queue before switching into
-     *  notification mode (i.e. cv + mutex)
-     */
+    /** \brief constructs thread system context */
     system_context_thread_t() noexcept;
 
     /** \brief invokes blocking execution of the supervisor

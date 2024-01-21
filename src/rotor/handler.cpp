@@ -61,11 +61,11 @@ bool handler_intercepted_t::select(message_ptr_t &message) noexcept { return bac
 
 void handler_intercepted_t::call_no_check(message_ptr_t &message) noexcept { return backend->call_no_check(message); }
 
-handler_ptr_t handler_intercepted_t::upgrade(const void *tag) noexcept {
-    if (tag == this->tag) {
+handler_ptr_t handler_intercepted_t::upgrade(const void *tag_) noexcept {
+    if (tag_ == tag) {
         return handler_ptr_t(this);
     }
-    return handler_base_t::upgrade(tag);
+    return handler_base_t::upgrade(tag_);
 }
 
 const void *handler_intercepted_t::message_type() const noexcept { return backend->message_type(); }
