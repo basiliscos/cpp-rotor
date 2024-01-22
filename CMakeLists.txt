@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.27")
+set(ROTOR_VERSION "0.28")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -137,6 +137,7 @@ set(ROTOR_HEADERS_TO_INSTALL
     include/rotor/supervisor.h
     include/rotor/supervisor_config.h
     include/rotor/system_context.h
+    include/rotor/timer_handler.hpp
 )
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
