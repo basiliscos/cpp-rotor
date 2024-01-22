@@ -66,6 +66,9 @@ project.
 
 ## Changelog
 
+### 0.28 (22-Jan-2024)
+ - [cmake, bugfix] add missing header into installation
+
 ### 0.27 (21-Jan-2024)
  - [feature] new interface `message_visitor_t`
  - [feature] new interface `message_stringifier_t` and the default implementation
@@ -79,7 +82,6 @@ which caused an error
  - [example] modernize `examples/thread/sha512.cpp` to use recent `openssl` version
  - [breaking] cmake requirements are lowered to `3.15`
  - [breaking] fix minor compilation warnings
-
 
 ### 0.26 (08-Jan-2024)
  - [feature] `start_timer` callback not only method, but any invocable

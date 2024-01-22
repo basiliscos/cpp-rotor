@@ -4,6 +4,9 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+### 0.28 (22-Jan-2024)
+ - [cmake, bugfix] add missing header into installation
+
 ### 0.27 (21-Jan-2024)
  - [feature] new interface `message_visitor_t`
  - [feature] new interface `message_stringifier_t` and the default implementation
