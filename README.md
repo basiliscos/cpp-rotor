@@ -66,6 +66,10 @@ project.
 
 ## Changelog
 
+### 0.29 (xx-Feb-2024)
+ - [bugfix] fix segfault in delivery plugin in debugging mode
+(try to set env `ROTOR_INSPECT_DELIVERY=99` to see)
+
 ### 0.28 (22-Jan-2024)
  - [cmake, bugfix] add missing header into installation
 
