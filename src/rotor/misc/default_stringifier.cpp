@@ -129,7 +129,7 @@ void default_stringifier_t::on(const message::commit_unsubscription_t &message) 
 }
 
 void default_stringifier_t::on(const message::handler_call_t &message) {
-    auto stream_copy = stream; // modified/nulled during recurive call
+    auto stream_copy = stream; // modified/nulled during recursive call
     (*stream_copy) << "r::handler_call {";
     stringify_to(*stream_copy, *message.payload.orig_message);
     (*stream_copy) << "} @ " << (const void *)message.payload.handler->actor_ptr;

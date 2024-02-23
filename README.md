@@ -66,7 +66,7 @@ project.
 
 ## Changelog
 
-### 0.29 (xx-Feb-2024)
+### 0.29 (24-Feb-2024)
  - [bugfix] fix segfault in delivery plugin in debugging mode
 (try to set env `ROTOR_INSPECT_DELIVERY=99` to see)
 
