@@ -4,6 +4,11 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
 
+#ifndef _WIN32
+#include <X11/Xlib.h>
+#include <cstdlib>
+#endif
+
 namespace r = rotor;
 namespace rf = r::fltk;
 
@@ -70,7 +75,24 @@ struct ponger_t : r::actor_base_t {
     rotor::address_ptr_t pinger_addr;
 };
 
+bool is_display_available() {
+#ifndef _WIN32
+    char *disp = getenv("DISPLAY");
+    if (disp == nullptr)
+        return false;
+    Display *dpy = XOpenDisplay(disp);
+    if (dpy == nullptr)
+        return false;
+    XCloseDisplay(dpy);
+#endif
+    return true;
+}
+
 int main(int argc, char **argv) {
+    if (!is_display_available()) {
+        return 0;
+    }
+
     // let fltk-core be aware of lockin mechanism (i.e. Fl::awake will work)
     Fl::lock();
 
