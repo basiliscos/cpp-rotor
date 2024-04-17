@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.29")
+set(ROTOR_VERSION "0.30")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -20,6 +20,7 @@ include(CMakePackageConfigHelpers)
 option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
 option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
 option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(BUILD_FLTK           "Enable building with fltk support   [default: OFF]"         OFF)
 option(BUILD_THREAD         "Enable building with thread support  [default: ON]"         ON)
 option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
 option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
@@ -254,6 +255,40 @@ if (BUILD_EV)
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/ev/export.h
         DESTINATION include/rotor/ev)
+endif()
+
+if (BUILD_FLTK)
+    find_package(fltk REQUIRED)
+    add_library(rotor_fltk)
+
+    file(GLOB FLTK_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/fltk/*.cpp")
+
+    generate_export_header(rotor_fltk
+        EXPORT_MACRO_NAME ROTOR_FLTK_API
+        EXPORT_FILE_NAME include/rotor/fltk/export.h
+    )
+
+    list(APPEND ROTOR_HEADERS_TO_INSTALL
+        include/rotor/fltk.hpp
+        include/rotor/fltk/supervisor_config_fltk.h
+        include/rotor/fltk/supervisor_fltk.h
+        include/rotor/fltk/system_context_fltk.h
+    )
+
+    target_sources(rotor_fltk PRIVATE ${FLTK_SOURCES})
+
+    target_link_libraries(rotor_fltk PUBLIC rotor fltk::fltk)
+    add_library(rotor::fltk ALIAS rotor_fltk)
+
+    install(
+        TARGETS rotor_fltk
+        EXPORT ROTOR_ALL_TARGETS
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+    )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/fltk/export.h
+        DESTINATION include/rotor/fltk)
 endif()
 
 if (BUILD_THREAD)

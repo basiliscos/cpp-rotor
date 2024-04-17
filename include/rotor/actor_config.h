@@ -140,21 +140,21 @@ template <typename Actor> struct actor_config_builder_t {
     }
 
     /** \brief setter for init and shutdown timeout */
-    builder_t &&timeout(const pt::time_duration &timeout) &&noexcept {
+    builder_t &&timeout(const pt::time_duration &timeout) && noexcept {
         config.init_timeout = config.shutdown_timeout = timeout;
         mask = (mask & (~INIT_TIMEOUT & ~SHUTDOWN_TIMEOUT));
         return std::move(*static_cast<builder_t *>(this));
     }
 
     /** \brief setter for init timeout */
-    builder_t &&init_timeout(const pt::time_duration &timeout) &&noexcept {
+    builder_t &&init_timeout(const pt::time_duration &timeout) && noexcept {
         config.init_timeout = timeout;
         mask = (mask & ~INIT_TIMEOUT);
         return std::move(*static_cast<builder_t *>(this));
     }
 
     /** \brief setter for shutdown timeout */
-    builder_t &&shutdown_timeout(const pt::time_duration &timeout) &&noexcept {
+    builder_t &&shutdown_timeout(const pt::time_duration &timeout) && noexcept {
         config.shutdown_timeout = timeout;
         mask = (mask & ~SHUTDOWN_TIMEOUT);
         return std::move(*static_cast<builder_t *>(this));
@@ -165,7 +165,7 @@ template <typename Actor> struct actor_config_builder_t {
      * This value must be set, when actor is create via spawner (i.e. in `factory_t`)
      *
      **/
-    builder_t &&spawner_address(const address_ptr_t &value) &&noexcept {
+    builder_t &&spawner_address(const address_ptr_t &value) && noexcept {
         config.spawner_address = value;
         return std::move(*static_cast<builder_t *>(this));
     }
@@ -178,7 +178,7 @@ template <typename Actor> struct actor_config_builder_t {
      * This policy is ignored when actor is spawned.
      *
      */
-    builder_t &&escalate_failure(bool value = true) &&noexcept {
+    builder_t &&escalate_failure(bool value = true) && noexcept {
         config.escalate_failure = value;
         return std::move(*static_cast<builder_t *>(this));
     }
@@ -188,7 +188,7 @@ template <typename Actor> struct actor_config_builder_t {
      * This policy is ignored when actor is spawned.
      *
      */
-    builder_t &&autoshutdown_supervisor(bool value = true) &&noexcept {
+    builder_t &&autoshutdown_supervisor(bool value = true) && noexcept {
         config.autoshutdown_supervisor = value;
         return std::move(*static_cast<builder_t *>(this));
     }

@@ -23,8 +23,8 @@ template <> auto &subscription_info_t::access<to::internal_address>() noexcept {
 template <> auto &subscription_info_t::access<to::internal_handler>() noexcept { return internal_handler; }
 
 supervisor_t::supervisor_t(supervisor_config_t &config)
-    : actor_base_t(config), last_req_id{0}, parent{config.supervisor},
-      inbound_queue(0), inbound_queue_size{config.inbound_queue_size}, poll_duration{config.poll_duration},
+    : actor_base_t(config), last_req_id{0}, parent{config.supervisor}, inbound_queue(0),
+      inbound_queue_size{config.inbound_queue_size}, poll_duration{config.poll_duration},
       shutdown_flag{config.shutdown_flag}, shutdown_poll_frequency{config.shutdown_poll_frequency},
       create_registry(config.create_registry), synchronize_start(config.synchronize_start),
       registry_address(config.registry_address), policy{config.policy} {

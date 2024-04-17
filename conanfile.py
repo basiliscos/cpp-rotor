@@ -26,6 +26,7 @@ class RotorConan(ConanFile):
         "shared": [True, False],
         "enable_asio": [True, False],
         "enable_ev" : [True, False],
+        "enable_fltk" : [True, False],
         "enable_thread": [True, False],
         "multithreading": [True, False],  # enables multithreading support
     }
@@ -34,6 +35,7 @@ class RotorConan(ConanFile):
         "shared": False,
         "enable_asio": True,
         "enable_ev" : False,
+        "enable_fltk" : False,
         "enable_thread": True,
         "multithreading": True,
     }
@@ -53,6 +55,8 @@ class RotorConan(ConanFile):
         self.requires("boost/1.83.0", transitive_headers=True)
         if self.options.enable_ev:
             self.requires("libev/4.33")
+        if self.options.enable_fltk:
+            self.requires("fltk/1.3.9")
 
     def layout(self):
         cmake_layout(self)
@@ -62,6 +66,7 @@ class RotorConan(ConanFile):
         tc.variables["BUILD_BOOST_ASIO"] = self.options.enable_asio
         tc.variables["BUILD_THREAD"] = self.options.enable_thread
         tc.variables["BUILD_EV"] = self.options.enable_ev
+        tc.variables["BUILD_FLTK"] = self.options.enable_fltk
         tc.variables["BUILD_EXAMPLES"] = os.environ.get('ROTOR_BUILD_EXAMPLES', 'OFF')
         tc.variables["BUILD_THREAD_UNSAFE"] = not self.options.multithreading
         tc.variables["BUILD_TESTING"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
@@ -126,3 +131,7 @@ class RotorConan(ConanFile):
         if self.options.enable_ev:
             self.cpp_info.components["ev"].libs = ["rotor_ev"]
             self.cpp_info.components["ev"].requires = ["core", "libev::libev"]
+
+        if self.options.enable_fltk:
+            self.cpp_info.components["fltk"].libs = ["rotor_fltk"]
+            self.cpp_info.components["fltk"].requires = ["core", "fltk::fltk"]

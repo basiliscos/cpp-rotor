@@ -137,12 +137,12 @@ template <typename Actor> struct sah_actor_config_builder_t : r::actor_config_bu
     using parent_t = r::actor_config_builder_t<Actor>;
     using parent_t::parent_t;
 
-    builder_t &&path(const std::string &value) &&noexcept {
+    builder_t &&path(const std::string &value) && noexcept {
         parent_t::config.path = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
-    builder_t &&block_size(std::size_t value) &&noexcept {
+    builder_t &&block_size(std::size_t value) && noexcept {
         parent_t::config.block_size = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
