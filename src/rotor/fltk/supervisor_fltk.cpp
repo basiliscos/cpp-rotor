@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+//
+// Distributed under the MIT Software License
+//
+
 #include "rotor/fltk/supervisor_fltk.h"
 
 #include <FL/Fl.H>

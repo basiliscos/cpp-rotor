@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -38,8 +38,8 @@ struct ROTOR_FLTK_API supervisor_fltk_t : public supervisor_t {
         timer_t(timer_t &) = delete;
         timer_t(timer_t &&) = default;
 
-        timer_handler_base_t *handler;
         supervisor_ptr_t sup;
+        timer_handler_base_t *handler;
     };
 
   protected:

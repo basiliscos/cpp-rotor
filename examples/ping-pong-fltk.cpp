@@ -40,7 +40,7 @@ struct pinger_t : public r::actor_base_t {
         start_timer(timeout, *this, &pinger_t::on_ping_timer);
     }
 
-    void on_ping_timer(r::request_id_t, bool cancelled) noexcept {
+    void on_ping_timer(r::request_id_t, bool) noexcept {
         box->label("ping has been sent");
         send<payload::ping_t>(ponger_addr);
     }
@@ -51,7 +51,7 @@ struct pinger_t : public r::actor_base_t {
         start_timer(timeout, *this, &pinger_t::on_shutdown_timer);
     }
 
-    void on_shutdown_timer(r::request_id_t, bool cancelled) noexcept { supervisor->shutdown(); }
+    void on_shutdown_timer(r::request_id_t, bool) noexcept { supervisor->shutdown(); }
 
     rotor::address_ptr_t ponger_addr;
     Fl_Box *box;
@@ -70,7 +70,7 @@ struct ponger_t : r::actor_base_t {
         start_timer(timeout, *this, &ponger_t::on_timer);
     }
 
-    void on_timer(r::request_id_t, bool cancelled) noexcept { send<payload::pong_t>(pinger_addr); }
+    void on_timer(r::request_id_t, bool) noexcept { send<payload::pong_t>(pinger_addr); }
 
     rotor::address_ptr_t pinger_addr;
 };
