@@ -52,7 +52,8 @@ if (BUILD_FLTK)
     add_executable(ping-pong-fltk WIN32 ping-pong-fltk.cpp)
     target_link_libraries(ping-pong-fltk
         rotor::fltk
-        jpeg png
+        $<$<PLATFORM_ID:Linux>:jpeg>
+        $<$<PLATFORM_ID:Linux>:png>
     )
     add_test(ping-pong-fltk "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-fltk")
 endif()
