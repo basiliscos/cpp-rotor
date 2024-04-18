@@ -117,7 +117,8 @@ int main(int argc, char **argv) {
 
     Fl::add_check([](auto *data) { reinterpret_cast<r::supervisor_t *>(data)->do_process(); }, supervisor.get());
 
-    while (Fl::wait() && !supervisor->get_shutdown_reason()) {
+    while (!supervisor->get_shutdown_reason()) {
+        Fl::wait(1.);
     }
 
     return 0;
