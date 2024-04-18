@@ -51,7 +51,7 @@ struct pinger_t : public r::actor_base_t {
         start_timer(timeout, *this, &pinger_t::on_shutdown_timer);
     }
 
-    void on_shutdown_timer(r::request_id_t, bool) noexcept { supervisor->shutdown(); }
+    void on_shutdown_timer(r::request_id_t, bool) noexcept { supervisor->do_shutdown(); }
 
     rotor::address_ptr_t ponger_addr;
     Fl_Box *box;
