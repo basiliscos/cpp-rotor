@@ -52,5 +52,6 @@ struct ROTOR_FLTK_API supervisor_fltk_t : public supervisor_t {
     timers_map_t timers_map;
 };
 
+
 } // namespace fltk
 } // namespace rotor

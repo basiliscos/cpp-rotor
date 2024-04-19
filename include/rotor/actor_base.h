@@ -404,7 +404,7 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
 
     /** \brief makes extended error within the context of the actor */
     extended_error_ptr_t make_error(const std::error_code &ec, const extended_error_ptr_t &next = {},
-                                    const message_ptr_t &request = {}) noexcept;
+                                    const message_ptr_t &request = {}) const noexcept;
 
     /** \brief notification, when actor has been unlinked from server actor
      *

@@ -7,7 +7,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <rotor/fltk.hpp>
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
 #include "access.h"
 
 namespace r = rotor;
@@ -112,30 +111,33 @@ struct bad_actor_t : public r::actor_base_t {
     ~bad_actor_t() { printf("~bad_actor_t\n"); }
 };
 
-TEST_CASE("ping/pong", "[supervisor][ev]") {
+TEST_CASE("ping/pong", "[supervisor][fltk]") {
     Fl::lock();
 
     auto system_context = rf::system_context_ptr_t(new rf::system_context_fltk_t());
     auto timeout = r::pt::milliseconds{100};
     auto sup = system_context->create_supervisor<supervisor_fltk_test_t>().timeout(timeout).finish();
 
+    sup->do_process();
     auto pinger = sup->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = sup->create_actor<ponger_t>().timeout(timeout).finish();
     pinger->set_ponger_addr(static_cast<r::actor_base_t *>(ponger.get())->get_address());
     ponger->set_pinger_addr(static_cast<r::actor_base_t *>(pinger.get())->get_address());
 
     sup->start();
-    Fl::wait(0);
+    while (((r::actor_base_t *)sup.get())->access<rt::to::state>() != r::state_t::SHUT_DOWN) {
+        system_context->try_process(Fl::thread_message());
+        Fl::wait(0.1);
+    }
 
-    REQUIRE(pinger->ping_sent == 1);
-    REQUIRE(pinger->pong_received == 1);
-    REQUIRE(ponger->pong_sent == 1);
-    REQUIRE(ponger->ping_received == 1);
+    CHECK(pinger->ping_sent == 1);
+    CHECK(pinger->pong_received == 1);
+    CHECK(ponger->pong_sent == 1);
+    CHECK(ponger->ping_received == 1);
 
     pinger.reset();
     ponger.reset();
 
-    REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);
     CHECK(rt::empty(sup->get_subscription()));
@@ -144,9 +146,12 @@ TEST_CASE("ping/pong", "[supervisor][ev]") {
     system_context.reset();
 
     REQUIRE(destroyed == 1 + 2 + 4);
+    Fl::unlock();
 }
 
-TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {
+TEST_CASE("supervisors hierarchy", "[supervisor][fltk]") {
+    Fl::lock();
+
     auto system_context = system_context_fltk_test_t();
     auto timeout = r::pt::milliseconds{100};
     auto sup = system_context.create_supervisor<supervisor_fltk_test_t>().timeout(timeout).finish();
@@ -155,15 +160,18 @@ TEST_CASE("supervisors hierarchy", "[supervisor][ev]") {
     sup->start();
 
     while (((r::actor_base_t *)sup.get())->access<rt::to::state>() != r::state_t::SHUT_DOWN) {
-        Fl::wait(0);
+        system_context.try_process(Fl::thread_message());
+        Fl::wait(0.1);
     }
+    CHECK(!sup->get_shutdown_reason()->root()->ec);
     CHECK(!system_context.ee);
 
     CHECK(((r::actor_base_t *)act.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(((r::actor_base_t *)sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
+    Fl::unlock();
 }
 
-TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
+TEST_CASE("no shutdown confirmation", "[supervisor][fltk]") {
     Fl::lock();
     auto destroyed_start = destroyed;
     auto system_context = new system_context_fltk_test_t();
@@ -174,7 +182,8 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     sup->create_actor<bad_actor_t>().timeout(timeout).finish();
 
     while (((r::actor_base_t *)sup.get())->access<rt::to::state>() != r::state_t::SHUT_DOWN) {
-        Fl::wait(0);
+        system_context->try_process(Fl::thread_message());
+        Fl::wait(0.1);
     }
 
     REQUIRE(system_context->ee);
@@ -187,4 +196,5 @@ TEST_CASE("no shutdown confirmation", "[supervisor][ev]") {
     delete system_context;
     auto destroyed_end = destroyed;
     CHECK(destroyed_end == destroyed_start + 4);
+    Fl::unlock();
 }

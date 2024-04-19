@@ -268,7 +268,7 @@ void actor_base_t::assign_shutdown_reason(extended_error_ptr_t reason) noexcept 
 }
 
 extended_error_ptr_t actor_base_t::make_error(const std::error_code &ec, const extended_error_ptr_t &next,
-                                              const message_ptr_t &request) noexcept {
+                                              const message_ptr_t &request) const noexcept {
     return ::make_error(identity, ec, next, request);
 }
 

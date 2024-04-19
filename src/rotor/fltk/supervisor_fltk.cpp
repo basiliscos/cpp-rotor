@@ -5,6 +5,7 @@
 //
 
 #include "rotor/fltk/supervisor_fltk.h"
+#include "rotor/fltk/system_context_fltk.h"
 
 #include <FL/Fl.H>
 
@@ -74,45 +75,16 @@ void supervisor_fltk_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
-    struct holder_t {
-        message_ptr_t message;
-        supervisor_fltk_t *supervisor;
-    };
-    auto holder = new holder_t{std::move(message), this};
-    intrusive_ptr_add_ref(this);
-    Fl::awake(
-        [](void *data) {
-            auto holder = reinterpret_cast<holder_t *>(data);
-            auto sup = holder->supervisor;
-            sup->put(std::move(holder->message));
-            sup->do_process();
-            intrusive_ptr_release(sup);
-            delete holder;
-        },
-        holder); // call to execute cb in main thread
+    static_cast<system_context_fltk_t*>(context)->enqueue_message(this, std::move(message));
 }
 
 void supervisor_fltk_t::start() noexcept {
-    intrusive_ptr_add_ref(this);
-    Fl::awake(
-        [](void *data) {
-            auto sup = reinterpret_cast<supervisor_fltk_t *>(data);
-            sup->do_process();
-            intrusive_ptr_release(sup);
-        },
-        this);
+    static_cast<system_context_fltk_t*>(context)->enqueue_message(this, {});
 }
 
 void supervisor_fltk_t::shutdown() noexcept {
-    intrusive_ptr_add_ref(this);
-    Fl::awake(
-        [](void *data) {
-            auto sup = reinterpret_cast<supervisor_fltk_t *>(data);
-            auto ec = make_error_code(shutdown_code_t::normal);
-            auto reason = sup->make_error(ec);
-            sup->do_shutdown(reason);
-            sup->do_process();
-            intrusive_ptr_release(sup);
-        },
-        this);
+    auto ec = make_error_code(shutdown_code_t::normal);
+    auto reason = make_error(ec);
+    auto message = make_message<payload::shutdown_trigger_t>(address, address, std::move(reason));
+    static_cast<system_context_fltk_t*>(context)->enqueue_message(this, std::move(message));
 }

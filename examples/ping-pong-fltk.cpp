@@ -102,9 +102,9 @@ int main(int argc, char **argv) {
     window.end();
     window.show(argc, argv);
 
-    auto context = rf::system_context_fltk_t();
-    auto timeout = r::pt::millisec{50};
-    auto supervisor = context.create_supervisor<rf::supervisor_fltk_t>().timeout(timeout).create_registry().finish();
+    auto system_context = rf::system_context_fltk_t();
+    auto timeout = r::pt::millisec{250};
+    auto supervisor = system_context.create_supervisor<rf::supervisor_fltk_t>().timeout(timeout).create_registry().finish();
     auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
 
@@ -113,12 +113,13 @@ int main(int argc, char **argv) {
     ponger->pinger_addr = pinger->get_address();
 
     // warm-up, optional
-    supervisor->do_process();
+    supervisor->start();
 
     Fl::add_check([](auto *data) { reinterpret_cast<r::supervisor_t *>(data)->do_process(); }, supervisor.get());
 
     while (!supervisor->get_shutdown_reason()) {
-        Fl::wait(1.);
+        Fl::wait(0.1);
+        system_context.try_process(Fl::thread_message());
     }
 
     return 0;
