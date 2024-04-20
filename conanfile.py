@@ -74,10 +74,11 @@ class RotorConan(ConanFile):
         tc = CMakeDeps(self)
         tc.generate()
 
-        bin_dir = os.path.join(self.build_folder, "bin")
-        mkdir(self, bin_dir)
-        for dep in self.dependencies.values():
-            copy(self, "*.dll", dep.cpp_info.bindir, bin_dir)
+        if (self.settings.os == "Windows"):
+            bin_dir = os.path.join(self.build_folder, "bin")
+            mkdir(self, bin_dir)
+            for dep in self.dependencies.values():
+                copy(self, "*.dll", dep.cpp_info.bindir, bin_dir)
 
     def validate(self):
         minimal_cpp_standard = "17"
