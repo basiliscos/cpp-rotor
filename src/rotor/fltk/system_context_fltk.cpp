@@ -19,55 +19,25 @@ struct thread_messsage_t {
         intrusive_ptr_add_ref(supervisor);
     }
 
+    thread_messsage_t() = delete;
+    thread_messsage_t(const thread_messsage_t&) = delete;
+    thread_messsage_t(thread_messsage_t&&) = delete;
+
     ~thread_messsage_t(){
         intrusive_ptr_release(supervisor);
     }
 };
 
-system_context_fltk_t::system_context_fltk_t() {
-    main_thread = std::this_thread::get_id();
-}
-
-system_context_fltk_t::~system_context_fltk_t() {
-    auto lock = std::lock_guard(mutex);
-    while(!theaded_messages.empty()) {
-        auto holder = theaded_messages.front();
-        delete holder;
-        theaded_messages.pop_front();
-    }
-}
-
 void system_context_fltk_t::enqueue_message(supervisor_fltk_t* supervisor, message_ptr_t message) noexcept {
-    if (std::this_thread::get_id() == main_thread){
-        if (message) {
-            supervisor->put(std::move(message));
+    auto msg = new thread_messsage_t(std::move(message), supervisor);
+    Fl::awake([](void *data){
+        auto msg = static_cast<thread_messsage_t*>(data);
+        if (msg->message) {
+            msg->supervisor->put(std::move(msg->message));
         }
-    }
-    else {
-        auto threaded_message = new thread_messsage_t(std::move(message), supervisor);
-        auto lock = std::lock_guard(mutex);
-        theaded_messages.emplace_back(threaded_message);
-        if (theaded_messages.size() == 1) {
-            Fl::awake(this);
-        }
-    }
+        msg->supervisor->do_process();
+        delete msg;
+    }, msg);
 }
 
-bool system_context_fltk_t::try_process(void* thead_message) noexcept {
-    bool result = false;
-    auto supervisor = get_supervisor();
-    if (thead_message == this) {
-        result = true;
-        auto lock = std::lock_guard(mutex);
-        while(!theaded_messages.empty()) {
-            auto holder = theaded_messages.front();
-            if (holder->message) { supervisor->put(std::move(holder->message)); }
-            delete holder;
-            theaded_messages.pop_front();
-        }
-    }
-    supervisor->do_process();
-    return result;
-}
-
-}
+} // namespace fltk

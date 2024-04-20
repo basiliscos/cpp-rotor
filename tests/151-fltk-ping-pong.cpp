@@ -72,10 +72,13 @@ struct pinger_t : public r::actor_base_t {
         r::actor_base_t::on_start();
         send<ping_t>(ponger_addr);
         ++ping_sent;
+        printf("pinger_t::on_start\n");
     }
 
     void on_pong(rotor::message_t<pong_t> &) noexcept {
+        printf("on pong\n");
         ++pong_received;
+        // supervisor->do_shutdown();
         supervisor->shutdown();
     }
 };
@@ -98,6 +101,7 @@ struct ponger_t : public r::actor_base_t {
         ++ping_received;
         send<pong_t>(pinger_addr);
         ++pong_sent;
+        printf("on ping\n");
     }
 };
 
@@ -111,9 +115,9 @@ struct bad_actor_t : public r::actor_base_t {
     ~bad_actor_t() { printf("~bad_actor_t\n"); }
 };
 
+
 TEST_CASE("ping/pong", "[supervisor][fltk]") {
     Fl::lock();
-
     auto system_context = rf::system_context_ptr_t(new rf::system_context_fltk_t());
     auto timeout = r::pt::milliseconds{100};
     auto sup = system_context->create_supervisor<supervisor_fltk_test_t>().timeout(timeout).finish();
@@ -126,7 +130,7 @@ TEST_CASE("ping/pong", "[supervisor][fltk]") {
 
     sup->start();
     while (((r::actor_base_t *)sup.get())->access<rt::to::state>() != r::state_t::SHUT_DOWN) {
-        system_context->try_process(Fl::thread_message());
+        sup->do_process();
         Fl::wait(0.1);
     }
 
@@ -160,7 +164,7 @@ TEST_CASE("supervisors hierarchy", "[supervisor][fltk]") {
     sup->start();
 
     while (((r::actor_base_t *)sup.get())->access<rt::to::state>() != r::state_t::SHUT_DOWN) {
-        system_context.try_process(Fl::thread_message());
+        sup->do_process();
         Fl::wait(0.1);
     }
     CHECK(!sup->get_shutdown_reason()->root()->ec);
@@ -182,7 +186,7 @@ TEST_CASE("no shutdown confirmation", "[supervisor][fltk]") {
     sup->create_actor<bad_actor_t>().timeout(timeout).finish();
 
     while (((r::actor_base_t *)sup.get())->access<rt::to::state>() != r::state_t::SHUT_DOWN) {
-        system_context->try_process(Fl::thread_message());
+        sup->do_process();
         Fl::wait(0.1);
     }
 

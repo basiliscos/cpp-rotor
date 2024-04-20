@@ -40,7 +40,8 @@ static void on_timeout(void *data) noexcept {
         auto actor_ptr = timers_map.at(timer_id)->handler->owner;
         actor_ptr->access<to::on_timer_trigger, request_id_t, bool>(timer_id, false);
         timers_map.erase(timer_id);
-        sup->do_process();
+        Fl::awake();
+        // sup->do_process();
     } catch (std::out_of_range &) {
         // no-op
     }

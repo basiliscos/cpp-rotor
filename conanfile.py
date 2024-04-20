@@ -3,7 +3,7 @@ from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import check_min_cppstd
 from conan.tools.scm import Version
-from conan.tools.files import apply_conandata_patches, export_conandata_patches, get, rmdir, copy
+from conan.tools.files import apply_conandata_patches, export_conandata_patches, get, rmdir, copy, mkdir
 from conan.tools.cmake import CMakeToolchain, CMake, CMakeDeps, cmake_layout
 
 required_conan_version = ">=1.52.0"
@@ -58,8 +58,8 @@ class RotorConan(ConanFile):
         if self.options.enable_fltk:
             self.requires("fltk/1.3.9")
 
-    def layout(self):
-        cmake_layout(self)
+#    def layout(self):
+#        cmake_layout(self)
 
     def generate(self):
         tc = CMakeToolchain(self)
@@ -73,6 +73,11 @@ class RotorConan(ConanFile):
         tc.generate()
         tc = CMakeDeps(self)
         tc.generate()
+
+        bin_dir = os.path.join(self.build_folder, "bin")
+        mkdir(self, bin_dir)
+        for dep in self.dependencies.values():
+            copy(self, "*.dll", dep.cpp_info.bindir, bin_dir)
 
     def validate(self):
         minimal_cpp_standard = "17"
