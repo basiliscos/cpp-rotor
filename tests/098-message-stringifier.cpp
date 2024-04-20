@@ -56,4 +56,8 @@ TEST_CASE("default message stringifier", "[misc]") {
         CHECK_THAT(string, ContainsSubstring("[r::start_trigger @"));
         CHECK_THAT(string, ContainsSubstring("some-actor"));
     }
+
+    sup->do_process();
+    sup->do_shutdown();
+    sup->do_process();
 }

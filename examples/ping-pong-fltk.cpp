@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
     Fl_Box *box = new Fl_Box(20, 40, 360, 100, "auto shutdown in 5 seconds");
     box->box(FL_UP_BOX);
     window.end();
-    window.show();
+    window.show(argc, argv);
 
     auto system_context = rf::system_context_fltk_t();
     auto timeout = r::pt::millisec{250};
