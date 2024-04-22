@@ -76,16 +76,45 @@ void supervisor_fltk_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
-    static_cast<system_context_fltk_t*>(context)->enqueue_message(this, std::move(message));
+    struct async_data_t {
+        message_ptr_t message;
+        supervisor_fltk_t *supervisor;
+
+        async_data_t(message_ptr_t message_, supervisor_fltk_t *supervisor_): message{message_}, supervisor{supervisor_}{
+            intrusive_ptr_add_ref(supervisor);
+        }
+
+        ~async_data_t(){
+            intrusive_ptr_release(supervisor);
+        }
+    };
+
+    auto msg = new async_data_t(std::move(message), this);
+    Fl::awake([](void *data){
+        auto msg = static_cast<async_data_t*>(data);
+        if (msg->message) {
+            msg->supervisor->put(std::move(msg->message));
+        }
+        msg->supervisor->do_process();
+        delete msg;
+    }, msg);
 }
 
 void supervisor_fltk_t::start() noexcept {
-    static_cast<system_context_fltk_t*>(context)->enqueue_message(this, {});
+    intrusive_ptr_add_ref(this);
+    Fl::awake([](void *data){
+        auto supersisor = reinterpret_cast<supervisor_fltk_t*>(data);
+        supersisor->do_process();
+        intrusive_ptr_release(supersisor);
+    }, this);
 }
 
 void supervisor_fltk_t::shutdown() noexcept {
-    auto ec = make_error_code(shutdown_code_t::normal);
-    auto reason = make_error(ec);
-    auto message = make_message<payload::shutdown_trigger_t>(address, address, std::move(reason));
-    static_cast<system_context_fltk_t*>(context)->enqueue_message(this, std::move(message));
+    intrusive_ptr_add_ref(this);
+    Fl::awake([](void *data){
+        auto supersisor = reinterpret_cast<supervisor_fltk_t*>(data);
+        supersisor->do_shutdown();
+        supersisor->do_process();
+        intrusive_ptr_release(supersisor);
+    }, this);
 }
