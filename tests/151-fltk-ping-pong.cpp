@@ -115,7 +115,6 @@ struct bad_actor_t : public r::actor_base_t {
     ~bad_actor_t() { printf("~bad_actor_t\n"); }
 };
 
-
 TEST_CASE("ping/pong", "[supervisor][fltk]") {
     Fl::lock();
     auto system_context = rf::system_context_ptr_t(new rf::system_context_fltk_t());

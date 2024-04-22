@@ -104,7 +104,8 @@ int main(int argc, char **argv) {
 
     auto system_context = rf::system_context_fltk_t();
     auto timeout = r::pt::millisec{250};
-    auto supervisor = system_context.create_supervisor<rf::supervisor_fltk_t>().timeout(timeout).create_registry().finish();
+    auto supervisor =
+        system_context.create_supervisor<rf::supervisor_fltk_t>().timeout(timeout).create_registry().finish();
     auto pinger = supervisor->create_actor<pinger_t>().timeout(timeout).finish();
     auto ponger = supervisor->create_actor<ponger_t>().timeout(timeout).finish();
 

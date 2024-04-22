@@ -80,41 +80,46 @@ void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
         message_ptr_t message;
         supervisor_fltk_t *supervisor;
 
-        async_data_t(message_ptr_t message_, supervisor_fltk_t *supervisor_): message{message_}, supervisor{supervisor_}{
+        async_data_t(message_ptr_t message_, supervisor_fltk_t *supervisor_)
+            : message{message_}, supervisor{supervisor_} {
             intrusive_ptr_add_ref(supervisor);
         }
 
-        ~async_data_t(){
-            intrusive_ptr_release(supervisor);
-        }
+        ~async_data_t() { intrusive_ptr_release(supervisor); }
     };
 
     auto msg = new async_data_t(std::move(message), this);
-    Fl::awake([](void *data){
-        auto msg = static_cast<async_data_t*>(data);
-        if (msg->message) {
-            msg->supervisor->put(std::move(msg->message));
-        }
-        msg->supervisor->do_process();
-        delete msg;
-    }, msg);
+    Fl::awake(
+        [](void *data) {
+            auto msg = static_cast<async_data_t *>(data);
+            if (msg->message) {
+                msg->supervisor->put(std::move(msg->message));
+            }
+            msg->supervisor->do_process();
+            delete msg;
+        },
+        msg);
 }
 
 void supervisor_fltk_t::start() noexcept {
     intrusive_ptr_add_ref(this);
-    Fl::awake([](void *data){
-        auto supersisor = reinterpret_cast<supervisor_fltk_t*>(data);
-        supersisor->do_process();
-        intrusive_ptr_release(supersisor);
-    }, this);
+    Fl::awake(
+        [](void *data) {
+            auto supersisor = reinterpret_cast<supervisor_fltk_t *>(data);
+            supersisor->do_process();
+            intrusive_ptr_release(supersisor);
+        },
+        this);
 }
 
 void supervisor_fltk_t::shutdown() noexcept {
     intrusive_ptr_add_ref(this);
-    Fl::awake([](void *data){
-        auto supersisor = reinterpret_cast<supervisor_fltk_t*>(data);
-        supersisor->do_shutdown();
-        supersisor->do_process();
-        intrusive_ptr_release(supersisor);
-    }, this);
+    Fl::awake(
+        [](void *data) {
+            auto supersisor = reinterpret_cast<supervisor_fltk_t *>(data);
+            supersisor->do_shutdown();
+            supersisor->do_process();
+            intrusive_ptr_release(supersisor);
+        },
+        this);
 }

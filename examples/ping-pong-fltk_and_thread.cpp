@@ -36,7 +36,8 @@ struct pinger_t : public r::actor_base_t {
     void configure(r::plugin::plugin_base_t &plugin) noexcept override {
         r::actor_base_t::configure(plugin);
         plugin.with_casted<r::plugin::starter_plugin_t>([](auto &p) { p.subscribe_actor(&pinger_t::on_pong); });
-        plugin.with_casted<r::plugin::registry_plugin_t>([&](auto &p) { p.discover_name("ponger", ponger_addr, true).link(); });
+        plugin.with_casted<r::plugin::registry_plugin_t>(
+            [&](auto &p) { p.discover_name("ponger", ponger_addr, true).link(); });
     }
 
     void on_start() noexcept override {
@@ -117,7 +118,8 @@ int main(int argc, char **argv) {
 
     auto fltk_context = rf::system_context_fltk_t();
     auto timeout = r::pt::millisec{500};
-    auto fltk_supervisor = fltk_context.create_supervisor<rf::supervisor_fltk_t>().timeout(timeout).create_registry().finish();
+    auto fltk_supervisor =
+        fltk_context.create_supervisor<rf::supervisor_fltk_t>().timeout(timeout).create_registry().finish();
 
     // warm-up
     fltk_supervisor->do_process();
@@ -126,13 +128,13 @@ int main(int argc, char **argv) {
     pinger->box = box;
 
     auto thread_context = rt::system_context_thread_t();
-    auto thread_supervisor = thread_context.create_supervisor<rt::supervisor_thread_t>().timeout(timeout)
-                                  .registry_address(fltk_supervisor->get_registry_address()).finish();
+    auto thread_supervisor = thread_context.create_supervisor<rt::supervisor_thread_t>()
+                                 .timeout(timeout)
+                                 .registry_address(fltk_supervisor->get_registry_address())
+                                 .finish();
     auto ponger = thread_supervisor->create_actor<ponger_t>().timeout(timeout).finish();
 
-    auto auxiliary_thread = std::thread([&](){
-        thread_context.run();
-    });
+    auto auxiliary_thread = std::thread([&]() { thread_context.run(); });
 
     Fl::add_check([](auto *data) { reinterpret_cast<r::supervisor_t *>(data)->do_process(); }, fltk_supervisor.get());
 
