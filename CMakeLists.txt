@@ -198,7 +198,9 @@ endif()
 
 if (BUILD_WX)
     find_package(wxWidgets COMPONENTS base REQUIRED)
-    include(${wxWidgets_USE_FILE})
+    if (${wxWidgets_USE_FILE})
+        include(${wxWidgets_USE_FILE})
+    endif()
     add_library(rotor_wx)
 
     file(GLOB WX_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/wx/*.cpp")
