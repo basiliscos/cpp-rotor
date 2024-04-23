@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-### 0.30 (xx-xxx-2024)
+### 0.30 (23-Apr-2024)
  - [feature] added [fltk](https://www.fltk.org/)-backend
  - [feature, conan] `enable_fltk` option which add fltk-support
  - [example] added `/examples/ping-pong-fltk.cpp` and
