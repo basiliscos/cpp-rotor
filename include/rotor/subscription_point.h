@@ -89,8 +89,8 @@ struct ROTOR_API subscription_info_t : public arc_base_t<subscription_info_t>, s
     /** \brief ctor from subscription point, internal address and internal handler and state */
     subscription_info_t(const subscription_point_t &point, bool internal_address_, bool internal_handler_,
                         state_t state_) noexcept
-        : subscription_point_t{point}, internal_address{internal_address_},
-          internal_handler{internal_handler_}, state{state_} {}
+        : subscription_point_t{point}, internal_address{internal_address_}, internal_handler{internal_handler_},
+          state{state_} {}
 
     /** \brief uses {@link subscription_point_t} comparison */
     inline bool operator==(const subscription_point_t &point) const noexcept {

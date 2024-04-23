@@ -22,7 +22,6 @@ if (BUILD_THREAD)
     add_subdirectory("thread")
 endif()
 
-
 add_executable(autoshutdown autoshutdown.cpp)
 target_link_libraries(autoshutdown rotor)
 add_test(autoshutdown "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/autoshutdown")
@@ -47,3 +46,24 @@ add_executable(pub_sub pub_sub.cpp)
 target_link_libraries(pub_sub rotor)
 add_test(pub_sub "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pub_sub")
 
+if (BUILD_FLTK)
+    find_package(JPEG REQUIRED)
+
+    add_executable(ping-pong-fltk ping-pong-fltk.cpp)
+    target_link_libraries(ping-pong-fltk
+        rotor::fltk
+        $<$<PLATFORM_ID:Linux>:jpeg>
+        $<$<PLATFORM_ID:Linux>:png>
+    )
+    add_test(ping-pong-fltk "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-fltk")
+
+    if (BUILD_THREAD)
+        add_executable(ping-pong-fltk_and_thread ping-pong-fltk_and_thread.cpp)
+        target_link_libraries(ping-pong-fltk_and_thread
+            rotor::fltk rotor::thread
+            $<$<PLATFORM_ID:Linux>:jpeg>
+            $<$<PLATFORM_ID:Linux>:png>
+        )
+        add_test(ping-pong-fltk_and_thread "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-fltk_and_thread")
+    endif()
+endif()

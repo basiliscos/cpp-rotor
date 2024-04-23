@@ -11,11 +11,13 @@
 [gtk]: https://www.gtk.org/
 [qt]: https://www.qt.io/
 [issues]: https://github.com/basiliscos/cpp-rotor/issues
+[fltk]: (https://www.fltk.org/)
 
  event loop   | support status
 --------------|---------------
 [boost-asio]  | supported
 [wx-widgets]  | supported
+[fltk]        | supported
 [ev]          | supported
 [std-thread]  | supported
 [libevent]    | planned

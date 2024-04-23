@@ -3,7 +3,7 @@ from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import check_min_cppstd
 from conan.tools.scm import Version
-from conan.tools.files import apply_conandata_patches, export_conandata_patches, get, rmdir, copy
+from conan.tools.files import apply_conandata_patches, export_conandata_patches, get, rmdir, copy, mkdir
 from conan.tools.cmake import CMakeToolchain, CMake, CMakeDeps, cmake_layout
 
 required_conan_version = ">=1.52.0"
@@ -26,6 +26,7 @@ class RotorConan(ConanFile):
         "shared": [True, False],
         "enable_asio": [True, False],
         "enable_ev" : [True, False],
+        "enable_fltk" : [True, False],
         "enable_thread": [True, False],
         "multithreading": [True, False],  # enables multithreading support
     }
@@ -34,6 +35,7 @@ class RotorConan(ConanFile):
         "shared": False,
         "enable_asio": True,
         "enable_ev" : False,
+        "enable_fltk" : False,
         "enable_thread": True,
         "multithreading": True,
     }
@@ -53,21 +55,30 @@ class RotorConan(ConanFile):
         self.requires("boost/1.83.0", transitive_headers=True)
         if self.options.enable_ev:
             self.requires("libev/4.33")
+        if self.options.enable_fltk:
+            self.requires("fltk/1.3.9")
 
-    def layout(self):
-        cmake_layout(self)
+#    def layout(self):
+#        cmake_layout(self)
 
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["BUILD_BOOST_ASIO"] = self.options.enable_asio
         tc.variables["BUILD_THREAD"] = self.options.enable_thread
         tc.variables["BUILD_EV"] = self.options.enable_ev
+        tc.variables["BUILD_FLTK"] = self.options.enable_fltk
         tc.variables["BUILD_EXAMPLES"] = os.environ.get('ROTOR_BUILD_EXAMPLES', 'OFF')
         tc.variables["BUILD_THREAD_UNSAFE"] = not self.options.multithreading
         tc.variables["BUILD_TESTING"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
         tc.generate()
         tc = CMakeDeps(self)
         tc.generate()
+
+        if (self.settings.os == "Windows"):
+            bin_dir = os.path.join(self.build_folder, "bin")
+            mkdir(self, bin_dir)
+            for dep in self.dependencies.values():
+                copy(self, "*.dll", dep.cpp_info.bindir, bin_dir)
 
     def validate(self):
         minimal_cpp_standard = "17"
@@ -126,3 +137,7 @@ class RotorConan(ConanFile):
         if self.options.enable_ev:
             self.cpp_info.components["ev"].libs = ["rotor_ev"]
             self.cpp_info.components["ev"].requires = ["core", "libev::libev"]
+
+        if self.options.enable_fltk:
+            self.cpp_info.components["fltk"].libs = ["rotor_fltk"]
+            self.cpp_info.components["fltk"].requires = ["core", "fltk::fltk"]

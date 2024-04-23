@@ -79,25 +79,25 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
     using parent_t::parent_t;
 
     /** \brief defines actor's startup policy */
-    builder_t &&policy(supervisor_policy_t policy_) &&noexcept {
+    builder_t &&policy(supervisor_policy_t policy_) && noexcept {
         parent_t::config.policy = policy_;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
     /** \brief instructs supervisor to create an registry */
-    builder_t &&create_registry(bool value = true) &&noexcept {
+    builder_t &&create_registry(bool value = true) && noexcept {
         parent_t::config.create_registry = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
     /** \brief instructs supervisor to synchronize start on it's children actors */
-    builder_t &&synchronize_start(bool value = true) &&noexcept {
+    builder_t &&synchronize_start(bool value = true) && noexcept {
         parent_t::config.synchronize_start = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
     /** \brief injects external registry address */
-    builder_t &&registry_address(const address_ptr_t &value) &&noexcept {
+    builder_t &&registry_address(const address_ptr_t &value) && noexcept {
         parent_t::config.registry_address = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }

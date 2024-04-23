@@ -207,7 +207,7 @@ template <typename Actor> struct resolver_worker_config_builder_t : r::actor_con
     using parent_t = r::actor_config_builder_t<Actor>;
     using parent_t::parent_t;
 
-    builder_t &&resolve_timeout(const pt::time_duration &value) &&noexcept {
+    builder_t &&resolve_timeout(const pt::time_duration &value) && noexcept {
         parent_t::config.resolve_timeout = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
@@ -218,12 +218,12 @@ template <typename Actor> struct http_worker_config_builder_t : r::actor_config_
     using parent_t = r::actor_config_builder_t<Actor>;
     using parent_t::parent_t;
 
-    builder_t &&resolve_timeout(const pt::time_duration &value) &&noexcept {
+    builder_t &&resolve_timeout(const pt::time_duration &value) && noexcept {
         parent_t::config.resolve_timeout = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }
 
-    builder_t &&request_timeout(const pt::time_duration &value) &&noexcept {
+    builder_t &&request_timeout(const pt::time_duration &value) && noexcept {
         parent_t::config.request_timeout = value;
         return std::move(*static_cast<typename parent_t::builder_t *>(this));
     }

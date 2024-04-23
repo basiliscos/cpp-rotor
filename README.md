@@ -66,6 +66,15 @@ project.
 
 ## Changelog
 
+### 0.30 (23-Apr-2024)
+ - [feature] added [fltk](https://www.fltk.org/)-backend
+ - [feature, conan] `enable_fltk` option which add fltk-support
+ - [example] added `/examples/ping-pong-fltk.cpp` and
+`examples/ping-pong-fltk_and_thread.cpp`
+ - [bugfix] [wx-backend](https://wxwidgets.org/) building and testing
+ - [improvement, breaking] output directories are set to `bin` for cmake
+ - [improvement, breaking] `actor_base_t::make_error()` is marked as const
+
 ### 0.29 (24-Feb-2024)
  - [bugfix] fix segfault in delivery plugin in debugging mode
 (try to set env `ROTOR_INSPECT_DELIVERY=99` to see)

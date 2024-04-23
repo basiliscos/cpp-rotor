@@ -65,8 +65,8 @@ struct ROTOR_API registry_plugin_t : public plugin_base_t {
 
       private:
         discovery_task_t(registry_plugin_t &plugin_, address_ptr_t *address_, std::string service_name_, bool delayed_)
-            : plugin{&plugin_},
-              address(address_), service_name{service_name_}, delayed{delayed_}, state{state_t::PASSIVE} {}
+            : plugin{&plugin_}, address(address_), service_name{service_name_}, delayed{delayed_},
+              state{state_t::PASSIVE} {}
         operator bool() const noexcept { return address; }
 
         void do_discover() noexcept;

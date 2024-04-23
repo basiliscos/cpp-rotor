@@ -61,15 +61,12 @@ endif()
 
 
 if (BUILD_WX)
-    find_package(wxWidgets COMPONENTS base core REQUIRED)
-    include(${wxWidgets_USE_FILE})
-
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
-    target_link_libraries(121-wx_ping_ping rotor::test rotor::wx ${wxWidgets_LIBRARIES})
+    target_link_libraries(121-wx_ping_ping rotor::test rotor::wx)
     catch_discover_tests(121-wx_ping_ping)
 
     add_executable(122-wx_timer 122-wx_timer.cpp)
-    target_link_libraries(122-wx_timer rotor::test rotor::wx ${wxWidgets_LIBRARIES})
+    target_link_libraries(122-wx_timer rotor::test rotor::wx)
     catch_discover_tests(122-wx_timer)
 endif()
 
@@ -96,4 +93,10 @@ if (BUILD_THREAD)
     add_executable(143-thread-shutdown_flag 143-thread-shutdown_flag.cpp)
     target_link_libraries(143-thread-shutdown_flag rotor::test rotor::thread)
     catch_discover_tests(143-thread-shutdown_flag TEST_PREFIX "143-thread-shutdown_flag \\")
+endif()
+
+if (BUILD_THREAD)
+    add_executable(151-fltk-ping-pong 151-fltk-ping-pong.cpp)
+    target_link_libraries(151-fltk-ping-pong rotor::test rotor::fltk $<$<PLATFORM_ID:Linux>:jpeg png>)
+    catch_discover_tests(151-fltk-ping-pong TEST_PREFIX "151-fltk-ping-pong \\")
 endif()

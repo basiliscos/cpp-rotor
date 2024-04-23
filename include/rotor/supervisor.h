@@ -599,8 +599,8 @@ template <typename Request> void actor_base_t::reply_with_error(Request &message
 
 template <typename Actor>
 actor_config_builder_t<Actor>::actor_config_builder_t(install_action_t &&action_, supervisor_t *supervisor_)
-    : install_action{std::move(action_)}, supervisor{supervisor_},
-      system_context{*supervisor_->context}, config{supervisor_} {
+    : install_action{std::move(action_)}, supervisor{supervisor_}, system_context{*supervisor_->context},
+      config{supervisor_} {
     init_ctor();
 }
 
