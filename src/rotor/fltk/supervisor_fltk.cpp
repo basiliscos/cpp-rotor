@@ -76,29 +76,33 @@ void supervisor_fltk_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
-    struct async_data_t {
-        message_ptr_t message;
-        supervisor_fltk_t *supervisor;
+    auto &inbound = inbound_queue;
+    // auto has_been_empty = inbound.empty();
+    inbound.push(message.detach());
 
-        async_data_t(message_ptr_t message_, supervisor_fltk_t *supervisor_)
-            : message{message_}, supervisor{supervisor_} {
-            intrusive_ptr_add_ref(supervisor);
-        }
-
-        ~async_data_t() { intrusive_ptr_release(supervisor); }
-    };
-
-    auto msg = new async_data_t(std::move(message), this);
-    Fl::awake(
+    // if (has_been_empty) {
+    intrusive_ptr_add_ref(this);
+    auto result = Fl::awake(
         [](void *data) {
-            auto msg = static_cast<async_data_t *>(data);
-            if (msg->message) {
-                msg->supervisor->put(std::move(msg->message));
+            auto self = static_cast<supervisor_fltk_t *>(data);
+            message_base_t *ptr;
+            bool try_fetch = true;
+            while (try_fetch) {
+                int fetched = 0;
+                while (self->inbound_queue.pop(ptr)) {
+                    self->queue.emplace_back(ptr, false);
+                    ++fetched;
+                }
+                self->do_process();
+                try_fetch = fetched > 0;
             }
-            msg->supervisor->do_process();
-            delete msg;
+            intrusive_ptr_release(self);
         },
-        msg);
+        this);
+    if (result != 0) {
+        intrusive_ptr_release(this);
+    }
+    // }
 }
 
 void supervisor_fltk_t::start() noexcept {
