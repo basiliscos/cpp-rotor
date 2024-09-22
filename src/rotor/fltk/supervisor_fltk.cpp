@@ -77,10 +77,8 @@ void supervisor_fltk_t::do_cancel_timer(request_id_t timer_id) noexcept {
 
 void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
     auto &inbound = inbound_queue;
-    // auto has_been_empty = inbound.empty();
     inbound.push(message.detach());
 
-    // if (has_been_empty) {
     intrusive_ptr_add_ref(this);
     auto result = Fl::awake(
         [](void *data) {
@@ -102,7 +100,6 @@ void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
     if (result != 0) {
         intrusive_ptr_release(this);
     }
-    // }
 }
 
 void supervisor_fltk_t::start() noexcept {
