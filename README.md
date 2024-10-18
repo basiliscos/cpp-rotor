@@ -66,6 +66,9 @@ project.
 
 ## Changelog
 
+### 0.31 (18-Oct-2024)
+ - [bugfix, fltk] more realiable message delivery for fltk backend
+
 ### 0.30 (23-Apr-2024)
  - [feature] added [fltk](https://www.fltk.org/)-backend
  - [feature, conan] `enable_fltk` option which add fltk-support
