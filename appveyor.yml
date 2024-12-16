@@ -12,6 +12,7 @@ environment:
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
   APPVEYOR_YML_DISABLE_PS_LINUX: true
+  CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
     - SHARED: True
     - SHARED: False
