@@ -26,7 +26,7 @@ for:
     install:
       - ps: $exePath = "$env:TEMP\winsdksetup.exe"
       - ps: ('https://download.microsoft.com/download/C/6/6/C6612AD1-8F30-4124-AC9E-01892ADEAC69/windowssdk/winsdksetup.exe', $exePath)
-      - cmd: /c start /wait "$exePath" /quiet /norestart
+      - ps: Start-Process -Wait -FilePath "$exePath" -ArgumentList  "/quiet", "/norestart"
       - cmd: set PATH=%PY_SCRIPTS%;%PATH%
       - cmd: echo %PATH%
       - cmd: "%PYTHON%\\python.exe -m pip install conan cmake"
