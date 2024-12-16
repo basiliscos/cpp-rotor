@@ -439,7 +439,8 @@ subscription_info_ptr_t starter_plugin_t::subscribe_actor(Handler &&handler, con
 template <> inline size_t delivery_plugin_t<plugin::local_delivery_t>::process() noexcept {
     size_t enqueued_messages{0};
     while (queue->size()) {
-        auto message = message_ptr_t(queue->front().detach(), false);
+        auto ptr = queue->front().detach();
+        auto message = message_ptr_t(ptr, false);
         auto &dest = message->address;
         queue->pop_front();
         auto internal = dest->same_locality(*address);
@@ -447,6 +448,11 @@ template <> inline size_t delivery_plugin_t<plugin::local_delivery_t>::process()
             auto local_recipients = subscription_map->get_recipients(*message);
             if (local_recipients) {
                 plugin::local_delivery_t::delivery(message, *local_recipients);
+            }
+            if (message->next_route && message->use_count() == 1) {
+                auto sup = static_cast<supervisor_t *>(actor);
+                message->address = std::move(message->next_route);
+                sup->put(std::move(message));
             }
         } else {
             dest->supervisor.enqueue(std::move(message));
@@ -459,25 +465,27 @@ template <> inline size_t delivery_plugin_t<plugin::local_delivery_t>::process()
 template <> inline size_t delivery_plugin_t<plugin::inspected_local_delivery_t>::process() noexcept {
     size_t enqueued_messages{0};
     while (queue->size()) {
-        auto message = message_ptr_t(queue->front().detach(), false);
+        auto ptr = queue->front().detach();
+        auto message = message_ptr_t(ptr, false);
         auto &dest = message->address;
         queue->pop_front();
         auto internal = dest->same_locality(*address);
         const subscription_t::joint_handlers_t *local_recipients = nullptr;
-        bool delivery_attempt = false;
         if (internal) { /* subscriptions are handled by me */
             local_recipients = subscription_map->get_recipients(*message);
-            delivery_attempt = true;
+            if (local_recipients) {
+                plugin::inspected_local_delivery_t::delivery(message, *local_recipients, stringifier);
+            }
+            if (ptr->next_route && ptr->use_count() == 1) {
+                auto sup = static_cast<supervisor_t *>(actor);
+                message->address = std::move(message->next_route);
+                sup->put(std::move(message));
+            } else if (!local_recipients) {
+                plugin::inspected_local_delivery_t::discard(message, stringifier);
+            }
         } else {
             dest->supervisor.enqueue(std::move(message));
             ++enqueued_messages;
-        }
-        if (local_recipients) {
-            plugin::inspected_local_delivery_t::delivery(message, *local_recipients, stringifier);
-        } else {
-            if (delivery_attempt) {
-                plugin::inspected_local_delivery_t::discard(message, stringifier);
-            }
         }
     }
     return enqueued_messages;

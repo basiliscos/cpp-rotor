@@ -64,6 +64,9 @@ struct message_base_t : public arc_base_t<message_base_t> {
     /** \brief message destination address */
     address_ptr_t address;
 
+    /** \brief post-delivery destination address, see `make_routed_message()` for usage */
+    address_ptr_t next_route;
+
     /** \brief constructor which takes destination address */
     inline message_base_t(const void *type_index_, const address_ptr_t &addr)
         : type_index(type_index_), address{addr} {}
@@ -120,6 +123,29 @@ using messages_queue_t = std::deque<message_ptr_t>;
 /** \brief constructs message by constructing it's payload; intrusive pointer for the message is returned */
 template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&...args) -> message_ptr_t {
     return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
+}
+
+/** \brief constructs message by constructing it's payload; after delivery to destination address
+ *  (to all subscribers), the message is routed the specified route_addr; intrusive pointer for the message is returned
+ *
+ *  The function is used for "synchronized" message post-processing, i.e. once a message has been delivered
+ *  and processed by all recipients (can be zero), then it is routed to the specifed address to do cleanup.
+ *
+ *  Example:
+ *  1. an db-actor and opens transaction and reads data (i.e. as `std::string_view`s, owned by db)
+ *  2. actors sends broadcast message to all interesting parties to deserialized data
+ *  3. **after** the step 2 is finished the db-actor closes transaction and releases acquired resources.
+ *
+ *  The `make_routed_message` is needed to perform recipient-agnostic 3rd step.
+ *
+ *  The alternative is to create a copy (snapshot) of data (i.e. `std::string` instead of `std::string_view`), but that
+ *  seems redundant.
+ */
+template <typename M, typename... Args>
+auto make_routed_message(const address_ptr_t &addr, const address_ptr_t &route_addr, Args &&...args) -> message_ptr_t {
+    auto message = message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
+    message->next_route = route_addr;
+    return message;
 }
 
 } // namespace rotor

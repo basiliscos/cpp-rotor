@@ -131,6 +131,8 @@ struct shutdown_request_t {
  *
  */
 struct handler_call_t {
+    ~handler_call_t();
+
     /** \brief The original message (intrusive pointer) sent to an address */
     message_ptr_t orig_message;
 
