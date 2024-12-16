@@ -143,13 +143,15 @@ int main(int argc, char **argv) {
         auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>().strand(strand1).timeout(timeout).finish();
         auto sup2 = sup1->create_actor<ra::supervisor_asio_t>().strand(strand2).timeout(timeout).finish();
 
+        // warm-up
+        sup1->do_process();
+        sup2->do_process();
+
         auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).autoshutdown_supervisor().finish();
         auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
         pinger->set_ponger_addr(ponger->get_address());
         pinger->set_pings(count);
         ponger->set_pinger_addr(pinger->get_address());
-
-        sup1->start();
 
         auto t1 = std::thread([&] { io_ctx.run(); });
         auto t2 = std::thread([&] { io_ctx.run(); });
