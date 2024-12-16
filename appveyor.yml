@@ -25,7 +25,8 @@ for:
   -
     install:
       - ps: $exePath = "$env:TEMP\winsdksetup.exe"
-      - ps: ('https://download.microsoft.com/download/C/6/6/C6612AD1-8F30-4124-AC9E-01892ADEAC69/windowssdk/winsdksetup.exe', $exePath)
+      - ps: (New-Object System.Net.WebClient).DownloadFile('https://download.microsoft.com/download/C/6/6/C6612AD1-8F30-4124-AC9E-01892ADEAC69/windowssdk/winsdksetup.exe', $exePath)
+      - cmd: echo $exePath
       - ps: Start-Process -Wait -FilePath $exePath -ArgumentList  "/quiet", "/norestart"
       - cmd: set PATH=%PY_SCRIPTS%;%PATH%
       - cmd: echo %PATH%
