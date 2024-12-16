@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
         auto sys_ctx = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx)};
         auto strand1 = std::make_shared<asio::io_context::strand>(io_ctx);
         auto strand2 = std::make_shared<asio::io_context::strand>(io_ctx);
-        auto timeout = boost::posix_time::milliseconds{500};
+        auto timeout = boost::posix_time::milliseconds{1000};
         auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>().strand(strand1).timeout(timeout).finish();
         auto sup2 = sup1->create_actor<ra::supervisor_asio_t>().strand(strand2).timeout(timeout).finish();
 
