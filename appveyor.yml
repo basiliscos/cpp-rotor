@@ -9,9 +9,10 @@ configuration:
   - Release
 
 environment:
+  APPVEYOR_SSH_KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMfXuDqlgFKyyqLiBJT0KEx5wBC/0qgQHE1/jgq7wyQ+ b@zbook"
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
-#  APPVEYOR_YML_DISABLE_PS_LINUX: true
+  APPVEYOR_YML_DISABLE_PS_LINUX: true
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
     - SHARED: True
@@ -25,7 +26,9 @@ stack: python 3.11
 for:
   -
     on_finish:
-      - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+      - sh: export APPVEYOR_SSH_BLOCK=true
+      - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#      - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     install:
       - cmd: set PATH=%PY_SCRIPTS%;%PATH%
       - cmd: echo %PATH%
