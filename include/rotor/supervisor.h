@@ -567,6 +567,7 @@ template <typename Request, typename... Args>
 request_builder_t<typename request_wrapper_t<Request>::request_t> actor_base_t::request(const address_ptr_t &dest_addr,
                                                                                         Args &&...args) {
     using request_t = typename request_wrapper_t<Request>::request_t;
+    assert(dest_addr);
     return supervisor->do_request<request_t>(*this, dest_addr, address, std::forward<Args>(args)...);
 }
 

@@ -131,7 +131,7 @@ struct ponger_t : public r::actor_base_t {
 int main(int argc, char **argv) {
     asio::io_context io_ctx;
     try {
-        std::uint32_t count = 10000;
+        std::uint32_t count = 100;
         if (argc > 1) {
             boost::conversion::try_lexical_convert(argv[1], count);
         }

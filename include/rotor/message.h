@@ -122,6 +122,7 @@ using messages_queue_t = std::deque<message_ptr_t>;
 
 /** \brief constructs message by constructing it's payload; intrusive pointer for the message is returned */
 template <typename M, typename... Args> auto make_message(const address_ptr_t &addr, Args &&...args) -> message_ptr_t {
+    assert(addr);
     return message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
 }
 
@@ -143,6 +144,7 @@ template <typename M, typename... Args> auto make_message(const address_ptr_t &a
  */
 template <typename M, typename... Args>
 auto make_routed_message(const address_ptr_t &addr, const address_ptr_t &route_addr, Args &&...args) -> message_ptr_t {
+    assert(addr);
     auto message = message_ptr_t{new message_t<M>(addr, std::forward<Args>(args)...)};
     message->next_route = route_addr;
     return message;
