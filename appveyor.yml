@@ -13,6 +13,7 @@ environment:
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
   APPVEYOR_YML_DISABLE_PS_LINUX: true
   CTEST_OUTPUT_ON_FAILURE: 1
+  APPVEYOR_RDP_PASSWORD: 123
   matrix:
     - SHARED: True
     - SHARED: False
@@ -21,6 +22,9 @@ platform:
     - x64
 
 stack: python 3.11
+
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 for:
   -
