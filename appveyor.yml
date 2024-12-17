@@ -1,6 +1,6 @@
 image:
-#  - Ubuntu2204
-  - Visual Studio 2017
+  - Ubuntu2204
+#  - Visual Studio 2017 -- conan2 seems not supporting it any longer
 #  - Visual Studio 2019
 #  - Visual Studio 2022
 
@@ -11,7 +11,7 @@ configuration:
 environment:
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
-  APPVEYOR_YML_DISABLE_PS_LINUX: true
+#  APPVEYOR_YML_DISABLE_PS_LINUX: true
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
     - SHARED: True
@@ -27,10 +27,6 @@ for:
     on_finish:
       - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     install:
-      - ps: $exePath = "$env:TEMP\winsdksetup.exe"
-      - ps: (New-Object System.Net.WebClient).DownloadFile('https://download.microsoft.com/download/C/6/6/C6612AD1-8F30-4124-AC9E-01892ADEAC69/windowssdk/winsdksetup.exe', $exePath)
-      - cmd: echo $exePath
-      - ps: Start-Process -Wait -FilePath $exePath -ArgumentList  "/quiet", "/norestart"
       - cmd: set PATH=%PY_SCRIPTS%;%PATH%
       - cmd: echo %PATH%
       - cmd: "%PYTHON%\\python.exe -m pip install conan cmake"
