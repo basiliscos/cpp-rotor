@@ -23,11 +23,10 @@ platform:
 
 stack: python 3.11
 
-init:
-  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
 for:
   -
+    init:
+      - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     install:
       - ps: $exePath = "$env:TEMP\winsdksetup.exe"
       - ps: (New-Object System.Net.WebClient).DownloadFile('https://download.microsoft.com/download/C/6/6/C6612AD1-8F30-4124-AC9E-01892ADEAC69/windowssdk/winsdksetup.exe', $exePath)
