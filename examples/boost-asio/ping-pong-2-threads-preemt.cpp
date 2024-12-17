@@ -85,7 +85,6 @@ struct pinger_t : public r::actor_base_t {
                 std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                           << ", freq = " << std::fixed << std::setprecision(10) << freq
                           << ", real freq = " << std::fixed << std::setprecision(10) << freq * 2 << "\n";
-                do_shutdown();
                 ponger_addr->supervisor.shutdown();
             }
         }
@@ -155,8 +154,10 @@ int main(int argc, char **argv) {
 
         auto t1 = std::thread([&] { io_ctx.run(); });
         auto t2 = std::thread([&] { io_ctx.run(); });
-        t1.join();
         t2.join();
+
+        sup1->shutdown();
+        t1.join();
 
         std::cout << "pings left: " << pinger->pings_left << "\n";
 
