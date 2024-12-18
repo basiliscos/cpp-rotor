@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-### 0.32 (xx-Dec-2024)
+### 0.32 (18-Dec-2024)
 - [feature] added `make_routed_message()` free function.
   The function is used for "synchronized" message post-processing, i.e. once a
   message has been delivered  and processed by all recipients (can be zero),
