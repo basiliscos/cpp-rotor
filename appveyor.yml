@@ -1,12 +1,12 @@
 image:
   - Ubuntu2204
 #  - Visual Studio 2017 -- conan2 seems not supporting it any longer
-  - Visual Studio 2019
-  - Visual Studio 2022
+#  - Visual Studio 2019
+#  - Visual Studio 2022
 
 configuration:
   - Debug
-  - Release
+#  - Release
 
 environment:
   APPVEYOR_SSH_KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMfXuDqlgFKyyqLiBJT0KEx5wBC/0qgQHE1/jgq7wyQ+ b@zbook"
@@ -15,7 +15,7 @@ environment:
   APPVEYOR_YML_DISABLE_PS_LINUX: true
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
-    - SHARED: True
+#    - SHARED: True
     - SHARED: False
 
 platform:
@@ -25,10 +25,10 @@ stack: python 3.11
 
 for:
   -
-#    on_finish:
-#      - sh: export APPVEYOR_SSH_BLOCK=true
-#      - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
-#      - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    on_finish:
+      - sh: export APPVEYOR_SSH_BLOCK=true
+      - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+      - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     install:
       - cmd: set PATH=%PY_SCRIPTS%;%PATH%
       - cmd: echo %PATH%
