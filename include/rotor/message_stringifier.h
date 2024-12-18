@@ -9,7 +9,7 @@
 #include "rotor/export.h"
 
 #include <string>
-#include <sstream>
+#include <ostream>
 #include <memory>
 
 #if defined(_MSC_VER)

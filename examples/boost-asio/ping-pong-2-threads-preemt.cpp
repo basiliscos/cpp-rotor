@@ -85,7 +85,6 @@ struct pinger_t : public r::actor_base_t {
                 std::cout << "pings finishes (" << pings_left << ") in " << diff.count() << "s"
                           << ", freq = " << std::fixed << std::setprecision(10) << freq
                           << ", real freq = " << std::fixed << std::setprecision(10) << freq * 2 << "\n";
-                do_shutdown();
                 ponger_addr->supervisor.shutdown();
             }
         }
@@ -131,7 +130,7 @@ struct ponger_t : public r::actor_base_t {
 int main(int argc, char **argv) {
     asio::io_context io_ctx;
     try {
-        std::uint32_t count = 10000;
+        std::uint32_t count = 100;
         if (argc > 1) {
             boost::conversion::try_lexical_convert(argv[1], count);
         }
@@ -139,9 +138,13 @@ int main(int argc, char **argv) {
         auto sys_ctx = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx)};
         auto strand1 = std::make_shared<asio::io_context::strand>(io_ctx);
         auto strand2 = std::make_shared<asio::io_context::strand>(io_ctx);
-        auto timeout = boost::posix_time::milliseconds{500};
+        auto timeout = boost::posix_time::milliseconds{1000};
         auto sup1 = sys_ctx->create_supervisor<ra::supervisor_asio_t>().strand(strand1).timeout(timeout).finish();
         auto sup2 = sup1->create_actor<ra::supervisor_asio_t>().strand(strand2).timeout(timeout).finish();
+
+        // warm-up
+        sup1->do_process();
+        sup2->do_process();
 
         auto pinger = sup1->create_actor<pinger_t>().timeout(timeout).autoshutdown_supervisor().finish();
         auto ponger = sup2->create_actor<ponger_t>().timeout(timeout).finish();
@@ -149,12 +152,12 @@ int main(int argc, char **argv) {
         pinger->set_pings(count);
         ponger->set_pinger_addr(pinger->get_address());
 
-        sup1->start();
-
         auto t1 = std::thread([&] { io_ctx.run(); });
         auto t2 = std::thread([&] { io_ctx.run(); });
-        t1.join();
         t2.join();
+
+        sup1->shutdown();
+        t1.join();
 
         std::cout << "pings left: " << pinger->pings_left << "\n";
 

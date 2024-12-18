@@ -66,6 +66,24 @@ project.
 
 ## Changelog
 
+### 0.32 (xx-Dec-2024)
+- [feature] added `make_routed_message()` free function.
+  The function is used for "synchronized" message post-processing, i.e. once a
+  message has been delivered  and processed by all recipients (can be zero),
+  then it is routed to the specifed address to do cleanup.
+
+Example:
+1. an db-actor and opens transaction and reads data (i.e. as `std::string_view`s, owned by db)
+2. actors sends broadcast message to all interesting parties to deserialized data
+3. **after** the step 2 is finished the db-actor closes transaction and releases acquired resources.
+
+The `make_routed_message` is needed to perform recipient-agnostic 3rd step.
+
+The alternative is to create a copy (snapshot) of data (i.e. `std::string`
+instead of `std::string_view`), but that  seems redundant.
+
+ - [improvement, breaking] add `void*` parameter to `message_visitor_t`
+
 ### 0.31 (18-Oct-2024)
  - [bugfix, fltk] more realiable message delivery for fltk backend
 

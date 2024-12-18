@@ -95,7 +95,7 @@ if (BUILD_THREAD)
     catch_discover_tests(143-thread-shutdown_flag TEST_PREFIX "143-thread-shutdown_flag \\")
 endif()
 
-if (BUILD_THREAD)
+if (BUILD_FLTK)
     add_executable(151-fltk-ping-pong 151-fltk-ping-pong.cpp)
     target_link_libraries(151-fltk-ping-pong rotor::test rotor::fltk $<$<PLATFORM_ID:Linux>:jpeg png>)
     catch_discover_tests(151-fltk-ping-pong TEST_PREFIX "151-fltk-ping-pong \\")
