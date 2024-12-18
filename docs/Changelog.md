@@ -20,6 +20,8 @@ The `make_routed_message` is needed to perform recipient-agnostic 3rd step.
 The alternative is to create a copy (snapshot) of data (i.e. `std::string`
 instead of `std::string_view`), but that  seems redundant.
 
+ - [improvement, breaking] add `void*` parameter to `message_visitor_t`
+
 ### 0.31 (18-Oct-2024)
  - [bugfix, fltk] more realiable message delivery for fltk backend
 
