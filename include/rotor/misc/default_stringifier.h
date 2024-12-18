@@ -63,39 +63,37 @@ struct ROTOR_API default_stringifier_t : message_stringifier_t,
                                          protected message::unlink_request_t::visitor_t,
                                          protected message::unlink_response_t::visitor_t {
     void stringify_to(std::ostream &, const message_base_t &) const override;
-    bool try_visit(const message_base_t &message) const override;
+    bool try_visit(const message_base_t &message, void *context) const override;
 
   private:
-    void on(const message::unsubscription_t &) override;
-    void on(const message::unsubscription_external_t &) override;
-    void on(const message::subscription_t &) override;
-    void on(const message::external_subscription_t &) override;
-    void on(const message::commit_unsubscription_t &) override;
-    void on(const message::handler_call_t &) override;
-    void on(const message::init_request_t &) override;
-    void on(const message::init_response_t &) override;
-    void on(const message::start_trigger_t &) override;
-    void on(const message::shutdown_trigger_t &) override;
-    void on(const message::shutdown_request_t &) override;
-    void on(const message::shutdown_response_t &) override;
-    void on(const message::create_actor_t &) override;
-    void on(const message::spawn_actor_t &) override;
-    void on(const message::registration_request_t &) override;
-    void on(const message::registration_response_t &) override;
-    void on(const message::deregistration_notify_t &) override;
-    void on(const message::deregistration_service_t &) override;
-    void on(const message::discovery_request_t &) override;
-    void on(const message::discovery_response_t &) override;
-    void on(const message::discovery_promise_t &) override;
-    void on(const message::discovery_future_t &) override;
-    void on(const message::discovery_cancel_t &) override;
-    void on(const message::link_request_t &) override;
-    void on(const message::link_response_t &) override;
-    void on(const message::unlink_notify_t &) override;
-    void on(const message::unlink_request_t &) override;
-    void on(const message::unlink_response_t &) override;
-
-    mutable std::ostream *stream = nullptr;
+    void on(const message::unsubscription_t &, void *) override;
+    void on(const message::unsubscription_external_t &, void *) override;
+    void on(const message::subscription_t &, void *) override;
+    void on(const message::external_subscription_t &, void *) override;
+    void on(const message::commit_unsubscription_t &, void *) override;
+    void on(const message::handler_call_t &, void *) override;
+    void on(const message::init_request_t &, void *) override;
+    void on(const message::init_response_t &, void *) override;
+    void on(const message::start_trigger_t &, void *) override;
+    void on(const message::shutdown_trigger_t &, void *) override;
+    void on(const message::shutdown_request_t &, void *) override;
+    void on(const message::shutdown_response_t &, void *) override;
+    void on(const message::create_actor_t &, void *) override;
+    void on(const message::spawn_actor_t &, void *) override;
+    void on(const message::registration_request_t &, void *) override;
+    void on(const message::registration_response_t &, void *) override;
+    void on(const message::deregistration_notify_t &, void *) override;
+    void on(const message::deregistration_service_t &, void *) override;
+    void on(const message::discovery_request_t &, void *) override;
+    void on(const message::discovery_response_t &, void *) override;
+    void on(const message::discovery_promise_t &, void *) override;
+    void on(const message::discovery_future_t &, void *) override;
+    void on(const message::discovery_cancel_t &, void *) override;
+    void on(const message::link_request_t &, void *) override;
+    void on(const message::link_response_t &, void *) override;
+    void on(const message::unlink_notify_t &, void *) override;
+    void on(const message::unlink_request_t &, void *) override;
+    void on(const message::unlink_response_t &, void *) override;
 };
 
 } // namespace misc

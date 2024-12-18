@@ -37,7 +37,7 @@ struct ROTOR_API message_visitor_t {
     virtual ~message_visitor_t() = default;
 
     /** \brief returns `true` if a message has been successfully processed */
-    virtual bool try_visit(const message_base_t &message) const = 0;
+    virtual bool try_visit(const message_base_t &message, void *context) const = 0;
 };
 
 /** \struct message_base_t
@@ -97,7 +97,7 @@ template <typename T> struct message_t : public message_base_t {
         virtual ~visitor_t() = default;
 
         /** \brief visit concrete message */
-        virtual void on(const message_t &) {}
+        virtual void on(const message_t &, void *) {}
     };
 
     /** \brief forwards `args` for payload construction */
