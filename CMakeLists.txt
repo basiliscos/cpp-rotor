@@ -182,7 +182,12 @@ if (BUILD_BOOST_ASIO)
         )
     endif()
     target_compile_definitions(rotor_asio PRIVATE ${ROTOR_ASIO_PRIVATE_FLAGS})
-    target_link_libraries(rotor_asio PUBLIC rotor Threads::Threads)
+    target_link_libraries(rotor_asio
+        PUBLIC
+            rotor
+            Threads::Threads
+            $<$<PLATFORM_ID:Windows>:ws2_32>
+    )
     add_library(rotor::asio ALIAS rotor_asio)
 
     install(
