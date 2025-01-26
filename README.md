@@ -66,7 +66,7 @@ project.
 
 ## Changelog
 
-### 0.33 (xx-Jan-2025)
+### 0.33 (26-Jan-2025)
  - [cmake, bugfix, win32] add `ws2_32` lib for rotor_asion win32 build
 
 ### 0.32 (18-Dec-2024)
