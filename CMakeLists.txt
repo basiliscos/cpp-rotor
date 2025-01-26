@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.32")
+set(ROTOR_VERSION "0.33")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -182,7 +182,12 @@ if (BUILD_BOOST_ASIO)
         )
     endif()
     target_compile_definitions(rotor_asio PRIVATE ${ROTOR_ASIO_PRIVATE_FLAGS})
-    target_link_libraries(rotor_asio PUBLIC rotor Threads::Threads)
+    target_link_libraries(rotor_asio
+        PUBLIC
+            rotor
+            Threads::Threads
+            $<$<PLATFORM_ID:Windows>:ws2_32>
+    )
     add_library(rotor::asio ALIAS rotor_asio)
 
     install(
