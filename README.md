@@ -66,6 +66,11 @@ project.
 
 ## Changelog
 
+### 0.34 (xx-xxx-2025)
+ - [workaround, fltk] more realiable message delivery for fltk backend. Fltk
+might "forget" to invoke scheduled `awakes` after shutdown process, which leads
+to minor memory leaks
+
 ### 0.33 (26-Jan-2025)
  - [cmake, bugfix, win32] add `ws2_32` lib for rotor_asion win32 build
 
