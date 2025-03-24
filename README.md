@@ -70,6 +70,7 @@ project.
  - [workaround, fltk] more realiable message delivery for fltk backend. Fltk
 might "forget" to invoke scheduled `awakes` after shutdown process, which leads
 to minor memory leaks
+ - [cmake, breaking] use `CMAKE_CURRENT_SOURCE_DIR` instead of `CMAKE_SOURCE_DIR`
 
 ### 0.33 (26-Jan-2025)
  - [cmake, bugfix, win32] add `ws2_32` lib for `rotor_asio` win32 build
