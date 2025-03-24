@@ -4,7 +4,7 @@ cmake_policy(SET CMP0074 NEW)
 
 set(ROTOR_VERSION "0.34")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 if (NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET AND
     NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
@@ -50,10 +50,10 @@ endif ()
 
 add_library(rotor)
 
-file(GLOB CORE_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/*.cpp")
-file(GLOB DETAIL_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/detail/*.cpp")
-file(GLOB PLUGIN_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/plugin/*.cpp")
-file(GLOB MISC_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/misc/*.cpp")
+file(GLOB CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/*.cpp")
+file(GLOB DETAIL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/detail/*.cpp")
+file(GLOB PLUGIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/plugin/*.cpp")
+file(GLOB MISC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/misc/*.cpp")
 
 target_sources(rotor PRIVATE
     ${CORE_SOURCES}
@@ -158,8 +158,8 @@ if (BUILD_BOOST_ASIO)
     find_package(Threads)
     add_library(rotor_asio)
 
-    file(GLOB ASIO_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/asio/*.cpp")
-    file(GLOB ASIO_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/asio/*.h*")
+    file(GLOB ASIO_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/asio/*.cpp")
+    file(GLOB ASIO_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/rotor/asio/*.h*")
 
     generate_export_header(rotor_asio
         EXPORT_MACRO_NAME ROTOR_ASIO_API
@@ -208,8 +208,8 @@ if (BUILD_WX)
     endif()
     add_library(rotor_wx)
 
-    file(GLOB WX_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/wx/*.cpp")
-    file(GLOB WX_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/wx/*.h*")
+    file(GLOB WX_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/wx/*.cpp")
+    file(GLOB WX_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/rotor/wx/*.h*")
 
     generate_export_header(rotor_wx
         EXPORT_MACRO_NAME ROTOR_WX_API
@@ -243,7 +243,7 @@ if (BUILD_EV)
     find_package(Libev REQUIRED)
     add_library(rotor_ev)
 
-    file(GLOB EV_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/ev/*.cpp")
+    file(GLOB EV_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/ev/*.cpp")
 
     generate_export_header(rotor_ev
         EXPORT_MACRO_NAME ROTOR_EV_API
@@ -278,7 +278,7 @@ if (BUILD_FLTK)
     find_package(fltk REQUIRED)
     add_library(rotor_fltk)
 
-    file(GLOB FLTK_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/fltk/*.cpp")
+    file(GLOB FLTK_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/fltk/*.cpp")
 
     generate_export_header(rotor_fltk
         EXPORT_MACRO_NAME ROTOR_FLTK_API
@@ -313,7 +313,7 @@ if (BUILD_THREAD)
 
     add_library(rotor_thread)
 
-    file(GLOB THREAD_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/thread/*.cpp")
+    file(GLOB THREAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/thread/*.cpp")
 
     generate_export_header(rotor_thread
         EXPORT_MACRO_NAME ROTOR_THREAD_API
