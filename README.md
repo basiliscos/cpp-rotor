@@ -46,7 +46,7 @@ Setup: Intel Core i7-8550U, Void Linux 5.15.
 (2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
 `examples/boost-asio/ping-pong-2-threads`, `examples/ev/ping-pong-ev-2-threads`.
 
-(3) Backend-independent inter-thread messaging when build with `BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
+(3) Backend-independent inter-thread messaging when build with `ROTOR_BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
 and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
 option is mainly targeted for single-threaded apps.
 
@@ -67,10 +67,19 @@ project.
 ## Changelog
 
 ### 0.34 (xx-xxx-2025)
+ - [feature] improve c++20 support
  - [workaround, fltk] more realiable message delivery for fltk backend. Fltk
 might "forget" to invoke scheduled `awakes` after shutdown process, which leads
 to minor memory leaks
  - [cmake, breaking] use `CMAKE_CURRENT_SOURCE_DIR` instead of `CMAKE_SOURCE_DIR`
+ - [cmake, breaking] configure option renamed `BUILD_BOOST_ASIO` => `ROTOR_BUILD_ASIO`
+ - [cmake, breaking] configure option renamed `BUILD_WX` => `ROTOR_BUILD_WX`
+ - [cmake, breaking] configure option renamed `BUILD_EV` => `ROTOR_BUILD_EV`
+ - [cmake, breaking] configure option renamed `BUILD_FLTK` => `ROTOR_BUILD_FLTK`
+ - [cmake, breaking] configure option renamed `BUILD_THREAD` => `ROTOR_BUILD_THREAD`
+ - [cmake, breaking] configure option renamed `BUILD_DOC` => `ROTOR_BUILD_DOC`
+ - [cmake, breaking] configure option renamed `BUILD_THREAD_UNSAFE` => `ROTOR_BUILD_THREAD_UNSAFE`
+ - [cmake, new] configure option added `ROTOR_BUILD_TESTS` (instead of `ENABLE_TESTING`)
 
 ### 0.33 (26-Jan-2025)
  - [cmake, bugfix, win32] add `ws2_32` lib for `rotor_asio` win32 build

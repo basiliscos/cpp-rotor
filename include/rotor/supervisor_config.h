@@ -118,7 +118,7 @@ template <typename Supervisor> struct supervisor_config_builder_t : actor_config
     /** \brief atomic shutdown flag and the period for polling it
      *
      * The thread-safe way to shutdown supervisor even when compiled with
-     * `BUILD_THREAD_UNSAFE` option. Might be useful in single-threaded
+     * `ROTOR_BUILD_THREAD_UNSAFE` option. Might be useful in single-threaded
      * applications.
      *
      * For more reactive behavior in thread-safe environment the

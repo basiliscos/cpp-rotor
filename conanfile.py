@@ -63,12 +63,12 @@ class RotorConan(ConanFile):
 
     def generate(self):
         tc = CMakeToolchain(self)
-        tc.variables["BUILD_BOOST_ASIO"] = self.options.enable_asio
-        tc.variables["BUILD_THREAD"] = self.options.enable_thread
-        tc.variables["BUILD_EV"] = self.options.enable_ev
-        tc.variables["BUILD_FLTK"] = self.options.enable_fltk
-        tc.variables["BUILD_EXAMPLES"] = os.environ.get('ROTOR_BUILD_EXAMPLES', 'OFF')
-        tc.variables["BUILD_THREAD_UNSAFE"] = not self.options.multithreading
+        tc.variables["ROTOR_BUILD_ASIO"] = self.options.enable_asio
+        tc.variables["ROTOR_BUILD_THREAD"] = self.options.enable_thread
+        tc.variables["ROTOR_BUILD_EV"] = self.options.enable_ev
+        tc.variables["ROTOR_BUILD_FLTK"] = self.options.enable_fltk
+        tc.variables["ROTOR_BUILD_EXAMPLES"] = os.environ.get('ROTOR_ROTOR_BUILD_EXAMPLES', 'OFF')
+        tc.variables["ROTOR_BUILD_THREAD_UNSAFE"] = not self.options.multithreading
         tc.variables["BUILD_TESTING"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
         tc.generate()
         tc = CMakeDeps(self)
@@ -124,7 +124,7 @@ class RotorConan(ConanFile):
         self.cpp_info.components["core"].requires = ["boost::date_time", "boost::system", "boost::regex"]
 
         if not self.options.multithreading:
-            self.cpp_info.components["core"].defines.append("BUILD_THREAD_UNSAFE")
+            self.cpp_info.components["core"].defines.append("ROTOR_BUILD_THREAD_UNSAFE")
 
         if self.options.enable_asio:
             self.cpp_info.components["asio"].libs = ["rotor_asio"]

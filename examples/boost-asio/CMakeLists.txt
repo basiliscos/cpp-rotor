@@ -39,7 +39,7 @@ add_executable(one-shot-lambda-subscriber one-shot-lambda-subscriber.cpp)
 target_link_libraries(one-shot-lambda-subscriber rotor_asio ${Boost_LIBRARIES})
 add_test(one-shot-lambda-subscriber "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/one-shot-lambda-subscriber")
 
-if (NOT BUILD_THREAD_UNSAFE)
+if (NOT ROTOR_BUILD_THREAD_UNSAFE)
     add_executable(ping-pong-2-threads ping-pong-2-threads.cpp)
     target_link_libraries(ping-pong-2-threads rotor_asio ${Boost_LIBRARIES})
     add_test(ping-pong-2-threads "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-2-threads")

@@ -17,15 +17,16 @@ include(GNUInstallDirs)
 include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
 
-option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
-option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
-option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
-option(BUILD_FLTK           "Enable building with fltk support   [default: OFF]"         OFF)
-option(BUILD_THREAD         "Enable building with thread support  [default: ON]"         ON)
-option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
-option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
-option(BUILD_THREAD_UNSAFE  "Enable building thread-unsafe library [default: OFF]"       OFF)
-option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debugging [default: OFF]"           OFF)
+option(ROTOR_BUILD_ASIO           "Enable building with boost::asio support [default: OFF]"    OFF)
+option(ROTOR_BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
+option(ROTOR_BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(ROTOR_BUILD_FLTK           "Enable building with fltk support   [default: OFF]"         OFF)
+option(ROTOR_BUILD_THREAD         "Enable building with thread support  [default: ON]"         ON)
+option(ROTOR_BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
+option(ROTOR_BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
+option(ROTOR_BUILD_TESTS          "Enable building tests library [default: OFF]"               OFF)
+option(ROTOR_BUILD_THREAD_UNSAFE  "Enable building thread-unsafe library [default: OFF]"       OFF)
+option(ROTOR_DEBUG_DELIVERY       "Enable runtime messages debugging [default: OFF]"           OFF)
 
 # output binaries to bin/lin
 foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
@@ -76,7 +77,7 @@ target_include_directories(rotor
 
 target_link_libraries(rotor PUBLIC Boost::date_time Boost::system Boost::regex)
 
-if (BUILD_THREAD_UNSAFE)
+if (ROTOR_BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
 endif()
 if (ROTOR_DEBUG_DELIVERY)
@@ -154,7 +155,7 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
     DESTINATION include/rotor)
 
-if (BUILD_BOOST_ASIO)
+if (ROTOR_BUILD_ASIO)
     find_package(Threads)
     add_library(rotor_asio)
 
@@ -162,7 +163,7 @@ if (BUILD_BOOST_ASIO)
     file(GLOB ASIO_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/rotor/asio/*.h*")
 
     generate_export_header(rotor_asio
-        EXPORT_MACRO_NAME ROTOR_ASIO_API
+        EXPORT_MACRO_NAME ROTOR_BUILD_ASIO_API
         EXPORT_FILE_NAME include/rotor/asio/export.h
     )
 
@@ -201,7 +202,7 @@ if (BUILD_BOOST_ASIO)
         DESTINATION include/rotor/asio)
 endif()
 
-if (BUILD_WX)
+if (ROTOR_BUILD_WX)
     find_package(wxWidgets COMPONENTS base REQUIRED)
     if (${wxWidgets_USE_FILE})
         include(${wxWidgets_USE_FILE})
@@ -239,7 +240,7 @@ if (BUILD_WX)
         DESTINATION include/rotor/wx)
 endif()
 
-if (BUILD_EV)
+if (ROTOR_BUILD_EV)
     find_package(Libev REQUIRED)
     add_library(rotor_ev)
 
@@ -274,7 +275,7 @@ if (BUILD_EV)
         DESTINATION include/rotor/ev)
 endif()
 
-if (BUILD_FLTK)
+if (ROTOR_BUILD_FLTK)
     find_package(fltk REQUIRED)
     add_library(rotor_fltk)
 
@@ -308,7 +309,7 @@ if (BUILD_FLTK)
         DESTINATION include/rotor/fltk)
 endif()
 
-if (BUILD_THREAD)
+if (ROTOR_BUILD_THREAD)
     find_package(Threads REQUIRED)
 
     add_library(rotor_thread)
@@ -342,16 +343,16 @@ if (BUILD_THREAD)
 endif()
 
 
-if (NOT BUILD_TESTING STREQUAL OFF)
+if (ROTOR_BUILD_TESTS)
     enable_testing()
     add_subdirectory("tests")
 endif()
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_EXAMPLES)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND ROTOR_BUILD_EXAMPLES)
     add_subdirectory("examples")
 endif()
 
-if(BUILD_DOC)
+if(ROTOR_BUILD_DOC)
     find_package(Doxygen)
     if (DOXYGEN_FOUND)
         if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")

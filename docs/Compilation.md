@@ -36,12 +36,12 @@ The optional event-loop specific supervisors depend on corresponding loop librar
 
 `rotor` uses `cmake` for building; it supports the following building options
 
-- `BUILD_BOOST_ASIO` - build with [boost-asio] support (`off` by default)
-- `BUILD_WX` build with [wx-widgets] support (`off` by default)
-- `BUILD_EV` build with [libev] support (`off` by default)
-- `BUILD_EXAMPLES` build examples (`off` by default)
-- `BUILD_DOC` generate doxygen documentation (`off` by default, only for release builds)
-- `BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default). Enable this option if you are sure, that
+- `ROTOR_BUILD_ASIO` - build with [boost-asio] support (`off` by default)
+- `ROTOR_BUILD_WX` build with [wx-widgets] support (`off` by default)
+- `ROTOR_BUILD_EV` build with [libev] support (`off` by default)
+- `ROTOR_BUILD_EXAMPLES` build examples (`off` by default)
+- `ROTOR_BUILD_DOC` generate doxygen documentation (`off` by default, only for release builds)
+- `ROTOR_BUILD_THREAD_UNSAFE` builds thread-unsafe library (`off` by default). Enable this option if you are sure, that
 rotor-objects (i.e. messages and actors) are accessed only from single thread.
 - `ROTOR_DEBUG_DELIVERY` allow runtime messages inspection (`off` by default, enabled by default for debug builds)
 
@@ -50,7 +50,7 @@ git clone https://github.com/basiliscos/cpp-rotor rotor
 cd rotor
 mkdir build
 cd build
-cmake --build .. --config Release -DBUILD_BOOST_ASIO=on -DBUILD_WX=on
+cmake --build .. --config Release -DROTOR_BUILD_ASIO=on -DROTOR_BUILD_WX=on
 ~~~
 
 ## Adding rotor into a project (modern way)
@@ -60,7 +60,7 @@ Your `CMakeLists.txt` should have something like
 ~~~cmake
 include(FetchContent)
 
-set(BUILD_BOOST_ASIO ON CACHE BOOL "with asio") # pick options you need
+set(ROTOR_BUILD_ASIO ON CACHE BOOL "with asio") # pick options you need
 FetchContent_Declare(
     rotor
     GIT_REPOSITORY https://github.com/basiliscos/cpp-rotor.git
@@ -81,7 +81,7 @@ git clone https://github.com/basiliscos/cpp-rotor.git external/rotor lib/rotor -
 Your `CMakeLists.txt` should have something like
 
 ~~~cmake
-set(BUILD_BOOST_ASIO ON CACHE BOOL "with asio")
+set(ROTOR_BUILD_ASIO ON CACHE BOOL "with asio")
 add_subdirectory("lib/rotor")
 
 target_include_directories(my_target PUBLIC

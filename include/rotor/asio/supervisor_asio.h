@@ -53,7 +53,7 @@ template <typename Actor, typename Handler, typename ArgsCount, typename ErrHand
  * via `strand`.
  *
  */
-struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
+struct ROTOR_BUILD_ASIO_API supervisor_asio_t : public supervisor_t {
 
     /** \brief injects an alias for supervisor_config_asio_t */
     using config_t = supervisor_config_asio_t;
