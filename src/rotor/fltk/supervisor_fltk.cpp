@@ -76,7 +76,7 @@ void supervisor_fltk_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
-    static_cast<system_context_fltk_t*>(context)->enqueue(std::move(message));
+    static_cast<system_context_fltk_t *>(context)->enqueue(std::move(message));
 }
 
 void supervisor_fltk_t::start() noexcept {

@@ -18,11 +18,11 @@ struct supervisor_fltk_t;
 /** \struct system_context_fltk_t
  *  \brief The FLTK system context to allow rotor messaging with fltk-backend.
  */
-struct ROTOR_FLTK_API system_context_fltk_t: system_context_t {
+struct ROTOR_FLTK_API system_context_fltk_t : system_context_t {
     using system_context_t::system_context_t;
     ~system_context_fltk_t();
 
-    private:
+  private:
     void enqueue(message_ptr_t message) noexcept;
     friend supervisor_fltk_t;
 };

@@ -21,7 +21,6 @@ struct queue {};
 } // namespace to
 } // namespace
 
-
 template <> inline auto &rotor::supervisor_t::access<to::inbound_queue>() noexcept { return inbound_queue; }
 template <> inline auto &rotor::supervisor_t::access<to::queue>() noexcept { return queue; }
 
@@ -30,7 +29,7 @@ static std::atomic_int32_t queue_counter{0};
 system_context_fltk_t::~system_context_fltk_t() {
     auto sup = get_supervisor().get();
     if (sup) {
-        auto& inbound = sup->access<to::inbound_queue>();
+        auto &inbound = sup->access<to::inbound_queue>();
         message_base_t *ptr;
         while (inbound.pop(ptr)) {
             intrusive_ptr_release(ptr);
@@ -42,10 +41,10 @@ system_context_fltk_t::~system_context_fltk_t() {
     };
 }
 
-static void _callback(void* data) {
+static void _callback(void *data) {
     auto sup_raw = static_cast<supervisor_t *>(data);
-    auto& inbound = sup_raw->access<to::inbound_queue>();
-    auto& queue = sup_raw->access<to::queue>();
+    auto &inbound = sup_raw->access<to::inbound_queue>();
+    auto &queue = sup_raw->access<to::queue>();
     message_base_t *ptr;
     bool try_fetch = true;
     while (try_fetch) {
@@ -56,8 +55,8 @@ static void _callback(void* data) {
             ++fetched;
         }
         if (fetched) {
-             sup_raw->do_process();
-             try_fetch = queue_counter.fetch_sub(fetched) != fetched;
+            sup_raw->do_process();
+            try_fetch = queue_counter.fetch_sub(fetched) != fetched;
         }
     }
 }
@@ -65,7 +64,7 @@ static void _callback(void* data) {
 void system_context_fltk_t::enqueue(message_ptr_t message) noexcept {
     auto sup = get_supervisor().get();
     if (sup) {
-        auto& inbound = sup->access<to::inbound_queue>();
+        auto &inbound = sup->access<to::inbound_queue>();
         inbound.push(message.detach());
         if (queue_counter.fetch_add(1) == 0) {
             Fl::awake(_callback, sup);
