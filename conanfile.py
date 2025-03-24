@@ -52,7 +52,7 @@ class RotorConan(ConanFile):
                 pass
 
     def requirements(self):
-        self.requires("boost/1.84.0", transitive_headers=True)
+        self.requires("boost/1.86.0", transitive_headers=True)
         if self.options.enable_ev:
             self.requires("libev/4.33")
         if self.options.enable_fltk:

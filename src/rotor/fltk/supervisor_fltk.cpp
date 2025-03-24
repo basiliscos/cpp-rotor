@@ -76,30 +76,7 @@ void supervisor_fltk_t::do_cancel_timer(request_id_t timer_id) noexcept {
 }
 
 void supervisor_fltk_t::enqueue(message_ptr_t message) noexcept {
-    auto &inbound = inbound_queue;
-    inbound.push(message.detach());
-
-    intrusive_ptr_add_ref(this);
-    auto result = Fl::awake(
-        [](void *data) {
-            auto self = static_cast<supervisor_fltk_t *>(data);
-            message_base_t *ptr;
-            bool try_fetch = true;
-            while (try_fetch) {
-                int fetched = 0;
-                while (self->inbound_queue.pop(ptr)) {
-                    self->queue.emplace_back(ptr, false);
-                    ++fetched;
-                }
-                self->do_process();
-                try_fetch = fetched > 0;
-            }
-            intrusive_ptr_release(self);
-        },
-        this);
-    if (result != 0) {
-        intrusive_ptr_release(this);
-    }
+    static_cast<system_context_fltk_t*>(context)->enqueue(std::move(message));
 }
 
 void supervisor_fltk_t::start() noexcept {
