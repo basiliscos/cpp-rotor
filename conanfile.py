@@ -69,7 +69,7 @@ class RotorConan(ConanFile):
         tc.variables["ROTOR_BUILD_FLTK"] = self.options.enable_fltk
         tc.variables["ROTOR_BUILD_EXAMPLES"] = os.environ.get('ROTOR_ROTOR_BUILD_EXAMPLES', 'OFF')
         tc.variables["ROTOR_BUILD_THREAD_UNSAFE"] = not self.options.multithreading
-        tc.variables["BUILD_TESTING"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
+        tc.variables["ROTOR_BUILD_TESTS"] = not self.conf.get("tools.build:skip_test", default=True, check_type=bool)
         tc.generate()
         tc = CMakeDeps(self)
         tc.generate()
