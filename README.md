@@ -66,7 +66,7 @@ project.
 
 ## Changelog
 
-### 0.34 (xx-xxx-2025)
+### 0.34 (25-Mar-2025)
  - [feature] improve c++20 support
  - [workaround, fltk] more realiable message delivery for fltk backend. Fltk
 might "forget" to invoke scheduled `awakes` after shutdown process, which leads
