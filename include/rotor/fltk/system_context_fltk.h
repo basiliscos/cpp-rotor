@@ -20,7 +20,6 @@ struct supervisor_fltk_t;
  */
 struct ROTOR_FLTK_API system_context_fltk_t : system_context_t {
     using system_context_t::system_context_t;
-    ~system_context_fltk_t();
 
   private:
     void enqueue(message_ptr_t message) noexcept;

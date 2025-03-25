@@ -26,21 +26,6 @@ template <> inline auto &rotor::supervisor_t::access<to::queue>() noexcept { ret
 
 static std::atomic_int32_t queue_counter{0};
 
-system_context_fltk_t::~system_context_fltk_t() {
-    auto sup = get_supervisor().get();
-    if (sup) {
-        auto &inbound = sup->access<to::inbound_queue>();
-        message_base_t *ptr;
-        while (inbound.pop(ptr)) {
-            intrusive_ptr_release(ptr);
-        }
-        if (queue_counter && sup->use_count() > 1) {
-            intrusive_ptr_release(sup);
-            queue_counter = 0;
-        }
-    };
-}
-
 static void _callback(void *data) {
     auto sup_raw = static_cast<supervisor_t *>(data);
     auto &inbound = sup_raw->access<to::inbound_queue>();
