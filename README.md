@@ -13,11 +13,12 @@
     [gitee](https://gitee.com/basiliscos/cpp-rotor)
 
 [telegram](https://t.me/cpp_rotor)
-[![CircleCI](https://circleci.com/gh/basiliscos/cpp-rotor.svg?style=svg)](https://circleci.com/gh/basiliscos/cpp-rotor)
+[![Conan Center](https://img.shields.io/conan/v/rotor)](https://conan.io/center/recipes/rotor)
+[![license](https://img.shields.io/github/license/basiliscos/cpp-rotor.svg)](https://github.com/basiliscos/cpp-rotor/blob/master/LICENSE)
 [![appveyor](https://ci.appveyor.com/api/projects/status/f3a5tnpser7ryj43/branch/master?svg=true)](https://ci.appveyor.com/project/basiliscos/cpp-rotor)
+[![CircleCI](https://circleci.com/gh/basiliscos/cpp-rotor.svg?style=svg)](https://circleci.com/gh/basiliscos/cpp-rotor)
 [![codecov](https://codecov.io/gh/basiliscos/cpp-rotor/branch/master/graph/badge.svg)](https://codecov.io/gh/basiliscos/cpp-rotor)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b9fc6a0fd738473f8fa9084227cd7265)](https://www.codacy.com/manual/basiliscos/cpp-rotor?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=basiliscos/cpp-rotor&amp;utm_campaign=Badge_Grade)
-[![license](https://img.shields.io/github/license/basiliscos/cpp-rotor.svg)](https://github.com/basiliscos/cpp-rotor/blob/master/LICENSE)
 
 ## features
 
@@ -46,7 +47,7 @@ Setup: Intel Core i7-8550U, Void Linux 5.15.
 (2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
 `examples/boost-asio/ping-pong-2-threads`, `examples/ev/ping-pong-ev-2-threads`.
 
-(3) Backend-independent inter-thread messaging when build with `BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
+(3) Backend-independent inter-thread messaging when build with `ROTOR_BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
 and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
 option is mainly targeted for single-threaded apps.
 
@@ -66,8 +67,23 @@ project.
 
 ## Changelog
 
+### 0.34 (25-Mar-2025)
+ - [feature] improve c++20 support
+ - [workaround, fltk] more realiable message delivery for fltk backend. Fltk
+might "forget" to invoke scheduled `awakes` after shutdown process, which leads
+to minor memory leaks
+ - [cmake, breaking] use `CMAKE_CURRENT_SOURCE_DIR` instead of `CMAKE_SOURCE_DIR`
+ - [cmake, breaking] configure option renamed `BUILD_BOOST_ASIO` => `ROTOR_BUILD_ASIO`
+ - [cmake, breaking] configure option renamed `BUILD_WX` => `ROTOR_BUILD_WX`
+ - [cmake, breaking] configure option renamed `BUILD_EV` => `ROTOR_BUILD_EV`
+ - [cmake, breaking] configure option renamed `BUILD_FLTK` => `ROTOR_BUILD_FLTK`
+ - [cmake, breaking] configure option renamed `BUILD_THREAD` => `ROTOR_BUILD_THREAD`
+ - [cmake, breaking] configure option renamed `BUILD_DOC` => `ROTOR_BUILD_DOC`
+ - [cmake, breaking] configure option renamed `BUILD_THREAD_UNSAFE` => `ROTOR_BUILD_THREAD_UNSAFE`
+ - [cmake, new] configure option added `ROTOR_BUILD_TESTS` (instead of `ENABLE_TESTING`)
+
 ### 0.33 (26-Jan-2025)
- - [cmake, bugfix, win32] add `ws2_32` lib for rotor_asion win32 build
+ - [cmake, bugfix, win32] add `ws2_32` lib for `rotor_asio` win32 build
 
 ### 0.32 (18-Dec-2024)
 - [feature] added `make_routed_message()` free function.

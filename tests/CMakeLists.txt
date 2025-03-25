@@ -30,7 +30,7 @@ foreach(SOURCES ${COMMON_TESTS_SOURCES})
 endforeach(SOURCES)
 
 
-if (BUILD_BOOST_ASIO)
+if (ROTOR_BUILD_ASIO)
     set(rotor_BOOTS_TEST_LIBS rotor::test rotor::asio)
 
     if (WIN32)
@@ -48,7 +48,7 @@ if (BUILD_BOOST_ASIO)
     target_link_libraries(102-asio_ping-pong-2-strands ${rotor_BOOTS_TEST_LIBS})
     catch_discover_tests(102-asio_ping-pong-2-strands TEST_PREFIX "102-asio_ping-pong-2-strands \\")
 
-    if (NOT BUILD_THREAD_UNSAFE)
+    if (NOT ROTOR_BUILD_THREAD_UNSAFE)
         add_executable(103-asio_ping-pong-2-threads 103-asio_ping-pong-2-threads.cpp)
         target_link_libraries(103-asio_ping-pong-2-threads ${rotor_BOOTS_TEST_LIBS})
         catch_discover_tests(103-asio_ping-pong-2-threads TEST_PREFIX "103-asio_ping-pong-2-threads \\")
@@ -60,7 +60,7 @@ if (BUILD_BOOST_ASIO)
 endif()
 
 
-if (BUILD_WX)
+if (ROTOR_BUILD_WX)
     add_executable(121-wx_ping_ping 121-wx_ping_ping.cpp)
     target_link_libraries(121-wx_ping_ping rotor::test rotor::wx)
     catch_discover_tests(121-wx_ping_ping)
@@ -71,7 +71,7 @@ if (BUILD_WX)
 endif()
 
 
-if (BUILD_EV)
+if (ROTOR_BUILD_EV)
     add_executable(131-ev_ping-pong 131-ev_ping-pong.cpp)
     target_link_libraries(131-ev_ping-pong rotor::test rotor::ev)
     catch_discover_tests(131-ev_ping-pong TEST_PREFIX "131-ev_ping-pong \\")
@@ -81,7 +81,7 @@ if (BUILD_EV)
     catch_discover_tests(132-ev_timer TEST_PREFIX "132-ev_timer \\")
 endif()
 
-if (BUILD_THREAD)
+if (ROTOR_BUILD_THREAD)
     add_executable(141-thread_ping-pong 141-thread_ping-pong.cpp)
     target_link_libraries(141-thread_ping-pong rotor::test rotor::thread)
     catch_discover_tests(141-thread_ping-pong TEST_PREFIX "141-thread_ping-pong \\")
@@ -95,7 +95,7 @@ if (BUILD_THREAD)
     catch_discover_tests(143-thread-shutdown_flag TEST_PREFIX "143-thread-shutdown_flag \\")
 endif()
 
-if (BUILD_FLTK)
+if (ROTOR_BUILD_FLTK)
     add_executable(151-fltk-ping-pong 151-fltk-ping-pong.cpp)
     target_link_libraries(151-fltk-ping-pong rotor::test rotor::fltk $<$<PLATFORM_ID:Linux>:jpeg png>)
     catch_discover_tests(151-fltk-ping-pong TEST_PREFIX "151-fltk-ping-pong \\")

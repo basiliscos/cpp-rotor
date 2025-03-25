@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.33")
+set(ROTOR_VERSION "0.34")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 if (NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET AND
     NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
@@ -17,15 +17,16 @@ include(GNUInstallDirs)
 include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
 
-option(BUILD_BOOST_ASIO     "Enable building with boost::asio support [default: OFF]"    OFF)
-option(BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
-option(BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
-option(BUILD_FLTK           "Enable building with fltk support   [default: OFF]"         OFF)
-option(BUILD_THREAD         "Enable building with thread support  [default: ON]"         ON)
-option(BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
-option(BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
-option(BUILD_THREAD_UNSAFE  "Enable building thread-unsafe library [default: OFF]"       OFF)
-option(ROTOR_DEBUG_DELIVERY "Enable runtime messages debugging [default: OFF]"           OFF)
+option(ROTOR_BUILD_ASIO           "Enable building with boost::asio support [default: OFF]"    OFF)
+option(ROTOR_BUILD_WX             "Enable building with wxWidgets support   [default: OFF]"    OFF)
+option(ROTOR_BUILD_EV             "Enable building with libev support   [default: OFF]"        OFF)
+option(ROTOR_BUILD_FLTK           "Enable building with fltk support   [default: OFF]"         OFF)
+option(ROTOR_BUILD_THREAD         "Enable building with thread support  [default: ON]"         ON)
+option(ROTOR_BUILD_EXAMPLES       "Enable building examples [default: OFF]"                    OFF)
+option(ROTOR_BUILD_DOC            "Enable building documentation [default: OFF]"               OFF)
+option(ROTOR_BUILD_TESTS          "Enable building tests library [default: OFF]"               OFF)
+option(ROTOR_BUILD_THREAD_UNSAFE  "Enable building thread-unsafe library [default: OFF]"       OFF)
+option(ROTOR_DEBUG_DELIVERY       "Enable runtime messages debugging [default: OFF]"           OFF)
 
 # output binaries to bin/lin
 foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
@@ -50,10 +51,10 @@ endif ()
 
 add_library(rotor)
 
-file(GLOB CORE_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/*.cpp")
-file(GLOB DETAIL_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/detail/*.cpp")
-file(GLOB PLUGIN_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/plugin/*.cpp")
-file(GLOB MISC_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/misc/*.cpp")
+file(GLOB CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/*.cpp")
+file(GLOB DETAIL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/detail/*.cpp")
+file(GLOB PLUGIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/plugin/*.cpp")
+file(GLOB MISC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/misc/*.cpp")
 
 target_sources(rotor PRIVATE
     ${CORE_SOURCES}
@@ -76,7 +77,7 @@ target_include_directories(rotor
 
 target_link_libraries(rotor PUBLIC Boost::date_time Boost::system Boost::regex)
 
-if (BUILD_THREAD_UNSAFE)
+if (ROTOR_BUILD_THREAD_UNSAFE)
     target_compile_definitions(rotor PUBLIC "ROTOR_REFCOUNT_THREADUNSAFE")
 endif()
 if (ROTOR_DEBUG_DELIVERY)
@@ -154,12 +155,12 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/include/rotor/export.h
     DESTINATION include/rotor)
 
-if (BUILD_BOOST_ASIO)
+if (ROTOR_BUILD_ASIO)
     find_package(Threads)
     add_library(rotor_asio)
 
-    file(GLOB ASIO_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/asio/*.cpp")
-    file(GLOB ASIO_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/asio/*.h*")
+    file(GLOB ASIO_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/asio/*.cpp")
+    file(GLOB ASIO_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/rotor/asio/*.h*")
 
     generate_export_header(rotor_asio
         EXPORT_MACRO_NAME ROTOR_ASIO_API
@@ -201,15 +202,15 @@ if (BUILD_BOOST_ASIO)
         DESTINATION include/rotor/asio)
 endif()
 
-if (BUILD_WX)
+if (ROTOR_BUILD_WX)
     find_package(wxWidgets COMPONENTS base REQUIRED)
     if (${wxWidgets_USE_FILE})
         include(${wxWidgets_USE_FILE})
     endif()
     add_library(rotor_wx)
 
-    file(GLOB WX_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/wx/*.cpp")
-    file(GLOB WX_HEADERS "${CMAKE_SOURCE_DIR}/include/rotor/wx/*.h*")
+    file(GLOB WX_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/wx/*.cpp")
+    file(GLOB WX_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/rotor/wx/*.h*")
 
     generate_export_header(rotor_wx
         EXPORT_MACRO_NAME ROTOR_WX_API
@@ -239,11 +240,11 @@ if (BUILD_WX)
         DESTINATION include/rotor/wx)
 endif()
 
-if (BUILD_EV)
+if (ROTOR_BUILD_EV)
     find_package(Libev REQUIRED)
     add_library(rotor_ev)
 
-    file(GLOB EV_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/ev/*.cpp")
+    file(GLOB EV_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/ev/*.cpp")
 
     generate_export_header(rotor_ev
         EXPORT_MACRO_NAME ROTOR_EV_API
@@ -274,11 +275,11 @@ if (BUILD_EV)
         DESTINATION include/rotor/ev)
 endif()
 
-if (BUILD_FLTK)
+if (ROTOR_BUILD_FLTK)
     find_package(fltk REQUIRED)
     add_library(rotor_fltk)
 
-    file(GLOB FLTK_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/fltk/*.cpp")
+    file(GLOB FLTK_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/fltk/*.cpp")
 
     generate_export_header(rotor_fltk
         EXPORT_MACRO_NAME ROTOR_FLTK_API
@@ -308,12 +309,12 @@ if (BUILD_FLTK)
         DESTINATION include/rotor/fltk)
 endif()
 
-if (BUILD_THREAD)
+if (ROTOR_BUILD_THREAD)
     find_package(Threads REQUIRED)
 
     add_library(rotor_thread)
 
-    file(GLOB THREAD_SOURCES "${CMAKE_SOURCE_DIR}/src/rotor/thread/*.cpp")
+    file(GLOB THREAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/rotor/thread/*.cpp")
 
     generate_export_header(rotor_thread
         EXPORT_MACRO_NAME ROTOR_THREAD_API
@@ -342,16 +343,16 @@ if (BUILD_THREAD)
 endif()
 
 
-if (NOT BUILD_TESTING STREQUAL OFF)
+if (ROTOR_BUILD_TESTS)
     enable_testing()
     add_subdirectory("tests")
 endif()
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_EXAMPLES)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND ROTOR_BUILD_EXAMPLES)
     add_subdirectory("examples")
 endif()
 
-if(BUILD_DOC)
+if(ROTOR_BUILD_DOC)
     find_package(Doxygen)
     if (DOXYGEN_FOUND)
         if (CMAKE_BUILD_TYPE MATCHES "^[Rr]elease")

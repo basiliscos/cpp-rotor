@@ -21,7 +21,7 @@
  * will correctly shutdown (including sanitizer build). Try it!
  *
  * As the additional std::threads are not spawned, this example is
- * ok to compile it with BUILD_THREAD_UNSAFE mode.
+ * ok to compile it with ROTOR_BUILD_THREAD_UNSAFE mode.
  *
  */
 

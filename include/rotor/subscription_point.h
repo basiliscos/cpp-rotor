@@ -1,14 +1,13 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
 
 #include "rotor/forward.hpp"
 #include "rotor/address.hpp"
-#include <vector>
 #include <list>
 
 #if defined(_MSC_VER)
@@ -76,7 +75,7 @@ struct ROTOR_API subscription_point_t {
     subscription_point_t(subscription_point_t &&) = default;
 
     /** \brief partial comparison by handler and address */
-    bool operator==(const subscription_point_t &other) const noexcept;
+    bool operator==(const subscription_point_t &other) const;
 };
 
 /** \struct subscription_info_t
@@ -91,11 +90,6 @@ struct ROTOR_API subscription_info_t : public arc_base_t<subscription_info_t>, s
                         state_t state_) noexcept
         : subscription_point_t{point}, internal_address{internal_address_}, internal_handler{internal_handler_},
           state{state_} {}
-
-    /** \brief uses {@link subscription_point_t} comparison */
-    inline bool operator==(const subscription_point_t &point) const noexcept {
-        return (subscription_point_t &)(*this) == point;
-    }
 
     /** \brief marks handler for blocking operations
      *

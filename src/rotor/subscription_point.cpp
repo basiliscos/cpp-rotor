@@ -21,7 +21,7 @@ const void *io = &io;
 
 }
 
-bool subscription_point_t::operator==(const subscription_point_t &other) const noexcept {
+bool subscription_point_t::operator==(const subscription_point_t &other) const {
     return address == other.address && (*handler == *other.handler);
 }
 
