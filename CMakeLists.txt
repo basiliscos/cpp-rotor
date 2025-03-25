@@ -163,7 +163,7 @@ if (ROTOR_BUILD_ASIO)
     file(GLOB ASIO_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/rotor/asio/*.h*")
 
     generate_export_header(rotor_asio
-        EXPORT_MACRO_NAME ROTOR_BUILD_ASIO_API
+        EXPORT_MACRO_NAME ROTOR_ASIO_API
         EXPORT_FILE_NAME include/rotor/asio/export.h
     )
 
