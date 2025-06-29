@@ -10,7 +10,7 @@
 [orca]: https://github.com/wlgq2/orca
 [gaylord]: https://github.com/IronsDu/gaylord
 [protoactor]: https://github.com/whitglint/protoactor-cpp
-[libscoa]: https://github.com/anqurvanillapy/libscoa 
+[libscoa]: https://github.com/anqurvanillapy/libscoa
 
  - c++ actor framework, aka [caf][caf]
  - [sobjectizer]
@@ -32,7 +32,7 @@
 [akka-doc]: https://doc.akka.io/docs/akka/current/general/index.html
 [yt-my]: https://www.youtube.com/watch?v=kOFSVJp_gMA
 [erlang-book]: https://learnyousomeerlang.com/
- 
+
 
  - [blog-cpp-supervisors] "Trees of Supervisors in C++" (my blog article)
  - [blog-cpp-permissions] "Experimental C++ access model" (my blog article)
@@ -41,4 +41,3 @@
  - [documentation][akka-doc] of famous java actor framework [akka][akka]; good for gaining insights
  - [overview of actor frameworks][yt-my] (my video in Russian)
  - you can view examples in the `examples` source dir as well as in the `tests` dir
- 

@@ -26,7 +26,7 @@ non-automated and human-supervised process for inclusion.
 
 C++ 17 is required to use rotor.
 
-The core dependency `rotor-core` needs intrusive pointer support from [boost-smartptr] 
+The core dependency `rotor-core` needs intrusive pointer support from [boost-smartptr]
 and `boost::posix_time::time_duration`. (That might be changed in future, PRs are welcome).
 
 The optional event-loop specific supervisors depend on corresponding loop libraries, i.e.

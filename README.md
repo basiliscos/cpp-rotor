@@ -44,7 +44,7 @@ Setup: Intel Core i7-8550U, Void Linux 5.15.
 
 (1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
 
-(2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`, 
+(2) Does not apply to wx-backend; can be measured with  `examples/thread/ping-pong-thread`,
 `examples/boost-asio/ping-pong-2-threads`, `examples/ev/ping-pong-ev-2-threads`.
 
 (3) Backend-independent inter-thread messaging when build with `ROTOR_BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
