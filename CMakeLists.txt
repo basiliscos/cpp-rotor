@@ -4,6 +4,7 @@ cmake_policy(SET CMP0074 NEW)
 
 set(ROTOR_VERSION "0.36")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 if (NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET AND
@@ -108,6 +109,14 @@ install(
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
 )
+
+add_custom_command(
+  # TARGET rotor
+  TARGET rotor::core
+  PRE_BUILD
+  COMMENT "Ensure clangd file is up to date."
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
+  ${CMAKE_CURRENT_SOURCE_DIR}/)
 
 set(ROTOR_HEADERS_TO_INSTALL
     include/rotor.hpp
