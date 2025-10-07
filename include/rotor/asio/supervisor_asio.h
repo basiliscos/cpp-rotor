@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -90,15 +90,15 @@ struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
 
   protected:
     /** \struct timer_t
-     * \brief boos::asio::deadline_timer with embedded timer handler */
-    struct timer_t : public asio::deadline_timer {
+     * \brief boos::asio::steady_timer with embedded timer handler */
+    struct  timer_t : public asio::steady_timer {
 
         /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;
 
         /** \brief constructs timer using timer handler and boost asio io_context */
         timer_t(timer_handler_base_t *handler_, asio::io_context &io_context)
-            : asio::deadline_timer(io_context), handler{handler_} {}
+            : asio::steady_timer(io_context), handler{handler_} {}
     };
 
     /** \brief unique pointer to timer */

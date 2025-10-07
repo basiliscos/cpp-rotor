@@ -47,6 +47,22 @@ struct bad_actor_t : public r::actor_base_t {
     }
 };
 
+struct timer_actor_t: r::actor_base_t {
+    using r::actor_base_t::actor_base_t;
+    void on_start() noexcept override {
+        r::actor_base_t::on_start();
+        auto timeout = r::pt::time_duration{r::pt::seconds{-1}};
+        auto req_id = start_timer(timeout, *this, &timer_actor_t::on_timer);
+    }
+
+    void on_timer(r::request_id_t req, bool cancelled){
+        timer_triggered = true;
+        do_shutdown();
+    }
+
+    bool timer_triggered = false;
+};
+
 TEST_CASE("timer", "[supervisor][asio]") {
     asio::io_context io_context{1};
     auto timeout = r::pt::milliseconds{10};
@@ -63,6 +79,27 @@ TEST_CASE("timer", "[supervisor][asio]") {
 
     REQUIRE(static_cast<r::actor_base_t *>(sup.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
     CHECK(rt::empty(sup->get_subscription()));
+
+    REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
+    REQUIRE(sup->get_leader_queue().size() == 0);
+    CHECK(rt::empty(sup->get_subscription()));
+}
+
+TEST_CASE("zero timeout", "[supervisor][asio]") {
+    asio::io_context io_context{1};
+    auto timeout = r::pt::milliseconds{10};
+    auto system_context = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_context)};
+    auto strand = std::make_shared<asio::io_context::strand>(io_context);
+
+    auto sup = system_context->create_supervisor<rt::supervisor_asio_test_t>().strand(strand).timeout(timeout).finish();
+    auto actor = sup->create_actor<timer_actor_t>().timeout(timeout).autoshutdown_supervisor().finish();
+
+    sup->start();
+    io_context.run();
+
+    CHECK(actor->timer_triggered);
+
+    REQUIRE(static_cast<r::actor_base_t *>(actor.get())->access<rt::to::state>() == r::state_t::SHUT_DOWN);
 
     REQUIRE(sup->get_state() == r::state_t::SHUT_DOWN);
     REQUIRE(sup->get_leader_queue().size() == 0);

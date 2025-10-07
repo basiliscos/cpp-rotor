@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -40,8 +40,10 @@ void supervisor_asio_t::start() noexcept { create_forwarder (&supervisor_asio_t:
 void supervisor_asio_t::shutdown() noexcept { create_forwarder (&supervisor_asio_t::invoke_shutdown)(); }
 
 void supervisor_asio_t::do_start_timer(const pt::time_duration &interval, timer_handler_base_t &handler) noexcept {
-    auto timer = std::make_unique<supervisor_asio_t::timer_t>(&handler, strand->context());
-    timer->expires_from_now(interval);
+    using namespace asio::chrono;
+    auto timer = std::make_unique<timer_t>(&handler, strand->context());
+    auto micro_seconds = microseconds(interval.total_microseconds());
+    timer->expires_after(duration_cast<timer_t::duration>(micro_seconds));
 
     intrusive_ptr_t<supervisor_asio_t> self(this);
     request_id_t timer_id = handler.request_id;
