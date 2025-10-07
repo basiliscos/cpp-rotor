@@ -4,7 +4,7 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
-### 0.35 (xx-Jul-2025)
+### 0.35 (07-Oct-2025)
  - [breaking] asio supervisor uses steady clock instead of system clock (aka deadline_timer)
 
 ### 0.34 (25-Mar-2025)
