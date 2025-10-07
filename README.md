@@ -67,7 +67,7 @@ project.
 
 ## Changelog
 
-### 0.35 (xx-Jul-2025)
+### 0.35 (07-Oct-2025)
  - [breaking] asio supervisor uses steady clock instead of system clock (aka deadline_timer)
 
 ### 0.34 (25-Mar-2025)
