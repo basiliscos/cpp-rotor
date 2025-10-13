@@ -139,7 +139,8 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      * the message is captured into `intrusive_ptr` somewhere it will NOT be
      * routed. It have to be manually `redirected` then.
      */
-    template<typename M, typename... Args> void route(const address_ptr_t &addr, const address_ptr_t &next_addr, Args &&...args);
+    template <typename M, typename... Args>
+    void route(const address_ptr_t &addr, const address_ptr_t &next_addr, Args &&...args);
 
     /** \brief redirects premade message into destination address
      *  (and them, possibly routes it to `next_address)

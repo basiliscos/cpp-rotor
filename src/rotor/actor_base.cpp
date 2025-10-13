@@ -45,7 +45,7 @@ void actor_base_t::do_shutdown(const extended_error_ptr_t &reason) noexcept {
     }
 }
 
-void actor_base_t::redirect(message_ptr_t message, const address_ptr_t &addr, const address_ptr_t &next_addr) noexcept{
+void actor_base_t::redirect(message_ptr_t message, const address_ptr_t &addr, const address_ptr_t &next_addr) noexcept {
     message->address = addr;
     message->next_route = next_addr;
     supervisor->put(std::move(message));

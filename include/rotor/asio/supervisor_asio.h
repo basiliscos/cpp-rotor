@@ -91,7 +91,7 @@ struct ROTOR_ASIO_API supervisor_asio_t : public supervisor_t {
   protected:
     /** \struct timer_t
      * \brief boos::asio::steady_timer with embedded timer handler */
-    struct  timer_t : public asio::steady_timer {
+    struct timer_t : public asio::steady_timer {
 
         /** \brief non-owning pointer to timer handler */
         timer_handler_base_t *handler;

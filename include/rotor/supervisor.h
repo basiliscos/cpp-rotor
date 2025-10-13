@@ -368,13 +368,12 @@ template <typename M, typename... Args> void actor_base_t::send(const address_pt
     supervisor->put(make_message<M>(addr, std::forward<Args>(args)...));
 }
 
-template <typename M, typename... Args> void actor_base_t::route(const address_ptr_t &addr, const address_ptr_t &next_addr, Args &&...args) {
+template <typename M, typename... Args>
+void actor_base_t::route(const address_ptr_t &addr, const address_ptr_t &next_addr, Args &&...args) {
     supervisor->put(make_routed_message<M>(addr, next_addr, std::forward<Args>(args)...));
 }
 
-template<typename M> void redirect(M message, const address_ptr_t &addr, const address_ptr_t &next_addr) {
-}
-
+template <typename M> void redirect(M message, const address_ptr_t &addr, const address_ptr_t &next_addr) {}
 
 template <typename Delegate, typename Method>
 void actor_base_t::start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,

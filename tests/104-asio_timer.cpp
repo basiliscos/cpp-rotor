@@ -47,7 +47,7 @@ struct bad_actor_t : public r::actor_base_t {
     }
 };
 
-struct timer_actor_t: r::actor_base_t {
+struct timer_actor_t : r::actor_base_t {
     using r::actor_base_t::actor_base_t;
     void on_start() noexcept override {
         r::actor_base_t::on_start();
@@ -55,7 +55,7 @@ struct timer_actor_t: r::actor_base_t {
         auto req_id = start_timer(timeout, *this, &timer_actor_t::on_timer);
     }
 
-    void on_timer(r::request_id_t req, bool cancelled){
+    void on_timer(r::request_id_t req, bool cancelled) {
         timer_triggered = true;
         do_shutdown();
     }

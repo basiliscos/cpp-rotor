@@ -21,7 +21,7 @@ struct int_payload_t {
 namespace message {
 using sample_message_t = r::message_t<payload::sample_payload_t>;
 using int_message_t = r::message_t<payload::int_payload_t>;
-}
+} // namespace message
 
 TEST_CASE("delivery to unknown addr", "[message]") {
     struct actor_t : public r::actor_base_t {
@@ -238,7 +238,7 @@ TEST_CASE("route & redirect (high-level api)", "[message]") {
             redirect(&msg, redirect_addr);
         }
 
-        void on_redirected(message::int_message_t &msg) noexcept { value = msg.payload.value -12; }
+        void on_redirected(message::int_message_t &msg) noexcept { value = msg.payload.value - 12; }
 
         r::address_ptr_t route_addr;
         r::address_ptr_t redirect_addr;
@@ -258,4 +258,3 @@ TEST_CASE("route & redirect (high-level api)", "[message]") {
 
     REQUIRE(act->value == -1);
 }
-
