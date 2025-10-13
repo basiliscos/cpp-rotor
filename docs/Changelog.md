@@ -4,6 +4,10 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+### 0.36 (xx-Oct-2025)
+ - [feature] add `route()` and `redirect()` high-level actor methods, which are
+   provide convenient API over `make_routed_message()` introduced in `v0.32`
+
 ### 0.35 (07-Oct-2025)
  - [breaking] asio supervisor uses steady clock instead of system clock (aka deadline_timer)
 
