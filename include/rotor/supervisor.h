@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -16,7 +16,6 @@
 #include "error_code.h"
 #include "spawner.h"
 
-#include <functional>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -368,6 +367,13 @@ template <typename Supervisor> auto system_context_t::create_supervisor() {
 template <typename M, typename... Args> void actor_base_t::send(const address_ptr_t &addr, Args &&...args) {
     supervisor->put(make_message<M>(addr, std::forward<Args>(args)...));
 }
+
+template <typename M, typename... Args>
+void actor_base_t::route(const address_ptr_t &addr, const address_ptr_t &next_addr, Args &&...args) {
+    supervisor->put(make_routed_message<M>(addr, next_addr, std::forward<Args>(args)...));
+}
+
+template <typename M> void redirect(M message, const address_ptr_t &addr, const address_ptr_t &next_addr) {}
 
 template <typename Delegate, typename Method>
 void actor_base_t::start_timer(request_id_t request_id, const pt::time_duration &interval, Delegate &delegate,

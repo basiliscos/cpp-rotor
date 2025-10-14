@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -123,6 +123,29 @@ struct ROTOR_API actor_base_t : public arc_base_t<actor_base_t> {
      *
      */
     template <typename M, typename... Args> void send(const address_ptr_t &addr, Args &&...args);
+
+    /** \brief routes message to the destination address, then to the next address
+     *
+     * The provided arguments are used for the construction of **payload**, which
+     * is, in turn, is wrapped into message.
+     *
+     * Internally the new message is placed into supervisor's outbound queue.
+     *
+     * The message routing is performed upon **last address** delivery, then,
+     * when ref_counter is 1, message address is chenaged to the `next_addr`
+     * and the `next_addr` is nullified.
+     *
+     * The whole mechanics is based on ref-counting mechanism. That means, if
+     * the message is captured into `intrusive_ptr` somewhere it will NOT be
+     * routed. It have to be manually `redirected` then.
+     */
+    template <typename M, typename... Args>
+    void route(const address_ptr_t &addr, const address_ptr_t &next_addr, Args &&...args);
+
+    /** \brief redirects premade message into destination address
+     *  (and them, possibly routes it to `next_address)
+     */
+    void redirect(message_ptr_t message, const address_ptr_t &addr, const address_ptr_t &next_addr = {}) noexcept;
 
     /** \brief returns request builder for destination address using the "main" actor address
      *

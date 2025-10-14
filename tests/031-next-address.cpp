@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -13,11 +13,15 @@ namespace rt = r::test;
 
 namespace payload {
 struct sample_payload_t {};
+struct int_payload_t {
+    int value;
+};
 } // namespace payload
 
 namespace message {
 using sample_message_t = r::message_t<payload::sample_payload_t>;
-}
+using int_message_t = r::message_t<payload::int_payload_t>;
+} // namespace message
 
 TEST_CASE("delivery to unknown addr", "[message]") {
     struct actor_t : public r::actor_base_t {
@@ -207,4 +211,50 @@ TEST_CASE("delivery to external subscriber, then route to destroy address", "[me
     }
 
     REQUIRE(samples_received == 20);
+}
+
+TEST_CASE("route & redirect (high-level api)", "[message]") {
+    struct actor_t : public r::actor_base_t {
+        using parent_t = r::actor_base_t;
+        using parent_t::parent_t;
+
+        void configure(r::plugin::plugin_base_t &plugin) noexcept override {
+            r::actor_base_t::configure(plugin);
+            plugin.with_casted<r::plugin::address_maker_plugin_t>([&](auto &p) {
+                route_addr = p.create_address();
+                redirect_addr = p.create_address();
+            });
+            plugin.with_casted<r::plugin::starter_plugin_t>([this](auto &p) {
+                p.subscribe_actor(&actor_t::on_message);
+                p.subscribe_actor(&actor_t::on_route, route_addr);
+                p.subscribe_actor(&actor_t::on_redirected, redirect_addr);
+            });
+        }
+
+        void on_message(message::int_message_t &msg) noexcept { msg.payload.value /= 2; }
+
+        void on_route(message::int_message_t &msg) noexcept {
+            msg.payload.value -= 39;
+            redirect(&msg, redirect_addr);
+        }
+
+        void on_redirected(message::int_message_t &msg) noexcept { value = msg.payload.value - 12; }
+
+        r::address_ptr_t route_addr;
+        r::address_ptr_t redirect_addr;
+        int value = 0;
+    };
+
+    r::system_context_t system_context;
+    rt::supervisor_test_ptr_t sup;
+
+    sup = system_context.create_supervisor<rt::supervisor_test_t>().timeout(rt::default_timeout).finish();
+    auto act = sup->create_actor<actor_t>().timeout(rt::default_timeout).finish();
+    sup->do_process();
+    REQUIRE(sup->get_state() == r::state_t::OPERATIONAL);
+
+    sup->route<payload::int_payload_t>(act->get_address(), act->route_addr, 100);
+    sup->do_process();
+
+    REQUIRE(act->value == -1);
 }
