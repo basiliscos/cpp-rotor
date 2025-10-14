@@ -67,8 +67,8 @@ project.
 
 ## Changelog
 
-### 0.36 (xx-Oct-2025)
- - [feature] add `route()` and `redirect()` high-level actor methods, which are
+### 0.36 (14-Oct-2025)
+ - [feature] add `route()` and `redirect()` high-level actor methods, which
    provide convenient API over `make_routed_message()` introduced in `v0.32`
 
 ### 0.35 (07-Oct-2025)
