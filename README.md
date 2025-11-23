@@ -67,6 +67,13 @@ project.
 
 ## Changelog
 
+### 0.37 (xx-xxx-202x)
+ - [cmake, breaking] increase cmake version requirement `3.15` -> `3.17`
+ - [cmake]  generate file for clangd langserv (thanks for @rymdbar)
+ - [cosmetic] removed trailing spaces (thanks for @rymdbar)
+ - [cosmetic] fixed identation to make sources more vim-folding friendly (thanks for @rymdbar)
+ - [cosmetic] configure linters to project style (thanks for @rymdbar)
+
 ### 0.36 (14-Oct-2025)
  - [feature] add `route()` and `redirect()` high-level actor methods, which
    provide convenient API over `make_routed_message()` introduced in `v0.32`
