@@ -62,7 +62,7 @@ int main() {
 
 It prints "hello world" and exits. The example uses `dummy_supervisor_t` (sources omitted),
 which does almost nothing, but gives you idea what supervisor should do. The code with "real"
-supervisor is shown below, however for pure messaging the kind of supervisor does not matter. 
+supervisor is shown below, however for pure messaging the kind of supervisor does not matter.
 
 ## Hello World (boost::asio loop)
 
