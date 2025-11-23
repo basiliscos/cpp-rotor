@@ -58,8 +58,8 @@ class RotorConan(ConanFile):
         if self.options.enable_fltk:
             self.requires("fltk/1.3.9")
 
-#    def layout(self):
-#        cmake_layout(self)
+    # def layout(self):
+    #     cmake_layout(self)
 
     def generate(self):
         tc = CMakeToolchain(self)
@@ -82,8 +82,8 @@ class RotorConan(ConanFile):
 
     def validate(self):
         minimal_cpp_standard = "17"
-#        if self.settings.compiler.get_safe("cppstd"):
-#            check_min_cppstd(self, minimal_cpp_standard)
+        # if self.settings.compiler.get_safe("cppstd"):
+        #     check_min_cppstd(self, minimal_cpp_standard)
         minimal_version = {
             "gcc": "7",
             "clang": "6",
