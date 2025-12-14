@@ -113,20 +113,29 @@ struct ponger_t : public r::actor_base_t {
 
 int main(int argc, char **argv) {
     try {
+        using boost::conversion::try_lexical_convert;
         std::uint32_t count = 10000;
+        std::uint32_t poll_us = 100;
         if (argc > 1) {
-            boost::conversion::try_lexical_convert(argv[1], count);
+            try_lexical_convert(argv[1], count);
+            if (argc > 2) {
+                try_lexical_convert(argv[2], poll_us);
+            }
         }
 
         rth::system_context_thread_t ctx_ping;
         rth::system_context_thread_t ctx_pong;
         auto timeout = boost::posix_time::milliseconds{100};
-        auto sup_ping =
-            ctx_ping.create_supervisor<rth::supervisor_thread_t>().timeout(timeout).create_registry().finish();
+        auto sup_ping = ctx_ping.create_supervisor<rth::supervisor_thread_t>()
+                .poll_duration(r::pt::milliseconds{poll_us})
+                .timeout(timeout)
+                .create_registry()
+                .finish();
         auto pinger = sup_ping->create_actor<pinger_t>().autoshutdown_supervisor().timeout(timeout).finish();
         pinger->set_pings(count);
 
         auto sup_pong = ctx_pong.create_supervisor<rth::supervisor_thread_t>()
+                            .poll_duration(r::pt::milliseconds{poll_us})
                             .timeout(timeout)
                             .registry_address(sup_ping->get_registry_address())
                             .finish();

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2024 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -124,7 +124,7 @@ void supervisor_ev_t::on_async() noexcept {
         enqueued_messages = do_process();
     }
 
-    if (enqueued_messages) {
+    if (poll_duration > 0 && enqueued_messages) {
         ev_now_update(loop);
         auto now = ev_now(loop);
         auto deadline = now + poll_duration;

@@ -118,8 +118,9 @@ void supervisor_asio_t::do_process() noexcept {
         enqueued_messages = supervisor_t::do_process();
     }
 
-    if (enqueued_messages) {
-        auto deadline = clock_t::now() + time_units_t{poll_duration.total_microseconds()};
+    auto total_microsecs = poll_duration.total_microseconds();
+    if (total_microsecs && enqueued_messages) {
+        auto deadline = clock_t::now() + time_units_t{total_microsecs};
         while (clock_t::now() < deadline && leader_queue.empty()) {
             while (inbound.pop(ptr)) {
                 leader_queue.emplace_back(ptr, false);
