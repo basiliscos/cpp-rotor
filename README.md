@@ -67,9 +67,10 @@ project.
 
 ## Changelog
 
-### 0.37 (xx-xxx-202x)
+### 0.37 (14-Dec-2025)
+ - [feature, asio, thread, ev] allow poll-duration to be set to zero save CPU cycles/battery
  - [cmake, breaking] increase cmake version requirement `3.15` -> `3.17`
- - [cmake]  generate file for clangd langserv (thanks for @rymdbar)
+ - [cmake] generate file for clangd langserv (thanks for @rymdbar)
  - [cosmetic] removed trailing spaces (thanks for @rymdbar)
  - [cosmetic] fixed identation to make sources more vim-folding friendly (thanks for @rymdbar)
  - [cosmetic] configure linters to project style (thanks for @rymdbar)
