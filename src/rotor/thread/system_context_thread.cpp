@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2021 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
+// Copyright (c) 2019-2025 Ivan Baidakou (basiliscos) (the dot dmol at gmail dot com)
 //
 // Distributed under the MIT Software License
 //
@@ -52,19 +52,23 @@ void system_context_thread_t::run() noexcept {
         return false;
     };
 
-    auto delta = time_units_t{poll_duration.total_microseconds()};
+    auto total_us = poll_duration.total_microseconds();
+    auto delta = time_units_t{total_us};
     while (condition()) {
         root_sup.do_process();
         if (condition()) {
-            using namespace std::chrono_literals;
             auto dealine = clock_t::now() + delta;
             if (!timer_nodes.empty()) {
                 dealine = std::min(dealine, timer_nodes.front().deadline);
             }
-            // fast stage, indirect spin-lock, cpu consuming
-            while ((clock_t::now() < dealine) && !process()) {
+            if (total_us) {
+                // fast stage, indirect spin-lock, cpu consuming
+                while ((clock_t::now() < dealine) && !process());
+            } else {
+                while (!process());
             }
             if (queue.empty()) {
+                using namespace std::chrono_literals;
                 std::unique_lock<std::mutex> lock(mutex);
                 auto predicate = [&]() { return !inbound.empty(); };
                 // wait notification, do not consume CPU

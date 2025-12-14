@@ -117,13 +117,17 @@ struct ponger_t : public r::actor_base_t {
 };
 
 int main(int argc, char **argv) {
-
+    using boost::conversion::try_lexical_convert;
     asio::io_context io_ctx1;
     asio::io_context io_ctx2;
     try {
         std::uint32_t count = 10000;
+        std::uint32_t poll_us = 100;
         if (argc > 1) {
-            boost::conversion::try_lexical_convert(argv[1], count);
+            try_lexical_convert(argv[1], count);
+            if (argc > 2) {
+                try_lexical_convert(argv[2], poll_us);
+            }
         }
 
         auto sys_ctx1 = ra::system_context_asio_t::ptr_t{new ra::system_context_asio_t(io_ctx1)};
@@ -134,11 +138,13 @@ int main(int argc, char **argv) {
         auto sup1 = sys_ctx1->create_supervisor<ra::supervisor_asio_t>()
                         .strand(strand1)
                         .timeout(timeout)
+                        .poll_duration(r::pt::milliseconds{poll_us})
                         .guard_context(true)
                         .finish();
         auto sup2 = sys_ctx2->create_supervisor<ra::supervisor_asio_t>()
                         .strand(strand2)
                         .timeout(timeout)
+                        .poll_duration(r::pt::milliseconds{poll_us})
                         .guard_context(true)
                         .finish();
 
