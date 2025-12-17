@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.37")
+set(ROTOR_VERSION "0.38")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
@@ -110,13 +110,14 @@ install(
     RUNTIME DESTINATION bin
 )
 
-add_custom_command(
-  # TARGET rotor
-  TARGET rotor::core
-  PRE_BUILD
-  COMMENT "Ensure clangd file is up to date."
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
-  ${CMAKE_CURRENT_SOURCE_DIR}/)
+if(CMAKE_VERSION VERSION_LESS "3.29")
+    add_custom_command(
+      TARGET rotor::core
+      PRE_BUILD
+      COMMENT "Ensure clangd file is up to date."
+      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
+      ${CMAKE_CURRENT_SOURCE_DIR}/)
+endif()
 
 set(ROTOR_HEADERS_TO_INSTALL
     include/rotor.hpp
