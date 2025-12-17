@@ -67,6 +67,9 @@ project.
 
 ## Changelog
 
+### 0.38 (17-Dec-2025)
+ - [cmake, bugfix] export `compile_commands.json` only if cmake version is >= `3.29`
+
 ### 0.37 (14-Dec-2025)
  - [feature, asio, thread, ev] allow poll-duration to be set to zero save CPU cycles/battery
  - [cmake, breaking] increase cmake version requirement `3.15` -> `3.17`
