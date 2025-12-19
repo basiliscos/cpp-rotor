@@ -110,7 +110,7 @@ install(
     RUNTIME DESTINATION bin
 )
 
-if(CMAKE_VERSION VERSION_LESS "3.29")
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.29")
     add_custom_command(
       TARGET rotor::core
       PRE_BUILD
