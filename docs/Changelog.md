@@ -4,6 +4,10 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+### 0.39 (19-Dec-2025)
+ - [cmake, bugfix] export `compile_commands.json` only if cmake version is >= `3.29`
+   (more correct fix, thanks to @ErniGH)
+
 ### 0.38 (17-Dec-2025)
  - [cmake, bugfix] export `compile_commands.json` only if cmake version is >= `3.29`
 
