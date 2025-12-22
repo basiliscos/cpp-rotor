@@ -237,6 +237,7 @@ if (ROTOR_BUILD_WX)
     target_sources(rotor_wx PRIVATE ${WX_SOURCES})
 
     target_link_libraries(rotor_wx PUBLIC rotor ${wxWidgets_LIBRARIES})
+    target_include_directories(rotor_wx PUBLIC ${wxWidgets_INCLUDE_DIRS})
     add_library(rotor::wx ALIAS rotor_wx)
 
     install(
