@@ -7,7 +7,7 @@ on:
     - workflows: build-package-workflow
       filter:
         source_branches: ["**", "!test**"]
-        target_branches: "main"
+        target_branches: "**"
 
 workflows:
   build-package-workflow:
@@ -24,5 +24,7 @@ tasks:
           - python3 -m venv myenv
           - source myenv/bin/activate
           - pip install conan
-          - ls -lah /tmp
+          - conan profile detect
+          - mkdir build.ci && cd build.ci
+          - conan install --build=missing -o *:shared=True --output-folder . ..
           - my-fail
