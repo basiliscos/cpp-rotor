@@ -27,6 +27,7 @@ tasks:
           - conan profile detect
           - mkdir build.ci && cd build.ci
           - conan install --build=missing -o '*:shared=True' -o '*:enable_ev=True' -o '*:enable_fltk=True' --output-folder . ..
+          - source ./conanbuild.sh
           - cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=$PWD/conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_BUILD_TYPE=Release -DROTOR_BUILD_THREAD=on -DROTOR_BUILD_ASIO=on -DROTOR_BUILD_EXAMPLES=on -DROTOR_BUILD_TESTS=on -DROTOR_BUILD_FLTK=on -DROTOR_BUILD_EV=on -DROTOR_BUILD_DOC=on -DROTOR_BUILD_WX=on
           - my-fail
 
