@@ -1,0 +1,28 @@
+on:
+  push:
+    - workflows: build-package-workflow
+      filter:
+        branches: ["main", "master"]
+  pull_request:
+    - workflows: build-package-workflow
+      filter:
+        source_branches: ["**", "!test**"]
+        target_branches: "main"
+
+workflows:
+  build-package-workflow:
+    tasks:
+      - build-package-task
+      
+tasks:
+  - name: build-package-task
+    cubes:
+      - name: setup
+        script:
+          - sudo apt update
+          - sudo apt install -y g++ cmake
+          - ls -lah /tmp
+          - my-fail
+          - sudo apt install openjdk-21-jdk -y
+          - sudo apt install maven -y
+
