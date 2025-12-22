@@ -2,12 +2,12 @@ on:
   push:
     - workflows: build-package-workflow
       filter:
-        branches: ["main", "master"]
-  pull_request:
-    - workflows: build-package-workflow
-      filter:
-        source_branches: ["**", "!test**"]
-        target_branches: "**"
+        branches: ["**"]
+#  pull_request:
+#    - workflows: build-package-workflow
+#      filter:
+#        source_branches: ["**", "!test**"]
+#        target_branches: "**"
 
 workflows:
   build-package-workflow:
