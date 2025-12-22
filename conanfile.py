@@ -105,6 +105,8 @@ class RotorConan(ConanFile):
         if self.options.shared and Version(self.version) < "0.23":
             raise ConanInvalidConfiguration("shared option is available from v0.23")
 
+    def build_requirements(self):
+        self.tool_requires("cmake/3.23")
 
     def build(self):
         cmake = CMake(self)
