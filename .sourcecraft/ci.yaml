@@ -20,9 +20,9 @@ tasks:
       - name: setup
         script:
           - sudo apt update
-          - sudo apt install -y g++ cmake
+          - sudo apt install -y g++ cmake python3-venv
+          - python3 -m venv myenv
+          - source myenv/bin/activate
+          - pip install conan
           - ls -lah /tmp
           - my-fail
-          - sudo apt install openjdk-21-jdk -y
-          - sudo apt install maven -y
-
