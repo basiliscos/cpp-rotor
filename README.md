@@ -36,11 +36,11 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 
 ## messaging performance
 
-|  inter-thread (1)  | cross-thread (2)  | single thread (3)  | no alloc (4)
-|:------------------:|:-----------------:|:-------------------:-------------------:
-| ~23.6M msgs/second | ~2.5M msgs/second | ~34.6М msgs/second | ~34.9 msgs/second
+|  inter-thread (1) | cross-thread (2) | single thread (3) | no alloc, TS (4) | no alloc (5)
+|:-----------------:|:----------------:|:-----------------:|:----------------:|:-------------:
+| ~31.6M msgs/s     | ~2.5M msgs/s     | ~49.6М msgs/s     | ~34.9M msgs/s    | ~71.33M msgs/s
 
-Setup: Intel Core i7-8550U, Void Linux 5.15.
+Setup: Intel Core i7-1360P, Void Linux, 6.12.63
 
 (1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
 
@@ -51,8 +51,11 @@ Setup: Intel Core i7-8550U, Void Linux 5.15.
 and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
 option is mainly targeted for single-threaded apps.
 
-(4) Pre-allocated single message ping-pong'ing, see `examples/thread/ping-pong-no-alloc.cpp`
-using `redirect()` technique appeared in `v0.36` .
+(4) Thread-safe pre-allocated single message inter-thread ping-pong'ing, see `examples/thread/ping-pong-no-alloc.cpp`
+using `redirect()` technique intoduced in `v0.36` .
+
+(5) Thread-unsafe (`ROTOR_BUILD_THREAD_UNSAFE=True`) pre-allocated single message inter-thread ping-pong'ing,
+see `examples/thread/ping-pong-no-alloc.cpp` using `redirect()` technique intoduced in `v0.36` .
 
 ## license
 
@@ -71,6 +74,7 @@ project.
 ## Changelog
 
 ### 0.40 (xx-xxx-20xx)
+ - update synthetic performance metrics
  - [example] added `examples/thread/ping-pong-no-alloc.cpp`
     (use message redirection/no alloctions)
  - [cmake] copy compile_commands.json only for Makefile generator
