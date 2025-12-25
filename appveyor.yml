@@ -1,5 +1,5 @@
 image:
-  - Ubuntu2204
+  # - Ubuntu2204
   # - Visual Studio 2017 -- conan2 seems not supporting it any longer
   - Visual Studio 2019
   - Visual Studio 2022
