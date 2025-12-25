@@ -8,9 +8,9 @@
 [blog-cpp-req_res]: https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/
 
 `rotor` is event loop friendly C++ actor micro framework,
+    [sourcecraft](https://sourcecraft.dev/the-dmol/cpp-rotor)
     [github](https://github.com/basiliscos/cpp-rotor)
     [abf](https://abf.io/basiliscos/cpp-rotor)
-    [gitee](https://gitee.com/basiliscos/cpp-rotor)
 
 [telegram](https://t.me/cpp_rotor)
 [![Conan Center](https://img.shields.io/conan/v/rotor)](https://conan.io/center/recipes/rotor)
@@ -36,9 +36,9 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 
 ## messaging performance
 
-|      inter-thread (1)   | cross-thread (2)       | single thread (3)
-|:-----------------------:|:----------------------:|:---------------------:
-|  ~23.6M messages/second | ~ 2.5M messages/second | ~34.6М messages/second
+|  inter-thread (1)  | cross-thread (2)  | single thread (3)  | no alloc (4)
+|:------------------:|:-----------------:|:-------------------:-------------------:
+| ~23.6M msgs/second | ~2.5M msgs/second | ~34.6М msgs/second | ~34.9 msgs/second
 
 Setup: Intel Core i7-8550U, Void Linux 5.15.
 
@@ -50,6 +50,9 @@ Setup: Intel Core i7-8550U, Void Linux 5.15.
 (3) Backend-independent inter-thread messaging when build with `ROTOR_BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
 and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
 option is mainly targeted for single-threaded apps.
+
+(4) Pre-allocated single message ping-pong'ing, see `examples/thread/ping-pong-no-alloc.cpp`
+using `redirect()` technique appeared in `v0.36` .
 
 ## license
 
@@ -66,6 +69,13 @@ Take a look into my [rotor-light](https://notabug.org/basiliscos/cpp-rotor-light
 project.
 
 ## Changelog
+
+### 0.40 (xx-xxx-20xx)
+ - [example] added `examples/thread/ping-pong-no-alloc.cpp`
+    (use message redirection/no alloctions)
+ - [cmake] copy compile_commands.json only for Makefile generator
+ - [ci] use [sourcecraft](https://sourcecraft.dev) hosting platform as CI/CD friendly
+ - [ci] fix [appveyor](https://ci.appveyor.com) windows builds
 
 ### 0.39 (19-Dec-2025)
  - [cmake, bugfix] export `compile_commands.json` only if cmake version is >= `3.29`
