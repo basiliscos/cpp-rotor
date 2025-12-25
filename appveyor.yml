@@ -12,7 +12,7 @@ environment:
   APPVEYOR_SSH_KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMfXuDqlgFKyyqLiBJT0KEx5wBC/0qgQHE1/jgq7wyQ+ b@zbook"
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
-  OPENSSL_HOME: "C:\\OpenSSL-Win64\\bin"
+  OPENSSL_HOME: "C:\\OpenSSL-Win64"
   APPVEYOR_YML_DISABLE_PS_LINUX: true
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
