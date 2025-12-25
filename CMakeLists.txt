@@ -111,12 +111,14 @@ install(
 )
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.29")
-    add_custom_command(
-      TARGET rotor::core
-      PRE_BUILD
-      COMMENT "Ensure clangd file is up to date."
-      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
-      ${CMAKE_CURRENT_SOURCE_DIR}/)
+    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+        add_custom_command(
+          TARGET rotor::core
+          PRE_BUILD
+          COMMENT "Ensure clangd file is up to date."
+          COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/)
+  endif()
 endif()
 
 set(ROTOR_HEADERS_TO_INSTALL
