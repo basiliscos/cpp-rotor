@@ -17,7 +17,7 @@ add_test(ping-pong-spawner "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-spawner"
 
 add_executable(ping-pong-no-alloc ping-pong-no-alloc.cpp)
 target_link_libraries(ping-pong-no-alloc rotor::thread)
-add_test(ping-pong-no-alloc "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-spawner")
+add_test(ping-pong-no-alloc "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ping-pong-no-alloc")
 
 if (NOT ROTOR_BUILD_THREAD_UNSAFE)
     add_executable(ping-pong-thread ping-pong-thread.cpp)

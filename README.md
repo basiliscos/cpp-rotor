@@ -73,8 +73,8 @@ project.
 
 ## Changelog
 
-### 0.40 (xx-xxx-20xx)
- - update synthetic performance metrics
+### 0.40 (27-Dec-2025)
+ - [doc] update synthetic performance metrics
  - [bugfix] [thread-backend] decrease cpu usage
  - [example] added `examples/thread/ping-pong-no-alloc.cpp`
     (use message redirection/no alloctions)
