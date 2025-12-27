@@ -43,13 +43,11 @@ void system_context_thread_t::run() noexcept {
     auto &inbound = root_sup.access<to::inbound_queue>();
     auto &poll_duration = root_sup.access<to::poll_duration>();
 
-    auto process = [&]() -> bool {
+    auto try_pop_inbound = [&]() -> void {
         message_base_t *ptr;
-        if (inbound.pop(ptr)) {
+        while (inbound.pop(ptr)) {
             queue.emplace_back(ptr, false);
-            return true;
         }
-        return false;
     };
 
     auto total_us = poll_duration.total_microseconds();
@@ -57,28 +55,29 @@ void system_context_thread_t::run() noexcept {
     while (condition()) {
         root_sup.do_process();
         if (condition()) {
-            auto dealine = clock_t::now() + delta;
-            if (!timer_nodes.empty()) {
-                dealine = std::min(dealine, timer_nodes.front().deadline);
-            }
-            if (total_us) {
+            try_pop_inbound();
+            if (total_us && queue.empty()) {
+                auto dealine = clock_t::now() + delta;
+                if (!timer_nodes.empty()) {
+                    dealine = std::min(dealine, timer_nodes.front().deadline);
+                }
                 // fast stage, indirect spin-lock, cpu consuming
-                while ((clock_t::now() < dealine) && !process());
-            } else {
-                while (!process());
+                while (queue.empty() && (clock_t::now() < dealine)) {
+                    try_pop_inbound();
+                }
             }
             if (queue.empty()) {
                 using namespace std::chrono_literals;
                 std::unique_lock<std::mutex> lock(mutex);
                 auto predicate = [&]() { return !inbound.empty(); };
                 // wait notification, do not consume CPU
-                auto next_timer_deadline = !timer_nodes.empty() ? timer_nodes.front().deadline : dealine + 1h;
-                cv.wait_until(lock, next_timer_deadline, predicate);
+                auto deadline = !timer_nodes.empty() ? timer_nodes.front().deadline : clock_t::now() + 1min;
+                cv.wait_until(lock, deadline, predicate);
             }
             update_time();
-            root_sup.do_process();
         }
     }
+    root_sup.do_process();
 }
 
 void system_context_thread_t::check() noexcept {
