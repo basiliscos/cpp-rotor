@@ -1,0 +1,34 @@
+on:
+  push:
+    - workflows: build-package-workflow
+
+workflows:
+  build-package-workflow:
+    tasks:
+      - configure-compile-test
+      
+tasks:
+  - name: configure-compile-test
+    cubes:
+      - name: configure
+        script:
+          - sudo apt update
+          - sudo apt install -y g++ cmake python3-venv doxygen pkgconf
+          - sudo apt install -y libwxgtk3.0-gtk3-dev libwxgtk3.0-gtk3-0v5
+          - sudo apt install -y libgl1-mesa-dev libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxaw7-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxmuu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxss-dev libxt-dev libxtst-dev libxv-dev libxxf86vm-dev libxcb-glx0-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev uuid-dev libxcb-cursor-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-present-dev libxcb-composite0-dev libxcb-ewmh-dev libxcb-res0-dev libxcb-util-dev libxcb-util0-dev libglu1-mesa-dev
+          - python3 -m venv myenv
+          - source myenv/bin/activate
+          - pip install conan
+          - conan profile detect
+          - mkdir build.ci && cd build.ci
+          - conan install --build=missing -o '*:shared=True' -o '*:enable_ev=True' -o '*:enable_fltk=True' -o '*:without_serialization=True' -o '*:without_graph=True' -o '*:without_fiber=True' -o '*:without_log=True' -o '*:without_math=True' -o '*:without_process=True' -o '*:without_stacktrace=True' -o '*:without_test=True' -o '*:without_wave=True'  --output-folder . ..
+          - source ./conanbuild.sh
+          - cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=$PWD/conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_BUILD_TYPE=Release -DROTOR_BUILD_THREAD=on -DROTOR_BUILD_ASIO=on -DROTOR_BUILD_EXAMPLES=on -DROTOR_BUILD_TESTS=on -DROTOR_BUILD_FLTK=on -DROTOR_BUILD_EV=on -DROTOR_BUILD_DOC=on -DROTOR_BUILD_WX=on
+      - name: compile
+        script:
+          - cd build.ci
+          - make -j`nproc`
+      - name: test
+        script:
+          - cd build.ci
+          - ctest .

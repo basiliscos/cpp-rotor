@@ -8,9 +8,9 @@
 [blog-cpp-req_res]: https://basiliscos.github.io/blog/2019/10/05/request-response-message-exchange-pattern/
 
 `rotor` is event loop friendly C++ actor micro framework,
+    [sourcecraft](https://sourcecraft.dev/the-dmol/cpp-rotor)
     [github](https://github.com/basiliscos/cpp-rotor)
     [abf](https://abf.io/basiliscos/cpp-rotor)
-    [gitee](https://gitee.com/basiliscos/cpp-rotor)
 
 [telegram](https://t.me/cpp_rotor)
 [![Conan Center](https://img.shields.io/conan/v/rotor)](https://conan.io/center/recipes/rotor)
@@ -36,11 +36,11 @@ and [this](https://basiliscos.github.io/blog/2019/08/19/cpp-supervisors/)
 
 ## messaging performance
 
-|      inter-thread (1)   | cross-thread (2)       | single thread (3)
-|:-----------------------:|:----------------------:|:---------------------:
-|  ~23.6M messages/second | ~ 2.5M messages/second | ~34.6М messages/second
+|  inter-thread (1) | cross-thread (2) | single thread (3) | no alloc, TS (4) | no alloc (5)
+|:-----------------:|:----------------:|:-----------------:|:----------------:|:-------------:
+| ~31.6M msgs/s     | ~2.5M msgs/s     | ~49.6М msgs/s     | ~34.9M msgs/s    | ~71.33M msgs/s
 
-Setup: Intel Core i7-8550U, Void Linux 5.15.
+Setup: Intel Core i7-1360P, Void Linux, 6.12.63
 
 (1) Backend-independent; Can be measured with `examples/boost-asio/ping-pong-single-simple`, `examples/ev/ping-pong-ev`.
 
@@ -50,6 +50,12 @@ Setup: Intel Core i7-8550U, Void Linux 5.15.
 (3) Backend-independent inter-thread messaging when build with `ROTOR_BUILD_THREAD_UNSAFE=True`. `rotor` objects (messages
 and actors) cannot be accessed from different threads, cross-thread message sending facility cannot be used. This
 option is mainly targeted for single-threaded apps.
+
+(4) Thread-safe pre-allocated single message inter-thread ping-pong'ing, see `examples/thread/ping-pong-no-alloc.cpp`
+using `redirect()` technique intoduced in `v0.36` .
+
+(5) Thread-unsafe (`ROTOR_BUILD_THREAD_UNSAFE=True`) pre-allocated single message inter-thread ping-pong'ing,
+see `examples/thread/ping-pong-no-alloc.cpp` using `redirect()` technique intoduced in `v0.36` .
 
 ## license
 
@@ -66,6 +72,15 @@ Take a look into my [rotor-light](https://notabug.org/basiliscos/cpp-rotor-light
 project.
 
 ## Changelog
+
+### 0.40 (27-Dec-2025)
+ - [doc] update synthetic performance metrics
+ - [bugfix] [thread-backend] decrease cpu usage
+ - [example] added `examples/thread/ping-pong-no-alloc.cpp`
+    (use message redirection/no alloctions)
+ - [cmake] copy compile_commands.json only for Makefile generator
+ - [ci] use [sourcecraft](https://sourcecraft.dev) hosting platform as CI/CD friendly
+ - [ci] fix [appveyor](https://ci.appveyor.com) windows builds
 
 ### 0.39 (19-Dec-2025)
  - [cmake, bugfix] export `compile_commands.json` only if cmake version is >= `3.29`

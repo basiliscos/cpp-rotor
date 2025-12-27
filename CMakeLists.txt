@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 
 cmake_policy(SET CMP0074 NEW)
 
-set(ROTOR_VERSION "0.39")
+set(ROTOR_VERSION "0.40")
 project (rotor LANGUAGES CXX VERSION ${ROTOR_VERSION})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
@@ -111,12 +111,14 @@ install(
 )
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.29")
-    add_custom_command(
-      TARGET rotor::core
-      PRE_BUILD
-      COMMENT "Ensure clangd file is up to date."
-      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
-      ${CMAKE_CURRENT_SOURCE_DIR}/)
+    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+        add_custom_command(
+          TARGET rotor::core
+          PRE_BUILD
+          COMMENT "Ensure clangd file is up to date."
+          COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/)
+  endif()
 endif()
 
 set(ROTOR_HEADERS_TO_INSTALL
@@ -237,6 +239,9 @@ if (ROTOR_BUILD_WX)
     target_sources(rotor_wx PRIVATE ${WX_SOURCES})
 
     target_link_libraries(rotor_wx PUBLIC rotor ${wxWidgets_LIBRARIES})
+    target_include_directories(rotor_wx PUBLIC ${wxWidgets_INCLUDE_DIRS})
+    target_compile_definitions(rotor_wx PUBLIC ${wxWidgets_DEFINITIONS})
+
     add_library(rotor::wx ALIAS rotor_wx)
 
     install(

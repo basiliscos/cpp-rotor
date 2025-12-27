@@ -4,6 +4,15 @@
 [reliable]: https://en.wikipedia.org/wiki/Reliability_(computer_networking) "reliable"
 [request-response]: https://en.wikipedia.org/wiki/Request%E2%80%93response
 
+### 0.40 (27-Dec-2025)
+ - [doc] update synthetic performance metrics
+ - [bugfix] [thread-backend] decrease cpu usage
+ - [example] added `examples/thread/ping-pong-no-alloc.cpp`
+    (use message redirection/no alloctions)
+ - [cmake] copy compile_commands.json only for Makefile generator
+ - [ci] use [sourcecraft](https://sourcecraft.dev) hosting platform as CI/CD friendly
+ - [ci] fix [appveyor](https://ci.appveyor.com) windows builds
+
 ### 0.39 (19-Dec-2025)
  - [cmake, bugfix] export `compile_commands.json` only if cmake version is >= `3.29`
    (more correct fix, thanks to @ErniGH)

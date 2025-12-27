@@ -1,8 +1,8 @@
 image:
-  - Ubuntu2204
   # - Visual Studio 2017 -- conan2 seems not supporting it any longer
   - Visual Studio 2019
   - Visual Studio 2022
+  - Ubuntu2204
 
 configuration:
   - Debug
@@ -12,6 +12,7 @@ environment:
   APPVEYOR_SSH_KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMfXuDqlgFKyyqLiBJT0KEx5wBC/0qgQHE1/jgq7wyQ+ b@zbook"
   PYTHON: "C:\\Python38-x64"
   PY_SCRIPTS: "C:\\Python38-x64\\Scripts"
+  OPENSSL_HOME: "C:\\OpenSSL-Win64"
   APPVEYOR_YML_DISABLE_PS_LINUX: true
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
@@ -30,7 +31,7 @@ for:
     #   - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
     #   - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
     install:
-      - cmd: set PATH=%PY_SCRIPTS%;%PATH%
+      - cmd: set PATH=%PY_SCRIPTS%;%OPENSSL_HOME%\\bin;%PATH%
       - cmd: echo %PATH%
       - cmd: "%PYTHON%\\python.exe -m pip install conan cmake"
       - sh: python3 -m pip install conan cmake
@@ -40,6 +41,7 @@ for:
       - cmake --version
       - conan profile detect
     test_script:
+      - cmd: echo "%cd%"
       - cmd: cmake -E env ROTOR_ROTOR_BUILD_EXAMPLES=ON CXXFLAGS="/permissive- /wd4251 /W4 /w14640 /wd4068" conan create . -s build_type=%CONFIGURATION% -o shared=%SHARED% -s compiler.cppstd=17 -c tools.build:skip_test=False -o enable_ev=True -o enable_fltk=True -o boost/*:without_chrono=True -o boost/*:without_container=True -o boost/*:without_context=True -o boost/*:without_contract=True -o boost/*:without_coroutine=True  -o boost/*:without_exception=True -o boost/*:without_fiber=True -o boost/*:without_graph=True -o boost/*:without_graph_parallel=True -o boost/*:without_iostreams=True -o boost/*:without_json=True -o boost/*:without_locale=True -o boost/*:without_log=True -o boost/*:without_math=True -o boost/*:without_mpi=True -o boost/*:without_nowide=True  -o boost/*:without_python=True -o boost/*:without_random=True -o boost/*:without_serialization=True -o boost/*:without_stacktrace=True -o boost/*:without_test=True -o boost/*:without_thread=True -o boost/*:without_timer=True -o boost/*:without_type_erasure=True -o boost/*:without_url=True -o boost/*:without_wave=True -o *:shared=True -o util-linux-libuuid/*:with_python_bindings=False --version 0.32 --build=missing
       - sh: env
       - sh: if [ "$CONFIGURATION $SHARED" == "Debug False" ]; then export COVERAGE_FLAGS="-fprofile-arcs -ftest-coverage --coverage"; else export COVERAGE_FLAGS=""; fi
